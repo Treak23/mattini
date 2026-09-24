@@ -10,6 +10,8 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ### Arc M0 — Setup and the first M1 step
 
+Supervision: ON · M0 · since 2026-09-24T03:44Z
+
 **OPEN briefs:**
 - M0-01 Repo skeleton, Python environment and the standard gate — M
 - M0-02 World config and coordinate transforms, pipeline side (Tier 1) — M
