@@ -14,18 +14,27 @@ Supervision: ON · M0 · since 2026-09-24T03:44Z
 Waker: session_012t9Gvi7HQtMJDJFdZtvd9W · Routine trig_01V6UzfBMJzJ7Z8dW3nYRKAf · since 2026-09-24T03:45Z
 Last tick: 2026-09-24T04:48Z · main c546125 · ticks 2
 Tick: session_01GXrQfvYt5ZUAHo2BNbt8HV · started 2026-09-24T05:17Z
-Builder: session_01UMSSmssoyATV5gxuKB5rwj · M0-04 · spawned 2026-09-24T04:48Z
-Cost: waker $? · ticks $? · builders $6.47 · lenses $0 (a session cannot read its own dollar cost; read the usage page at the close)
+Lens: spawning · R1 coordinates · spawned 2026-09-24T05:26Z
+Lens: spawning · R1 gate · spawned 2026-09-24T05:26Z
+Cost: waker $? · ticks $? · builders $9.38 · lenses $0 (a session cannot read its own dollar cost; read the usage page at the close)
 
-**OPEN briefs:**
-- M0-04 Terrain download for the village area (the first M1 step) — M
+**OPEN briefs:** none.
 
-**DONE:** M0-01 (4475f6f), M0-02 (1d53a00), M0-03 (ff9e9d6); full gate green on 1617a3a
-(tick 2: 144 pytest, 13 GUT tests, 0 failures).
+**DONE:** M0-01 (4475f6f), M0-02 (1d53a00), M0-03 (ff9e9d6), M0-04 (a383cff); full gate
+green on a8cfa63 (tick 3: 209 pytest, 2 network tests deselected, 13 GUT tests, 0 failures).
 
-Order: M0-01 → M0-02 → M0-03 and M0-04 (disjoint scopes; both depend on M0-02 only).
-
-**Builders running:** the `Builder:` lines above.
+**Review round R1** (WORKFLOW §Review policy), over `git diff 366b0b5..a8cfa63` without
+`game/addons/` and `pipeline/uv.lock`, two lenses (at most two builds at once, lesson 20):
+- `coordinates` — Tier 1: `config/world.json`, both transforms, the manifest, the shared
+  vectors, the pipeline's determinism, the seams M0-02↔M0-03 and M0-02↔M0-04. Rounds until
+  clean.
+- `gate` — Tier 2: `tools/gate.sh`, the hygiene tests, the Godot project and GUT, the
+  download's errors, licence and attribution, the seam M0-01↔M0-03. One round plus one
+  verification pass over its fixes.
+Reports: `docs/reviews/M0-R1-<lens>.md`. The lens split and the P0–P3 scale in the lens
+prompts are the supervisor's reversible choices (tick 3): P0 a Hard Rule broken or a gate
+that cannot fail on the harm it names; P1 a defect the owner or the next arc will hit; P2
+a weakness with no current consumer; P3 clarity. The alternative: one lens per brief pair.
 
 **Decisions for the close:**
 - Ratify: `height_offset_m` read as y = H − height_offset_m on both sides, pinned by tests
@@ -43,6 +52,14 @@ Order: M0-01 → M0-02 → M0-03 and M0-04 (disjoint scopes; both depend on M0-0
   `*.sh text eol=lf` for the owner's Windows PC (unmeasured).
 - Process slip recorded (M0-01 Findings 7): gate re-run after the push, not before; the
   pushed head's re-run exited 0.
+- For design to know (M0-04 Findings 7): a re-run of `download terrain` fetches the six
+  STAC items again; were swisstopo to republish a tile inside the 2024 edition, the file
+  and `provenance.json` would change (visibly). Hard Rule 5's "same inputs" then rests on
+  swisstopo not republishing within an edition.
+- Audit the builder's reversible choices (M0-04 Findings 8): editions must be four-digit
+  years; a damaged file on disk is deleted before its re-fetch; STAC item fetches are not
+  retried; `provenance.json` fields and no `terms` string in it; progress on stderr,
+  path on stdout. Not measured on Windows (Findings 9).
 
 **Parked questions:** none.
 
