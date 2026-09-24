@@ -14,8 +14,8 @@ Supervision: ON · M0 · since 2026-09-24T03:44Z
 Waker: session_012t9Gvi7HQtMJDJFdZtvd9W · Routine trig_01V6UzfBMJzJ7Z8dW3nYRKAf · since 2026-09-24T03:45Z
 Last tick: 2026-09-24T04:48Z · main c546125 · ticks 2
 Tick: session_01GXrQfvYt5ZUAHo2BNbt8HV · started 2026-09-24T05:17Z
-Lens: spawning · R1 coordinates · spawned 2026-09-24T05:26Z
-Lens: spawning · R1 gate · spawned 2026-09-24T05:26Z
+Lens: session_01T4q5GCbYTRUNAccbuwnQfK · R1 coordinates · spawned 2026-09-24T05:20Z
+Lens: session_01EMAwuHwKi69zA8n735G7FD · R1 gate · spawned 2026-09-24T05:20Z
 Cost: waker $? · ticks $? · builders $9.38 · lenses $0 (a session cannot read its own dollar cost; read the usage page at the close)
 
 **OPEN briefs:** none.
