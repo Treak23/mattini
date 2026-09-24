@@ -1,5 +1,5 @@
 # Brief: M0-04 — Terrain download for the village area (the first M1 step)
-Status: OPEN
+Status: DONE (a383cff)
 
 Written in the design realm; executed by one fresh executor session. Executor rules:
 `docs/roles/BUILD.md`.
