@@ -1,5 +1,5 @@
 # Brief: M0-01 — Repo skeleton, Python environment and the standard gate
-Status: OPEN
+Status: DONE (4475f6f)
 
 Written in the design realm; executed by one fresh executor session. Executor rules:
 `docs/roles/BUILD.md`.
@@ -111,3 +111,6 @@ Executor session, 2026-09-24, container with uv 0.8.17 and CPython 3.13.12.
    - No `.gitattributes`: on Windows with Git's default `core.autocrlf=true`,
      `tools/gate.sh` would be checked out with CRLF line endings, which bash is expected
      to refuse. Not measured (no Windows here); `*.sh text eol=lf` would prevent it.
+7. **Process slip, recorded:** the rebase before the push brought in one board commit
+   (`4af4a4f`, docs only) and the gate was re-run only after the push, not before it
+   (BUILD.md §Commits). The re-run on the pushed head `4475f6f` exited 0.
