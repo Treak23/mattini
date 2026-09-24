@@ -1,0 +1,36 @@
+{
+  "effortLevel": "xhigh",
+  "autoCompactWindow": "400k",
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-opus-5-5"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read", "Edit", "Write", "Glob", "Grep", "Bash",
+      "WebFetch", "WebSearch",
+      "mcp__Claude_Code_Remote",
+      "mcp__github"
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push --force-with-lease *)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push --delete *)",
+      "Bash(git push origin --delete *)"
+    ]
+  }
+}

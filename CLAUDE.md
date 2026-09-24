@@ -1,0 +1,128 @@
+# CLAUDE.md
+
+mattini is a desktop game (Windows, Linux) set in Zermatt, built on swisstopo open
+geodata, in a stylised diorama look. The first deliverable is a walkable / flyable sandbox
+of the real terrain and village; game modes come later. It is the owner's learning
+project, later shared with a few people; a commercial release is undecided, so everything
+stays licence-clean. Full design in **docs/SPEC.md**: read it before any structural
+change. Work in small increments per roadmap phase; do not build ahead of the current
+phase.
+
+## Build & Test
+
+```bash
+uv run --project pipeline pytest pipeline/tests        # pipeline unit tests
+uv run --project pipeline ruff check pipeline          # pipeline lint
+uv run --project pipeline python -m mattini manifest   # writes game/assets/generated/manifest.json
+godot --headless --path game --import                  # asset import; exits 0 even on errors (brain.md §Hazards)
+godot --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit   # game tests (GUT)
+uv run --project pipeline gdlint game                  # game lint (vendored addons excluded)
+```
+
+`godot` is the pinned Godot 4.6.3 binary; set `GODOT` to its path where it has another
+name (e.g. on Windows). The Godot commands exist from brief M0-03 on.
+
+**The standard gate** is `tools/gate.sh` (runs everything above, exits non-zero on any
+failure), redirected to a log and chained to the commit by its own exit status
+(`docs/roles/BUILD.md` rule 3c). Godot's own exit status is not enough: the gate also fails
+on error lines in Godot's output and on any test script GUT could not load (brain.md
+§Hazards). There is no never-happen rule (the owner chose none, 2026-09-24); the code that
+guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on both sides,
+the pipeline's determinism) MUST have tests, mutation-proved.
+
+**What the gate cannot see:** containers have no GPU. Nothing here proves that anything
+renders or looks right; the owner's PC is the visual test (brain.md §Hazards).
+
+## Stack
+
+- Godot 4.6.3-stable (standard build, not .NET), GDScript, terrain via the Terrain3D
+  plugin 1.0.2 (vendored in `game/addons/terrain_3d/`). Game tests: GUT 9.6.1 (vendored in
+  `game/addons/gut/`). GDScript lint: gdtoolkit 4.5.0. Versions and sources: SPEC §Stack.
+- Python 3.13 via uv for `pipeline/`, lockfile `pipeline/uv.lock` committed; libraries
+  (GDAL/rasterio, numpy, pyproj, shapely, trimesh, laspy) each confirmed by the design
+  realm before it is added.
+- **Forbidden:** Google Maps Platform content of any kind (its terms forbid storing,
+  shipping or deriving assets from it); any geodata whose licence does not allow
+  redistribution in a shipped game.
+
+## Layout
+
+```
+config/world.json    local origin, bounding boxes, axis mapping (one home)
+config/datasets.json swisstopo datasets: collection, pinned edition, attribution
+pipeline/            Python data pipeline (offline, re-runnable); package `mattini`
+data/                raw and intermediate downloads — git-ignored
+game/                Godot project (project.godot)
+game/addons/         vendored plugins (Terrain3D, GUT) — committed, SPEC §Storage
+game/assets/generated/  pipeline output: chunks + manifest — git-ignored, regenerated
+tests/shared/        fixtures read by both pipeline and game tests (the seam)
+tools/gate.sh        the standard gate
+docs/SPEC.md         design of record
+docs/WORKFLOW.md     the process skeleton; docs/roles/ the role docs
+docs/briefs/         briefs (the unit of work) and BLOCKED.md
+docs/feedback/       the inbox the clerk files into
+docs/releases/       one record per shipped version
+brain.md             compressed whole-project handoff
+docs/LESSONS.md      numbered lessons, each tagged with the role it binds
+docs/ROADMAP.md      the board — open items only
+```
+
+## Hard Rules
+
+These bind the agents. The owner's explicit word overrides any of them except rule 1
+(WORKFLOW §Rules about rules). There is no never-happen rule: the owner chose none on
+2026-09-24.
+
+1. **No secrets in the repo.** No API keys or tokens in code, config, tests or history.
+   None are needed today (the swisstopo STAC API has no key); where one would live is
+   decided when one is needed.
+2. **Honest states.** No fabricated data: a placeholder mesh, texture or value is labelled
+   as one in code and in the brief's Findings. Errors surface visibly (in the game and in
+   pipeline output), never silently. A comment never claims what the code does not do,
+   and no report claims a visual result that nobody rendered.
+3. **Licence-clean data.** Only geodata whose terms allow redistribution enters the
+   pipeline. Every shared build shows `© swisstopo` in its credits (plus any
+   dataset-specific wording). Raw downloads stay in `data/` and never enter git history.
+   Harm prevented: a game that cannot be shared or sold. A soft rule by the owner's choice
+   (2026-09-24): enforced by a test and by `docs/RELEASE.md`, reviewed at Tier 2.
+4. **One home for world coordinates.** The local origin and axis mapping exist only in
+   `config/world.json`; pipeline and game both read it; no hard-coded offsets anywhere.
+   Harm prevented: a world that is silently shifted or mirrored.
+5. **The pipeline is re-runnable and deterministic.** Same inputs and config → same
+   outputs; every step can run from scratch. Harm prevented: generated assets nobody can
+   reproduce.
+
+## Conventions
+
+- Conventional commits (`feat:`, `fix:`, `refactor:`, `docs:`); one roadmap item per
+  commit series.
+- Tests for every pipeline transform and every piece of game logic that can run headless.
+- Metric units everywhere (metres, °C, km/h).
+- **Close every shipped version with a report-back list:** one entry per item the owner
+  reported (what they said, what was wrong, what changed, which version), kept separate
+  from what the review found. Plain text.
+
+## Process: three realms and a supervisor (`docs/WORKFLOW.md`)
+
+Design sessions write briefs + pinning tests into `docs/briefs/` and review arcs
+(`docs/roles/DESIGN.md`); executor sessions implement them under `docs/roles/BUILD.md` —
+no design authority, ambiguity goes to `docs/briefs/BLOCKED.md`, done = the brief's gates
+green; the supervisor (a waker plus a fresh tick per due wake) spawns and checks builders
+under `docs/roles/SUPERVISE.md`; the clerk files feedback under `docs/roles/FEEDBACK.md`.
+If you have been pointed at a brief, you are an executor and BUILD.md binds you. A brief
+marked `Builder: owner` on the board is the owner's to implement; no agent takes it (the
+owner takes none today, 2026-09-24).
+
+**Session roles (spawn words).** When the owner's first message is one of these words,
+first run `git fetch origin main && git checkout main && git pull origin main`, then read
+the role doc and follow it: `design` → `docs/roles/DESIGN.md` · `ultracode build` →
+`docs/roles/BUILD.md` · `supervise` → `docs/roles/SUPERVISE.md` · `feedback` →
+`docs/roles/FEEDBACK.md`. Default models (WORKFLOW §Models): design = Fable or the newest
+Opus, started only by the owner; build and supervise = the newest Opus; feedback =
+Sonnet. Every spawn names the full model id. Anything an AGENT spawns runs Opus or lower,
+never Fable.
+
+**Rules about rules** (`docs/WORKFLOW.md`): rules bind the agents, never the owner; the
+owner's explicit word overrides any process rule except no-secrets and no unrecoverable
+loss of the owner's work (record the override in one line);
+one home per rule — link, don't retell.
