@@ -1,5 +1,5 @@
 # Brief: M0-03 — Godot project, GUT, GDScript lint, WorldConfig and a hardened gate
-Status: OPEN
+Status: DONE (ff9e9d6)
 
 Written in the design realm; executed by one fresh executor session. Executor rules:
 `docs/roles/BUILD.md`. Review tier: **Tier 1** for `WorldConfig` (the game side of the
