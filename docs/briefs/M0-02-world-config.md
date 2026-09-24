@@ -83,3 +83,49 @@ Any change to `config/world.json` or `tests/shared/world_vectors.json` (design d
 disagreement goes to Findings or BLOCKED.md); new dependencies; changing a pinned copy.
 
 ## Findings (executor writes)
+
+Executor session, 2026-09-24 (same session as M0-01).
+
+1. **Pinned copies:** `cmp` of `test_world.py` and `test_manifest.py` against
+   `docs/briefs/pinning/M0-02/pipeline/tests/` exits 0 for both.
+2. **pytest:** 144 passed: 21 hygiene (M0-01), 29 pinned here, 94 of my own in
+   `test_world_rotations.py` (all 48 signed axis mappings: the 24 rotations accepted,
+   right-handed and round-tripping, the 24 mirrors refused), `test_world_refusals.py`
+   (27 malformed configs, each refused with the file named), `test_world_transforms.py`
+   (round trips, the height offset, the 32-bit trap point) and `test_manifest_output.py`
+   (LF bytes, sorted keys, independence from the working directory, a refused config
+   writes nothing, the command exits 1 naming the file).
+3. **Command:** `uv run --project pipeline python -m mattini manifest` from the repository
+   root printed `/home/user/mattini/game/assets/generated/manifest.json`, exit 0; the file
+   is git-ignored (`.gitignore:5`); `world_sha256` =
+   `d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b`.
+4. **Mutation proofs (Tier 1)**, one per run through `tools/gate.sh`, each undone with
+   `git apply -R` of its saved diff; the restored run exits 0 (144 passed):
+
+   | Run | Mutation | Exit, step | Failing tests | Owner-visible harm |
+   |---|---|---|---|---|
+   | a | `to_local` and `to_lv95` ignore the sign of each axis | 1, `pytest` (39 failed) | pinned: `test_to_local_matches_shared_vectors` and `test_to_lv95_matches_shared_vectors` (7 of 8 vectors each; the origin vector passes), `test_mapping_is_a_rotation_not_a_mirror`, `test_load_world_reads_the_given_file`; mine: 21 of the 24 rotations in `test_world_rotations.py`, 2 in `test_world_transforms.py` | the world mirrored north–south: the village drawn with the Matterhorn to its north-west |
+   | b | the determinant check in `_rotation` removed | 1, `pytest` (26 failed) | pinned: `test_bad_config_is_refused_with_the_file_named[mirror]`; mine: the 24 mirrors in `test_world_rotations.py`, `test_a_refused_config_writes_no_manifest` | a mirrored config accepted silently, and a mirrored manifest written for the game |
+   | c | `"written_at": datetime.now().isoformat()` in the manifest | 1, `pytest` (3 failed) | pinned: `test_writing_twice_gives_identical_bytes`, `test_cli_writes_the_same_manifest`; mine: `test_cli_output_does_not_depend_on_the_working_directory` | generated assets nobody can reproduce byte for byte |
+   | d | `ORIGIN_E = 2623000.0` appended to `pipeline/mattini/world.py` | 1, `pytest` (1 failed) | pinned: `test_origin_numbers_live_only_in_config` | a second home for the origin that drifts from `config/world.json` |
+
+5. **A reading taken (design to confirm):** nothing defines what `height_offset_m` does;
+   it is 0.0 today, where every reading gives the same numbers. I read it as the vertical
+   part of the origin, subtracted like the easting and northing: y = H − height_offset_m,
+   and H = y + height_offset_m back. `test_world_transforms.py::
+   test_height_offset_is_subtracted_from_heights` pins that reading so a change to it is
+   deliberate; the game side (M0-03) must read it the same way, or a non-zero offset
+   would split the two halves by twice the offset.
+6. **Strictness beyond the pinned refusals** (all refused with the file named): unknown or
+   missing keys at every level, duplicate JSON keys (Python's `json` would otherwise keep
+   the last one silently), `NaN` and `Infinity` literals, booleans where numbers are
+   expected (`true == 1` in Python), and `area()` asked for an unknown name.
+7. **Where the defaults point:** `mattini.world.REPO` is derived from the module's own
+   location (`Path(__file__).parents[2]`), which is the repository because `uv sync`
+   installs the package editable; a non-editable install would point elsewhere.
+8. **Line endings:** the manifest is written with `write_bytes` and `\n` endings, because
+   `Path.write_text` on Windows turns `\n` into `\r\n` and the owner's Windows PC would
+   then write different bytes from Linux (Hard Rule 5). Not measured on Windows.
+9. The census (`test_origin_numbers_live_only_in_config`) proves text only: it does not
+   see an origin computed from other numbers, and it skips every path with a `tests`,
+   `addons`, `generated` or `.godot` part.
