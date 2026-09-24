@@ -1,4 +1,4 @@
-# SPEC.md — mattini, design of record (v0, 2026-09-24)
+# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close)
 
 Written by the design realm with the owner from `docs/start.md` Part 1 / 1A and the
 owner's day-one answers. Only the design realm edits this file. `CLAUDE.md` holds the
@@ -86,6 +86,12 @@ Items are addressed by id; assets carry `file:checksum` as a multihash (`1220` +
 
 Pinned editions live in `config/datasets.json`; the pipeline never asks for "the latest"
 (Hard Rule 5: same inputs, same outputs). A new edition is a deliberate config change.
+swisstopo can also republish a tile inside an edition (its STAC item carries an `updated`
+time); the M0 download would then fetch the new file and `provenance.json` would change,
+visibly but without anyone deciding it. Decided at the M0 close, built in M1: the
+repository pins the SHA-256 of every tile the pipeline uses, and the download refuses a
+published checksum that differs from the pinned one, so a republished tile is a deliberate
+change like a new edition (the form of the pin is M1's).
 
 ## 6. Coordinates (confirmed by the owner on day one)
 
@@ -96,6 +102,11 @@ Pinned editions live in `config/datasets.json`; the pipeline never asks for "the
 - 1 Godot unit = 1 m. Godot is Y-up, −Z forward: **x = E − 2'623'000, y = H (real LN02
   metres, no vertical offset), z = −(N − 1'096'000).** This mapping is a rotation, not a
   mirror (east × north = up holds after mapping).
+- `height_offset_m` in `config/world.json` is the vertical part of the origin:
+  y = H − height_offset_m, and H = y + height_offset_m back, as both halves compute it and
+  their tests pin (ruled at the M0 close). It is 0.0, which gives y = H as above; a
+  non-zero value lowers the whole world in Godot by that many metres and is a design
+  change.
 - The one home is `config/world.json` (CLAUDE.md Hard Rule 4). The pipeline reads it; the
   pipeline copies it verbatim into the generated manifest with its SHA-256; the game reads
   the origin and axes only from the manifest (an exported game cannot read files outside
@@ -190,6 +201,11 @@ export size, and a larger export is a design question (split the pack file, or L
 **Version scheme — PROPOSED:** `0.<n>.<patch>` for releases before v1; `1.0.0` when the v1
 scope (§2) is complete. The version lives in `game/project.godot`
 (`application/config/version`).
+
+**The first version** is planned for M1's close, the first milestone with something to
+look at; M0 closed without one, because it had nothing to play (the main scene is empty)
+(ruled at the M0 close). Where the version shows and the version scheme are asked when M1
+is planned.
 
 ## 12. What cloud sessions can and cannot verify
 

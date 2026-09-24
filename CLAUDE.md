@@ -16,7 +16,7 @@ uv run --project pipeline ruff check pipeline          # pipeline lint
 uv run --project pipeline python -m mattini manifest   # writes game/assets/generated/manifest.json
 godot --headless --path game --import                  # asset import; exits 0 even on errors (brain.md §Hazards)
 godot --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit   # game tests (GUT)
-uv run --project pipeline gdlint game                  # game lint (vendored addons excluded)
+uv run --project pipeline gdlint $(find game -path game/addons -prune -o -name '*.gd' -print)   # game lint, vendored addons excluded (the gate's list)
 ```
 
 `godot` is the pinned Godot 4.6.3 binary; set `GODOT` to its path where it has another
@@ -24,9 +24,14 @@ name (e.g. on Windows). The Godot commands exist from brief M0-03 on.
 
 **The standard gate** is `tools/gate.sh` (runs everything above, exits non-zero on any
 failure), redirected to a log and chained to the commit by its own exit status
-(`docs/roles/BUILD.md` rule 3c). Godot's own exit status is not enough: the gate also fails
-on error lines in Godot's output and on any test script GUT could not load (brain.md
-§Hazards). There is no never-happen rule (the owner chose none, 2026-09-24); the code that
+(`docs/roles/BUILD.md` rule 3c). Godot's own exit status is not enough, so the gate also
+scans its output: error lines at the import and the parse check, an import left
+`valid=false`, and in the GUT run any test script GUT skipped or could not load,
+`SCRIPT ERROR`, and GUT's own `[ERROR]` (brain.md §Hazards). An engine `ERROR` line in
+the GUT run fails only the test running when it is printed; one printed outside a test
+(in `before_all`, measured, or `after_all`, same code path) does not fail the gate yet
+(M0 review G-03, carried into M1).
+There is no never-happen rule (the owner chose none, 2026-09-24); the code that
 guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on both sides,
 the pipeline's determinism) MUST have tests, mutation-proved.
 

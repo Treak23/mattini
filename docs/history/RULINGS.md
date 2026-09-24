@@ -6,4 +6,19 @@ a question is filed; never startup reading. Formats:
 `<date> · supervisor · <brief> · <question> → <answer>, per <citation>` ·
 `<date> · owner's word, in the waker session · <brief> · <question> → <answer>`
 
+The M0 close's rulings (2026-09-24) have their full text in `docs/history/ARCS.md` §M0,
+numbered D1–D12 there.
+
+2026-09-24 · design · M0 close · does M0 ship a version? → no: it has nothing to play (the main scene is empty); the first version is planned for M1's close, and a close without a version writes its record to `docs/history/ARCS.md` (D1; SPEC §11, DESIGN.md rule 4)
+2026-09-24 · design · M0-02, M0-03 · what does `height_offset_m` mean? → the vertical part of the origin, y = H − height_offset_m on both sides, as built and pinned; kept (D2; SPEC §6)
+2026-09-24 · design · M0-03 · keep the gate checks the builder added (import `valid=false`, GUT `[ERROR]`, ANSI codes stripped)? → keep all three; `valid=false` is the import step's only detector in cloud sessions (D3; brain.md H1)
+2026-09-24 · design · M0-03 · CLAUDE.md's `gdlint game` lints the vendored GUT → CLAUDE.md now gives the gate's file list; no `gdlintrc` (D4)
+2026-09-24 · design · M0-01 · `uv lock --check` in the gate, and `.gitattributes`? → both, in M1's first briefs: `uv lock --check` (measured offline, 12 ms) and `* text=auto eol=lf` for the whole repository, with a test (D5)
+2026-09-24 · design · M0-01 · the gate re-run after the push, not before → recorded in the ledger; no rule change (D6)
+2026-09-24 · design · M0-04 · what if swisstopo republishes a tile inside an edition? → the repository pins every used tile's SHA-256 and the download refuses a changed one, built in M1 (D7; SPEC §5)
+2026-09-24 · design · M0-04 · the builder's reversible choices (Findings 8) → all kept (D8)
+2026-09-24 · design · M0 R1 · C-05 with G-06: what is M1's tile list? → `provenance.json` only, checked against the config (edition, resolution, tile list); the download removes it before its first change on disk; stray `.tif` files stay (D9)
+2026-09-24 · design · M0 R1 · the design's-call findings (C-02 part 2, C-04, C-07, C-09, G-02, G-03, G-05, G-08, G-10) → as in the carry-over table: km spelling caught; `.gitattributes`; NaN plus an error for an unbuilt WorldConfig; C-09 fixed now; only `All tests passed!` passes; `^ERROR` scanned in GUT with one allowlist entry; `valid=false` ratified; `--error-unmatch` in a live test; `XDG_DATA_HOME` per gate run (D10)
+2026-09-24 · design · M0 R1 · regrade the P2s the lens summaries called "critical"? → no; the committed grades stand (D11)
+2026-09-24 · design · M0 R1 · a fix tranche before M1, or M1's briefs carry the residue? → M1's first briefs carry it, before any M1 brief that writes shaders, project settings, manifest fields, a main-scene script or Terrain3D tests (D12)
 2026-09-24 · supervisor · M0 R1 · does a round with P2/P3 findings only, in Tier-1 territory included, count as clean? → yes: fix briefs only for P0/P1, P2/P3 to the board's residue list, per SUPERVISE §The tick 6 ("Fix briefs only for P0/P1 findings … P2/P3 → the board's residue list") and WORKFLOW §Review policy ("Residual P2/P3s go to the board and the report-back"); adjudication in `docs/reviews/M0-round1.md`

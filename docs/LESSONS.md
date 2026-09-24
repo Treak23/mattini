@@ -202,3 +202,37 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     length, not the role. The structural fix: nothing that supervises lives for the arc
     except a waker that reads only status lines; the work runs in a fresh tick session per
     due wake, and the board carries the arc between sessions.
+
+33. `[all]` **Two runs compared in one minute on one machine cannot see what changes by
+    day or by machine.** Every Hard Rule 5 test of arc M0 wrote twice in one run and
+    compared the bytes; a date, a host name or a Python version added to the manifest or
+    to `provenance.json` passed the full gate (M0 review C-01, 2026-09-24). Pin the exact
+    bytes for a fixed input and the exact key set; comparing two runs is only the floor.
+
+34. `[all]` **Test data must be able to tell the right code from its likeliest wrong
+    twin.** The owner's axis mapping swaps two axes, so it is its own inverse, and a game
+    `to_lv95` that applied the mapping instead of its inverse passed every game test; the
+    "32-bit" random round trips drew 32-bit numbers, which a `Vector3` holds exactly, so
+    the narrowing they described never happened (M0 review C-03, C-06, 2026-09-24).
+    Before trusting a test, name the mistake it must catch and check that its data can
+    show it: an asymmetric case, inputs from the wider type.
+
+35. `[all]` **A signal printed once belongs to whoever runs first.** Godot prints an import
+    error only on the run that imports the file. In every cloud container that run is the
+    session-start hook's warm-up, which discards its output, so the gate's scan of later
+    imports sees nothing, and the `valid=false` check a builder added as a re-run nicety
+    is the import step's only detector (M0-03 Findings 6, M0 review G-05, 2026-09-24).
+    Gate on state that persists, and measure a gate in the environment where it runs.
+
+36. `[all]` **A gate owns its tools' configuration.** GUT loads `res://.gutconfig.json` by
+    default, so one committed file could switch its error tracking off with the gate green;
+    gdtoolkit reads its config from the working directory upward, so CLAUDE.md's
+    `gdlint game` linted the vendored GUT (M0 review G-04, M0-03 Findings 8, 2026-09-24).
+    The gate passes each tool's configuration on its command line, and a documented
+    command is run as written before anyone relies on it.
+
+37. `[all]` **A scan scoped by an inclusion list misses the files the next arc will
+    write.** The Hard Rule 4 census read seven suffixes in three folders; a second origin
+    in `project.godot`, in a `.gdshader` or in a script outside `pipeline/mattini/`, or
+    written `2.623e6`, passed the gate (M0 review C-02, 2026-09-24). Scope a census by
+    exclusion (every tracked file minus named folders) and list the spellings, not one.

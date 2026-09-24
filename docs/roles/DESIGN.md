@@ -41,8 +41,9 @@ governs every reading of every rule here.
    first and keep or reverse each (a reversal is a fix brief and a RULINGS line); review
    per WORKFLOW §Review policy where a round is still open — N Opus lenses over the arc's
    diff, P0–P3 findings with file:line, every load-bearing claim verified against the tree;
-   write the release record to `docs/releases/` FIRST, then copy it to chat; move the
-   close's narrative off the board, leaving one line.
+   write the release record to `docs/releases/` FIRST (a close that ships no version
+   writes its record to `docs/history/ARCS.md` instead, ruled at the M0 close), then copy
+   it to chat; move the close's narrative off the board, leaving one line.
 5. **The design realm writes NO production code** — nothing under `pipeline/`, `game/` or
    `tools/`, one-liners included (lesson 15). If the budget is spent, the arc waits.
    Pinning tests (`docs/briefs/pinning/`), the shared fixtures in `tests/shared/` and the
