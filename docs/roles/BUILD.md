@@ -20,7 +20,8 @@ spawning session's prompt). Fallback:
    `brain.md` §Key files and §Hazards, then your brief: the lowest OPEN one, or the first
    the prompt names. A brief with a `Builder:` line on the board belongs to someone else
    (`Builder: owner` included).
-2. Work the brief to green: its gates plus the standard gate.
+2. Copy the brief's pinning tests into place (WORKFLOW §Brief lifecycle), then work the
+   brief to green: its gates plus the standard gate.
 3. Commit (chained on the gate, rule 3c), `git pull --rebase origin main`, re-run the gate
    if the rebase brought commits in, push `main` (a rejected push means rebase again,
    never force). Fill Findings; set `Status: DONE (<sha>)` with the sha copied from

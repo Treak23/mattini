@@ -1,0 +1,14 @@
+{
+  "about": "Pinned conversions between LV95 + LN02 height and Godot local coordinates for config/world.json schema 1 (SPEC section 6). Heights are synthetic round values chosen for the test, not measured terrain heights. Read by pipeline/tests/test_world.py and game/tests/test_world_config.gd.",
+  "tolerance_m": 0.001,
+  "vectors": [
+    {"name": "origin", "lv95": [2623000.0, 1096000.0, 0.0], "local": [0.0, 0.0, 0.0]},
+    {"name": "Kirchplatz 1 address point", "lv95": [2623825.25, 1096489.75, 1600.0], "local": [825.25, 1600.0, -489.75]},
+    {"name": "fractional point near Kirchplatz (32-bit trap)", "lv95": [2623825.13, 1096489.77, 1606.37], "local": [825.13, 1606.37, -489.77]},
+    {"name": "Bahnhofplatz 1 address point", "lv95": [2623923.5, 1096921.5, 1605.0], "local": [923.5, 1605.0, -921.5]},
+    {"name": "village area north-east corner", "lv95": [2625000.0, 1098000.0, 0.0], "local": [2000.0, 0.0, -2000.0]},
+    {"name": "village area south-west corner", "lv95": [2623000.0, 1095000.0, 0.0], "local": [0.0, 0.0, 1000.0]},
+    {"name": "Matterhorn summit name point", "lv95": [2617049.0, 1091673.0, 4478.0], "local": [-5951.0, 4478.0, 4327.0]},
+    {"name": "20 km east and 20 km south of the origin", "lv95": [2643000.0, 1076000.0, 0.0], "local": [20000.0, 0.0, 20000.0]}
+  ]
+}

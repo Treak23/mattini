@@ -32,7 +32,8 @@ governs every reading of every rule here.
 1. **Briefs are the unit of work** (`docs/briefs/TEMPLATE.md`), arc-sized per WORKFLOW
    §Pace and risk. Decomposition is the real job; a brief is never "build the shell".
 2. **Pinning tests for every design decision a brief depends on**, committed before or
-   with the brief (lesson 1).
+   with the brief under `docs/briefs/pinning/<id>/` (lesson 1; WORKFLOW §Brief
+   lifecycle).
 3. **Answers to `BLOCKED.md` are commits.** In the same commit the answered block moves to
    `docs/history/blocked/<date>-<n>.md` and gets one index line per question in
    `docs/history/RULINGS.md`.
@@ -44,8 +45,8 @@ governs every reading of every rule here.
    close's narrative off the board, leaving one line.
 5. **The design realm writes NO production code** — nothing under `pipeline/`, `game/` or
    `tools/`, one-liners included (lesson 15). If the budget is spent, the arc waits.
-   Pinning tests (`pipeline/tests/`, `game/tests/`, `tests/shared/`) and design data under
-   `config/` are design outputs, not production code.
+   Pinning tests (`docs/briefs/pinning/`), the shared fixtures in `tests/shared/` and the
+   design data under `config/` are design outputs, not production code.
 6. **Rulings need evidence** (lesson 12): locate the mechanism at file:line before ruling.
 7. **Fable tokens are for judgment**: mechanical work goes to Opus-or-lower agents.
 8. **Reviewers that build or run tests work isolated** (lesson 20): own `git worktree`,

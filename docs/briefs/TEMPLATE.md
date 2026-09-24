@@ -32,7 +32,8 @@ may run at once.>
 ## Done when (gates)
 
 <Runnable checks, command plus expected result. The pinning tests already exist in the
-tree; a missing one is a BLOCKED question. Every gate carries a "does NOT prove" line; if
+tree (under `docs/briefs/pinning/<id>/`, WORKFLOW §Brief lifecycle); a missing one is a
+BLOCKED question. Every gate carries a "does NOT prove" line; if
 it is hard to write, the gate is not understood yet.>
 
 - [ ] <gate 1>

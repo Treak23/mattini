@@ -175,6 +175,17 @@ line of reason and one line of cost to the owner; the owner's go approves them k
 `Status: OPEN` → `Status: DONE (<commit sha>)`, or `Status: BLOCKED` with the question in
 `BLOCKED.md` §Open. Done briefs stay in the tree as the execution record.
 
+**Pinning tests travel with their brief.** The design realm commits a brief's pinning
+tests under `docs/briefs/pinning/<brief id>/`, mirroring the paths they will have
+(`docs/briefs/pinning/M0-02/pipeline/tests/test_world.py` becomes
+`pipeline/tests/test_world.py`). The executor's first step copies them into place
+(`cp -r docs/briefs/pinning/<id>/. .`); for the whole brief the live copies stay
+byte-identical to the pinned ones (the brief's first gate checks it with `cmp`). Harm
+prevented: the pinning tests of several OPEN briefs sitting in the live test tree would
+keep the standard gate red for every brief but the last, and a gate that is always red
+gets ignored (lesson 31). After the brief is DONE the live copies may evolve with later
+briefs; the pinned copies stay as the record.
+
 ## Releases
 
 `docs/RELEASE.md` is walked top to bottom before any version bump. Release records live
