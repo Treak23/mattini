@@ -1,0 +1,18 @@
+# Raw and intermediate downloads (CLAUDE.md Hard Rule 3; SPEC §9)
+/data/
+
+# Pipeline output, regenerated on each machine (SPEC §9)
+/game/assets/generated/
+
+# Godot's import cache and editor state
+/game/.godot/
+
+# Python environment, caches and tool caches
+/pipeline/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# The standard gate's log (docs/roles/BUILD.md rule 3c)
+/gate.log

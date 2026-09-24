@@ -79,3 +79,35 @@ Runtime dependencies; anything under `game/`; changing the pinned copy or anythi
 `config/` or `tests/shared/`.
 
 ## Findings (executor writes)
+
+Executor session, 2026-09-24, container with uv 0.8.17 and CPython 3.13.12.
+
+1. **Environment.** `uv lock` resolved 17 packages; the dev group locked at pytest 9.1.1,
+   ruff 0.16.8 and gdtoolkit 4.5.0. Build backend: hatchling
+   (`[tool.hatch.build.targets.wheel] packages = ["mattini"]`, flat layout). `uv.lock`
+   does not pin the build backend's version; it only builds the editable install of the
+   pipeline package, so no generated asset depends on it.
+2. **Pinned copy:** `cmp docs/briefs/pinning/M0-01/pipeline/tests/test_repo_hygiene.py
+   pipeline/tests/test_repo_hygiene.py` exits 0.
+3. **pytest:** 21 passed, all in `pipeline/tests/test_repo_hygiene.py`
+   (rootdir `pipeline/`, configfile `pyproject.toml`).
+4. **Import:** `uv run --project pipeline python -c "import mattini"` works from the
+   repository root and, with `--project <repo>/pipeline`, from `/tmp` (both resolve
+   `pipeline/mattini/__init__.py`).
+5. **Gate mutation proof** (one mutation per run; each undone by deleting its scratch
+   file):
+
+   | Run | Mutation | Exit | Failing step | Owner-visible harm it reproduces |
+   |---|---|---|---|---|
+   | a | `pipeline/tests/test_scratch_mutation.py` with `assert 1 == 2` | 1 | `pytest` (1 failed, 21 passed) | a pipeline test fails and the commit goes in anyway |
+   | b | `pipeline/mattini/_scratch_mutation.py` with an unused `import os` | 1 | `ruff check` (F401) | a lint error such as an undefined name ships |
+   | c | `pipeline/mattini/_scratch_mutation.py` with `X = {  'a':1 }` | 1 | `ruff format --check` (`ruff check` passed) | unformatted code drifts in |
+   | — | all restored | 0 | — (`all steps passed`) | — |
+
+6. **Follow-up candidates (not built; outside this brief):**
+   - The gate runs `uv run --frozen`, which does not check that `uv.lock` matches
+     `pyproject.toml`; an edited dependency list without `uv lock` passes the gate.
+     `uv lock --check` as a gate step would catch it.
+   - No `.gitattributes`: on Windows with Git's default `core.autocrlf=true`,
+     `tools/gate.sh` would be checked out with CRLF line endings, which bash is expected
+     to refuse. Not measured (no Windows here); `*.sh text eol=lf` would prevent it.
