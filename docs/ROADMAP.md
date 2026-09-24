@@ -12,8 +12,9 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 Supervision: ON · M0 · since 2026-09-24T03:44Z
 Waker: session_012t9Gvi7HQtMJDJFdZtvd9W · Routine trig_01V6UzfBMJzJ7Z8dW3nYRKAf · since 2026-09-24T03:45Z
-Tick: session_014hf7nKBEfYUKvLAPhozEqK · started 2026-09-24T03:46Z
+Last tick: 2026-09-24T03:47Z · main 8619f16 · ticks 1
 Builder: session_01NSgBnxx9h39syb6PE5SYpA · M0-01, M0-02, M0-03 · spawned 2026-09-24T03:47Z
+Cost: waker $? · ticks $? · builders $? · lenses $0 (a session cannot read its own dollar cost; read the usage page at the close)
 
 **OPEN briefs:**
 - M0-01 Repo skeleton, Python environment and the standard gate — M
