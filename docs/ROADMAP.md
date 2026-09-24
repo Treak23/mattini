@@ -13,6 +13,7 @@ Open items only. Shipped and answered items live in `docs/history/` and
 Supervision: ON · M0 · since 2026-09-24T03:44Z
 Waker: session_012t9Gvi7HQtMJDJFdZtvd9W · Routine trig_01V6UzfBMJzJ7Z8dW3nYRKAf · since 2026-09-24T03:45Z
 Tick: session_014hf7nKBEfYUKvLAPhozEqK · started 2026-09-24T03:46Z
+Builder: spawning · M0-01, M0-02, M0-03 · spawned 2026-09-24T03:49Z
 
 **OPEN briefs:**
 - M0-01 Repo skeleton, Python environment and the standard gate — M
@@ -22,7 +23,8 @@ Tick: session_014hf7nKBEfYUKvLAPhozEqK · started 2026-09-24T03:46Z
 
 Order: M0-01 → M0-02 → M0-03 and M0-04 (disjoint scopes; both depend on M0-02 only).
 
-**Builders running:** none.
+**Builders running:** the `Builder:` lines above. M0-04 waits for M0-02 DONE, then gets its own
+builder (disjoint scope from M0-03, runs beside it).
 
 **Decisions for the close:** none yet.
 
