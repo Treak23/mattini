@@ -1,0 +1,29 @@
+# The janitor — sweeps zero-content session branches (docs/WORKFLOW.md §Branches).
+# Deletes any `claude/*` branch whose tip is an ancestor of main; never touches main,
+# any non-claude ref, or a diverged branch. Sessions cannot delete refs, hence an Action.
+name: janitor
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: delete claude/* branches contained in main
+        run: |
+          git fetch origin main --quiet
+          git ls-remote --heads origin 'refs/heads/claude/*' | while read -r sha ref; do
+            branch="${ref#refs/heads/}"
+            if git merge-base --is-ancestor "$sha" origin/main 2>/dev/null; then
+              echo "deleting $branch (tip $sha is contained in main)"
+              git push origin --delete "$branch" || echo "could not delete $branch (kept)"
+            else
+              echo "keeping $branch (diverged from main or unknown tip)"
+            fi
+          done
