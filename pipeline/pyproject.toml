@@ -21,6 +21,9 @@ packages = ["mattini"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Tests that reach the real swisstopo servers are opt-in: `pytest -m network` (brief M0-04).
+markers = ["network: reaches the real swisstopo servers; run only with -m network"]
+addopts = "--strict-markers -m 'not network'"
 
 [tool.ruff]
 line-length = 100
