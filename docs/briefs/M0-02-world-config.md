@@ -1,5 +1,5 @@
 # Brief: M0-02 — World config and coordinate transforms, pipeline side
-Status: OPEN
+Status: DONE (1d53a00)
 
 Written in the design realm; executed by one fresh executor session. Executor rules:
 `docs/roles/BUILD.md`. Review tier: **Tier 1** (WORKFLOW §Review policy).
