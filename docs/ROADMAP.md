@@ -14,21 +14,35 @@ Supervision: ON · M0 · since 2026-09-24T03:44Z
 Waker: session_012t9Gvi7HQtMJDJFdZtvd9W · Routine trig_01V6UzfBMJzJ7Z8dW3nYRKAf · since 2026-09-24T03:45Z
 Last tick: 2026-09-24T03:47Z · main 8619f16 · ticks 1
 Tick: session_013c1o7eqEMpgV5P8LYyAnqE · started 2026-09-24T04:46Z
-Builder: session_01NSgBnxx9h39syb6PE5SYpA · M0-01, M0-02, M0-03 · spawned 2026-09-24T03:47Z
-Cost: waker $? · ticks $? · builders $? · lenses $0 (a session cannot read its own dollar cost; read the usage page at the close)
+Builder: spawning · M0-04 · spawned 2026-09-24T04:48Z
+Cost: waker $? · ticks $? · builders $6.47 · lenses $0 (a session cannot read its own dollar cost; read the usage page at the close)
 
 **OPEN briefs:**
-- M0-01 Repo skeleton, Python environment and the standard gate — M
-- M0-02 World config and coordinate transforms, pipeline side (Tier 1) — M
-- M0-03 Godot project, GUT, GDScript lint, WorldConfig and a hardened gate — M
 - M0-04 Terrain download for the village area (the first M1 step) — M
+
+**DONE:** M0-01 (4475f6f), M0-02 (1d53a00), M0-03 (ff9e9d6); full gate green on 1617a3a
+(tick 2: 144 pytest, 13 GUT tests, 0 failures).
 
 Order: M0-01 → M0-02 → M0-03 and M0-04 (disjoint scopes; both depend on M0-02 only).
 
-**Builders running:** the `Builder:` lines above. M0-04 waits for M0-02 DONE, then gets its own
-builder (disjoint scope from M0-03, runs beside it).
+**Builders running:** the `Builder:` lines above.
 
-**Decisions for the close:** none yet.
+**Decisions for the close:**
+- Ratify: `height_offset_m` read as y = H − height_offset_m on both sides, pinned by tests
+  (M0-02 Findings 5, M0-03 Findings 10). At the committed 0.0 it gives SPEC §6's "y = H
+  (real LN02 metres, no vertical offset)"; what a non-zero value means is undefined.
+- Ratify or remove: three gate checks beyond M0-03's list — import fails on any
+  `valid=false` `.import` file, GUT fails on `[ERROR]`, ANSI codes stripped before scanning
+  (M0-03 Findings 6); the first is a brain.md §Hazards candidate (H1's second half).
+- CLAUDE.md's `uv run --project pipeline gdlint game`, commented "vendored addons
+  excluded", lints the vendored GUT (645 problems; `gdformat --check game`: 85 files). The
+  gate's own file list is right. A root `gdlintrc`/`gdformatrc` or a changed CLAUDE.md line
+  (M0-03 Findings 8).
+- Follow-up candidates (M0-01 Findings 6): `uv lock --check` as a gate step (`--frozen`
+  does not see a lockfile out of step with `pyproject.toml`); `.gitattributes`
+  `*.sh text eol=lf` for the owner's Windows PC (unmeasured).
+- Process slip recorded (M0-01 Findings 7): gate re-run after the push, not before; the
+  pushed head's re-run exited 0.
 
 **Parked questions:** none.
 
