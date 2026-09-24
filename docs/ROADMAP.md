@@ -12,6 +12,7 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 Supervision: ON · M0 · since 2026-09-24T03:44Z
 Waker: session_012t9Gvi7HQtMJDJFdZtvd9W · Routine trig_01V6UzfBMJzJ7Z8dW3nYRKAf · since 2026-09-24T03:45Z
+Tick: session_014hf7nKBEfYUKvLAPhozEqK · started 2026-09-24T03:46Z
 
 **OPEN briefs:**
 - M0-01 Repo skeleton, Python environment and the standard gate — M
