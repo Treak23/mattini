@@ -13,9 +13,8 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01RJDQ3THu2YpVyofW3Pn924 · Routine trig_01UT2z3Zny3tXn481i8nSJGc · since 2026-09-25T04:02Z
-Tick: session_01H8a28u2bPTo3gpVd4cxyVe · started 2026-09-25T04:16Z
-Last tick: 2026-09-25T04:05Z · main 1419199 · ticks 1
-Cost: waker $0.54 (to 04:02Z) · ticks $? (tick 1 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so tick 1 at a later tick or the close's usage page)
+Last tick: 2026-09-25T04:18Z · main c635411 · ticks 2
+Cost: waker $1.25 (to 04:15Z) · ticks $1.31 (tick 1; tick 2 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Builder: session_01UxbykwYFJSxYM4GVUxoxky · M1-01, M1-03 · spawned 2026-09-25T04:04Z
 Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T04:04Z
 
@@ -29,6 +28,10 @@ Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T
 | M1-04 | Terrain3D in the game: vendoring, TerrainGrid, TerrainLoader, clay look, `tools/shot.sh` | M1-02 | game |
 | M1-05 | Free-fly over the village: main scene, camera, pause screen, credits, errors on screen | M1-03, M1-04 | — |
 | M1-06 | Release preparation for 0.1.0: presets, `tools/export.sh`, a real export | M1-05 | — |
+
+Landed: M1-01 `25972d4` (DONE) — full gate green on `7fa1470` at tick 2 (pytest 275
+passed, GUT 13/13, exit 0). M1-02 code `c635411`: full gate green on it at tick 2's end
+(pytest 275 passed, GUT 18/18); its status line and Findings are still to come.
 
 **Review** (WORKFLOW §Review policy): Tier 1 covers the terrain grid on both sides (the
 pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the manifest's
