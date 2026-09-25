@@ -225,7 +225,8 @@ Executor session, 2026-09-25. Code commit `0794554`, on top of M1-02's gate (`c6
    - `build_terrain` takes an optional keyword `progress` (the command prints it on
      stderr: each tile read, the resampling, the file written).
 7. **For design to know:** in `test_a_stray_tif_in_the_folder_is_not_read` the stray tile
-   lies outside the one-tile area, so under the brief's "no nodata … in the area" rule its
-   nodata pixels are never checked; the test fails the folder-reading mutation through the
-   stray id being unknown to provenance, not through its content. A folder reader that
+   lies outside the one-tile area, so under the rule as `test_terrain_build.py` states it
+   ("no nodata or non-finite value in the area") its nodata pixels are never checked; the
+   test fails the folder-reading mutation through the stray id being unknown to
+   provenance, not through its content. A folder reader that
    skipped unknown ids would pass it and behave like the correct code here.
