@@ -26,7 +26,8 @@ spawning session's prompt). Fallback:
    if the rebase brought commits in, push `main` (a rejected push means rebase again,
    never force). Fill Findings; set `Status: DONE (<sha>)` with the sha copied from
    `git log origin/main` AFTER the push. If the board has a `Waker:` line, `fire_trigger`
-   the Routine it names; if that fails, carry on.
+   the Routine it names, without `text` (with it, a new session starts, brain.md H13); if
+   that fails, carry on.
 4. Take the next OPEN brief of yours. The session ends only when none remains OPEN or all
    remaining are BLOCKED.
 

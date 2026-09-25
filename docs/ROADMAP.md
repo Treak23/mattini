@@ -84,7 +84,10 @@ Nothing deferred: the inbox is empty.
 - Landing wakes. In M0 no landing started a tick; every tick came from a scheduled wake
   (ledger, 2026-09-24). Checked at M1 tick 1 (2026-09-25T04:05Z): `fire_trigger` on the
   waker's Routine turned its session running within a second. The next miss lies in the
-  builders' fire or the waker's due check.
+  builders' fire or the waker's due check. Only without `text`: a fire with `text` starts
+  a stray session instead (brain.md H13). Design's first test at the go passed `text` and
+  left one, "⚡ Waker · M1 · hourly wake" (`session_01QSSgKNoYUzz1jYhNjBjCES`, $0.24, no
+  repository), tagged `M1` for the close's sweep and ledger.
 - Windows line endings break the gate and change the manifest's bytes until M1-01's
   `.gitattributes` (brain.md H10).
 - Software screenshots use the Compatibility renderer; Forward+ crashes in software when

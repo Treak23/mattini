@@ -98,7 +98,7 @@ verifies it with the gate when the owner marks it DONE.
 Each lens is its own session (title `Lens · <arc> R<n> · <lens>`, one `Lens:` line): its
 prompt names the lens, the diff range, the rule *prove it or downgrade it*, what the round
 already ruled, and its one output, `docs/reviews/<arc>-R<n>-<lens>.md`, committed alone,
-then a `fire_trigger` on the waker's Routine. The tick that finds all of a round's reports
+then a `fire_trigger` on the waker's Routine, without `text` (brain.md H13). The tick that finds all of a round's reports
 adjudicates them into `docs/reviews/<arc>-round<n>.md` and writes the fix briefs.
 
 ## What the supervisor decides

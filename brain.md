@@ -150,6 +150,13 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   gl_compatibility …` renders Terrain3D and saves screenshots. Forward+ on Mesa's lavapipe
   (Vulkan, installable with apt) crashes as soon as Terrain3D draws. A Compatibility image
   is not the Forward+ look.
+- **H13 — Firing a Routine with `text` starts a new session (measured 2026-09-25).** On the
+  waker's Routine (it targets the waker's own session), `fire_trigger` without `text` wakes
+  the waker (04:05 and 04:08, each turn visible in `get_session`), and so does a one-shot
+  `create_trigger` with `persistent_session_id` and `run_once_at`. With `text`, it starts a
+  fresh session instead ("⚡ <routine name>", origin `force_run_trigger`): no repository,
+  Sonnet, tagged `routine_notify_push`, and absent from `list_sessions`' default listing,
+  so the close's tag sweep misses it. Never pass `text` when firing the waker.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 
