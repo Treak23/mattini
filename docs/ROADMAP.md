@@ -12,9 +12,9 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 ### Arc M1 — Terrain (planned 2026-09-25)
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
-Waker: session_01RJDQ3THu2YpVyofW3Pn924 · Routine trig_01UT2z3Zny3tXn481i8nSJGc · since 2026-09-25T04:02Z
+Waker: session_019do6LK4hFYQ9c4ykJwQcNw · Routine trig_011umFC7mvuuPiadHHw9DE56 · since 2026-09-25T04:21Z
 Last tick: 2026-09-25T04:18Z · main c635411 · ticks 2
-Cost: waker $1.25 (to 04:15Z) · ticks $1.31 (tick 1; tick 2 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
+Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $1.31 (tick 1; tick 2 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Builder: session_01UxbykwYFJSxYM4GVUxoxky · M1-01, M1-03 · spawned 2026-09-25T04:04Z
 Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T04:04Z
 
