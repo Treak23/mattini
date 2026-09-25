@@ -6,17 +6,17 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
+READY TO CLOSE: ddbbc6e, pytest 367 (3 deselected) + GUT 15 scripts / 69 tests / 1641 asserts + uv lock check, ruff, manifest, Godot version, import and parse check, gdlint, gdformat, 0 failures, 2026-09-25 (arc M1; full gate from a fresh worktree and in the tick's checkout, tick 9)
+
 **Last shipped:** nothing yet. Arc M0 closed on 2026-09-24 without a version, because
 there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 ### Arc M1 — Terrain (planned 2026-09-25)
 
-Supervision: ON · M1 · since 2026-09-25T04:00Z
+Supervision: OFF · M1 · since 2026-09-25T06:40Z (READY TO CLOSE)
 Waker: session_01EEAeJBE7KpsQsoGUEmhTVm · Routine trig_01LxXVtmJjWGmvzExTFWz4m9 · since 2026-09-25T05:24Z
-Tick: session_011aAzn6wpccxzxsPN2VtCqW · started 2026-09-25T06:20Z
-Last tick: 2026-09-25T06:16Z · main 303ba66 · ticks 8
-Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $8.98 (ticks 1–7; tick 8 unread) · builders $30.89 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38; M1-05, M1-06's $11.01) · lenses $8.89 (R1 terrain $8.89) (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
-Lens: session_01AkH5MvA3pEEQS5zJF8BEzF · R1 game · spawned 2026-09-25T05:43Z
+Last tick: 2026-09-25T06:40Z · main ddbbc6e · ticks 9
+Cost: waker $5.40 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third $2.02 to 06:19Z, its rest unread) · ticks $9.98 (ticks 1–8; tick 9 unread) · builders $30.89 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38; M1-05, M1-06's $11.01) · lenses $17.70 (R1 terrain $8.89, R1 game $8.81) (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 
 **OPEN briefs:** none. The arc's six, all DONE:
 
@@ -37,31 +37,24 @@ passed, GUT 13/13, exit 0). M1-02 `c635411` (DONE, Findings `bdba171`) — full 
 at tick 5 (pytest 362 passed, GUT 40/40, exit 0). M1-05 `29e829f` (DONE, Findings `2169791`)
 — full gate green on `14460ce` at tick 6 (pytest 362 passed, GUT 66/66, exit 0). M1-06
 `5c421ca` (DONE, Findings `6fb378d`) — full gate green on `468349c` at tick 7 (pytest 367
-passed, 3 deselected, GUT 69/69, 1641 asserts, exit 0).
+passed, 3 deselected, GUT 69/69, 1641 asserts, exit 0). Full gate green on `ddbbc6e` at tick 9,
+in the tick's checkout and from a fresh worktree (pytest 367 passed, 3 deselected, GUT
+69/69, 1641 asserts, exit 0).
 
 **Review** (WORKFLOW §Review policy): Tier 1 covers the terrain grid on both sides (the
 pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the manifest's
 `terrain` block) with `config/world.json` and the transforms; Tier 2 covers the rest
 (gate, camera, UI, look, export, vendoring, credits).
 
-**Review round R1** (opened at tick 7), over `git diff e83a36a..6fb378d` without
-`game/addons/` and `pipeline/uv.lock`, two lenses (at most two builds at once, lesson 20):
-- `terrain` — Tier 1: `config/world.json`, `config/terrain.json`, the shared terrain
-  fixture and vectors, the pipeline's grid and resampling, the lock, provenance and
-  goldens (Hard Rule 5), the origin census (Hard Rule 4), the manifest's `terrain` block,
-  `WorldConfig`, `TerrainGrid`/`TerrainLoader` placement; the seams M1-01↔M1-03,
-  M1-03↔M1-04, M1-02↔M1-04. Rounds until clean.
-- `game` — Tier 2: `tools/gate.sh` and its allowlist, the main scene, camera, pause
-  screen, credits and error panel, the clay shader, `tools/shot.sh`, Terrain3D's vendoring,
-  the export presets and `tools/export.sh`, licence and attribution; the seams
-  M1-02↔M1-05, M1-04↔M1-05, M1-05↔M1-06. One round plus one verification pass over its
-  fixes.
-Reports: `docs/reviews/M1-R1-<lens>.md`. In: `terrain` (`e9022f5`: no P0, no P1, five
-P2, five P3; full gate green on `303ba66` at tick 8, pytest 367 passed, 3 deselected, GUT
-69/69, exit 0). Waiting: `game`. Adjudication at the tick that finds both. The split and the P0–P3 scale are M0's, kept
-(the supervisor's reversible choice, tick 7): P0 a Hard Rule broken or a gate that
-cannot fail on the harm it names; P1 a defect the owner or the next arc will hit; P2 a
-weakness with no current consumer; P3 clarity. The alternative: one lens per brief pair.
+**Review round R1: clean** (no P0, no P1; per the M0 R1 ruling in
+`docs/history/RULINGS.md`). Lenses `terrain` (Tier 1, `docs/reviews/M1-R1-terrain.md`,
+`e9022f5`) and `game` (Tier 2, `docs/reviews/M1-R1-game.md`, `f95b7c6`) over `git diff
+e83a36a..6fb378d` without `game/addons/` and `pipeline/uv.lock`; adjudication
+`docs/reviews/M1-round1.md` (tick 9): 8 P2 and 10 P3, all to the residue below; the game
+area had no fixes, so no verification pass. The split and the P0–P3 scale are M0's, kept
+(the supervisor's reversible choice, tick 7): P0 a Hard Rule broken or a gate that cannot
+fail on the harm it names; P1 a defect the owner or the next arc will hit; P2 a weakness
+with no current consumer; P3 clarity. The alternative: one lens per brief pair.
 
 **The close** ships 0.1.0 (SPEC §11): the owner's first look at the village.
 
@@ -103,6 +96,18 @@ weakness with no current consumer; P3 clarity. The alternative: one lens per bri
   first); only the builder's own tests see the axes and whole-number checks go.
 - M1-02 Findings 8: a process slip, a Findings push after a rebase without a gate re-run
   (the re-run after: exit 0).
+- Review R1 residue (`docs/reviews/M1-round1.md`): seven findings whose fix is unambiguous
+  and inside an M1 brief's scope (T-03, T-05 part 1, G-01 part 1, T-07, G-04, G-07, G-08),
+  one cheap fix tranche if design wants it; thirteen more are design's call.
+- Close-facing, for 0.1.0: G-02 (nothing starts the exported build; RELEASE.md §C has no
+  such line; the lens measured today's export from a fresh checkout loading the village),
+  G-08 (RELEASE.md §B still calls the version's place OPEN), T-01's real-data half
+  (nothing compares the owner's first `village.f32` with SPEC §8's `b6334c1f…`), G-06
+  (godot-cpp's MIT notice, a licence reading). T-01, T-02 and G-02 are one class on three
+  sides (lesson 9): the gate's data is tidier than the village.
+- The game lens session's closing summary called G-01, G-02 and G-03 "P1s"; the committed
+  report grades them P2 and is the record (lesson 30, as M0's D11). Regrade here if design
+  disagrees.
 
 **Parked questions:** none.
 
@@ -150,6 +155,7 @@ Nothing deferred: the inbox is empty.
 - While M1-05 and M1-06 wait on M1-04 they have no `Builder:` line, so the waker's due
   rule (SUPERVISE §The waker 2.5) counts a tick at every wake until M1-04 lands (tick 4,
   2026-09-25): for design.
+- M1 R1 residue, 8 P2 and 10 P3 (`docs/reviews/M1-round1.md`): T-01…T-10, G-01…G-08.
 - Landing wakes. In M0 no landing started a tick; every tick came from a scheduled wake
   (ledger, 2026-09-24). Checked at M1 tick 1 (2026-09-25T04:05Z): `fire_trigger` on the
   waker's Routine turned its session running within a second. The next miss lies in the
