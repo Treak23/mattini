@@ -1,7 +1,8 @@
 """Command line: `python -m mattini <command>`.
 
-`lock terrain|buildings`, `download terrain|buildings` and `terrain` all serve the one area
-config/terrain.json names (briefs M2-01, M2-03; M1 R1 T-06): the area has one home.
+`lock terrain|buildings`, `download terrain|buildings`, `terrain` and `buildings` all serve
+the one area config/terrain.json names (briefs M2-01, M2-03, M2-04; M1 R1 T-06): the area
+has one home.
 `lock <dataset>` writes that dataset's entry of config/datasets.lock.json and keeps every
 other entry (brief M2-03).
 """
@@ -12,7 +13,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from mattini import download, lock, terrain
+from mattini import buildings, download, lock, terrain
 from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.manifest import DEFAULT_OUT, write_manifest
 from mattini.world import WorldConfigError, load_world
@@ -51,6 +52,16 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument(
         "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
     )
+    solids = commands.add_parser(
+        "buildings",
+        help="build the building chunks from the downloaded map sheets, then the manifest",
+    )
+    solids.add_argument(
+        "--raw", default=download.DEFAULT_OUT, help="download root (default: data/raw)"
+    )
+    solids.add_argument(
+        "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -62,12 +73,15 @@ def main(argv: list[str] | None = None) -> int:
             return _download(args.dataset, Path(args.out))
         elif args.command == "terrain":
             print(_build_terrain(Path(args.raw), Path(args.out)))
+        elif args.command == "buildings":
+            print(_build_buildings(Path(args.raw), Path(args.out)))
     except (
         WorldConfigError,
         DatasetsConfigError,
         lock.LockError,
         download.DownloadError,
         terrain.TerrainError,
+        buildings.BuildingsError,
     ) as exc:
         print(f"mattini: error: {exc}", file=sys.stderr)
         return 1
@@ -125,6 +139,25 @@ def _build_terrain(raw_root: Path, out_dir: Path) -> Path:
         load_world(),
         load_datasets(),
         lock.load_lock(lock.LOCK_PATH),
+        terrain.load_terrain_config(),
+        raw_root,
+        out_dir,
+        progress=progress,
+    )
+    return write_manifest(out_dir)
+
+
+def _build_buildings(raw_root: Path, out_dir: Path) -> Path:
+    """Build the configured area's building chunks, then the manifest; progress on stderr."""
+
+    def progress(message: str) -> None:
+        print(message, file=sys.stderr, flush=True)
+
+    buildings.build_buildings(
+        load_world(),
+        load_datasets(),
+        lock.load_lock(lock.LOCK_PATH),
+        buildings.load_buildings_config(),
         terrain.load_terrain_config(),
         raw_root,
         out_dir,

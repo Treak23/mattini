@@ -4,7 +4,7 @@ Pinned decisions (docs/history/ARCS.md §M0; lesson 33): two runs compared on on
 cannot see a field that changes by day or by machine (a date, a host name, a version), so
 the manifest and provenance.json are pinned to exact bytes for fixed inputs, and their
 key sets are pinned exactly. A later field changes these goldens on purpose, in the brief
-that adds it (M1-03 adds the manifest's terrain block).
+that adds it (M1-03 adds the manifest's terrain block, M2-04 its buildings block).
 """
 
 import hashlib
@@ -21,8 +21,10 @@ from mattini.world import load_world
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE_WORLD = REPO / "tests" / "shared" / "terrain_fixture" / "world.json"
-# M1-03 added the terrain block (null here: no terrain is built): a new key set and golden.
-MANIFEST_SHA256 = "a04c269d19ba62f7600733abf52defb4817da419bfa1ed7adfa42b33bd8c8828"
+# M1-03 added the terrain block, M2-04 the buildings block (both null here: nothing is
+# built): each a new key set and golden. M2-04's golden is M1-03's bytes with the one line
+# `  "buildings": null,` added (a04c269d… without it, measured).
+MANIFEST_SHA256 = "ba8383ffd4e67eeafc456fb24a00a6c57cad9d5c03bf4214049969642dd9aabd"
 PROVENANCE_SHA256 = "2efd91929da1aa4aa7a987c39a1b66ad25af330ba51eabcde84da3809b77b73a"
 PROVENANCE_KEYS = {
     "attribution",
@@ -39,8 +41,9 @@ TILE_KEYS = {"file", "item", "sha256", "size_bytes", "tile", "url"}
 def test_manifest_bytes_for_a_fixed_world_config(tmp_path):
     raw = write_manifest(tmp_path, FIXTURE_WORLD).read_bytes()
     manifest = json.loads(raw)
-    assert set(manifest) == {"schema", "terrain", "world", "world_sha256"}
+    assert set(manifest) == {"buildings", "schema", "terrain", "world", "world_sha256"}
     assert manifest["terrain"] is None
+    assert manifest["buildings"] is None
     assert manifest["world"] == json.loads(FIXTURE_WORLD.read_text(encoding="utf-8"))
     assert manifest["world_sha256"] == hashlib.sha256(FIXTURE_WORLD.read_bytes()).hexdigest()
     assert hashlib.sha256(raw).hexdigest() == MANIFEST_SHA256
