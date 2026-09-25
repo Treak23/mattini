@@ -13,7 +13,8 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01RJDQ3THu2YpVyofW3Pn924 · Routine trig_01UT2z3Zny3tXn481i8nSJGc · since 2026-09-25T04:02Z
-Tick: session_0155cpPoMH3XqcqMNUWBiH7a · started 2026-09-25T04:03Z
+Last tick: 2026-09-25T04:05Z · main 1419199 · ticks 1
+Cost: waker $0.54 (to 04:02Z) · ticks $? (tick 1 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so tick 1 at a later tick or the close's usage page)
 Builder: session_01UxbykwYFJSxYM4GVUxoxky · M1-01, M1-03 · spawned 2026-09-25T04:04Z
 Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T04:04Z
 
@@ -81,8 +82,8 @@ Nothing deferred: the inbox is empty.
 - An exported build may exceed GitHub's 100 MB file limit on `dist` (SPEC §11): at 0.5 m
   the village's heights are 96 MB.
 - Landing wakes. In M0 no landing started a tick; every tick came from a scheduled wake
-  (ledger, 2026-09-24). At the M1 go, check once that `fire_trigger` on the new waker's
-  Routine wakes it (its session turns running). If it does, the next miss lies in the
+  (ledger, 2026-09-24). Checked at M1 tick 1 (2026-09-25T04:05Z): `fire_trigger` on the
+  waker's Routine turned its session running within a second. The next miss lies in the
   builders' fire or the waker's due check.
 - Windows line endings break the gate and change the manifest's bytes until M1-01's
   `.gitattributes` (brain.md H10).
