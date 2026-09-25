@@ -15,8 +15,8 @@ Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_019do6LK4hFYQ9c4ykJwQcNw · Routine trig_011umFC7mvuuPiadHHw9DE56 · since 2026-09-25T04:21Z
 Tick: session_01Nf7BgWfr9p8KWviRiSQHKG · started 2026-09-25T04:55Z
 Last tick: 2026-09-25T04:34Z · main 3a3fe0e · ticks 4
-Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $3.52 (ticks 1–3; tick 4 unread) · builders $7.50 (M1-01 and M1-03's builder) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
-Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T04:04Z
+Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $4.52 (ticks 1–4; tick 5 unread) · builders $19.88 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
+Builder: spawning · M1-05, M1-06 · spawned 2026-09-25T04:59Z
 
 **OPEN briefs** (lanes may run at once: no shared file, no dependency):
 
@@ -33,7 +33,8 @@ Landed: M1-01 `25972d4` (DONE) — full gate green on `7fa1470` at tick 2 (pytes
 passed, GUT 13/13, exit 0). M1-02 `c635411` (DONE, Findings `bdba171`) — full gate green on
 `1f2578e` at tick 3 (pytest 275 passed, GUT 18/18, exit 0). M1-03 `0794554` (DONE, Findings
 `1dbb31e`, `7d94d4c`) — full gate green on `3a3fe0e` at tick 4 (pytest 361 passed, GUT
-18/18, exit 0).
+18/18, exit 0). M1-04 `2160a3c` (DONE, Findings `93c215d`) — full gate green on `589c63a`
+at tick 5 (pytest 362 passed, GUT 40/40, exit 0).
 
 **Review** (WORKFLOW §Review policy): Tier 1 covers the terrain grid on both sides (the
 pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the manifest's
@@ -48,9 +49,18 @@ pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the man
   `run_godot` wrapper and step order, WorldConfig's `_built` flag and own NaN test), M1-03
   Findings 6 (resampling as the plain 64-bit window mean, the refusal order, the terrain
   config's strictness, how `manifest` reads the terrain description, the `progress`
-  keyword).
+  keyword), M1-04 Findings 8 (TerrainGrid's extra refusals and check order, no NaN scan,
+  no out-of-tree guard in TerrainLoader, `shot.gd`/`shot.sh`'s view and timeout choices,
+  the extension list's `LC_ALL=C sort`).
 - M1-03 Findings 7, for design: the pinned stray-tile test fails the folder-reading
   mutation only through the stray tile's unknown id, never through its content.
+- M1-04 Findings 1, for design: H11's fresh-checkout abort (exit 134) did not reproduce;
+  the extension-list step is kept as decided, its need unshown; H11 wants a re-measure.
+- M1-04 Findings 5 runs e and j, for the Tier 1 round: the pinned rotated-world test
+  accepts any refusal and passes with the axes check disabled (the columns check refuses
+  first); only the builder's own tests see the axes and whole-number checks go.
+- M1-02 Findings 8: a process slip, a Findings push after a rebase without a gate re-run
+  (the re-run after: exit 0).
 
 **Parked questions:** none.
 
