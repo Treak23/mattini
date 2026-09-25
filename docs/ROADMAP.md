@@ -12,6 +12,7 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 ### Arc M1 — Terrain (planned 2026-09-25)
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
+Waker: session_01RJDQ3THu2YpVyofW3Pn924 · Routine trig_01UT2z3Zny3tXn481i8nSJGc · since 2026-09-25T04:02Z
 
 **OPEN briefs** (lanes may run at once: no shared file, no dependency):
 
