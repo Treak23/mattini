@@ -13,10 +13,8 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01EEAeJBE7KpsQsoGUEmhTVm · Routine trig_01LxXVtmJjWGmvzExTFWz4m9 · since 2026-09-25T05:24Z
-Tick: session_01HcaQDdwr1EXLVPJNNdRAWG · started 2026-09-25T06:14Z
-Last tick: 2026-09-25T05:43Z · main 314f811 · ticks 7
-Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $7.00 (ticks 1–6; tick 7 unread) · builders $30.89 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38; M1-05, M1-06's $11.01) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
-Lens: session_01XJY3cAYkoCiJxwb7EVLcki · R1 terrain · spawned 2026-09-25T05:42Z
+Last tick: 2026-09-25T06:16Z · main 303ba66 · ticks 8
+Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $8.98 (ticks 1–7; tick 8 unread) · builders $30.89 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38; M1-05, M1-06's $11.01) · lenses $8.89 (R1 terrain $8.89) (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Lens: session_01AkH5MvA3pEEQS5zJF8BEzF · R1 game · spawned 2026-09-25T05:43Z
 
 **OPEN briefs:** none. The arc's six, all DONE:
@@ -57,7 +55,9 @@ pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the man
   the export presets and `tools/export.sh`, licence and attribution; the seams
   M1-02↔M1-05, M1-04↔M1-05, M1-05↔M1-06. One round plus one verification pass over its
   fixes.
-Reports: `docs/reviews/M1-R1-<lens>.md`. The split and the P0–P3 scale are M0's, kept
+Reports: `docs/reviews/M1-R1-<lens>.md`. In: `terrain` (`e9022f5`: no P0, no P1, five
+P2, five P3; full gate green on `303ba66` at tick 8, pytest 367 passed, 3 deselected, GUT
+69/69, exit 0). Waiting: `game`. Adjudication at the tick that finds both. The split and the P0–P3 scale are M0's, kept
 (the supervisor's reversible choice, tick 7): P0 a Hard Rule broken or a gate that
 cannot fail on the harm it names; P1 a defect the owner or the next arc will hit; P2 a
 weakness with no current consumer; P3 clarity. The alternative: one lens per brief pair.
