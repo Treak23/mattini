@@ -1,14 +1,18 @@
 extends Node3D
-## The main scene (docs/SPEC.md §10, M1's game; brief M1-05). Reads the manifest at
-## manifest_path, builds its terrain in the clay look (TerrainLoader, node "Terrain") under
-## a fixed sun and a sky, and starts the free-fly camera START_ABOVE_M above the grid's
-## centre, facing START_BEARING_DEG. The pause action opens UI/PauseMenu: the version (shown
-## nowhere else, owner 2026-09-25), the controls, the credits, Resume and Quit. A missing,
-## refused or stale manifest or terrain opens UI/ErrorPanel with the refusal and the command
-## that fixes it (Hard Rule 2); the camera flies either way. Each refusal is logged once, by
-## the reader that refuses it (WorldConfig, TerrainGrid); the panel shows what they logged.
-## Every direction (the start view, the sun) is measured through WorldConfig, never
-## assumed (Hard Rule 4).
+## The main scene (docs/SPEC.md §10, M1's and M2's game; briefs M1-05, M2-05). Reads the
+## manifest at manifest_path, builds its terrain in the clay look (TerrainLoader, node
+## "Terrain") under a fixed sun and a sky, then its buildings (BuildingLoader, node
+## "Buildings", beside "Terrain"), and starts the free-fly camera START_ABOVE_M above the
+## grid's centre, facing START_BEARING_DEG. The pause action opens UI/PauseMenu: the version
+## (shown nowhere else, owner 2026-09-25), the controls, the credits, Resume and Quit. A
+## missing, refused or stale manifest, terrain or buildings block opens UI/ErrorPanel: its
+## first line names what cannot be shown, then each refusal with the commands that fix it
+## (Hard Rule 2). What can be shown still is (the terrain without its buildings, and the
+## other way round), and the camera flies either way. Each refusal is logged once, by the
+## reader that refuses it (WorldConfig, TerrainGrid, BuildingChunks); the panel shows what
+## they logged. Every direction (the start view, the sun) is measured through WorldConfig,
+## never assumed, and the buildings stand where the pipeline placed them for the world
+## config the manifest pins (Hard Rule 4).
 
 
 ## Collects the errors logged while the generated data is read, so that the error panel
@@ -46,6 +50,13 @@ const TERRAIN_FIX := [
 	"uv run --project pipeline python -m mattini download terrain",
 	"uv run --project pipeline python -m mattini terrain",
 ]
+const BUILDINGS_FIX := [
+	"uv run --project pipeline python -m mattini download buildings",
+	"uv run --project pipeline python -m mattini buildings",
+]
+## What the error panel's first line names when it cannot be shown.
+const TERRAIN_WHAT := "the terrain"
+const BUILDINGS_WHAT := "the buildings"
 const START_ABOVE_M := 150.0
 ## Clockwise from LV95 north: towards the Matterhorn.
 const START_BEARING_DEG := 235.0
@@ -96,12 +107,11 @@ func _ready() -> void:
 	_pause_menu.hide()
 	_resume.pressed.connect(toggle_pause)
 	_quit.pressed.connect(get_tree().quit)
-	var version: String = ProjectSettings.get_setting("application/config/version")
-	($UI/PauseMenu/Version as Label).text = "mattini %s" % version
+	($UI/PauseMenu/Version as Label).text = "mattini %s" % _version()
 	($UI/PauseMenu/Controls as Label).text = _controls_text()
 	# The camera is in the tree and current by now: Terrain3D needs it on entering.
-	var source := _load_terrain()
-	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(source)
+	var datasets := _load_world()
+	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(datasets)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -120,25 +130,54 @@ func toggle_pause() -> void:
 		_resume.grab_focus()
 
 
-## Reads the manifest and builds the terrain, stopping at the first refusal, which opens
-## the error panel. Returns the terrain's source block for the credits, or {} when there
-## is no terrain.
-func _load_terrain() -> Dictionary:
-	var catcher := ErrorCatcher.new()
-	OS.add_logger(catcher)
-	var world := WorldConfig.from_manifest(manifest_path)
-	var grid: TerrainGrid = null
-	if world != null:
-		grid = TerrainGrid.from_manifest(manifest_path, world)
-	OS.remove_logger(catcher)
+## Reads the manifest, then builds the terrain and then the buildings. A refused manifest
+## shows neither; a refused terrain or buildings block leaves the other shown. Every refusal
+## opens the error panel. Returns the credits' line of each dataset loaded, the terrain's
+## first.
+func _load_world() -> PackedStringArray:
+	var datasets := PackedStringArray()
+	var read_world := _caught(WorldConfig.from_manifest.bind(manifest_path))
+	var world: WorldConfig = read_world[0]
 	if world == null:
-		_show_error(catcher.messages(), MANIFEST_FIX)
-		return {}
+		_show_error([[TERRAIN_WHAT + " and " + BUILDINGS_WHAT, read_world[1], MANIFEST_FIX]])
+		return datasets
 	_read_directions(world)
 	_place_sun()
+	var refusals := []
+	var read_grid := _caught(TerrainGrid.from_manifest.bind(manifest_path, world))
+	var grid: TerrainGrid = read_grid[0]
 	if grid == null:
-		_show_error(catcher.messages(), TERRAIN_FIX)
-		return {}
+		refusals.append([TERRAIN_WHAT, read_grid[1], TERRAIN_FIX])
+	else:
+		_show_terrain(grid)
+		var source := _terrain_source()
+		datasets.append(
+			_dataset_line(source.get("dataset"), source.get("edition"), grid.attribution)
+		)
+	var read_buildings := _caught(BuildingChunks.from_manifest.bind(manifest_path, world))
+	var buildings: BuildingChunks = read_buildings[0]
+	if buildings == null:
+		refusals.append([BUILDINGS_WHAT, read_buildings[1], BUILDINGS_FIX])
+	else:
+		_show_buildings(buildings)
+		datasets.append(_dataset_line(buildings.dataset, buildings.edition, buildings.attribution))
+	if not refusals.is_empty():
+		_show_error(refusals)
+	return datasets
+
+
+## Calls [param read] while an ErrorCatcher listens; returns [its result, the errors logged
+## meanwhile].
+static func _caught(read: Callable) -> Array:
+	var catcher := ErrorCatcher.new()
+	OS.add_logger(catcher)
+	var result: Variant = read.call()
+	OS.remove_logger(catcher)
+	return [result, catcher.messages()]
+
+
+## Builds the terrain, starts the view over it and prints the terrain's startup line.
+func _show_terrain(grid: TerrainGrid) -> void:
 	_terrain = TerrainLoader.create(grid, self)
 	move_child(_terrain, _ui.get_index())
 	_camera.height_at = _ground_height
@@ -147,16 +186,36 @@ func _load_terrain() -> Dictionary:
 	print(
 		(
 			"mattini %s: terrain %s loaded, %d x %d vertices at %s m"
-			% [
-				ProjectSettings.get_setting("application/config/version"),
-				grid.area,
-				grid.columns,
-				grid.rows,
-				_number(grid.spacing_m),
-			]
+			% [_version(), grid.area, grid.columns, grid.rows, _number(grid.spacing_m)]
 		)
 	)
-	return _terrain_source()
+
+
+## Builds the buildings beside the terrain and prints the buildings' startup line.
+func _show_buildings(chunks: BuildingChunks) -> void:
+	var node := BuildingLoader.create(chunks, self)
+	move_child(node, _ui.get_index())
+	var count := 0
+	var triangles := 0
+	for chunk: Dictionary in chunks.chunks:
+		count += chunk["buildings"]
+		triangles += chunk["indices"].size() / 3
+	# The second startup line: tools/export.sh checks it in the exported build (brief M2-05).
+	print(
+		(
+			"mattini %s: buildings %s loaded, %d buildings in %d chunks, %d triangles"
+			% [_version(), chunks.area, count, chunks.chunks.size(), triangles]
+		)
+	)
+
+
+static func _version() -> String:
+	return ProjectSettings.get_setting("application/config/version")
+
+
+## A dataset's line in the credits: "<dataset> <edition>, <attribution>".
+static func _dataset_line(dataset: Variant, edition: Variant, attribution: String) -> String:
+	return "%s %s, %s" % [dataset, edition, attribution]
 
 
 ## The local height of the terrain under (x, z), or NaN where there is none.
@@ -215,19 +274,30 @@ func _terrain_source() -> Dictionary:
 	return terrain["source"]
 
 
-func _show_error(refusals: PackedStringArray, fix: Array) -> void:
-	var lines := PackedStringArray(["mattini cannot show the terrain.", ""])
-	if refusals.is_empty():
-		lines.append("The generated data at %s was refused." % manifest_path)
-	else:
-		lines.append_array(refusals)
-	lines.append("")
-	if fix.size() == 1:
-		lines.append("To fix it, run this in the mattini folder:")
-	else:
-		lines.append("To fix it, run these in the mattini folder, in this order:")
-	for command: String in fix:
-		lines.append("    " + command)
+## Opens the error panel. Its first line names what cannot be shown; then, per refusal,
+## what its reader logged and the commands that fix it. [param refusals] holds one
+## [what, the messages logged, the commands] per refusal, the terrain's first.
+func _show_error(refusals: Array) -> void:
+	var what := PackedStringArray()
+	for refusal: Array in refusals:
+		what.append(refusal[0])
+	var lines := PackedStringArray(["mattini cannot show %s." % " and ".join(what)])
+	for refusal: Array in refusals:
+		var messages: PackedStringArray = refusal[1]
+		var fix: Array = refusal[2]
+		lines.append("")
+		if messages.is_empty():
+			lines.append("The generated data at %s was refused." % manifest_path)
+		else:
+			lines.append_array(messages)
+		lines.append("")
+		var it: String = "it" if refusals.size() == 1 else refusal[0]
+		if fix.size() == 1:
+			lines.append("To fix %s, run this in the mattini folder:" % it)
+		else:
+			lines.append("To fix %s, run these in the mattini folder, in this order:" % it)
+		for command: String in fix:
+			lines.append("    " + command)
 	_error_message.text = "\n".join(lines)
 	_error_panel.show()
 
@@ -274,14 +344,14 @@ func _key_name(event: InputEventKey) -> String:
 	return OS.get_keycode_string(key)
 
 
-func _credits_text(source: Dictionary) -> String:
+## The credits: one line per loaded dataset ([param datasets], the terrain's first), then
+## the software's licences.
+func _credits_text(datasets: PackedStringArray) -> String:
 	var lines := PackedStringArray(["Credits", "", "Data"])
-	if source.is_empty():
-		lines.append("No terrain is loaded, so no dataset is shown.")
+	if datasets.is_empty():
+		lines.append("No generated data is loaded, so no dataset is shown.")
 	else:
-		lines.append(
-			"%s %s, %s" % [source.get("dataset"), source.get("edition"), source.get("attribution")]
-		)
+		lines.append_array(datasets)
 	lines.append_array(["", "Godot Engine", Engine.get_license_text(), ""])
 	lines.append("Godot Engine's components")
 	for component: Dictionary in Engine.get_copyright_info():

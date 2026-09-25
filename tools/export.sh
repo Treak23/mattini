@@ -6,7 +6,8 @@
 #   tools/export.sh
 #
 # In order, stopping with a non-zero exit and a message at the first failure:
-#   1. refuses unless the generated manifest has a terrain block (the build ships it);
+#   1. refuses unless the generated manifest has a terrain block and a buildings block (the
+#      build ships them);
 #   2. rewrites the manifest, which re-checks the generated data against the config;
 #   3. installs Godot 4.6.3-stable's export templates for these two presets into Godot's
 #      templates folder when they are missing, from Godot's download mirror (github.com
@@ -20,10 +21,12 @@
 #      (104'857'600 bytes, GitHub's file limit: docs/RELEASE.md §C);
 #   6. starts the Linux build headless for 300 frames (build/linux/mattini.x86_64
 #      --headless --quit-after 300, with user:// in a scratch folder, so the owner's is not
-#      touched), and requires its startup line
+#      touched), and requires its two startup lines
 #      "mattini <version>: terrain <area> loaded, <columns> x <rows> vertices at <spacing> m"
-#      with game/project.godot's version and the manifest's values, exit 0 and no ERROR line
-#      (M1 review G-02: an export without its terrain passed every step before this one).
+#      and "mattini <version>: buildings <area> loaded, <n> buildings in <k> chunks, <t>
+#      triangles" with game/project.godot's version and the manifest's values (brief M2-05),
+#      exit 0 and no ERROR line (M1 review G-02: an export without its terrain passed every
+#      step before this one).
 #      It needs Linux, and fails on another system. Nothing here starts the Windows build
 #      (the owner's PC is its test).
 set -euo pipefail
@@ -85,14 +88,17 @@ error_lines() {
 	grep -a -E '^(ERROR|SCRIPT ERROR)' "$1" || true
 }
 
-# The startup line game/scripts/main.gd prints once the terrain is loaded: the version from
-# game/project.godot, the area, columns, rows and spacing from the manifest's terrain
-# block, the spacing written as main.gd writes it (at most two decimals, no trailing zeros).
-expected_startup_line() {
+# The two startup lines game/scripts/main.gd prints, one per line: once the terrain is
+# loaded, the version from game/project.godot, the area, columns, rows and spacing from the
+# manifest's terrain block, the spacing written as main.gd writes it (at most two decimals,
+# no trailing zeros); once the buildings are loaded, the version, the area, the count of
+# buildings, of chunks and of triangles from the manifest's buildings block.
+expected_startup_lines() {
 	"${UV_RUN[@]}" python -c '
 import json, sys
 
-terrain = json.load(open(sys.argv[1], encoding="utf-8"))["terrain"]
+manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+terrain, buildings = manifest["terrain"], manifest["buildings"]
 section, version = "", None
 for line in open(sys.argv[2], encoding="utf-8"):
     line = line.strip()
@@ -105,6 +111,11 @@ if not isinstance(version, str) or not version:
 spacing = ("%.2f" % terrain["spacing_m"]).rstrip("0").rstrip(".")
 fields = (version, terrain["area"], terrain["columns"], terrain["rows"], spacing)
 print("mattini %s: terrain %s loaded, %d x %d vertices at %s m" % fields)
+chunks = buildings["chunks"]
+count = sum(chunk["buildings"] for chunk in chunks)
+triangles = sum(chunk["triangles"] for chunk in chunks)
+fields = (version, buildings["area"], count, len(chunks), triangles)
+print("mattini %s: buildings %s loaded, %d buildings in %d chunks, %d triangles" % fields)
 ' "$MANIFEST" game/project.godot
 }
 
@@ -116,10 +127,16 @@ templates_dir() {
 	esac
 }
 
-step "1. the manifest has a terrain block"
+step "1. the manifest has a terrain block and a buildings block"
 [ -f "$MANIFEST" ] || fail "$MANIFEST is missing: run uv run --project pipeline python -m mattini download terrain, then uv run --project pipeline python -m mattini terrain"
-"${UV_RUN[@]}" python -c 'import json, sys; sys.exit(0 if isinstance(json.load(open(sys.argv[1], encoding="utf-8")).get("terrain"), dict) else 1)' "$MANIFEST" \
+# Exits 0 when the manifest's block named $1 is an object (not null, not missing), else 1.
+has_block() {
+	"${UV_RUN[@]}" python -c 'import json, sys; sys.exit(0 if isinstance(json.load(open(sys.argv[1], encoding="utf-8")).get(sys.argv[2]), dict) else 1)' "$MANIFEST" "$1"
+}
+has_block terrain \
 	|| fail "$MANIFEST has no terrain block: run uv run --project pipeline python -m mattini download terrain, then uv run --project pipeline python -m mattini terrain"
+has_block buildings \
+	|| fail "$MANIFEST has no buildings block: run uv run --project pipeline python -m mattini download buildings, then uv run --project pipeline python -m mattini buildings"
 
 step "2. the manifest, re-checked against the config"
 "${UV_RUN[@]}" python -m mattini manifest || fail "python -m mattini manifest refused the generated data (see above)"
@@ -194,8 +211,12 @@ fi
 step "6. the Linux build starts"
 [ "$(uname -s)" = "Linux" ] \
 	|| fail "step 6 starts the Linux build, which needs Linux; this is $(uname -s): run tools/export.sh on Linux"
-expected="$(expected_startup_line)" || fail "no startup line to expect (see above)"
-echo "expecting: $expected"
+expected="$(expected_startup_lines)" || fail "no startup lines to expect (see above)"
+mapfile -t EXPECTED <<< "$expected"
+[ "${#EXPECTED[@]}" -eq 2 ] || fail "expected two startup lines, found: $expected"
+for line in "${EXPECTED[@]}"; do
+	echo "expecting: $line"
+done
 status=0
 XDG_DATA_HOME="$SCRATCH/data" timeout --kill-after=10 "$START_TIMEOUT_S" \
 	build/linux/mattini.x86_64 --headless --quit-after 300 > "$SCRATCH/start.raw" 2>&1 || status=$?
@@ -203,8 +224,10 @@ clean_output "$SCRATCH/start.raw" "$SCRATCH/start.log"
 errors="$(error_lines "$SCRATCH/start.log")"
 [ -z "$errors" ] || fail "the Linux build printed error lines:"$'\n'"$errors"
 [ "$status" -eq 0 ] || fail "the Linux build exited $status (124: still running after $START_TIMEOUT_S s)"
-grep -a -q -x -F -e "$expected" "$SCRATCH/start.log" \
-	|| fail "the Linux build did not print its startup line: $expected"
-echo "started: $expected"
+for line in "${EXPECTED[@]}"; do
+	grep -a -q -x -F -e "$line" "$SCRATCH/start.log" \
+		|| fail "the Linux build did not print its startup line: $line"
+	echo "started: $line"
+done
 
 echo "== export: done in ${SECONDS} s"

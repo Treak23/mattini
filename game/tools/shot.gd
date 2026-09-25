@@ -1,12 +1,13 @@
 extends SceneTree
-## Software screenshots of the main scene (docs/SPEC.md §12; briefs M1-04, M1-05): evidence
-## of what is drawn and where, never a gate, and not the Forward+ look. Run by tools/shot.sh:
+## Software screenshots of the main scene (docs/SPEC.md §12; briefs M1-04, M1-05, M2-05):
+## evidence of what is drawn and where, never a gate, and not the Forward+ look. Run by
+## tools/shot.sh:
 ##
 ##   godot --path game --rendering-method gl_compatibility --resolution 1280x720 \
 ##     -s res://tools/shot.gd -- <manifest> <out_dir> "<view>;<view>;..."
 ##
-## The scene is main.tscn reading <manifest>: its terrain, sun, sky, camera, error panel and
-## pause screen. Each view is one of:
+## The scene is main.tscn reading <manifest>: its terrain, buildings, sun, sky, camera, error
+## panel and pause screen. Each view is one of:
 ##   name,E,N,above_m,bearing,pitch  the camera at an LV95 point (converted through
 ##       WorldConfig), above_m over the terrain there, facing the bearing in degrees
 ##       clockwise from north, pitched that many degrees below the horizon;
