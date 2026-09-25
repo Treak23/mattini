@@ -18,6 +18,12 @@ waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
 | M2-04 | The village buildings from the sheets | M2-03 | DONE (b980214), checked |
 | M2-05 | The buildings in the game | M2-02, M2-04 | DONE (86d764c), was BLOCKED on design's pinned tests |
 | M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | DONE (cefa1ac), checked |
+| M2-07 | M2 R1's fixes, the pipeline half | none | OPEN |
+| M2-08 | M2 R1's fixes, the game and tools half | none | OPEN |
+
+Review round M2 R1 (`docs/reviews/M2-round1.md`): clean, no P0 or P1; its five P2s and
+fifteen of its sixteen P3s are M2-07 and M2-08; I-07 goes to M5 planning. Then one
+verification pass, then the close.
 
 Each brief is built by one agent in its own worktree, then checked by a second agent that
 re-runs the gate, compares the pinned copies and proves the new tests by mutation. Residue
