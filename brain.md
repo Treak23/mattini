@@ -1,9 +1,10 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-09-25 — no version yet — arc M0 closed;
-arc M1 (terrain in Godot, six briefs) planned and started: the village terrain at 0.5 m in
-Terrain3D with a free-fly camera, and version 0.1.0 at its close** (update this header when
-a phase closes). `CLAUDE.md` (rules) and `docs/SPEC.md` (design) outrank this file.
+Orientation for any session. Current as of **2026-09-25 — version 0.1.0 shipped at the
+close of arc M1 (Terrain): the village terrain at 0.5 m in Terrain3D, a free-fly camera, a
+pause screen with the credits; builds on the `dist` branch. Next: arc M2 (Buildings), not
+yet planned** (update this header when a phase closes). `CLAUDE.md` (rules) and
+`docs/SPEC.md` (design) outrank this file.
 
 ## 1. WHAT
 A desktop game (Windows, Linux) set in Zermatt on swisstopo open geodata; stylised diorama
@@ -31,20 +32,21 @@ copies it into the generated manifest, and the game learns the origin only from 
 ## 4. STACK
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
 4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
-from M1-03. Why each: SPEC §4 and §13. Test counts at the last gate (the M0 close, 2026-09-24): pytest 209 passed, 2 network
-tests deselected; GUT 5 scripts, 13 tests, 943 asserts.
+from M1-03. Why each: SPEC §4 and §13. Test counts at the last gate (the M1 close,
+2026-09-25): pytest 367 passed, 3 network tests deselected; GUT 15 scripts, 69 tests,
+1641 asserts.
 
 ## 5. HISTORY
-Per-arc record: `docs/history/ARCS.md`. Lessons: `docs/LESSONS.md`. Ledger:
-`docs/history/LEDGER.md`.
+Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25).
+Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-Arc M1 runs (board): M1-01 ‖ M1-02 (the M0 carry-over plus the tile lock), then M1-03 ‖
-M1-04 (the terrain step; Terrain3D in the game), then M1-05 (the main scene: free-fly over
-the village, pause screen, credits) and M1-06 (export and 0.1.0). The owner answered M1's
-questions on 2026-09-25 (SPEC §13 rows 14–19): 0.5 m, the version only on the pause screen,
-the scheme confirmed, no owner designs, software screenshots as evidence. Its close ships
-0.1.0. The board is the live version.
+M2 Buildings, planned in a fresh `design` session. Its first briefs carry M1's review
+residue, fifteen findings with the fix named (`docs/history/ARCS.md` §M1, the carry-over
+table). It asks the owner how builds reach them once a file passes GitHub's 100 MiB limit
+(the `.pck` has 8.3 MiB of room; D16) and the access route for swissBUILDINGS3D, and it
+fixes the spawn prompts' sync line (H14). The owner's first look at 0.1.0 comes back
+through `feedback`. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -92,8 +94,8 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   `get_tree().quit()` ends the run with exit 0 and no summary line (R1 G-02); an engine
   error in `before_all` fails no test (G-03; `after_all` by the same code path, not run);
   it loads `res://.gutconfig.json` by default, and a committed one with
-  `"failure_error_types": []` switches its error tracking off (G-04). These three pass
-  today's gate; M1's first briefs close them.
+  `"failure_error_types": []` switches its error tracking off (G-04). The gate closes all
+  three since M1-02: the summary line, the `ERROR` scan, `-gconfig=` (its runs b, c, d).
 - **H9 — Small traps, each measured.** GNU grep treats output holding a NUL byte as binary
   and prints `binary file matches` instead of the lines, exit 0, so a scan without `-a` goes
   blind (G-07; Godot's `print` replaces NUL, native GDExtension output may not). Godot's
@@ -110,15 +112,18 @@ builders, and by its review (M0 R1, `docs/reviews/`).
 - **H10 — Line endings on Windows.** Without a `.gitattributes`, a checkout with
   `core.autocrlf=true` (Git for Windows' default install choice) gets CRLF: `tools/gate.sh`
   then fails in bash (`set: pipefail: invalid option name`) and `config/world.json`'s
-  SHA-256, so the manifest, changes (R1 C-04, simulated on Linux; the owner's settings are
-  not measured). Until M1-01 adds `.gitattributes`, clone with `git clone -c
-  core.autocrlf=false`. Raw `.f32` files hold 0x0A bytes and must be marked binary.
+  SHA-256, so the manifest, changes (R1 C-04, simulated on Linux). Fixed by M1-01's
+  `.gitattributes` (`* text=auto eol=lf`, binaries such as `.f32` marked): such a clone
+  gets the same bytes (its test; the M1 R1 game lens, all 484 files). `dist` carries its
+  own (`* binary`).
 - **H11 — Terrain3D 1.0.2 in Godot 4.6.3, measured at M1 planning (2026-09-25).** Each
   line below was measured in a cloud container; the M1-04 loader is built around them.
-  - A fresh checkout's first headless Godot run that discovers the GDExtension aborts at
-    exit (`Aborted`, exit 134) after importing; the second run exits 0. Writing
+  - Measured once, at M1 planning: a fresh checkout's first headless Godot run that
+    discovers the GDExtension aborted at exit (`Aborted`, exit 134) after importing. Not
+    reproduced in any fresh-checkout run since (the M1-04 builder's eleven, the R1 game
+    lens's two, the M1 close's export). The gate and the hook still write
     `game/.godot/extension_list.cfg` (one `res://…/terrain.gdextension` per line) before
-    the first run avoids it.
+    the first run; it costs nothing.
   - `import_images()` puts the image's first pixel at the corner of the region that holds
     the position given, not at the position (a heightmap placed at z = −2000 at region size
     1024 landed at z = −2048, 48 m north). Pass region-aligned images.
@@ -137,7 +142,9 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   - A Terrain3D made in code prints `ERROR: Resource file not found: res://` and `ERROR:
     Error loading resource: ''` on entering the tree unless `free_editor_textures` is set
     false first (terrain_3d.cpp:853–857). With no camera in the viewport it prints
-    `ERROR: … Cannot find the active camera`.
+    `ERROR: … Cannot find the active camera` and stops its `_physics_process`; it looks at
+    its first physics frame, not on entering the tree, so a camera made current in the
+    same frame is found (M1-05 Findings 1).
   - Collision (on by default) over areas that are all holes makes Godot print `ERROR:
     Condition "min_height > max_height" is true.`, 13 times for the fixture. M1 turns
     collision off; walking (M6) needs an answer.
@@ -157,6 +164,23 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   fresh session instead ("⚡ <routine name>", origin `force_run_trigger`): no repository,
   Sonnet, tagged `routine_notify_push`, and absent from `list_sessions`' default listing,
   so the close's tag sweep misses it. Never pass `text` when firing the waker.
+- **H14 — A session's checkout is shallow, and its local `main` can be an old ref
+  (measured twice, 2026-09-25).** Sessions clone with depth 50. When the local `main` is
+  older than the boundary, `git fetch origin main` reports a "forced update" and `git pull
+  origin main` "diverged" with no merge base, although the old ref is an ancestor of
+  `origin/main`: `git fetch --unshallow origin main` shows it, then `git pull --ff-only
+  origin main` fast-forwards (M1-05 Findings 8; the M1 close, where the old ref was the
+  repository's first commit). `git checkout -B main origin/main` was refused by the
+  auto-mode classifier once and accepted once. Fetch `origin main` by name: a plain fetch
+  of every branch also pulls `dist`'s builds.
+- **H15 — Exports (measured at the M1 close, 2026-09-25).** The executables are Godot's
+  release templates unchanged: the Windows one is 104'659'456 bytes, 198 KB under GitHub's
+  100 MiB file limit, so a later Godot's template may cross it alone. The release template
+  ignores `--script`, so a probe cannot run inside an export (the R1 game lens). Exports are
+  not byte-reproducible: the `.pck` differs between exports at the same size. The first
+  import of a fresh checkout may print `WARNING: Canceling suspended execution of
+  "_enter_tree" due to a script reload.`, a warning line. The started build logs to
+  `user://logs/godot.log` (Linux `~/.local/share/godot/app_userdata/mattini/logs/`).
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 
@@ -177,3 +201,5 @@ repo, never in chat. Pinning tests travel with their brief under `docs/briefs/pi
 8. `docs/briefs/` — briefs, `BLOCKED.md`, `pinning/`.
 9. `docs/LESSONS.md` — lessons by role tag.
 10. `tools/gate.sh` — the standard gate (from M0-01 on).
+11. `docs/releases/` — one record per version; the builds are on the `dist` branch
+    (`README.md` there says how to start and roll back).

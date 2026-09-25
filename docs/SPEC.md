@@ -1,4 +1,4 @@
-# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close and at M1 planning, 2026-09-25)
+# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning and at the M1 close, 2026-09-25)
 
 Written by the design realm with the owner from `docs/start.md` Part 1 / 1A and the
 owner's day-one answers. Only the design realm edits this file. `CLAUDE.md` holds the
@@ -198,8 +198,10 @@ places heights in the world (WORKFLOW §Review policy).
   the 2 × 2 pixels around the vertex; for 2 m of the 4 × 4; at the area's edges only the
   pixels inside count. Why: swissALTI3D pixels are areas whose centres lie 0.25 m off the
   metre grid, while Terrain3D's vertices sit at whole multiples of the spacing (measured
-  2026-09-24). The sums of up to 16 32-bit heights are exact in 64-bit, so every correct
-  implementation gives the same bits on every machine: the village at 0.5 m is
+  2026-09-24). The sums of up to 16 32-bit heights are exact in 64-bit, and so is the
+  subtraction of every offset in use (0, 1000 and −12.25 m; an offset with many binary
+  fraction digits would round twice, by at most one 32-bit step, M1 R1 T-08), so every
+  correct implementation gives the same bits on every machine: the village at 0.5 m is
   `b6334c1fdc992f0576bc59efd51484db2178cbe399ad46512a4bf510abb9411a` (96'040'004 bytes),
   measured with two independent implementations; seven flat and sloped points agree with
   swisstopo's height service within 0.19 m.
@@ -293,12 +295,20 @@ design realm proposes and the owner reacts through `feedback`):**
 ## 11. Delivery (owner, day one: option b)
 
 Exported Windows and Linux builds on a `dist` shelf branch (orphan, never merged, never
-deleted), previous version kept as `*-previous.*` for rollback (`docs/RELEASE.md` §C).
+deleted): `windows/` and `linux/` hold the current version under fixed names,
+`mattini-<version>/` each version under its own name (the last three kept; the one before
+the current is the rollback), and a `README.md` says how to download, start and roll back
+(`docs/RELEASE.md` §C; ruled at the M1 close, D15: files cannot be renamed per version,
+since an executable finds its `.pck` by its own name and Terrain3D's library has a fixed
+one).
 Consequences: Godot 4.6.3 export templates are downloaded from the mirror at release time;
 the pipeline regenerates the assets from pinned inputs before export; binaries accumulate
-in the `dist` history. GitHub rejects files over 100 MB: the first release measures the
-export size, and a larger export is a design question (split the pack file, or LFS on
-`dist`) — **OPEN** until then.
+in the `dist` history, which a plain `git clone` or `git fetch` of every branch downloads
+too (about 140 MB per release; `--single-branch --branch main` avoids it). GitHub rejects
+files over 100 MiB: the first release measured the export size, and a larger export is a
+design question (split the pack file, or LFS on `dist`) — **OPEN**. Measured at 0.1.0:
+nothing over; the largest file is `mattini.exe`, Godot's own Windows template, 198 KB
+under the limit, and each `.pck` has 8.3 MiB of room (D16).
 
 **Version scheme (confirmed by the owner, 2026-09-25):** `0.<n>.<patch>` for releases
 before v1; `1.0.0` when the v1 scope (§2) is complete. The version lives in
@@ -306,8 +316,9 @@ before v1; `1.0.0` when the v1 scope (§2) is complete. The version lives in
 screen (owner, 2026-09-25: option b), so a screenshot sent to `feedback` shows the version
 only when the pause screen is open.
 
-**The first version, 0.1.0,** ships at M1's close, the first milestone with something to
-look at; M0 closed without one, because it had nothing to play (ruled at the M0 close).
+**The first version, 0.1.0,** shipped at M1's close (2026-09-25; `docs/releases/v0.1.0.md`),
+the first milestone with something to look at; M0 closed without one, because it had
+nothing to play (ruled at the M0 close).
 Exports go to `build/` (git-ignored) through `tools/export.sh` (brief M1-06): Linux and
 Windows x86_64 with the `.pck` beside the executable. At 0.5 m the village heights alone
 are 96 MB, so the `.pck` sits just under GitHub's 100 MB file limit; the script measures
@@ -378,7 +389,8 @@ Asked when the milestone that needs them is planned; each is also on the board.
   only) — M3.
 - A committed sample of real swisstopo data as a test fixture (M1 tests with a synthetic
   fixture instead).
-- Export over 100 MB on `dist` — at the first release (M1's close; §11).
+- Export over 100 MB on `dist` — nothing over at 0.1.0 (§11); asked at M2 planning, since
+  M2's buildings go into the `.pck` (D16).
 - Game type — later.
 
 Answered at M1 planning (2026-09-25; §13 rows 14–19): the terrain resolution, where the

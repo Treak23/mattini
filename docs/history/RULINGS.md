@@ -8,7 +8,18 @@ a question is filed; never startup reading. Formats:
 
 The M0 close's rulings (2026-09-24) have their full text in `docs/history/ARCS.md` §M0,
 numbered D1–D12 there.
+The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
+D13–D21 there.
 
+2026-09-25 · design · M1 close · the builders' reversible choices (M1-01 F6, M1-02 F6, M1-03 F6, M1-04 F8, M1-05 F6–7, M1-06 F9) → all kept; M1-06 F9's unscanned export output joins G-02's fix (D13)
+2026-09-25 · design · M1 close · a fix tranche before 0.1.0? → no: 0.1.0 ships now; T-01's real-data half, G-02 and G-08 were done by hand at the close; the rest go into M2's first briefs (D14)
+2026-09-25 · design · M1 close · `*-previous.*` cannot work (a `.pck` is found by its executable's name, Terrain3D's library has a fixed name) → `dist` holds `windows/` and `linux/` (current, fixed names) and `mattini-<version>/` (the last three kept; the one before the current is the rollback), a README and `* binary` (D15; SPEC §11, RELEASE.md §C)
+2026-09-25 · design · M1 close · an export over 100 MB? → none is over (`mattini.exe` 99.81 MiB, Godot's own template; `.pck` 91.67 MiB); SPEC §14 stays OPEN and is asked at M2 planning, since M2's buildings go into the `.pck` (D16)
+2026-09-25 · design · M1 R1 G-06 · Terrain3D's library compiles in godot-cpp: its own notice, or Godot's as cover? → its own: the credits carry godot-cpp's MIT notice (M2's first game brief) and RELEASE.md §A names it; 0.1.0 lacks it and stays the owner's own build (D17)
+2026-09-25 · design · M1 R1 · regrade G-01–G-03, which the lens's session summary called P1? → no; the committed P2 grades stand (D18; lesson 30)
+2026-09-25 · design · M1 R1 · the eighteen findings → G-08 and T-08's SPEC half fixed at the close; T-09 and T-10 declined (each guarded elsewhere); fifteen carried into M2 with the fix named, T-01 (b) as an expected SHA-256 per area and spacing in `config/terrain.json` checked by `terrain` and `manifest` (D19)
+2026-09-25 · design · M1-04 F1, M1-05 F1 · brain.md H11's abort and camera lines → the abort did not reproduce in any fresh checkout since, the list step stays; Terrain3D looks for the camera at its first physics frame (D20)
+2026-09-25 · design · M1 close · the waker's due rule, landing wakes, the spawn prompts' sync line → no change (no tick was wasted); working (every tick 0.5–5 min after its landing); carried to M2 planning with a measured recipe (D21; brain.md H14)
 2026-09-24 · design · M0 close · does M0 ship a version? → no: it has nothing to play (the main scene is empty); the first version is planned for M1's close, and a close without a version writes its record to `docs/history/ARCS.md` (D1; SPEC §11, DESIGN.md rule 4)
 2026-09-24 · design · M0-02, M0-03 · what does `height_offset_m` mean? → the vertical part of the origin, y = H − height_offset_m on both sides, as built and pinned; kept (D2; SPEC §6)
 2026-09-24 · design · M0-03 · keep the gate checks the builder added (import `valid=false`, GUT `[ERROR]`, ANSI codes stripped)? → keep all three; `valid=false` is the import step's only detector in cloud sessions (D3; brain.md H1)

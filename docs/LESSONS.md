@@ -236,3 +236,18 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     in `project.godot`, in a `.gdshader` or in a script outside `pipeline/mattini/`, or
     written `2.623e6`, passed the gate (M0 review C-02, 2026-09-24). Scope a census by
     exclusion (every tracked file minus named folders) and list the spellings, not one.
+
+38. `[design]` **A check assigned to a person is not a check.** M1-03's brief named the
+    value that proves the real village (`b6334c1f…`) and said "the owner's first run is the
+    check": a hash compared by hand, by the one person the process never asks to read
+    hashes. Nothing ran it, and the review built a village with its kilometres swapped that
+    the whole gate, `manifest` and an export accepted (M1 R1 T-01, 2026-09-25). When a brief
+    names the value that proves a real run, the same line names the code that compares it,
+    or the close's step that does.
+
+39. `[all]` **A deliverable is proven by using it the way its consumer will.** M1-06's
+    export was checked for existence and size, and an export with no terrain in it passed
+    the gate, `tools/export.sh` and the size check; it would have shown the owner an error
+    panel (M1 R1 G-02, 2026-09-25). Every chain that ends in something the owner receives
+    ends in one step that runs it: the close started the Linux build before shipping 0.1.0,
+    and `export.sh` will.

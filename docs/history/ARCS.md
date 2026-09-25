@@ -238,3 +238,184 @@ Not tagged:
 
 Routines: the waker's hourly Routine is gone from the account's Routine list at the close
 (tick 4 was to delete it at READY TO CLOSE). No M0 Routine remains.
+
+## M1 — Terrain · closed 2026-09-25 · version 0.1.0
+
+The report-back is the release record, `docs/releases/v0.1.0.md` (DESIGN.md rule 4); this
+is the close in full. Arc: the go `e83a36a` at 04:01Z, READY TO CLOSE `05f86ef` at 06:24Z
+(the board said 06:40Z; the commit's time is the record), six briefs, one review round.
+
+**Decisions** (RULINGS 2026-09-25, D13–D21; numbered on from M0's D1–D12; each keeps what
+was built unless it says otherwise).
+
+- **D13 · The builders' reversible choices are kept:** M1-01 Findings 6 (the lock check's
+  order, `load_lock`'s strictness, the module layout), M1-02 Findings 6 (`run_godot`, the
+  step order, WorldConfig's `_built` flag and its own NaN test), M1-03 Findings 6 (the
+  resampling as the plain 64-bit window mean, which equals the area-weighted mean because
+  every window's pixels are equally covered, measured by the terrain lens at all three
+  spacings; the refusal order; the terrain config's strictness; how `manifest` reads the
+  description; `progress`), M1-04 Findings 8 (TerrainGrid's extra refusals and order; no
+  NaN scan, since the SHA-256 ties the file to the pipeline, which refuses non-finite
+  heights; no out-of-tree guard, since the failure is a loud `SCRIPT ERROR`; `shot.gd` and
+  `shot.sh`'s choices; `LC_ALL=C sort`), M1-05 Findings 6 and 7 (exposure 0.85, the credits
+  a RichTextLabel, the error panel through a `Logger`, the controls from the InputMap, the
+  camera's numbers, `canvas_items` at 1280 × 720, the sky's ground colours, `shot.gd`
+  rendering `main.tscn`: the look and the controls are the owner's to react to through
+  `feedback`), M1-06 Findings 9 (all kept; its unscanned export output joins G-02's fix).
+- **D14 · 0.1.0 ships at this close, without a fix tranche first.** The round found no P0
+  and no P1. The three residues whose first consumer is this release were done by hand
+  here: T-01's real-data half (`village.f32` rebuilt from the pinned tiles is `b6334c1f…`),
+  G-02 (the exported Linux build started: its startup line, no `ERROR`) and G-08
+  (RELEASE.md §B). The rest go into M2's first briefs, D12's pattern: a separate M1
+  tranche would hold back the owner's first look for fixes no current code trips.
+- **D15 · The layout of `dist`** replaces "`*-previous.*`", which cannot work for this
+  export: each executable finds its `.pck` by its own name, and Terrain3D's library keeps a
+  fixed name. `windows/` and `linux/` hold the current version under fixed names;
+  `mattini-<version>/windows/` and `…/linux/` hold each version under its name; the last
+  three named folders are kept, and the one before the current is the rollback. A
+  `README.md` says how to download, start and roll back, with every file's SHA-256; a
+  `.gitattributes` (`* binary`) keeps a `core.autocrlf=true` clone from touching the
+  builds. SPEC §11, RELEASE.md §C and §E, WORKFLOW §Pace and risk and FEEDBACK.md's
+  `crash` line follow. Reversible: nothing reads `dist` but people.
+- **D16 · An export over 100 MB (SPEC §14) stays OPEN:** nothing is over at 0.1.0. The
+  largest file is `mattini.exe`, Godot 4.6.3's Windows release template unchanged, at
+  104'659'456 bytes, 198 KB under GitHub's 104'857'600; each `.pck` is 96'124'108 bytes,
+  8.3 MiB of room. M2's buildings go into the `.pck`, so M2 planning asks it before M2's
+  first build brief, with the options: a second resource pack for the heights (loaded at
+  start), the heights compressed by the pipeline (measure first), Git LFS on `dist` (a
+  quota), GitHub Releases (assets up to 2 GiB; uploading from a container is unmeasured),
+  or a coarser spacing (the owner's call, SPEC §7).
+- **D17 · godot-cpp's notice (R1 G-06).** Terrain3D's library compiles in godot-cpp (MIT,
+  "Copyright (c) 2017-present Godot Engine contributors"). The credits carry its notice:
+  M2's first game brief adds it, and RELEASE.md §A names it from now on. 0.1.0 lacks it;
+  it is the owner's own build, and the record says so before it is shared.
+- **D18 · Grades.** The committed reports' grades stand. The game lens session's summary
+  in the session list called G-01, G-02 and G-03 "P1s"; its report grades them P2, each
+  resting on a harm a future change would meet (lesson 30; M0's D11, again).
+- **D19 · The residue** (18 findings): G-08 and the SPEC half of T-08 fixed at this close;
+  T-09 and T-10 declined; fifteen carried into M2 with the fix named (the table below).
+  T-01 and T-02 need design data, which M2 planning computes two independent ways, as it
+  did the M1 fixture.
+  - T-09 declined: the builder's own `test_a_rotated_world_is_refused_for_its_axes` sees
+    the axes check go (M1-04 run e), and the pipeline refuses a rotated world before it
+    writes anything.
+  - T-10 declined: the worst variant is a refusal that names the fix, never a wrong
+    terrain; every file read is still hashed against provenance and the lock.
+- **D20 · The known items.** brain.md H11 is corrected twice: the fresh-checkout abort
+  (M1-04 Findings 1) did not reproduce in any fresh-checkout run since design's one
+  measurement (the M1-04 builder's eleven, the game lens's two, this close's export), and
+  the extension-list step stays, as it costs nothing; and Terrain3D looks for its
+  camera at its first physics frame, not on entering the tree (M1-05 Findings 1). M1-06
+  Findings 2 is noted; the filter is needed and G-02 covers the class. M1-02 Findings 8 is
+  in the ledger. M1-06 Findings 5–7 are on the owner's list in the release record.
+- **D21 · The board's items for design.**
+  - The waker's due rule counting OPEN briefs whose dependencies are not DONE: measured, no
+    tick was wasted (each of the nine had a landing, a report or the go behind it). No
+    rule change.
+  - Landing wakes: working. Every tick started 0.5 to 5 minutes after the landing or report
+    that made it due (the builders' and lenses' `fire_trigger`, without `text`). M0's
+    ledger item is closed.
+  - The spawn prompts' sync line: carried to M2 planning, which writes the next spawns.
+    Measured twice, the same shape: a checkout whose local `main` is an old ref that the
+    shallow clone's boundary hides as an ancestor, so `git fetch` says "forced update" and
+    `git pull` says "diverged" (M1-05 Findings 8; this close, where `git fetch --unshallow`
+    showed `6364451` to be an ancestor of `origin/main`). Proposed: `git fetch --unshallow
+    origin main` when `git rev-parse --is-shallow-repository` says true, then `git pull
+    --ff-only origin main` (brain.md H14).
+
+**Carried into M2**: fifteen findings, first work of the arc, before any M2 brief that
+writes a manifest block, chunk-grid code, a loader, the terrain material or the export.
+Suggested split: a pipeline brief and a game-and-tools brief, whose Scopes share no file,
+so they can run at once.
+
+| id | grade | brief | the fix |
+|---|---|---|---|
+| T-01 | P2 | pipeline | (a) A build test from at least 2 × 2 synthetic tiles, with an area that cuts the outer tiles, pinned to exact bytes design computes two ways. (b) The expected SHA-256 of each built terrain is design data in `config/terrain.json`, per area and spacing (the village at 0.5 m `b6334c1f…`; 1 m and 2 m computed at M2 planning); `terrain` fails when its output differs, naming both values; `manifest` refuses a terrain whose SHA-256 is not the expected one. Until built, RELEASE.md §C's line. |
+| T-03 | P2 | pipeline | `build_terrain`'s own output for a fixed synthetic input pinned to exact bytes (T-01's test can do it); `manifest` requires exact key sets for `source` and each of its `tiles`. |
+| T-04 | P2 | pipeline | `manifest` compares the block's `source` with the lock (each tile's SHA-256) and with `config/datasets.json` (attribution, collection), refusing and naming `terrain`. The fourth member, the pipeline's own code, is closed by T-01 (b): a changed rule changes the bytes. |
+| T-05 | P2 | pipeline | The census also catches the kilometre pair reversed, the pair on lines up to three apart in either order, and a mantissa with trailing zeros (`2.6230e6`). It still proves text only (lesson 5). |
+| T-06 | P3 | pipeline | One home for the area the pipeline serves: `download terrain` and `lock terrain` read it from `config/terrain.json`. |
+| T-07 | P3 | pipeline | The tracked-files test scoped by exclusion (lesson 37), so the fixture and Terrain3D's binaries are covered. |
+| T-08 | P3 | pipeline | The live rules test's docstring states SPEC §8's condition: one rounding while the offset subtracts exactly. |
+| T-02 | P2 | game | A second shared fixture north-west of its origin, crossing a row of regions, at 2 m, its heights computed by design two ways; the loader tests read it back on its own vertices. |
+| G-01 | P2 | game | A test reads `show_checkered` (false), `shader_override_enabled` (true) and the override's `resource_path` on the loaded terrain. The `height_offset_m` uniform stays a does-NOT-prove line until an arc changes the material (M3, M4). |
+| G-02 | P2 | game and tools | `tools/export.sh` scans the export's output for `ERROR` lines and gains a step 6: start `build/linux/mattini.x86_64 --headless --quit-after 300` and require the startup line with the manifest's columns, rows and spacing, and no `ERROR` line. The live preset test pins the include filter exactly. |
+| G-03 | P2 | game and tools | The unbuilt-WorldConfig allowlist entry stops being global: the test's deliberate object is marked so that an entry scoped like the others (`user://test_…`) covers it, or the entry is scoped to its one test script. M2 planning picks the mechanism. |
+| G-04 | P3 | tools | The GUT step compares GUT's last `---- ` line, as its comment says. |
+| G-05 | P3 | game | The live version test checks every visible `Control` with a `text` outside the pause menu, not only `Label`s. |
+| G-06 | P3 | game | The credits carry godot-cpp's MIT notice (D17). |
+| G-07 | P3 | tools | `tools/shot.sh`'s header and usage name M1-05's views (`name`, `name,pause`) and the error-panel capture. |
+
+Also for M2 planning: D16's question to the owner, the spawn prompts' sync line (D21), and
+the design data T-01 and T-02 need.
+
+**RELEASE.md, walked at the close.**
+- §A. `git status` clean. Every brief reads `DONE (<sha>)` and each sha is on
+  `origin/main`. The design realm wrote no production code: in `e83a36a..05f86ef` only the
+  six `feat:` commits touch `pipeline/`, `game/`, `tools/`, `config/`, `tests/` or
+  `.claude/`; M1 planning (`b2b58b1`) committed design data, the shared fixture and pinning
+  tests (DESIGN.md rule 5), and this close changes docs only. No brief carries an unfinished
+  review. No census stands alone over load-time code: the scenes and loaders are tested by
+  running them, and the export was started. All 32 gates carry a does-NOT-prove line; the
+  set is in the release record. Attribution: the credits read `swissalti3d 2024, ©
+  swisstopo`, then Godot's licence and its components', then Terrain3D 1.0.2's (the R1 game
+  lens, from the real manifest; the `.pck` holds `© swisstopo` twice and Terrain3D's
+  `LICENSE.txt`); godot-cpp's is D17. No raw data or unmanaged binary entered history: the
+  largest blobs are the four vendored Terrain3D binaries (3.3 to 4.2 MB, byte-identical to
+  the release zip, SPEC §9), and the only `.f32` files are the synthetic fixture's two.
+- §B. `0.1.0` in `game/project.godot`, shown on the pause screen only (the pinned test; the
+  lens's reading). Full gate from a clean worktree of `05f86ef`, to a log: exit 0 in 63 s,
+  pytest 367 passed, 3 deselected, GUT 15 scripts, 69 tests, 1641 asserts.
+- §C. In a fresh worktree of `05f86ef`: `download terrain` 6 tiles verified, 6 fetches,
+  `provenance.json` `28523b17…`; `terrain`: `village.f32` `b6334c1f…` (96'040'004 bytes),
+  manifest `0e4572fb…`; `tools/export.sh` exit 0 in 75 s, with a fresh templates folder, so
+  the templates were downloaded (1'255'918'323 bytes) and checked against the pinned
+  SHA-256; no `ERROR` line in its output, and no `Aborted` though nothing wrote
+  `extension_list.cfg` first. The six files have M1-06's sizes; `mattini.x86_64` and
+  `mattini.exe` equal Godot's release templates byte for byte, the libraries the vendored
+  Terrain3D ones; the two `.pck` files are identical to each other (`9fca1a21…`) and differ
+  from earlier exports at the same size (nothing claims a byte-reproducible export). The
+  Linux build started: `--headless --quit-after 300`, exit 0 in 5.3 s, the startup line,
+  no `ERROR` line. The `dist` commit `2e81625` (orphan, the first) carries the version, the
+  source sha and the gate's line; pushed plain as a new branch in 36 s; GitHub warned about
+  three files over 50 MB and refused nothing.
+- §D. The release record was committed before the chat message; the board was updated and
+  the arc's narrative moved here; no Routine is enabled on the account; the ratio is in the
+  record.
+
+**Sessions** (tag `M1`, cost from each one's `usage.cost_usd`):
+
+| Session | Id | $ | At the close |
+|---|---|---|---|
+| Waker · M1 (04:01Z–04:20Z) | `session_01RJDQ3THu2YpVyofW3Pn924` | 1.68 | archived |
+| Waker · M1 (04:20Z–05:22Z) | `session_019do6LK4hFYQ9c4ykJwQcNw` | 1.70 | archived |
+| Waker · M1 (05:22Z–06:25Z) | `session_01EEAeJBE7KpsQsoGUEmhTVm` | 2.27 | archived |
+| Tick 1 · 04:02Z | `session_0155cpPoMH3XqcqMNUWBiH7a` | 1.31 | archived |
+| Tick 2 · 04:15Z | `session_01H8a28u2bPTo3gpVd4cxyVe` | 1.24 | archived |
+| Tick 3 · 04:22Z | `session_01RDGSCQm3yq8URfoMD7YVDJ` | 0.97 | archived |
+| Tick 4 · 04:31Z | `session_01QHegXTq5Z4seMJyWAbX2HR` | 1.00 | archived |
+| Tick 5 · 04:54Z | `session_01Nf7BgWfr9p8KWviRiSQHKG` | 1.19 | not archived: the auto-mode classifier refused it; left for the owner |
+| Tick 6 · 05:26Z | `session_01R7sAANf4bkpLp1n8jYopTa` | 1.29 | archived |
+| Tick 7 · 05:39Z | `session_01X6QWucdq2PdcnnthGwjLX9` | 1.98 | not archived: refused likewise; left for the owner |
+| Tick 8 · 06:14Z | `session_01HcaQDdwr1EXLVPJNNdRAWG` | 1.00 | archived |
+| Tick 9 · 06:19Z | `session_011aAzn6wpccxzxsPN2VtCqW` | 2.01 | archived |
+| Builder · M1-01, M1-03 | `session_01UxbykwYFJSxYM4GVUxoxky` | 7.50 | archived |
+| Builder · M1-02, M1-04 | `session_018DsC2M2fzoruSxhZSkXs3Z` | 12.38 | archived |
+| Builder · M1-05, M1-06 | `session_01C1AkkQheFeaoMGMvdomW9k` | 11.01 | archived |
+| Lens · M1 R1 · terrain | `session_01XJY3cAYkoCiJxwb7EVLcki` | 8.89 | archived |
+| Lens · M1 R1 · game | `session_01AkH5MvA3pEEQS5zJF8BEzF` | 8.81 | archived |
+| ⚡ Waker · M1 · hourly wake (stray, brain.md H13) | `session_01QSSgKNoYUzz1jYhNjBjCES` | 0.24, read at the go | gone: `get_session` finds none |
+
+Not tagged:
+- the M1 planning session "Design" (`session_012KGaYP1VjcM8pR799MMjb1`, $36.44), the
+  owner's own, left as it is;
+- this close ("Design", `session_012bXTsixRhS7anZasuSVnLC`), which cannot read its own
+  cost.
+
+Totals: design 36.44 (planning) · supervision 17.64 (wakers 5.64, ticks 11.99) · builders
+30.89 · review 17.70 · stray 0.24. Supervision 0.57 × the builders; design's planning
+1.18 × the builders.
+
+Routines: none is enabled on the account at the close. The waker's hourly Routine
+(`trig_01LxXVtmJjWGmvzExTFWz4m9`) is gone; the two M1 30-minute one-shots still listed
+fired and disabled themselves (`run_once_fired`). No M1 Routine remains.

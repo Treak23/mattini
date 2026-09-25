@@ -91,9 +91,10 @@ A screenshot without the pause screen open does not show the version: never gues
 2. `Impact: blocks-use` automatically.
 3. Say this line, verbatim:
 
-> "There is no previous version yet — the design chat will get you a working build."
+> "While it is fixed: the `dist` branch keeps each version in its own folder,
+> `mattini-<version>/`; the folder of the version before yours holds the previous build
+> (0.1.0, the first, has none). The design chat will get you a working build."
 
-(The design realm replaces this line with the `dist` rollback instructions when the first
-release exists.)
+(Rewritten at the M1 close, when the first release existed; RELEASE.md §E is its home.)
 
 Then file the entry as normal.

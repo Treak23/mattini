@@ -122,9 +122,9 @@ Hard Rules 4 and 5 only (below).
   rule, mutation proofs, zero unannounced behaviour change. The licence rule (Hard Rule 3)
   is soft by the owner's choice: a test and `docs/RELEASE.md` enforce it, reviewed at
   Tier 2. Everything else is priced by recoverability.
-- **Rollback:** the previous binaries on the `dist` shelf (`*-previous.*`, RELEASE.md §C;
-  delivery (b), the owner's choice on 2026-09-24). Before the first release there is
-  nothing to roll back to.
+- **Rollback:** the previous version's named folder on the `dist` shelf
+  (`mattini-<version>/`, RELEASE.md §C; delivery (b), the owner's choice on 2026-09-24).
+  0.1.0 is the first version, so before the second there is nothing to roll back to.
 
 ## Supervision must cost less than the work
 
