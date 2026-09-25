@@ -1,0 +1,308 @@
+{
+  "about": "The shared buildings fixture (SPEC section 8, the buildings; briefs M2-04 and M2-05), the seam between the pipeline's buildings step and the game's building reader. tests/shared/buildings_fixture/ holds a synthetic world (world.json: origin E 2650000 / N 1150000, height_offset_m 500.0, the owner's axes, area 'fixture' E 2650900-2651100, N 1149950-1150050) and source.json: eleven synthetic buildings (invented shapes, UUIDs and heights; no swisstopo data) as the reader hands them over, in reading order, for one sheet, 1249-42, the only LK25 sixteenth within 100 m of the box (sheet 1249: c = 9, r = 12, E 2637500-2655000, N 1146000-1158000; quadrant 4, sub-quadrant 2: E 2650625-2655000, N 1149000-1152000; the next sixteenth, 1249-41, is 275 m away). Each triangle is its three points in ring order, the closing point dropped; E and N lie on the 1 mm grid, H on the 0.1 mm grid, so snapping changes no coordinate here. The last UUID group numbers the cases: 01 a gable house (10 vertices) wound negative as swisstopo's are, reversed; 02 b a flat box wound positive, not reversed; 03 c an L-shaped block straddling E 2651000 with its bounding-box centre at E 2650999.9995, so tile 2650 (its vertex mean and its vertex 0 lie east of 2651000); 04 d centre exactly on the west edge, E 2650900.0, included; 05 e centre exactly on the east edge, E 2651100.0, excluded; 06 f wholly outside, south of the box; 07 g centre exactly on N 1150000.0, tile row 1150 (its vertex 0 lies south of it); 08 h1 and 09 h2 row houses sharing two bottom corners, in one chunk, UUID order the reverse of reading order; 10 i centre exactly on the south edge, N 1149950.0, included; 11 j centre exactly on the north edge, N 1150050.0, excluded. Every building is closed and consistently oriented; all but b read V < 0. Tile 2651-1149 gets no building (c, f and g reach into it). The expected outcomes below follow from the rule and were checked by a script; selected and reversed list UUIDs in chunk order (chunks by tile, buildings by UUID as text), excluded in reading order. The chunk files' bytes are pinned elsewhere. The 'vertices' list names, per selected building, its first and last vertex as the chunk file holds it: the chunk, the index into the chunk's vertex list, the LV95 point (E, N snapped to 1 mm, H to 0.1 mm) and the local position as the file's float32 values; the game finds each at WorldConfig.to_local of the LV95 point. The expected files under buildings_fixture/generated/ were computed by design two independent ways at M2 planning (identical bytes).",
+  "world": "tests/shared/buildings_fixture/world.json",
+  "source": "tests/shared/buildings_fixture/source.json",
+  "area": "fixture",
+  "expected": {
+    "selected": [
+      "{1B7E52C0-0000-4000-8000-000000000001}",
+      "{3F09D6A1-0000-4000-8000-000000000010}",
+      "{41D8A3E6-0000-4000-8000-000000000003}",
+      "{5E2C07B9-0000-4000-8000-000000000004}",
+      "{10E4B7C3-0000-4000-8000-000000000009}",
+      "{9A62F0D1-0000-4000-8000-000000000008}",
+      "{6D3A8F24-0000-4000-8000-000000000002}",
+      "{C45B19E7-0000-4000-8000-000000000007}"
+    ],
+    "excluded": [
+      {
+        "uuid": "{7F81C2D5-0000-4000-8000-000000000005}",
+        "reason": "bounding-box centre E 2651100.0 on the east edge (e_max excluded)"
+      },
+      {
+        "uuid": "{0A4D6E93-0000-4000-8000-000000000006}",
+        "reason": "wholly outside the area (south of n_min)"
+      },
+      {
+        "uuid": "{E2970B4C-0000-4000-8000-000000000011}",
+        "reason": "bounding-box centre N 1150050.0 on the north edge (n_max excluded)"
+      }
+    ],
+    "reversed": [
+      "{1B7E52C0-0000-4000-8000-000000000001}",
+      "{3F09D6A1-0000-4000-8000-000000000010}",
+      "{41D8A3E6-0000-4000-8000-000000000003}",
+      "{5E2C07B9-0000-4000-8000-000000000004}",
+      "{10E4B7C3-0000-4000-8000-000000000009}",
+      "{9A62F0D1-0000-4000-8000-000000000008}",
+      "{C45B19E7-0000-4000-8000-000000000007}"
+    ],
+    "chunks": [
+      {
+        "tile": "2650-1149",
+        "buildings": [
+          "{1B7E52C0-0000-4000-8000-000000000001}",
+          "{3F09D6A1-0000-4000-8000-000000000010}",
+          "{41D8A3E6-0000-4000-8000-000000000003}",
+          "{5E2C07B9-0000-4000-8000-000000000004}"
+        ]
+      },
+      {
+        "tile": "2650-1150",
+        "buildings": [
+          "{10E4B7C3-0000-4000-8000-000000000009}",
+          "{9A62F0D1-0000-4000-8000-000000000008}"
+        ]
+      },
+      {
+        "tile": "2651-1150",
+        "buildings": [
+          "{6D3A8F24-0000-4000-8000-000000000002}",
+          "{C45B19E7-0000-4000-8000-000000000007}"
+        ]
+      }
+    ]
+  },
+  "vertices": [
+    {
+      "name": "{1B7E52C0-0000-4000-8000-000000000001} (Gebaeude Einzelhaus) vertex 0",
+      "tile": "2650-1149",
+      "index": 0,
+      "lv95": [
+        2650931.474,
+        1149968.217,
+        1521.4817
+      ],
+      "local": [
+        931.4739990234375,
+        1021.481689453125,
+        31.783000946044922
+      ]
+    },
+    {
+      "name": "{1B7E52C0-0000-4000-8000-000000000001} (Gebaeude Einzelhaus) vertex 9",
+      "tile": "2650-1149",
+      "index": 9,
+      "lv95": [
+        2650944.839,
+        1149971.036,
+        1527.6093
+      ],
+      "local": [
+        944.8389892578125,
+        1027.6092529296875,
+        28.964000701904297
+      ]
+    },
+    {
+      "name": "{3F09D6A1-0000-4000-8000-000000000010} (Gebaeude Einzelhaus) vertex 0",
+      "tile": "2650-1149",
+      "index": 10,
+      "lv95": [
+        2650913.662,
+        1149945.412,
+        1504.9352
+      ],
+      "local": [
+        913.6619873046875,
+        1004.9351806640625,
+        54.5880012512207
+      ]
+    },
+    {
+      "name": "{3F09D6A1-0000-4000-8000-000000000010} (Gebaeude Einzelhaus) vertex 7",
+      "tile": "2650-1149",
+      "index": 17,
+      "lv95": [
+        2650913.662,
+        1149945.412,
+        1511.1178
+      ],
+      "local": [
+        913.6619873046875,
+        1011.1177978515625,
+        54.5880012512207
+      ]
+    },
+    {
+      "name": "{41D8A3E6-0000-4000-8000-000000000003} (Gebaeude Einzelhaus) vertex 0",
+      "tile": "2650-1149",
+      "index": 18,
+      "lv95": [
+        2651007.876,
+        1149966.207,
+        1534.0419
+      ],
+      "local": [
+        1007.8759765625,
+        1034.0418701171875,
+        33.792999267578125
+      ]
+    },
+    {
+      "name": "{41D8A3E6-0000-4000-8000-000000000003} (Gebaeude Einzelhaus) vertex 11",
+      "tile": "2650-1149",
+      "index": 29,
+      "lv95": [
+        2651003.519,
+        1149981.594,
+        1541.7625
+      ],
+      "local": [
+        1003.5189819335938,
+        1041.762451171875,
+        18.4060001373291
+      ]
+    },
+    {
+      "name": "{5E2C07B9-0000-4000-8000-000000000004} (Gebaeude Einzelhaus) vertex 0",
+      "tile": "2650-1149",
+      "index": 30,
+      "lv95": [
+        2650895.481,
+        1149958.261,
+        1503.6071
+      ],
+      "local": [
+        895.4810180664062,
+        1003.6071166992188,
+        41.73899841308594
+      ]
+    },
+    {
+      "name": "{5E2C07B9-0000-4000-8000-000000000004} (Gebaeude Einzelhaus) vertex 7",
+      "tile": "2650-1149",
+      "index": 37,
+      "lv95": [
+        2650896.138,
+        1149966.642,
+        1503.6071
+      ],
+      "local": [
+        896.1380004882812,
+        1003.6071166992188,
+        33.358001708984375
+      ]
+    },
+    {
+      "name": "{10E4B7C3-0000-4000-8000-000000000009} (Gebaeude Einzelhaus) vertex 0",
+      "tile": "2650-1150",
+      "index": 0,
+      "lv95": [
+        2650942.391,
+        1150012.263,
+        1519.0063
+      ],
+      "local": [
+        942.3909912109375,
+        1019.0062866210938,
+        -12.262999534606934
+      ]
+    },
+    {
+      "name": "{10E4B7C3-0000-4000-8000-000000000009} (Gebaeude Einzelhaus) vertex 7",
+      "tile": "2650-1150",
+      "index": 7,
+      "lv95": [
+        2650942.391,
+        1150012.263,
+        1525.2197
+      ],
+      "local": [
+        942.3909912109375,
+        1025.2197265625,
+        -12.262999534606934
+      ]
+    },
+    {
+      "name": "{9A62F0D1-0000-4000-8000-000000000008} (Gebaeude Einzelhaus) vertex 0",
+      "tile": "2650-1150",
+      "index": 8,
+      "lv95": [
+        2650931.846,
+        1150012.263,
+        1519.0063
+      ],
+      "local": [
+        931.8460083007812,
+        1019.0062866210938,
+        -12.262999534606934
+      ]
+    },
+    {
+      "name": "{9A62F0D1-0000-4000-8000-000000000008} (Gebaeude Einzelhaus) vertex 7",
+      "tile": "2650-1150",
+      "index": 15,
+      "lv95": [
+        2650931.846,
+        1150012.263,
+        1526.8531
+      ],
+      "local": [
+        931.8460083007812,
+        1026.8531494140625,
+        -12.262999534606934
+      ]
+    },
+    {
+      "name": "{6D3A8F24-0000-4000-8000-000000000002} (Gebaeude Einzelhaus) vertex 0",
+      "tile": "2651-1150",
+      "index": 0,
+      "lv95": [
+        2651061.527,
+        1150014.093,
+        1538.2716
+      ],
+      "local": [
+        1061.5269775390625,
+        1038.2716064453125,
+        -14.093000411987305
+      ]
+    },
+    {
+      "name": "{6D3A8F24-0000-4000-8000-000000000002} (Gebaeude Einzelhaus) vertex 7",
+      "tile": "2651-1150",
+      "index": 7,
+      "lv95": [
+        2651073.191,
+        1150026.425,
+        1538.2716
+      ],
+      "local": [
+        1073.1910400390625,
+        1038.2716064453125,
+        -26.424999237060547
+      ]
+    },
+    {
+      "name": "{C45B19E7-0000-4000-8000-000000000007} (Kapelle) vertex 0",
+      "tile": "2651-1150",
+      "index": 8,
+      "lv95": [
+        2651040.527,
+        1149995.382,
+        1527.4409
+      ],
+      "local": [
+        1040.5269775390625,
+        1027.44091796875,
+        4.618000030517578
+      ]
+    },
+    {
+      "name": "{C45B19E7-0000-4000-8000-000000000007} (Kapelle) vertex 8",
+      "tile": "2651-1150",
+      "index": 16,
+      "lv95": [
+        2651040.527,
+        1150004.618,
+        1527.4409
+      ],
+      "local": [
+        1040.5269775390625,
+        1027.44091796875,
+        -4.618000030517578
+      ]
+    }
+  ]
+}

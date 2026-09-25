@@ -20,3 +20,7 @@ __pycache__/
 # Exports made by tools/export.sh (docs/SPEC.md §11; brief M1-06); binaries reach the dist
 # shelf only through the release (docs/RELEASE.md §C)
 /build/
+
+# Git worktrees that in-session agents work in (M2: workflow agents with worktree
+# isolation); each is a full copy of the repository, which no scan of this checkout may read
+/.claude/worktrees/

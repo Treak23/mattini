@@ -14,3 +14,4 @@
 *.dll binary
 *.res binary
 *.glb binary
+*.bin binary

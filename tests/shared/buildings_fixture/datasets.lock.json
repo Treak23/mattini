@@ -1,0 +1,15 @@
+{
+  "datasets": {
+    "swissbuildings3d": {
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "edition": "2020",
+      "sheets": {
+        "1249-42": {
+          "file": "source.json",
+          "sha256": "d712603ac18639257e192337973d04457c84294f58bf165f0e96973c1476ba9b"
+        }
+      }
+    }
+  },
+  "schema": 1
+}

@@ -14,9 +14,14 @@ waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
 |---|---|---|---|
 | M2-01 | M1's residue, the pipeline half (T-01, T-03 to T-08) | none | OPEN |
 | M2-02 | M1's residue, the game and tools half (T-02, G-01 to G-07) | none | OPEN |
-| M2-03 | The building inputs: sheets, lock, download | M2-01, the owner's source | waits on the owner |
-| M2-04 | The village buildings from the sheets | M2-03 | waits on the owner |
-| M2-05 | The buildings in the game | M2-02, M2-04 | waits on the owner |
+| M2-03 | The building inputs: sheets, lock, download | M2-01 | OPEN |
+| M2-04 | The village buildings from the sheets | M2-03 | OPEN |
+| M2-05 | The buildings in the game | M2-02, M2-04 | OPEN |
+
+M2-03 to M2-05 are written on the source design PROPOSES (question 1 below: (a), the 2020
+edition per map sheet), so the work goes on while the owner's answer is awaited. Nothing of
+it reaches `main` or a build before the answer; another answer rewrites them. The real
+sample (question 4) is not committed before the owner agrees.
 
 **Asked of the owner at M2 planning (2026-09-25), waiting:**
 1. The swissBUILDINGS3D access route (SPEC §14): (a) 3.0, 2020 edition, per map sheet,

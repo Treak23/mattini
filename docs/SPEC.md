@@ -1,4 +1,4 @@
-# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning and at the M1 close, 2026-09-25)
+# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close and at M2 planning, 2026-09-25)
 
 Written by the design realm with the owner from `docs/start.md` Part 1 / 1A and the
 owner's day-one answers. Only the design realm edits this file. `CLAUDE.md` holds the
@@ -50,6 +50,7 @@ macOS is **OPEN**. Browser and mobile are dropped.
 | Pipeline | Python **3.13** via **uv**, lockfile committed | uv installs Python itself (works in containers) | Design, delegated by the owner (§13) |
 | Python checks | pytest, ruff | PyPI | — |
 | Raster reading | **rasterio** (bundles GDAL) and **numpy**, the versions uv resolves, locked (confirmed by design at M1 planning, 2026-09-25) | PyPI wheels for Python 3.13 on Linux and Windows | Reads swisstopo's GeoTIFF tiles with their georeference, which the terrain step checks; measured: rasterio 1.5.1 (GDAL 3.12.4) and numpy 2.5.3 read the real 2024 tiles |
+| Vector reading | **fiona** (bundles GDAL), the version uv resolves, locked (confirmed by design at M2 planning, 2026-09-25) | PyPI wheels for Python 3.13 on Linux and Windows (`fiona-1.10.1-cp313-cp313-win_amd64.whl` exists) | Reads swissBUILDINGS3D 3.0's zipped FileGDB from memory (`fiona.io.ZipMemoryFile`); measured: fiona 1.10.1 (GDAL 3.9.2) reads the layer `Building_solid` as MultiPolygon Z triangles, and works beside rasterio's GDAL 3.12.4 in one process. pyogrio cannot: it refuses the layer's geometry type, TIN Z (measured) |
 
 Measured on 2026-09-24 in a cloud container: Godot 4.6.3 runs headless; GUT 9.6.1 runs
 headless with a non-zero exit on a failing test; Terrain3D 1.0.2 loads headless in 4.6.3
@@ -81,7 +82,7 @@ Items are addressed by id; assets carry `file:checksum` as a multihash (`1220` +
 |---|---|---|---|
 | swissALTI3D | `ch.swisstopo.swissalti3d` | 1 km tiles, editions 2019 and 2024 for all six village tiles; COG GeoTIFF at 0.5 m (18.1 MB per tile) and 2 m (1.2 MB); EPSG:2056 + EPSG:5728 (LN02 heights) | Terrain (M1) |
 | swissSURFACE3D | `ch.swisstopo.swisssurface3d` / `…-raster` | LAZ point cloud 213 MB per tile (2021); 0.5 m surface-model COG per tile | Canopy height, steep rock (M3) |
-| swissBUILDINGS3D 3.0 | `ch.swisstopo.swissbuildings3d_3_0` | Current edition (2026) only as ONE national FileGDB of 14.1 GB; per-map-sheet items exist for 2015 and 2020 (sheet 1348-11: 9.1 MB GDB) | Buildings (M2) — access route **OPEN** |
+| swissBUILDINGS3D 3.0 | `ch.swisstopo.swissbuildings3d_3_0` | Current edition (2026) only as ONE national FileGDB of 14.1 GB; per-map-sheet items exist for 2015/2016 and 2020 (sheet 1348-11: 9.1 MB GDB zip; the village's six sheets 14.1 MB together, measured 2026-09-25). 2.0 (`ch.swisstopo.swissbuildings3d_2`) has per-sheet DXF up to 2024-05, but 1'272 of its 2'376 village parts are open meshes (measured) | Buildings (M2): the 2020 edition per map sheet, PROPOSED (§8 *The buildings*; §13 row 22) |
 | SWISSIMAGE 10 cm | `ch.swisstopo.swissimage-dop10` | 1 km tiles, 2023 edition: 43.2 MB (0.1 m), 0.2 MB (2 m) | Surface classification (M3) |
 | swissTLM3D | `ch.swisstopo.swisstlm3d` | National only (2026-02): 2.9 GB GDB / 4.8 GB GPKG | Paths, roads, rivers, rail, lifts, land cover (M3) — access route **OPEN** |
 | swissNAMES3D | `ch.swisstopo.swissnames3d` | National (2026): CSV/GDB/GPKG/SHP | Place names |
@@ -158,7 +159,7 @@ heights file, 2.9 s to load into Terrain3D and about 540 MB of memory in a headl
 swisstopo STAC API
   → pipeline/  (Python package `mattini`, offline, re-runnable)
        download → crop → re-origin → terrain for Terrain3D (+ LODs where needed)
-       → buildings per chunk (glTF) → splat maps (SWISSIMAGE + land cover)
+       → buildings per 1 km chunk (a raw mesh file) → splat maps (SWISSIMAGE + land cover)
        → tree points (surface model − terrain) → vectors (paths, rivers, rail, lifts)
        → manifest
   → game/assets/generated/   chunks + manifest.json
@@ -174,7 +175,7 @@ the game's only source of generated data. It carries at least: `schema` (1), `wo
 verbatim copy of `config/world.json`) and `world_sha256`; later the datasets used (each
 with its edition, inputs' checksums and attribution) and the chunk lists. The credits
 screen is generated from it. From M1 its top level is exactly `schema`, `terrain`,
-`world` and `world_sha256`.
+`world` and `world_sha256`; from M2 `buildings` joins them (null until built).
 
 **The terrain grid (M1; designed at M1 planning, 2026-09-25).** Tier 1 territory: it
 places heights in the world (WORKFLOW §Review policy).
@@ -255,6 +256,114 @@ places heights in the world (WORKFLOW §Review policy).
   fixture's. Each fixture folder holds a `datasets.lock.json` pinning its source as the
   1 km tile it lies in (M2-01, for T-04's check).
 
+**The buildings (M2; designed at M2 planning, 2026-09-25, on the source §13 row 22
+PROPOSES).** Tier 1 territory: it places buildings in the world (WORKFLOW §Review
+policy).
+
+- *Source:* swissBUILDINGS3D 3.0 beta, edition 2020, per map sheet: STAC collection
+  `ch.swisstopo.swissbuildings3d_3_0`, item `swissbuildings3d_3_0_2020_<sheet>`, asset
+  `swissbuildings3d_3_0_2020_<sheet>_2056_5728.gdb.zip`, a zipped FileGDB holding one
+  folder `<name>.gdb`; its layer `Building_solid` holds one closed triangle solid per
+  building (an Esri MultiPatch, which fiona reads as a MultiPolygon Z whose every polygon
+  is one triangle), EPSG:2056 with LN02 heights, attributes including `UUID` and
+  `OBJEKTART`.
+- *Sheets:* the LK25 sheet `1000 + 20 r + c` covers E 2'480'000 + 17'500 c to
+  2'480'000 + 17'500 (c + 1), N 1'302'000 − 12'000 (r + 1) to 1'302'000 − 12'000 r. Its
+  sixteenth `<sheet>-<q><s>` is quadrant q (1 north-west, 2 north-east, 3 south-west,
+  4 south-east; 8'750 m × 6'000 m), then sub-quadrant s of it (same order;
+  4'375 m × 3'000 m). Example: 1348-11 is E 2'620'000–2'624'375, N 1'095'000–1'098'000.
+  The buildings step uses every sheet whose box comes within 100 m of the area's box
+  (distance ≤ 100 m, touching included), sorted by sheet id as text, and selects buildings
+  by the area, never by their sheet. Measured at M2 planning: the grid matches all 34
+  sheets of the 2020 edition around Zermatt within 7 mm; buildings overhang their sheet by
+  up to about 12 m; three of the 2'134 in the village's six sheets have their bounding-box
+  centre up to 3.6 m outside their own sheet; no building is in two sheets.
+- *Reading:* each zip is opened from the very bytes whose SHA-256 was checked against the
+  lock; its one `.gdb` folder, layer `Building_solid`. Every feature must have a
+  non-empty text `UUID`, and a geometry that is a MultiPolygon Z whose every polygon is
+  exactly one ring of four points with the first equal to the last (a triangle), else the
+  feature is refused (naming sheet and UUID).
+- *Snapping:* every coordinate is snapped to the file's storage grid in 64-bit:
+  E' = round(E × 1000) / 1000, N' = round(N × 1000) / 1000 (1 mm), H' = round(H × 10000) /
+  10000 (0.1 mm), where round is round-half-to-even to an integer and the division is the
+  correctly rounded 64-bit division. A coordinate whose |v − v'| exceeds 1e-6 m is refused
+  (a finer grid is a design change).
+- *Which buildings:* those whose bounding-box centre ((E'min + E'max) / 2, (N'min +
+  N'max) / 2), over all its snapped vertices, in 64-bit, lies in the area box with the
+  west and south edges included and the east and north edges excluded:
+  e_min ≤ Ec < e_max and n_min ≤ Nc < n_max. A UUID seen twice among the selected
+  buildings is refused.
+- *Each building:*
+  1. Its vertices are welded by exact equality of (E', N', H') and numbered from 0 in the
+     order of their first appearance, reading the triangles in the order fiona gives them
+     and each triangle's three points in ring order (the ring's closing point dropped).
+  2. It must be a closed, consistently oriented triangle mesh: no triangle repeats a
+     vertex number, and every directed edge (a, b) of its triangles occurs exactly once and
+     its reverse (b, a) exactly once. Otherwise it is refused (naming sheet and UUID).
+  3. Its signed volume V = Σ over triangles (a, b, c) of a · (b × c) / 6, computed in
+     64-bit on the vertices minus the building's vertex 0, in triangle order, left to
+     right. V = 0 is refused. If V < 0, every triangle (a, b, c) becomes (a, c, b); the
+     vertex numbering does not change. So the output is counter-clockwise seen from outside:
+     (b − a) × (c − a) points out of the building. (swisstopo's 2020 solids all read V < 0,
+     measured.)
+- *Placement:* each vertex's local (x, y, z) is the world config's to_local(E', N', H') in
+  64-bit (x = E' − origin_e, y = H' − height_offset_m, z = −(N' − origin_n) for the
+  owner's axes; generally the configured rotation), then each component rounded once to
+  32-bit float (round-half-to-even).
+- *Chunks:* a building belongs to the 1 km tile holding its bounding-box centre:
+  `<floor(Ec / 1000)>-<floor(Nc / 1000)>`. Within a chunk, buildings are ordered by UUID,
+  compared as text (Python string order). A tile with no building has no chunk.
+- *The chunk file* `buildings/<tile>.bin`: the chunk's vertex positions, then its triangles,
+  no header. Vertices: each building's vertices in their numbering order, buildings in
+  chunk order, each vertex as x, y, z little-endian float32 (12 bytes). Triangles: each
+  building's triangles in their order, buildings in chunk order, each as three
+  little-endian uint32 indices into the chunk's vertex list (a building's vertex number
+  plus the count of vertices of the buildings before it in the chunk) (12 bytes). File size
+  = 12 × vertices + 12 × triangles.
+- *The description* `buildings/<area>.json` (sorted keys, 2-space indent, UTF-8, LF, final
+  newline, like the terrain's), exactly: `area`; `chunks`, a list sorted by tile, each
+  exactly `{"buildings": <count>, "file": "buildings/<tile>.bin", "sha256": <hex>, "tile":
+  <tile>, "triangles": <count>, "vertices": <count>}`; `format`: `"mesh-f32-u32-le"`;
+  `lv95_box`: `{"e_max", "e_min", "n_max", "n_min"}` of the area (floats); `source`:
+  `{"attribution": "© swisstopo", "collection": "ch.swisstopo.swissbuildings3d_3_0",
+  "dataset": "swissbuildings3d", "edition": "2020", "sheets": [{"sha256": <zip's sha256>,
+  "sheet": <sheet id>} … sorted by sheet]}`; `world_sha256`: the SHA-256 of the world
+  config's bytes.
+- *Expected output (lesson 38):* `config/buildings.json`, `{"schema": 1, "areas":
+  {"village": {"expected_sha256": {"<tile>": "<sha256>", …}}}}`, the one area being the
+  terrain config's. The village's six chunks were computed by design two independent ways
+  at M2 planning (identical bytes): 1'486 buildings, 92'594 vertices, 178'910 triangles,
+  3'258'048 bytes in all. The buildings step compares every chunk with it before writing
+  anything; `manifest` refuses any other file. `manifest` also refuses a block whose key
+  sets are not exact, whose `world_sha256` is not the world config's, whose `source` is not
+  the datasets config's attribution, collection and edition and the lock's sheets with
+  their SHA-256s in order, or whose chunk files' sizes or SHA-256s differ; each refusal
+  names `python -m mattini buildings`.
+- *The game:* `BuildingChunks` reads the block and the files, checks each file's path, size
+  and SHA-256, the indices, and the block's `world_sha256` against its manifest, and never
+  converts a coordinate: the pipeline wrote local coordinates for the world config that
+  `world_sha256` pins. `BuildingLoader` makes one flat-shaded mesh per chunk under a
+  `Buildings` node. Each triangle's normal is `normalize((b − a) × (c − a))` in the file's
+  order, pointing out. The triangle goes into Godot's arrays as (a, c, b), because Godot's
+  front faces are clockwise (measured: `SurfaceTool.generate_normals` gives (0, 1, 0) for
+  the triangle (0,0,0), (1,0,0), (0,0,1), whose right-hand normal is (0, −1, 0)). A
+  triangle whose normal has y ≥ 0.5 is roof, the rest wall.
+- *How the buildings meet the terrain (measured on the real village, 2026-09-25):* every
+  solid has a flat floor (spread under 1 cm) below the terrain around it, typically 2.4 m
+  below its lowest corner. So no building floats and nothing is added under them. Twelve
+  of 1'486 stand above the 2024 terrain at a corner, by up to 4.1 m (four by more than
+  1 m, two of them marked *Im Bau*). The terrain is 2024, the buildings' survey mostly
+  2012. They are shown as the data has them (Hard Rule 2), and the release record names
+  them for the owner to look at.
+- *Shared fixture:* `tests/shared/buildings_fixture/` and
+  `tests/shared/buildings_vectors.json`: a synthetic world (origin E 2'650'000 /
+  N 1'150'000, height offset 500 m) with eleven buildings as the reader hands them over.
+  They cover a solid to reverse and one to keep, centres exactly on the area's west, east
+  and north edges and on a tile boundary, and a building whose vertex mean lies in
+  another tile than its bounding-box centre. Its expected output was computed two
+  independent ways. The pipeline must reproduce it byte for byte, and the game must find
+  its named vertices at `WorldConfig.to_local` of their LV95 points: the seam (lesson 3).
+
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same
 inputs gives identical bytes, and tests say so.
@@ -277,6 +386,9 @@ inputs gives identical bytes, and tests say so.
   from data, not from sculpting.
 - **Generated terrain:** `game/assets/generated/terrain/` (git-ignored, like all generated
   assets), written by `python -m mattini terrain` (§8).
+- **Generated buildings:** `game/assets/generated/buildings/` (git-ignored), written by
+  `python -m mattini buildings` (§8): about 3.1 MiB for the village, which the export's
+  `.pck` holds beside the heights.
 - **Screenshots:** software-rendered evidence from builders of visual briefs (§12) in
   `docs/briefs/shots/<brief>-<view>.jpg`, JPEG, 1280 × 720, a few per brief.
 - **Test data:** synthetic data generated inside the tests, and the small shared files in
@@ -315,6 +427,21 @@ design realm proposes and the owner reacts through `feedback`):**
   the licences of Godot and its components and of Terrain3D), Resume and Quit.
 - *Errors on screen:* a missing, refused or stale manifest or terrain opens a message
   naming the command that fixes it (Hard Rule 2).
+
+**M2's game (planned 2026-09-25; design proposes, the owner reacts through `feedback`):**
+
+- *Look:* the buildings as a white architectural model. Walls matte off-white
+  (0.93, 0.92, 0.89), roofs a shade darker and warmer (0.76, 0.72, 0.68); roughness 1,
+  no metal, flat-shaded facets, casting shadows in the fixed sun, back faces culled. No
+  textures and no per-building colours: M2 has no data for them, and nothing is invented.
+  The two materials are `.tres` files the owner can tune in the editor.
+- *Loading:* after the terrain; a refusal opens the error panel with the refusal and the
+  commands (`download buildings`, then `buildings`) while the terrain stays; the panel
+  names what cannot be shown. A second startup line counts the buildings.
+- *Credits:* one line per loaded dataset (`swissalti3d 2024, © swisstopo`,
+  `swissbuildings3d 2020, © swisstopo`), then the software licences, godot-cpp's included
+  (D17).
+- *Not in M2:* collision and walking (M6), names or picking of buildings.
 
 ## 11. Delivery (owner, day one: option b)
 
@@ -392,6 +519,12 @@ line stays on every visual gate.
 | 19 | Camera controls (the design's proposal) | Kept as proposed (Godot editor fly mode) | Owner (no change asked) |
 | 20 | Form of the tile pin (D7) | `config/datasets.lock.json`, written by `python -m mattini lock terrain` | Design (M0 close: "M1 planning picks the form") |
 | 21 | Raster libraries | rasterio and numpy confirmed | Design, delegated (CLAUDE.md §Stack) |
+| 22 | swissBUILDINGS3D access route (M2 planning, 2026-09-25) | **PROPOSED** by design, the owner's answer awaited: (a) swissBUILDINGS3D 3.0, edition 2020, per map sheet (the village's six sheets, 14.1 MB: closed solids with attributes). The alternatives: (b) 2.0, 2024-05, per sheet (DXF; 1'272 of the village's 2'376 parts are open meshes, measured); (c) the 3.0 national file, 2026 (14.1 GB for about 1'500 buildings) | Owner (asked) |
+| 23 | An export over 100 MiB (D16) | **PROPOSED**: stays open until M5; the village's buildings add 3.1 MiB to a `.pck` with 8.3 MiB of room, and `tools/export.sh` refuses any file over 100 MiB | Owner (asked) |
+| 24 | A committed sample of real swisstopo data | **PROPOSED**: yes, sheet 1328-33 of the 2020 edition (45'668 bytes, three buildings) as the buildings reader's fixture, the one file of real geodata in git; nothing is committed before the owner agrees, since a committed file stays in the history | Owner (asked) |
+| 25 | Vector library | fiona confirmed (pyogrio cannot read the layer) | Design, delegated (CLAUDE.md §Stack) |
+| 26 | The buildings' file format | A raw mesh per 1 km chunk (`.bin`, float32 vertices then uint32 triangles), not glTF: Godot imports a `.glb` under `res://` and an export ships the imported copy, not the file (measured), while a `.bin` ships as it is, like the terrain's `.f32`, and the game checks its SHA-256 | Design (the architecture's "glTF" was a sketch; the owner may reverse) |
+| 27 | How M2 is run | In one session: design, build, review and close with in-session agents; no spawned waker, ticks or builders | Owner (RULINGS 2026-09-25) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not
@@ -409,12 +542,11 @@ Asked when the milestone that needs them is planned; each is also on the board.
   all rights reserved by default).
 - Weather: simulated, or real data (MeteoSwiss open data, Open-Meteo) — M6.
 - Backdrop and larger-area extents and resolutions — M5.
-- Access route for swissBUILDINGS3D (14.1 GB national file) — M2; for swissTLM3D (national
-  only) — M3.
-- A committed sample of real swisstopo data as a test fixture (M1 tests with a synthetic
-  fixture instead).
-- Export over 100 MB on `dist` — nothing over at 0.1.0 (§11); asked at M2 planning, since
-  M2's buildings go into the `.pck` (D16).
+- Access route for swissTLM3D (national only) — M3.
+- Access route for swissBUILDINGS3D — asked at M2 planning (§13 row 22, PROPOSED).
+- A committed sample of real swisstopo data as a test fixture — asked at M2 planning (§13
+  row 24, PROPOSED).
+- Export over 100 MB on `dist` — asked at M2 planning (§13 row 23, PROPOSED; D16).
 - Game type — later.
 
 Answered at M1 planning (2026-09-25; §13 rows 14–19): the terrain resolution, where the
