@@ -1,7 +1,9 @@
-"""swissALTI3D download for the village area (brief M0-04; docs/SPEC.md §5, §7 and §9).
+"""swissALTI3D download for the terrain's area (briefs M0-04, M2-01; docs/SPEC.md §5, §7, §9).
 
-The 1 km tiles covering `areas.village` in config/world.json are fetched at the edition and
-resolution pinned in config/datasets.json, never "the latest" (Hard Rule 5). STAC items are
+The 1 km tiles covering the area config/terrain.json names (its one area; the box is in
+config/world.json) are fetched at the edition and resolution pinned in
+config/datasets.json, never "the latest" (Hard Rule 5); the caller passes the area, so the
+download, the lock and the terrain step serve one area (M1 R1 T-06). STAC items are
 addressed by id. Every file is checked against swisstopo's published SHA-256 (`file:checksum`,
 a `1220…` multihash): it downloads to `<name>.part`, is verified, and only then takes its
 final name, so a file under its final name matched the published checksum when it was
@@ -59,9 +61,13 @@ class DownloadError(RuntimeError):
     """A download could not be completed or verified; the message names the tile and URL."""
 
 
-def village_tiles(world: World) -> list[str]:
-    """The ids (`<e km>-<n km>`) of the 1 km tiles covering the village area, sorted."""
-    e_min, e_max, n_min, n_max = world.area("village")
+def area_tiles(world: World, area: str) -> list[str]:
+    """The ids (`<e km>-<n km>`) of the 1 km tiles the named area's box touches, sorted.
+
+    East outer, north inner: the order of the download, provenance.json, the terrain step
+    and the manifest's `source.tiles`.
+    """
+    e_min, e_max, n_min, n_max = world.area(area)
     east = range(math.floor(e_min / TILE_M), math.ceil(e_max / TILE_M))
     north = range(math.floor(n_min / TILE_M), math.ceil(n_max / TILE_M))
     return [f"{e}-{n}" for e in east for n in north]
@@ -86,16 +92,18 @@ class PublishedAsset:
     sha256: str
 
 
-def published_assets(world: World, datasets: dict, fetch_json: FetchJson) -> list[PublishedAsset]:
-    """Read the STAC item of every village tile, in tile order; no file is fetched."""
+def published_assets(
+    world: World, datasets: dict, fetch_json: FetchJson, *, area: str
+) -> list[PublishedAsset]:
+    """Read the STAC item of every tile of `area`, in tile order; no file is fetched."""
     alti = datasets[DATASET]
     edition = alti["edition"]
     suffix = f"_{_resolution_tag(alti['resolution_m'])}_2056_5728.tif"
     assets = []
-    for tile in village_tiles(world):
+    for tile in area_tiles(world, area):
         item_id = f"{DATASET}_{edition}_{tile}"
         item_url = STAC_ITEM.format(collection=alti["collection"], item_id=item_id)
-        name, href, sha256 = _published_asset(fetch_json, item_url, item_id, tile, suffix)
+        name, href, sha256 = _published_asset(fetch_json, item_url, item_id, tile, area, suffix)
         assets.append(PublishedAsset(tile, item_id, name, href, sha256))
     return assets
 
@@ -108,8 +116,9 @@ def download_terrain(
     fetch_file: FetchFile,
     *,
     lock: dict,
+    area: str,
 ) -> list[dict]:
-    """Fetch and verify the village tiles into `<out_root>/swissalti3d/<edition>/`.
+    """Fetch and verify the tiles of `area` into `<out_root>/swissalti3d/<edition>/`.
 
     `lock` is the tile lock (`mattini.lock.load_lock()`): it must be for the config's
     collection, edition and resolution and list every tile of the area, and every published
@@ -119,14 +128,14 @@ def download_terrain(
     """
     alti = datasets[DATASET]
     _resolution_tag(alti["resolution_m"])
-    pinned = _locked_tiles(lock, alti, village_tiles(world))
-    assets = published_assets(world, datasets, fetch_json)
+    pinned = _locked_tiles(lock, alti, area_tiles(world, area), area)
+    assets = published_assets(world, datasets, fetch_json, area=area)
     for asset in assets:
         locked = pinned[asset.tile]
         if (asset.name, asset.sha256) != (locked["file"], locked["sha256"]):
             raise DownloadError(
-                f"tile {asset.tile}: swisstopo now publishes {asset.name} with SHA-256 "
-                f"{asset.sha256}, the tile lock pins {locked['file']} with SHA-256 "
+                f"tile {asset.tile} of area {area!r}: swisstopo now publishes {asset.name} with "
+                f"SHA-256 {asset.sha256}, the tile lock pins {locked['file']} with SHA-256 "
                 f"{locked['sha256']}; nothing was fetched. A republished tile is adopted "
                 f"only on purpose: `{LOCK_COMMAND}`, then commit the lock"
             )
@@ -142,7 +151,7 @@ def download_terrain(
             dest.unlink()  # stale or damaged: never leave it looking valid
         if not dest.exists():
             provenance.unlink(missing_ok=True)
-            _fetch_verified(fetch_file, asset.href, dest, asset.sha256, asset.tile)
+            _fetch_verified(fetch_file, asset.href, dest, asset.sha256, asset.tile, area)
         entries.append(
             {
                 "file": asset.name,
@@ -185,12 +194,13 @@ def _resolution_tag(resolution_m: object) -> str:
     return format(resolution_m, "g")
 
 
-def _locked_tiles(lock: object, alti: dict, tiles: list[str]) -> dict:
+def _locked_tiles(lock: object, alti: dict, tiles: list[str], area: str) -> dict:
     """The lock's tile entries, once it is shown to be for this config's tiles."""
 
     def fail(message: str) -> DownloadError:
         return DownloadError(
-            f"the tile lock {message}; `{LOCK_COMMAND}` writes the lock for the config"
+            f"the tile lock {message} (area {area!r}); `{LOCK_COMMAND}` writes the lock for "
+            f"the config"
         )
 
     datasets = lock.get("datasets") if isinstance(lock, dict) else None
@@ -210,12 +220,12 @@ def _locked_tiles(lock: object, alti: dict, tiles: list[str]) -> dict:
 
 
 def _published_asset(
-    fetch_json: FetchJson, item_url: str, item_id: str, tile: str, suffix: str
+    fetch_json: FetchJson, item_url: str, item_id: str, tile: str, area: str, suffix: str
 ) -> tuple[str, str, str]:
     """The (file name, href, SHA-256) of the one asset of the item whose key ends `suffix`."""
 
     def fail(message: str) -> DownloadError:
-        return DownloadError(f"tile {tile}: {item_url}: {message}")
+        return DownloadError(f"tile {tile} of area {area!r}: {item_url}: {message}")
 
     try:
         item = fetch_json(item_url)
@@ -244,7 +254,9 @@ def _published_asset(
     return name, href, sha256
 
 
-def _fetch_verified(fetch_file: FetchFile, url: str, dest: Path, sha256: str, tile: str) -> None:
+def _fetch_verified(
+    fetch_file: FetchFile, url: str, dest: Path, sha256: str, tile: str, area: str
+) -> None:
     """Fetch `url` to `dest` via `<dest>.part`, keeping it only if its SHA-256 matches."""
     part = dest.with_name(dest.name + ".part")
     problem = ""
@@ -260,7 +272,9 @@ def _fetch_verified(fetch_file: FetchFile, url: str, dest: Path, sha256: str, ti
             problem = f"fetch failed: {exc}"
         finally:
             part.unlink(missing_ok=True)
-    raise DownloadError(f"tile {tile}: {url}: {problem} (after {ATTEMPTS} attempts)")
+    raise DownloadError(
+        f"tile {tile} of area {area!r}: {url}: {problem} (after {ATTEMPTS} attempts)"
+    )
 
 
 def _sha256(path: Path) -> str:

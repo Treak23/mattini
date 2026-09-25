@@ -2,6 +2,9 @@
   "schema": 1,
   "areas": {
     "fixture": {
+      "expected_sha256": {
+        "0.5": "fd02c74441317dfb668f79011cb4bae7e76718648a992ec2f26417cca1f26ea2"
+      },
       "spacing_m": 0.5
     }
   }

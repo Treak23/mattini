@@ -33,7 +33,7 @@ MEASURED = {  # tile: (file, SHA-256); M0-04 Findings 4, re-read 2026-09-25
 
 
 def _lock_for(fake):
-    return build_lock(load_world(), load_datasets(), fake.fetch_json)
+    return build_lock(load_world(), load_datasets(), fake.fetch_json, area="village")
 
 
 def _download(fake, out_root, lock):
@@ -44,6 +44,7 @@ def _download(fake, out_root, lock):
         fetch_json=fake.fetch_json,
         fetch_file=fake.fetch_file,
         lock=lock,
+        area="village",
     )
 
 

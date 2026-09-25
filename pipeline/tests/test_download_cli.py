@@ -58,7 +58,9 @@ def swisstopo(monkeypatch, tmp_path):
     monkeypatch.setattr(lock, "LOCK_PATH", server.lock_path)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    pinned = lock.build_lock(load_world(), load_datasets(), download.urllib_fetch_json)
+    pinned = lock.build_lock(
+        load_world(), load_datasets(), download.urllib_fetch_json, area="village"
+    )
     lock.write_lock(pinned, server.lock_path)
     server.requests.clear()
     yield server

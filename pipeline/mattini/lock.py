@@ -34,12 +34,15 @@ class LockError(ValueError):
     """The tile lock is missing or malformed; the message names the file and the command."""
 
 
-def build_lock(world: World, datasets: dict, fetch_json: download.FetchJson) -> dict:
-    """The lock for the village tiles at the pinned edition and resolution, from STAC only."""
+def build_lock(world: World, datasets: dict, fetch_json: download.FetchJson, *, area: str) -> dict:
+    """The lock for the tiles of `area` at the pinned edition and resolution, from STAC only.
+
+    The command line passes the area config/terrain.json names (brief M2-01, M1 R1 T-06).
+    """
     alti = datasets[download.DATASET]
     tiles = {
         asset.tile: {"file": asset.name, "sha256": asset.sha256}
-        for asset in download.published_assets(world, datasets, fetch_json)
+        for asset in download.published_assets(world, datasets, fetch_json, area=area)
     }
     return {
         "schema": SCHEMA,

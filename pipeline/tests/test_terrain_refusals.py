@@ -4,7 +4,10 @@ A rotated world, an area whose north-west corner is off the vertex lattice, a so
 is not 0.5 m, a lock or provenance that disagree, a tile that is not what its id says, and
 a manifest whose terrain description no longer fits: each is a TerrainError naming what is
 wrong and the command that fixes it, and nothing is written. The test world is one tile
-(its id and corner are read from the world config's own origin) at 2 m spacing.
+(its id and corner are read from the world config's own origin) at 2 m spacing; since
+M2-01 its terrain config expects the SHA-256 an independent reference computes from the
+tile's own heights (window_mean.py), and the manifest over the shared fixture reads the
+fixture's own tile lock.
 """
 
 import hashlib
@@ -17,6 +20,7 @@ import numpy as np
 import pytest
 import rasterio
 from rasterio.transform import from_origin
+from window_mean import expected_sha256
 
 from mattini.datasets import load_datasets
 from mattini.manifest import write_manifest
@@ -36,6 +40,17 @@ LOCK_COMMAND = "python -m mattini lock terrain"
 def _heights():
     rows, cols = np.mgrid[0:2000, 0:2000]
     return (1600.0 + 0.0625 * cols - 0.03125 * rows).astype(np.float32)
+
+
+# The heights' SHA-256 at 2 m, from the tile's own heights (the area is the whole tile)
+HEIGHTS_SHA256 = expected_sha256(_heights(), 2.0)
+
+
+def _config(area="village"):
+    return {
+        "schema": 1,
+        "areas": {area: {"expected_sha256": {"2": HEIGHTS_SHA256}, "spacing_m": 2.0}},
+    }
 
 
 def _write_tile(path, data, west=WEST, north=SOUTH + 1000.0, size=0.5):
@@ -99,7 +114,7 @@ def case(tmp_path):
         "world": _world(tmp_path),
         "datasets": load_datasets(),
         "lock": lock,
-        "config": {"schema": 1, "areas": {"village": {"spacing_m": 2.0}}},
+        "config": _config(),
         "raw_dir": raw_dir,
         "out": tmp_path / "generated",
     }
@@ -138,8 +153,7 @@ def test_an_area_off_the_vertex_lattice_is_refused(case, tmp_path):
 
 
 def test_an_area_the_world_does_not_have_is_refused(case):
-    config = {"schema": 1, "areas": {"backdrop": {"spacing_m": 2.0}}}
-    _refused(case, "backdrop", config=config)
+    _refused(case, "no area named 'backdrop'", config=_config("backdrop"))
 
 
 def test_a_source_resolution_other_than_half_a_metre_is_refused(case):
@@ -234,6 +248,7 @@ def _manifest(out, datasets=FIXTURE / "datasets.json"):
         FIXTURE / "world.json",
         terrain_config_path=FIXTURE / "terrain.json",
         datasets_path=datasets,
+        lock_path=FIXTURE / "datasets.lock.json",
     )
 
 
@@ -289,6 +304,8 @@ def test_a_heights_file_without_its_description_is_no_terrain(tmp_path):
 @pytest.mark.parametrize("name", ["../village", "Village", "village.f32", ""])
 def test_an_area_name_that_is_not_a_plain_file_name_is_refused(tmp_path, name):
     path = tmp_path / "terrain.json"
-    path.write_text(json.dumps({"schema": 1, "areas": {name: {"spacing_m": 0.5}}}), "utf-8")
-    with pytest.raises(TerrainError, match=re.escape(str(path))):
+    area = {"expected_sha256": {"0.5": "0" * 64}, "spacing_m": 0.5}
+    path.write_text(json.dumps({"schema": 1, "areas": {name: area}}), "utf-8")
+    with pytest.raises(TerrainError, match=re.escape(str(path))) as refused:
         load_terrain_config(path)
+    assert "area name" in str(refused.value)

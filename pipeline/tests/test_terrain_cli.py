@@ -31,13 +31,16 @@ def test_terrain_builds_then_writes_the_manifest(case, monkeypatch, capsys):  # 
     monkeypatch.setattr(
         cli,
         "write_manifest",
-        lambda out: manifest.write_manifest(out, world_path, terrain_config_path=terrain_config),
+        lambda out: manifest.write_manifest(
+            out, world_path, terrain_config_path=terrain_config, lock_path=lock_path
+        ),
     )
     out = case["out"]
     assert cli.main(["terrain", "--raw", str(case["tmp"] / "raw"), "--out", str(out)]) == 0
     captured = capsys.readouterr()
     assert captured.out == f"{out / 'manifest.json'}\n"
     assert "reading " in captured.err and "501 × 501 vertices" in captured.err
+    assert "the heights have the SHA-256 config/terrain.json expects" in captured.err
     written = json.loads((out / "manifest.json").read_bytes())
     block = json.loads((out / "terrain" / "village.json").read_bytes())
     assert written["terrain"] == block

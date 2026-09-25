@@ -20,11 +20,11 @@ pytestmark = pytest.mark.network
 def test_pinned_items_publish_one_asset_with_a_sha256_each():
     alti = load_datasets()["swissalti3d"]
     suffix = f"_{download._resolution_tag(alti['resolution_m'])}_2056_5728.tif"
-    for tile in download.village_tiles(load_world()):
+    for tile in download.area_tiles(load_world(), "village"):
         item_id = f"swissalti3d_{alti['edition']}_{tile}"
         url = download.STAC_ITEM.format(collection=alti["collection"], item_id=item_id)
         name, href, sha256 = download._published_asset(
-            download.urllib_fetch_json, url, item_id, tile, suffix
+            download.urllib_fetch_json, url, item_id, tile, "village", suffix
         )
         assert name == f"{item_id}{suffix}"
         assert href.startswith("https://data.geo.admin.ch/") and href.endswith(name)
@@ -32,7 +32,9 @@ def test_pinned_items_publish_one_asset_with_a_sha256_each():
 
 
 def test_the_committed_lock_is_what_swisstopo_publishes():
-    published = lock.build_lock(load_world(), load_datasets(), download.urllib_fetch_json)
+    published = lock.build_lock(
+        load_world(), load_datasets(), download.urllib_fetch_json, area="village"
+    )
     assert published == lock.load_lock()
 
 
@@ -45,7 +47,8 @@ def test_a_real_download_of_the_2m_tiles_verifies(tmp_path):
         tmp_path,
         download.urllib_fetch_json,
         download.urllib_fetch_file,
-        lock=lock.build_lock(load_world(), datasets, download.urllib_fetch_json),
+        lock=lock.build_lock(load_world(), datasets, download.urllib_fetch_json, area="village"),
+        area="village",
     )
     assert [e["file"].endswith("_2_2056_5728.tif") for e in entries] == [True] * 6
     assert all(e["size_bytes"] > 0 for e in entries)

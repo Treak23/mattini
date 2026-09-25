@@ -2,6 +2,11 @@
   "schema": 1,
   "areas": {
     "village": {
+      "expected_sha256": {
+        "0.5": "b6334c1fdc992f0576bc59efd51484db2178cbe399ad46512a4bf510abb9411a",
+        "1": "71bd4f174dfc3d07a3becace073c62bdf6b5cc010072a5e483a484210e8bc333",
+        "2": "d6c1d558fee28c91472f2fea9c5db06d9b74480dd22f77554bf7037beec794ce"
+      },
       "spacing_m": 0.5
     }
   }

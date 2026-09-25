@@ -1,4 +1,4 @@
-"""Pinning tests for brief M1-03: the pipeline reproduces the shared terrain fixture exactly.
+"""Pinning tests for briefs M1-03 and M2-01: the pipeline reproduces the shared terrain fixture.
 
 Pinned decisions (docs/SPEC.md §8, the terrain grid): a vertex every spacing_m from the
 area's north-west corner, the edges included; each vertex's height is the area-weighted
@@ -8,7 +8,9 @@ little-endian float32, rows north to south (+z), columns west to east (+x), no h
 description is written next to it and copied into the manifest's `terrain` block. The
 expected bytes under tests/shared/terrain_fixture/generated/ were computed by design two
 independent ways (see tests/shared/terrain_vectors.json); the game's tests load the same
-bytes (brief M1-04), so this is the seam between the two halves (lesson 3).
+bytes (brief M1-04), so this is the seam between the two halves (lesson 3). Since M2-01
+the fixture's source is pinned in its own `datasets.lock.json` as the tile it lies in
+(2601-1199), so the manifest's source check (M1 R1 T-04) applies to it too.
 """
 
 import hashlib
@@ -87,6 +89,7 @@ def test_the_manifest_carries_the_fixture_block_verbatim(tmp_path):
         FIXTURE / "world.json",
         terrain_config_path=FIXTURE / "terrain.json",
         datasets_path=FIXTURE / "datasets.json",
+        lock_path=FIXTURE / "datasets.lock.json",
     )
     assert path.read_bytes() == (GENERATED / "manifest.json").read_bytes()
     assert hashlib.sha256(path.read_bytes()).hexdigest() == (

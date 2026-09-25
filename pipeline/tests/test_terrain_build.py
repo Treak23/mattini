@@ -6,7 +6,9 @@ resolution or tiles differ from what the config asks for, naming `download terra
 stray files in the folder are not read. Every tile's SHA-256 must equal the lock's. Every
 tile must lie where its id says (EPSG:2056, 2000 x 2000 pixels of 0.5 m, its 1 km square)
 and hold no nodata or non-finite value in the area; each refusal names the tile. The test
-world is one tile (2623-1096) at 2 m spacing, so the step runs in about a second.
+world is one tile (2623-1096) at 2 m spacing, so the step runs in about a second. Since
+M2-01 its terrain config carries the heights' expected SHA-256, computed from the test's
+own source by an independent reference (window_mean.py).
 """
 
 import hashlib
@@ -17,6 +19,7 @@ import numpy as np
 import pytest
 import rasterio
 from rasterio.transform import from_origin
+from window_mean import expected_sha256
 
 from mattini.datasets import load_datasets
 from mattini.terrain import TerrainError, build_terrain
@@ -31,6 +34,10 @@ DOWNLOAD_COMMAND = "python -m mattini download terrain"
 def _heights():
     rows, cols = np.mgrid[0:2000, 0:2000]
     return (1600.0 + 0.0625 * cols - 0.03125 * rows + 0.5 * ((rows + cols) % 2)).astype(np.float32)
+
+
+# The heights' SHA-256 at 2 m, from the tile's own heights (the area is the whole tile)
+HEIGHTS_SHA256 = expected_sha256(_heights(), 2.0)
 
 
 def _write_tile(path, data, west=2623000.0, north=1097000.0, crs="EPSG:2056"):
@@ -98,7 +105,12 @@ def one_tile(tmp_path):
         "world": load_world(world_path),
         "world_sha256": hashlib.sha256(world_path.read_bytes()).hexdigest(),
         "lock": lock,
-        "terrain_config": {"schema": 1, "areas": {"village": {"spacing_m": 2.0}}},
+        "terrain_config": {
+            "schema": 1,
+            "areas": {
+                "village": {"expected_sha256": {"2": HEIGHTS_SHA256}, "spacing_m": 2.0},
+            },
+        },
         "raw_root": tmp_path / "raw",
         "raw_dir": raw_dir,
         "out": tmp_path / "generated",
@@ -137,6 +149,7 @@ def test_one_tile_builds_the_designed_grid(one_tile):
     assert block["file"] == "terrain/village.f32"
     assert block["format"] == "float32-le"
     assert block["sha256"] == hashlib.sha256(heights_path.read_bytes()).hexdigest()
+    assert block["sha256"] == HEIGHTS_SHA256
     assert block["world_sha256"] == one_tile["world_sha256"]
     assert block["source"]["attribution"] == "© swisstopo"
     assert block["source"]["tiles"] == [
@@ -213,6 +226,25 @@ def test_nodata_in_the_area_is_refused(one_tile, bad):
     _relock(one_tile)
     with pytest.raises(TerrainError, match=TILE):
         _build(one_tile)
+
+
+def test_heights_other_than_the_expected_ones_are_refused_before_anything_is_written(one_tile):
+    """Every input vouched for, but the heights differ from the config's: nothing is written.
+
+    The tile is rewritten 0.25 m higher and provenance and lock are made to vouch for it,
+    so the only thing wrong is that the heights are not the ones the terrain config
+    expects: what a machine or a code change that computes other heights looks like to the
+    step (SPEC §8, lesson 38).
+    """
+    _write_tile(one_tile["raw_dir"] / NAME, _heights() + np.float32(0.25))
+    _relock(one_tile)
+    with pytest.raises(TerrainError) as refused:
+        _build(one_tile)
+    message = str(refused.value)
+    assert HEIGHTS_SHA256 in message
+    assert expected_sha256(_heights() + np.float32(0.25), 2.0) in message
+    assert "'village'" in message and "config/terrain.json" in message
+    assert not one_tile["out"].exists()
 
 
 def _relock(case):
