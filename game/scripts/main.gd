@@ -139,6 +139,19 @@ func _load_terrain() -> Dictionary:
 	move_child(_terrain, _ui.get_index())
 	_camera.height_at = _ground_height
 	_start_view(grid)
+	# The startup line: an exported build is checked by it, headless (brief M1-06).
+	print(
+		(
+			"mattini %s: terrain %s loaded, %d x %d vertices at %s m"
+			% [
+				ProjectSettings.get_setting("application/config/version"),
+				grid.area,
+				grid.columns,
+				grid.rows,
+				_number(grid.spacing_m),
+			]
+		)
+	)
 	return _terrain_source()
 
 

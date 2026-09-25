@@ -16,3 +16,7 @@ __pycache__/
 
 # The standard gate's log (docs/roles/BUILD.md rule 3c)
 /gate.log
+
+# Exports made by tools/export.sh (docs/SPEC.md §11; brief M1-06); binaries reach the dist
+# shelf only through the release (docs/RELEASE.md §C)
+/build/
