@@ -15,16 +15,21 @@ waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
 | M2-01 | M1's residue, the pipeline half (T-01, T-03 to T-08) | none | DONE (b5a45e5), checked |
 | M2-02 | M1's residue, the game and tools half (T-02, G-01 to G-07) | none | DONE (2cf5660), checked |
 | M2-03 | The building inputs: sheets, lock, download | M2-01 | DONE (ad12280), was BLOCKED on design's pinned lint |
-| M2-04 | The village buildings from the sheets | M2-03 | building |
-| M2-05 | The buildings in the game | M2-02, M2-04 | OPEN |
-| M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | OPEN |
+| M2-04 | The village buildings from the sheets | M2-03 | DONE (b980214), checked |
+| M2-05 | The buildings in the game | M2-02, M2-04 | building |
+| M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | building |
 
 Each brief is built by one agent in its own worktree, then checked by a second agent that
 re-runs the gate, compares the pinned copies and proves the new tests by mutation. Residue
 the checks graded P3 waits for the review round: M2-02's gate can be fooled by a test that
 prints GUT's pass line itself and quits (G-04 only partly closed); the scoped allowlist's
 line-end matching is unmeasured on Windows; the credits show godot-cpp's `# MIT License`
-heading as raw text.
+heading as raw text; M2-03's check: the download's refusal before any fetch is proven only
+when the earlier sheets are already on disk (P2), provenance removed before a fetch is
+untested, two refusals reach the owner as a traceback; M2-04's check: every command loads
+fiona (the manifest imports the buildings module), an earlier build's chunk files are not
+removed and an export would ship them, the real reader's output meets the step only in
+the real run.
 
 M2-03 to M2-05 are written on the source design PROPOSES (question 1 below: (a), the 2020
 edition per map sheet), so the work goes on while the owner's answer is awaited. Nothing of

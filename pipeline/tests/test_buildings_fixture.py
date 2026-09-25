@@ -2,7 +2,7 @@
 
 Pinned decisions (docs/SPEC.md §8, the buildings): the fixture
 (tests/shared/buildings_fixture/, its outcomes in tests/shared/buildings_vectors.json) is a
-synthetic world with ten buildings as the reader hands them over. They include:
+synthetic world with eleven buildings as the reader hands them over. They include:
 - a negative solid that must be reversed and a positive one that must not;
 - centres exactly on the area's west, east and north edges and on a tile's row boundary;
 - a building whose vertex mean and first vertex lie in another tile than its
