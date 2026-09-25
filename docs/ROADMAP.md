@@ -13,9 +13,8 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01EEAeJBE7KpsQsoGUEmhTVm · Routine trig_01LxXVtmJjWGmvzExTFWz4m9 · since 2026-09-25T05:24Z
-Tick: session_01R7sAANf4bkpLp1n8jYopTa · started 2026-09-25T05:26Z
-Last tick: 2026-09-25T04:57Z · main 589c63a · ticks 5
-Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $4.52 (ticks 1–4; tick 5 unread) · builders $19.88 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
+Last tick: 2026-09-25T05:28Z · main 14460ce · ticks 6
+Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $5.71 (ticks 1–5; tick 6 unread) · builders $19.88 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Builder: session_01C1AkkQheFeaoMGMvdomW9k · M1-05, M1-06 · spawned 2026-09-25T04:56Z
 
 **OPEN briefs** (lanes may run at once: no shared file, no dependency):
@@ -34,7 +33,8 @@ passed, GUT 13/13, exit 0). M1-02 `c635411` (DONE, Findings `bdba171`) — full 
 `1f2578e` at tick 3 (pytest 275 passed, GUT 18/18, exit 0). M1-03 `0794554` (DONE, Findings
 `1dbb31e`, `7d94d4c`) — full gate green on `3a3fe0e` at tick 4 (pytest 361 passed, GUT
 18/18, exit 0). M1-04 `2160a3c` (DONE, Findings `93c215d`) — full gate green on `589c63a`
-at tick 5 (pytest 362 passed, GUT 40/40, exit 0).
+at tick 5 (pytest 362 passed, GUT 40/40, exit 0). M1-05 `29e829f` (DONE, Findings `2169791`)
+— full gate green on `14460ce` at tick 6 (pytest 362 passed, GUT 66/66, exit 0).
 
 **Review** (WORKFLOW §Review policy): Tier 1 covers the terrain grid on both sides (the
 pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the manifest's
@@ -51,7 +51,14 @@ pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the man
   config's strictness, how `manifest` reads the terrain description, the `progress`
   keyword), M1-04 Findings 8 (TerrainGrid's extra refusals and check order, no NaN scan,
   no out-of-tree guard in TerrainLoader, `shot.gd`/`shot.sh`'s view and timeout choices,
-  the extension list's `LC_ALL=C sort`).
+  the extension list's `LC_ALL=C sort`), M1-05 Findings 6 and 7 (exposure 0.85, Credits
+  a RichTextLabel for the scroll, the error panel showing the caught refusal through a
+  `Logger`, Controls generated from the InputMap, the camera's numbers, `canvas_items`
+  stretch at 1280 × 720, the sky's ground colours, `shot.gd` rendering `main.tscn`).
+- M1-05 Findings 1, for design: the brief's mutation (c) (the camera out of the tree
+  while the terrain loads, back in the same frame) passes the gate, since Terrain3D looks
+  for the camera at its first physics frame; run c2 (no current camera then) reproduces
+  the harm and fails the gate. The scene keeps the brief's order; H11 wants the timing.
 - M1-03 Findings 7, for design: the pinned stray-tile test fails the folder-reading
   mutation only through the stray tile's unknown id, never through its content.
 - M1-04 Findings 1, for design: H11's fresh-checkout abort (exit 134) did not reproduce;
@@ -119,6 +126,10 @@ Nothing deferred: the inbox is empty.
   `.gitattributes` (brain.md H10).
 - Software screenshots use the Compatibility renderer; Forward+ crashes in software when
   Terrain3D draws (brain.md H12). They are evidence of what is drawn, not of the look.
+- A spawned session's shallow checkout holds a local `main` at an old ref, so the spawn
+  prompt's `git pull` stops on "diverged" (M1-05 Findings 8; tick 6 too). `git fetch
+  --unshallow && git pull --ff-only` fixes it; `checkout -B`/`reset --hard` are refused
+  by auto mode: for design (the spawn prompts).
 
 ## Later
 
