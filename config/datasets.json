@@ -7,6 +7,11 @@
       "edition": "2024",
       "resolution_m": 0.5,
       "attribution": "© swisstopo"
+    },
+    "swissbuildings3d": {
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "edition": "2020",
+      "attribution": "© swisstopo"
     }
   }
 }
