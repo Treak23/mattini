@@ -15,10 +15,11 @@ Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01EEAeJBE7KpsQsoGUEmhTVm · Routine trig_01LxXVtmJjWGmvzExTFWz4m9 · since 2026-09-25T05:24Z
 Tick: session_01X6QWucdq2PdcnnthGwjLX9 · started 2026-09-25T05:39Z
 Last tick: 2026-09-25T05:28Z · main 14460ce · ticks 6
-Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $5.71 (ticks 1–5; tick 6 unread) · builders $19.88 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
-Builder: session_01C1AkkQheFeaoMGMvdomW9k · M1-05, M1-06 · spawned 2026-09-25T04:56Z
+Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $7.00 (ticks 1–6; tick 7 unread) · builders $30.89 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38; M1-05, M1-06's $11.01) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
+Lens: spawning · R1 terrain · spawned 2026-09-25T05:52Z
+Lens: spawning · R1 game · spawned 2026-09-25T05:52Z
 
-**OPEN briefs** (lanes may run at once: no shared file, no dependency):
+**OPEN briefs:** none. The arc's six, all DONE:
 
 | Brief | What | Depends on | Lane |
 |---|---|---|---|
@@ -35,12 +36,31 @@ passed, GUT 13/13, exit 0). M1-02 `c635411` (DONE, Findings `bdba171`) — full 
 `1dbb31e`, `7d94d4c`) — full gate green on `3a3fe0e` at tick 4 (pytest 361 passed, GUT
 18/18, exit 0). M1-04 `2160a3c` (DONE, Findings `93c215d`) — full gate green on `589c63a`
 at tick 5 (pytest 362 passed, GUT 40/40, exit 0). M1-05 `29e829f` (DONE, Findings `2169791`)
-— full gate green on `14460ce` at tick 6 (pytest 362 passed, GUT 66/66, exit 0).
+— full gate green on `14460ce` at tick 6 (pytest 362 passed, GUT 66/66, exit 0). M1-06
+`5c421ca` (DONE, Findings `6fb378d`) — full gate green on `468349c` at tick 7 (pytest 367
+passed, 3 deselected, GUT 69/69, 1641 asserts, exit 0).
 
 **Review** (WORKFLOW §Review policy): Tier 1 covers the terrain grid on both sides (the
 pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the manifest's
 `terrain` block) with `config/world.json` and the transforms; Tier 2 covers the rest
 (gate, camera, UI, look, export, vendoring, credits).
+
+**Review round R1** (opened at tick 7), over `git diff e83a36a..6fb378d` without
+`game/addons/` and `pipeline/uv.lock`, two lenses (at most two builds at once, lesson 20):
+- `terrain` — Tier 1: `config/world.json`, `config/terrain.json`, the shared terrain
+  fixture and vectors, the pipeline's grid and resampling, the lock, provenance and
+  goldens (Hard Rule 5), the origin census (Hard Rule 4), the manifest's `terrain` block,
+  `WorldConfig`, `TerrainGrid`/`TerrainLoader` placement; the seams M1-01↔M1-03,
+  M1-03↔M1-04, M1-02↔M1-04. Rounds until clean.
+- `game` — Tier 2: `tools/gate.sh` and its allowlist, the main scene, camera, pause
+  screen, credits and error panel, the clay shader, `tools/shot.sh`, Terrain3D's vendoring,
+  the export presets and `tools/export.sh`, licence and attribution; the seams
+  M1-02↔M1-05, M1-04↔M1-05, M1-05↔M1-06. One round plus one verification pass over its
+  fixes.
+Reports: `docs/reviews/M1-R1-<lens>.md`. The split and the P0–P3 scale are M0's, kept
+(the supervisor's reversible choice, tick 7): P0 a Hard Rule broken or a gate that
+cannot fail on the harm it names; P1 a defect the owner or the next arc will hit; P2 a
+weakness with no current consumer; P3 clarity. The alternative: one lens per brief pair.
 
 **The close** ships 0.1.0 (SPEC §11): the owner's first look at the village.
 
@@ -55,7 +75,20 @@ pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the man
   the extension list's `LC_ALL=C sort`), M1-05 Findings 6 and 7 (exposure 0.85, Credits
   a RichTextLabel for the scroll, the error panel showing the caught refusal through a
   `Logger`, Controls generated from the InputMap, the camera's numbers, `canvas_items`
-  stretch at 1280 × 720, the sky's ground colours, `shot.gd` rendering `main.tscn`).
+  stretch at 1280 × 720, the sky's ground colours, `shot.gd` rendering `main.tscn`), M1-06
+  Findings 9 (`export.sh` also refusing a Godot other than 4.6.3, the seven template files
+  installed through `.partial` renames, `build/linux` and `build/windows` emptied before
+  export, the export's output not scanned for `ERROR` lines, the manifest read with
+  Python's `json`, `export_presets.cfg` holding only the brief's keys plus `runnable`).
+- M1-06 Findings 1, for the close: `mattini.exe` is Godot's own Windows template,
+  unchanged, 198'144 bytes under GitHub's 100 MiB limit; each `.pck` has 8.3 MiB of room.
+  No file is over, so SPEC §14's open decision on an export over 100 MB stays open; a
+  later Godot's template may cross the limit by itself.
+- M1-06 Findings 2, for design: the brief's mutation (a) shows the missing heights file,
+  not the missing manifest: under `all_resources` both JSON files ship without the
+  include filter, only `village.f32` is left out. The filter is still needed.
+- M1-06 Findings 5–7, the owner's PC: not measured here are the Windows templates path,
+  that the Windows build starts, and that the Linux build starts on EndeavourOS.
 - M1-05 Findings 1, for design: the brief's mutation (c) (the camera out of the tree
   while the terrain loads, back in the same frame) passes the gate, since Terrain3D looks
   for the camera at its first physics frame; run c2 (no current camera then) reproduces
