@@ -198,3 +198,6 @@ the board's; the gate re-run after each rebase: exit 0).
    active camera`, `min_height > max_height`) fails the gate unless the loader avoids it
    or M1-04's third allowlist entry names it. `WARNING` lines (H4's deprecation) are not
    scanned.
+8. **Process slip (BUILD.md §Commits):** the Findings commit `bdba171` was pushed after
+   a rebase that brought one board commit (`7ff6b37`, `docs/ROADMAP.md` only) without
+   re-running the gate first. The gate re-run on the pushed head right after: exit 0.

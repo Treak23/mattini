@@ -1,5 +1,5 @@
 # Brief: M1-04 — Terrain3D in the game: every height on its own vertex
-Status: OPEN
+Status: DONE (2160a3c)
 
 Written in the design realm; executed by one fresh executor session. Executor rules:
 `docs/roles/BUILD.md`.
@@ -184,3 +184,116 @@ importing heights with NaN; a camera or main-scene change (M1-05's); changing `c
 
 ## Findings (executor writes)
 
+Executor session, 2026-09-25. Code commit `2160a3c` (rebased onto M1-03's commits; the gate
+re-run after the rebase: exit 0).
+
+1. **For design first: H11's fresh-checkout abort did not reproduce here.** With the
+   extension-list step removed (the one `step` line, saved diff), a fresh worktree's gate
+   exits **0**, not 134: `godot import` printed no `Aborted` and its `.godot/` got an
+   `extension_list.cfg` from Godot itself. Also tried, each in a fresh worktree of this
+   commit with no `game/.godot`: a bare first `--import`, three times with and three
+   times without `XDG_DATA_HOME` (all exit 0); a first GUT run and a first `--editor
+   --quit` (exit 0; a first `--check-only` exits 1, H9's class cache, not an abort); the
+   zip's original `icons/*.import` in place of Godot's rewrite (exit 0, then 0); the
+   whole zip addon, editor plugin files included but not enabled (exit 0, then 0). So the
+   gate row "fails at `godot import` (exit 134)" is not met: the step is built and kept
+   as decided (it writes what Godot writes, `res://addons/terrain_3d/terrain.gdextension`),
+   but nothing here shows that it is needed. What differed in design's measurement is not
+   known; H11's first bullet wants a re-measure. The fresh-checkout run with the step:
+   exit 0 in 30 s.
+   - does NOT prove: the owner's first editor start on a fresh clone (not measured with a
+     display).
+2. **Pinned copies:** `cmp` of `test_terrain_grid.gd`, `test_terrain_loader.gd` and
+   `test_terrain3d_vendored.gd` against `docs/briefs/pinning/M1-04/game/tests/`: all
+   identical.
+3. **Vendoring.** The zip from the store URL: SHA-256
+   `a071850250ec5e596aa54da61c01d75768774eb379ee997584d426a45f4884a2`, as the brief says.
+   `sha256sum` of the eight listed files in `game/addons/terrain_3d/`: all eight equal the
+   brief's list. 48 files, 15 MB: the eight, `icons/` (20 `.svg`, byte-identical to the
+   zip, and 20 `.svg.import`). No text file has a CR, so `.gitattributes`' `eol=lf` leaves
+   every byte as in the zip. Godot 4.6.3's first import rewrote the 20 `.svg.import` files
+   by adding **six** lines each (the brief says four keys): `compress/uastc_level=0`,
+   `compress/rdo_quality_loss=0.0` and `process/channel_remap/red|green|blue|alpha`;
+   committed as Godot wrote them. A second `--import`: exit 0, `git status` empty. The
+   editor plugin is neither vendored nor in `editor_plugins/enabled` (pinned test).
+   - does NOT prove: that the Windows binaries load (no Windows here).
+4. **The gate on the pushed head:** exit 0. pytest 362 passed, 3 deselected; GUT 12
+   scripts, 40 tests, 1367 asserts, all passed. 60 `ERROR` lines, each excepted: 16 are
+   `TerrainGrid: user://test_…` (the pinned and my refusal tests), the rest M1-02's two
+   WorldConfig entries. H4's deprecation warning prints once, in the loader tests'
+   `before_all`, so no test is charged with it and the gate does not scan `WARNING` lines;
+   no test of mine adds a Terrain3D in a test body.
+5. **Mutation proofs.** Each a full `tools/gate.sh` in its own fresh worktree of this
+   commit before the rebase (`c7c9ec2`, the same game code), made with `git worktree add`
+   and removed after the run, two at a time. The unmutated run: exit 0.
+
+   | Run | Mutation | Exit, step | Evidence | Owner-visible harm it reproduces |
+   |---|---|---|---|---|
+   | a | the grid image alone imported at the grid's own position (`Vector3(x_min, 0, z_min)`) | 1, `gut` | `test_heights_read_back_on_their_own_vertices`: `[0.0] expected to equal [600.0625]` (north-west corner); also `test_terrain3d_settings_follow_the_grid` (regions `[(0,0)]`) and the holes test | the village drawn 1 km off its coordinates (the fixture's shift; 48 m in design's village measurement) |
+   | b | `collision_mode` line removed | 1, `gut` | 13 × `ERROR: Condition "min_height > max_height" is true.` in the gate's error lines; also `[1] expected to equal [0]: no collision in M1` | a console full of engine errors, and collision the camera does not need |
+   | c | `world_background` line removed | 1, `gut` | `test_terrain3d_settings_follow_the_grid`: `[1] expected to equal [0]: world background none: no invented ground` | an invented flat ground plane at 0 m around the village (Hard Rule 2) |
+   | d | the SHA-256 comparison disabled (`if false and …`) | 1, `gut` | `test_heights_files_that_do_not_match_are_refused`: `a file with one bit changed is refused` fails | a damaged or stale heights file drawn as if it were the pipeline's |
+   | e | the axes comparison disabled | 1, `gut` | only my `test_a_rotated_world_is_refused_for_its_axes` fails. The pinned `test_a_rotated_world_is_refused` **passes**: the columns check refuses the rotated grid too (`do not fit lv95_box at 0.5 m (-22.0 × 41.0)`), and the pinned test accepts any refusal | a rotated world refused with the wrong reason; for every proper rotation but the owner's, the box no longer fits, so no rotated grid is drawn either way |
+   | f | the `TerrainGrid: user://test_` allowlist entry removed | 1, `gut` | GUT: 40 passed, `All tests passed!`; the gate: `error lines in the output: ERROR: TerrainGrid: user://test_terrain_grid/…` | — (the entry is needed; without it the refusal tests' own lines fail the gate) |
+   | g | `control.fill(hole)` removed | 1, `gut` | `test_vertices_of_the_regions_outside_the_grid_are_holes`: `one vertex west of the grid: a hole` | an invented flat ground at 0 m over the rest of each 1 km region |
+   | h | the lattice check disabled | 1, `gut` | `test_a_grid_off_the_vertex_lattice_is_refused`: `a grid between the vertices is refused` | heights a quarter metre off their vertices |
+   | i2 | the world-origin comparison removed | 1, `gut` | my `test_a_world_from_another_manifest_is_refused` fails (the grid is accepted) | a grid placed with another manifest's origin: 1 km off in the test |
+   | j | the whole-number check removed | 1, `gut` | my `test_a_fractional_column_count_is_refused` fails; the grid is still refused, by the columns check (`(41 × 24) do not fit … (41.5 × 24.0)`) | a refusal with a less precise reason |
+
+   - does NOT prove: that the heights look right (the next item is evidence only). Runs e
+     and j: two of TerrainGrid's checks are backed by the columns check, so only my own
+     tests with the refusal's reason see them go (lesson 10).
+6. **Software screenshots** (evidence, not a gate; Compatibility on llvmpipe under Xvfb,
+   `tools/shot.sh`, each run 7 s for the fixture and 22 s for the three village views):
+   - `docs/briefs/shots/M1-04-fixture-overhead.jpg` (`2601025,1199983.75,14,0,89`) and
+     `M1-04-fixture-oblique.jpg` (`2601016,1199979,8,45,30`): the 20 × 11.5 m fixture is
+     the only thing drawn, with the 1600 m and 1610 m contours; everything around it is
+     the sky's neutral ground, so the holes and "no world background" show.
+   - After `download terrain` (6 tiles, 6 fetches) and `terrain` (`village.f32`
+     `b6334c1f…411a`, SPEC §8's value): `M1-04-start.jpg`, `M1-04-overview.jpg` and
+     `M1-04-kirchplatz.jpg`, design's three views. Start and overview match design's
+     reference shots view for view: the valley, the contours every 10 m, the stronger
+     100 m ones, the terrain's edge against the neutral ground. The clay constants are
+     design's prototype, unchanged.
+   - does NOT prove: that it renders or looks right in Forward+ on the owner's PC.
+7. **The real village, headless** (a probe script, not committed): `TerrainGrid` read the
+   4001 × 6001 grid in 975 ms (x_min 0.0, z_min −2000.0); `TerrainLoader.create` took
+   5.5 s; six regions, (0,−2) to (1,0); Godot's static memory peak 831 MB; 7.0 s for the
+   whole run. 2000 random vertices read back from Terrain3D equal the grid's heights
+   exactly (worst difference 0.0 m). Kirchplatz 1 (E 2623825.25, N 1096489.75): H 1617.06 m.
+   For M1-05: loading the village is a 5–6 s wait on start.
+8. **Choices inside the brief's scope** (reversible):
+   - TerrainGrid also refuses: a WorldConfig whose origin or height offset differs from
+     the manifest's own world block (run i2); an empty `area`; an empty attribution; a
+     `sha256` that is not 64 hex digits. The heights-file refusals (missing, wrong size,
+     wrong SHA-256) also name `python -m mattini terrain`, following SPEC §10's "errors on
+     screen" rule; "no terrain built" names `download terrain` then `terrain`, as the
+     brief says. TerrainGrid does not scan the heights for NaN (24 million floats in
+     GDScript would take seconds): the SHA-256 match ties the file to the pipeline, which
+     refuses non-finite values.
+   - The checks run in this order: world given, manifest readable, terrain built, built
+     for this world, the world's origin and axes, the block's fields, the placement (fit,
+     then lattice), the heights file (path, size, SHA-256).
+   - TerrainLoader has no guard for a parent outside the tree: a test of such a guard
+     would print an ERROR line the one-entry allowlist cannot except. Without the tree,
+     `material` is null and the script stops with a `SCRIPT ERROR`: the first
+     `shot.gd` run did exactly that from `_initialize` (the root enters the tree only after
+     it returns), and Godot then kept running for 5 minutes until killed. Hence `shot.gd`
+     waits one frame before it builds anything, and `shot.sh` runs Godot under `timeout`
+     (`SHOT_TIMEOUT`, default 300 s) and fails unless every `<name>.jpg` was written
+     (H2), after deleting stale ones first.
+   - `shot.gd`: a view over no terrain (NaN height) ends the run naming the view, rather
+     than inventing a ground height; the pitch is degrees below the horizon and the
+     bearing is clockwise from north (design's view strings read that way); camera near
+     0.5 m, far 20 km; shadows to 3000 m; filmic tone mapping; the sky's ground colours are
+     greys 0.42 and 0.62; 10 frames before each capture. Every capture came out 1280 × 720
+     (it is resized only if not).
+   - The gate's `extension_list` and the hook's block write the list with `LC_ALL=C sort`;
+     the hook's copy is soft-failing like its other steps and was not run in this session
+     (the hook runs at container start).
+   - My own tests: `game/tests/test_terrain_grid_placement.gd` (the fixture control, a
+     world from another manifest, a fractional count, a rotated world refused for its
+     axes).
+   - Compile-forced files outside the Scope list, named in the commit: the `.uid` files
+     Godot writes for `terrain_grid.gd`, `terrain_loader.gd`, `terrain_clay.gdshader` and
+     `shot.gd`, so that imports leave the tree clean.
