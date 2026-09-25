@@ -7,8 +7,17 @@ extends GutTest
 ## carries the engine and the data together (GitHub's 100 MB limit, docs/RELEASE.md §C).
 ## The generated assets and Terrain3D's licence ship; the tests and GUT do not. The Windows
 ## preset does not rewrite the executable's resources, which would need rcedit.
+##
+## Brief M2-02 (M1 R1 G-02, G-06): both presets' include and exclude filters are pinned
+## exactly, since a narrower filter still holds the texts a substring check looks for
+## ("assets/generated/*.json" contains "assets/generated/*") and ships a build without its
+## heights; godot-cpp's licence ships for the credits.
 
 const PRESETS := "res://export_presets.cfg"
+const INCLUDE_FILTER := (
+	"assets/generated/*, addons/terrain_3d/LICENSE.txt, " + "credits/godot-cpp-LICENSE.txt"
+)
+const EXCLUDE_FILTER := "tests/*, addons/gut/*"
 
 
 func _presets() -> Dictionary:
@@ -47,11 +56,9 @@ func test_each_preset_ships_the_data_and_the_licence_but_not_the_tests() -> void
 		assert_eq(config.get_value(p["preset"], "platform"), name, "%s platform" % name)
 		assert_eq(config.get_value(p["preset"], "export_path"), paths[name], "%s path" % name)
 		var include: String = config.get_value(p["preset"], "include_filter", "")
-		assert_string_contains(include, "assets/generated/*")
-		assert_string_contains(include, "addons/terrain_3d/LICENSE.txt")
+		assert_eq(include, INCLUDE_FILTER, "%s include filter, exactly" % name)
 		var exclude: String = config.get_value(p["preset"], "exclude_filter", "")
-		assert_string_contains(exclude, "tests/*")
-		assert_string_contains(exclude, "addons/gut/*")
+		assert_eq(exclude, EXCLUDE_FILTER, "%s exclude filter, exactly" % name)
 		assert_eq(config.get_value(p["options"], "binary_format/architecture"), "x86_64")
 		assert_eq(config.get_value(p["options"], "binary_format/embed_pck"), false, "pck beside")
 	var windows: Dictionary = _presets().get("Windows Desktop", {})

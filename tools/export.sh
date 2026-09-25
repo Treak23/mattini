@@ -13,9 +13,19 @@
 #      release downloads are refused in cloud containers, brain.md H6), verified against
 #      the SHA-256 pinned below; a Godot other than 4.6.3 is refused, as its templates
 #      would not be these;
-#   4. exports both presets of game/export_presets.cfg, each into a fresh folder;
+#   4. exports both presets of game/export_presets.cfg, each into a fresh folder, and
+#      fails naming any ERROR or SCRIPT ERROR line in Godot's output (Godot has exited 0
+#      on errors, brain.md H1, H2), or a file the export did not write;
 #   5. lists every file in build/ with its size, and fails naming any file over 100 MiB
-#      (104'857'600 bytes, GitHub's file limit: docs/RELEASE.md §C).
+#      (104'857'600 bytes, GitHub's file limit: docs/RELEASE.md §C);
+#   6. starts the Linux build headless for 300 frames (build/linux/mattini.x86_64
+#      --headless --quit-after 300, with user:// in a scratch folder, so the owner's is not
+#      touched), and requires its startup line
+#      "mattini <version>: terrain <area> loaded, <columns> x <rows> vertices at <spacing> m"
+#      with game/project.godot's version and the manifest's values, exit 0 and no ERROR line
+#      (M1 review G-02: an export without its terrain passed every step before this one).
+#      It needs Linux, and fails on another system. Nothing here starts the Windows build
+#      (the owner's PC is its test).
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -47,6 +57,9 @@ PRESETS=(
 	"Windows Desktop|build/windows/mattini.exe"
 )
 LIMIT_BYTES=104857600
+# Step 6: the build is killed if it has not quit after this many seconds (it took 6.3 s in
+# the M1 review, 5.3 s in brief M2-02's run).
+START_TIMEOUT_S=300
 
 SCRATCH="$(mktemp -d)"
 trap 'rm -rf "$SCRATCH"' EXIT
@@ -58,6 +71,41 @@ fail() {
 
 step() {
 	echo "== export: $1"
+}
+
+# Copies the output file $1 to $2 with ANSI colours removed, and prints it.
+clean_output() {
+	sed 's/\x1b\[[0-9;]*[A-Za-z]//g' "$1" > "$2"
+	cat "$2"
+}
+
+# The lines of the cleaned output $1 that Godot writes for an error; grep -a, so a NUL byte
+# in the output cannot turn the scan into "binary file matches" (M0 review G-07).
+error_lines() {
+	grep -a -E '^(ERROR|SCRIPT ERROR)' "$1" || true
+}
+
+# The startup line game/scripts/main.gd prints once the terrain is loaded: the version from
+# game/project.godot, the area, columns, rows and spacing from the manifest's terrain
+# block, the spacing written as main.gd writes it (at most two decimals, no trailing zeros).
+expected_startup_line() {
+	"${UV_RUN[@]}" python -c '
+import json, sys
+
+terrain = json.load(open(sys.argv[1], encoding="utf-8"))["terrain"]
+section, version = "", None
+for line in open(sys.argv[2], encoding="utf-8"):
+    line = line.strip()
+    if line.startswith("["):
+        section = line
+    elif section == "[application]" and line.startswith("config/version="):
+        version = json.loads(line.split("=", 1)[1])
+if not isinstance(version, str) or not version:
+    sys.exit(sys.argv[2] + " has no application/config/version")
+spacing = ("%.2f" % terrain["spacing_m"]).rstrip("0").rstrip(".")
+fields = (version, terrain["area"], terrain["columns"], terrain["rows"], spacing)
+print("mattini %s: terrain %s loaded, %d x %d vertices at %s m" % fields)
+' "$MANIFEST" game/project.godot
 }
 
 # Godot's templates folder for this version (Linux, or Windows under Git Bash).
@@ -118,9 +166,15 @@ for entry in "${PRESETS[@]}"; do
 	rm -rf "$folder"
 	mkdir -p "$folder"
 	echo "-- $preset -> $path"
+	status=0
 	"$GODOT" --headless --path game --export-release "$preset" "$ROOT/$path" \
-		|| fail "Godot's export of $preset failed (see above)"
-	# Godot has exited 0 on errors before (brain.md H1, H2): the files must be there.
+		> "$SCRATCH/export.raw" 2>&1 || status=$?
+	clean_output "$SCRATCH/export.raw" "$SCRATCH/export.log"
+	# Godot has exited 0 on errors before (brain.md H1, H2): its error lines fail the step,
+	# and the files must be there.
+	errors="$(error_lines "$SCRATCH/export.log")"
+	[ -z "$errors" ] || fail "Godot's export of $preset printed error lines:"$'\n'"$errors"
+	[ "$status" -eq 0 ] || fail "Godot's export of $preset failed, exit $status (see above)"
 	for file in "$path" "${path%.*}.pck"; do
 		[ -s "$file" ] || fail "the export of $preset did not write $file"
 	done
@@ -136,5 +190,21 @@ done < <(find build -type f -print0 | LC_ALL=C sort -z)
 if [ "${#over[@]}" -gt 0 ]; then
 	fail "over 100 MiB ($LIMIT_BYTES bytes), which GitHub refuses (docs/RELEASE.md §C): ${over[*]}"
 fi
+
+step "6. the Linux build starts"
+[ "$(uname -s)" = "Linux" ] \
+	|| fail "step 6 starts the Linux build, which needs Linux; this is $(uname -s): run tools/export.sh on Linux"
+expected="$(expected_startup_line)" || fail "no startup line to expect (see above)"
+echo "expecting: $expected"
+status=0
+XDG_DATA_HOME="$SCRATCH/data" timeout --kill-after=10 "$START_TIMEOUT_S" \
+	build/linux/mattini.x86_64 --headless --quit-after 300 > "$SCRATCH/start.raw" 2>&1 || status=$?
+clean_output "$SCRATCH/start.raw" "$SCRATCH/start.log"
+errors="$(error_lines "$SCRATCH/start.log")"
+[ -z "$errors" ] || fail "the Linux build printed error lines:"$'\n'"$errors"
+[ "$status" -eq 0 ] || fail "the Linux build exited $status (124: still running after $START_TIMEOUT_S s)"
+grep -a -q -x -F -e "$expected" "$SCRATCH/start.log" \
+	|| fail "the Linux build did not print its startup line: $expected"
+echo "started: $expected"
 
 echo "== export: done in ${SECONDS} s"
