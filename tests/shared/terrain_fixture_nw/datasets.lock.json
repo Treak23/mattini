@@ -1,0 +1,16 @@
+{
+  "datasets": {
+    "swissalti3d": {
+      "collection": "ch.swisstopo.swissalti3d",
+      "edition": "2024",
+      "resolution_m": 0.5,
+      "tiles": {
+        "2698-1101": {
+          "file": "source.f32",
+          "sha256": "70fd134e3b677aa9ed6156aeb7deff6d86dd60afcfd57cdba4daff99e3a499d7"
+        }
+      }
+    }
+  },
+  "schema": 1
+}

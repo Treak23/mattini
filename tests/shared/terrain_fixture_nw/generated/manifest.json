@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "terrain": {
+    "area": "fixture_nw",
+    "columns": 13,
+    "file": "terrain/fixture_nw.f32",
+    "format": "float32-le",
+    "lv95_box": {
+      "e_max": 2698988.0,
+      "e_min": 2698964.0,
+      "n_max": 1101034.0,
+      "n_min": 1101008.0
+    },
+    "rows": 14,
+    "sha256": "31096e50ec9127310a807c1180a749fcc28b646870e618e8f99d0b7b02fd55a1",
+    "source": {
+      "attribution": "© swisstopo",
+      "collection": "ch.swisstopo.swissalti3d",
+      "dataset": "swissalti3d",
+      "edition": "2024",
+      "resolution_m": 0.5,
+      "tiles": [
+        {
+          "sha256": "70fd134e3b677aa9ed6156aeb7deff6d86dd60afcfd57cdba4daff99e3a499d7",
+          "tile": "2698-1101"
+        }
+      ]
+    },
+    "spacing_m": 2.0,
+    "world_sha256": "f5bef4818256f23b1e5dc6f99957ccafd4c83a075558d16ceab139c53adb2a40"
+  },
+  "world": {
+    "areas": {
+      "fixture_nw": {
+        "e_max": 2698988.0,
+        "e_min": 2698964.0,
+        "n_max": 1101034.0,
+        "n_min": 1101008.0
+      }
+    },
+    "axes": {
+      "x": "+e",
+      "y": "+h",
+      "z": "-n"
+    },
+    "crs": {
+      "horizontal": "EPSG:2056",
+      "vertical": "EPSG:5728"
+    },
+    "height_offset_m": -12.25,
+    "origin_lv95": {
+      "e": 2700000.0,
+      "n": 1100000.0
+    },
+    "schema": 1
+  },
+  "world_sha256": "f5bef4818256f23b1e5dc6f99957ccafd4c83a075558d16ceab139c53adb2a40"
+}

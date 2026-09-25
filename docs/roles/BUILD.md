@@ -3,8 +3,8 @@
 **Spawn words: `ultracode build`** ("ultracode" must come from the owner's message or the
 spawning session's prompt). Fallback:
 
-> ultracode. Run git fetch origin main && git checkout main && git pull origin main —
-> you work on main and push to main, never the session's scratch branch. Then read
+> ultracode. Run git fetch --unshallow origin main || git fetch origin main, then git
+> checkout main && git pull --ff-only origin main — you work on main and push to main, never the session's scratch branch. Then read
 > CLAUDE.md, docs/LESSONS.md and docs/roles/BUILD.md, and work the OPEN briefs in
 > docs/briefs/ in ascending order — or, when this prompt names briefs, those and only
 > those — under the executor rules in BUILD.md. For each: work until its gates are

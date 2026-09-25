@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "areas": {
+    "fixture_nw": {
+      "expected_sha256": {
+        "2": "31096e50ec9127310a807c1180a749fcc28b646870e618e8f99d0b7b02fd55a1"
+      },
+      "spacing_m": 2.0
+    }
+  }
+}

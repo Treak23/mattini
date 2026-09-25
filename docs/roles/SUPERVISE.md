@@ -10,13 +10,15 @@ arc.
 waker (`create_session`, model `claude-opus-5-5`, the rest of
 §Builders *The spawn*, title `Waker · <arc>`) with:
 
-> waker. Run git fetch origin main && git checkout main && git pull origin main, then read
-> docs/roles/SUPERVISE.md §The waker and follow it for the arc on the board in docs/ROADMAP.md.
+> waker. Run git fetch --unshallow origin main || git fetch origin main, then git checkout
+> main && git pull --ff-only origin main, then read docs/roles/SUPERVISE.md §The waker and
+> follow it for the arc on the board in docs/ROADMAP.md.
 
 The waker spawns each tick the same way, titled `Tick · <arc> · <UTC>`, with:
 
-> tick. Run git fetch origin main && git checkout main && git pull origin main, then read
-> docs/roles/SUPERVISE.md and do one tick (§The tick).
+> tick. Run git fetch --unshallow origin main || git fetch origin main, then git checkout
+> main && git pull --ff-only origin main, then read docs/roles/SUPERVISE.md and do one tick
+> (§The tick).
 
 **Model: the newest Opus.** Never Fable. **No production code.**
 

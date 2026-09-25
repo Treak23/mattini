@@ -11,6 +11,7 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-09-25 · owner's word, at M2 planning · M2 · how is M2 run? → in one session, "ultracode design … do everything in this session here, no spawning of other worker, all just opus 5.5 ultracode": design, build, review and close in the one Opus 5.5 session, with in-session workflow agents and no waker, ticks, builder or lens sessions; so DESIGN.md rule 5 (no production code by design), WORKFLOW §Supervision and SUPERVISE.md do not apply to M2 (WORKFLOW §Rules about rules 2); the briefs, pinning tests, gates, review and release record stay
 2026-09-25 · design · M1 close · the builders' reversible choices (M1-01 F6, M1-02 F6, M1-03 F6, M1-04 F8, M1-05 F6–7, M1-06 F9) → all kept; M1-06 F9's unscanned export output joins G-02's fix (D13)
 2026-09-25 · design · M1 close · a fix tranche before 0.1.0? → no: 0.1.0 ships now; T-01's real-data half, G-02 and G-08 were done by hand at the close; the rest go into M2's first briefs (D14)
 2026-09-25 · design · M1 close · `*-previous.*` cannot work (a `.pck` is found by its executable's name, Terrain3D's library has a fixed name) → `dist` holds `windows/` and `linux/` (current, fixed names) and `mattini-<version>/` (the last three kept; the one before the current is the rollback), a README and `* binary` (D15; SPEC §11, RELEASE.md §C)

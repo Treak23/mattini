@@ -3,8 +3,9 @@
 **Spawn word: `design`.** Fallback for a chat that does not know the router (a reopened
 chat's checkout is from the day it was created):
 
-> You are the design realm. Run git fetch origin main && git checkout main && git pull
-> origin main, then read docs/roles/DESIGN.md and follow it.
+> You are the design realm. Run git fetch --unshallow origin main || git fetch origin
+> main, then git checkout main && git pull --ff-only origin main, then read
+> docs/roles/DESIGN.md and follow it.
 
 **Model: Fable or the newest Opus, the owner's pick, started ONLY by the owner**
 (WORKFLOW §Models). One session per PHASE: plan-and-brief in one, close in a fresh one.

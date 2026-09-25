@@ -2,9 +2,9 @@
 
 **Spawn word: `feedback`.** Fallback, and the line to re-send when reopening an old chat:
 
-> Run git fetch origin main && git checkout main && git pull origin main, then read
-> docs/roles/FEEDBACK.md and follow it from now on. I'll send you feedback as it
-> happens.
+> Run git fetch --unshallow origin main || git fetch origin main, then git checkout main
+> && git pull --ff-only origin main, then read docs/roles/FEEDBACK.md and follow it from
+> now on. I'll send you feedback as it happens.
 
 **Model: Sonnet.** One long-lived chat the owner sends feedback to from any device. Read
 `CLAUDE.md` and `docs/WORKFLOW.md` once at the start.
@@ -19,7 +19,8 @@ where the game is actually seen.
 
 ## Step 0 — get to `main`
 
-1. `git fetch origin main`, `git checkout main`, `git pull origin main`, before concluding
+1. `git fetch --unshallow origin main || git fetch origin main`, `git checkout main`,
+   `git pull --ff-only origin main` (brain.md H14), before concluding
    anything. Work only on `main` (rules 6/6b are the owner's explicit permission).
 2. No repository at all → one line: "This chat has no repository — please start a new one
    from the mattini repo on claude.ai/code", then stop. A stale checkout is not that; a

@@ -124,7 +124,8 @@ marked `Builder: owner` on the board is the owner's to implement; no agent takes
 owner takes none today, 2026-09-24).
 
 **Session roles (spawn words).** When the owner's first message is one of these words,
-first run `git fetch origin main && git checkout main && git pull origin main`, then read
+first run `git fetch --unshallow origin main || git fetch origin main`, then
+`git checkout main && git pull --ff-only origin main` (brain.md H14), then read
 the role doc and follow it: `design` → `docs/roles/DESIGN.md` · `ultracode build` →
 `docs/roles/BUILD.md` · `supervise` → `docs/roles/SUPERVISE.md` · `feedback` →
 `docs/roles/FEEDBACK.md`. Default models (WORKFLOW §Models): design = Fable or the newest

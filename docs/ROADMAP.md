@@ -6,23 +6,35 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-No arc is running. **Next: M2 Buildings**, planned in a fresh `design` session.
+**Arc M2 — Buildings: running since 2026-09-25**, in this one session: design, build,
+review and close by the one Opus 5.5 session with in-session workflow agents, and no
+waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
+
+| Brief | What | Depends on | Status |
+|---|---|---|---|
+| M2-01 | M1's residue, the pipeline half (T-01, T-03 to T-08) | none | OPEN |
+| M2-02 | M1's residue, the game and tools half (T-02, G-01 to G-07) | none | OPEN |
+| M2-03 | The building inputs: sheets, lock, download | M2-01, the owner's source | waits on the owner |
+| M2-04 | The village buildings from the sheets | M2-03 | waits on the owner |
+| M2-05 | The buildings in the game | M2-02, M2-04 | waits on the owner |
+
+**Asked of the owner at M2 planning (2026-09-25), waiting:**
+1. The swissBUILDINGS3D access route (SPEC §14): (a) 3.0, 2020 edition, per map sheet,
+   design's recommendation; (b) 2.0, 2024-05, per sheet (DXF); (c) the 14 GB national
+   3.0 file.
+2. An export over 100 MiB (D16): design recommends leaving it open until M5; the
+   buildings add about 3 to 6 MB and there are 8.3 MiB of room.
+3. Where the session pushes: `main` as usual, or the session branch only; and `dist` for
+   0.2.0.
+4. A committed real swisstopo sample (SPEC §14): the 45.7 KB buildings sheet 1328-33 as
+   a reader fixture; design recommends yes.
 
 **Last shipped:** 0.1.0, 2026-09-25: the village terrain at 0.5 m with a free-fly camera
 (`docs/releases/v0.1.0.md`; `dist` `2e81625`, built from `main` `05f86ef`).
 
 Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0; the close in full is
-`docs/history/ARCS.md` §M1.
-
-**For M2 planning** (from the M1 close):
-- M1's review residue, fifteen findings with the fix named, is M2's first work
-  (`docs/history/ARCS.md` §M1, the carry-over table). T-01 and T-02 need design data: the
-  expected SHA-256 of the village at 1 m and 2 m, a build test from 2 × 2 tiles, a second
-  game fixture.
-- Ask the owner how builds reach them once a file passes 100 MiB (D16): the `.pck` has
-  8.3 MiB of room, and M2's buildings go into it.
-- The spawn prompts' sync line (D21; brain.md H14).
-- The owner's first look at 0.1.0 arrives through `feedback`.
+`docs/history/ARCS.md` §M1. Its fifteen carried findings are M2-01 and M2-02; the spawn
+prompts' sync line (D21) is fixed at M2 planning (brain.md H14).
 
 **Parked questions:** none.
 
@@ -31,12 +43,12 @@ Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0; the close in full is
 - Licence of mattini's own code — OPEN.
 - Weather: simulated or real data — OPEN (M6).
 - Backdrop and larger-area extents and resolutions — OPEN (M5).
-- Access route for swissBUILDINGS3D (one 14.1 GB national file) — OPEN (M2); for
-  swissTLM3D (national only) — OPEN (M3).
-- A committed sample of real swisstopo data as a test fixture — OPEN (M1 used a synthetic
-  fixture).
-- An export over 100 MB on `dist` — OPEN; nothing was over at 0.1.0; asked at M2 planning
-  (D16).
+- Access route for swissBUILDINGS3D — asked at M2 planning (above); for swissTLM3D
+  (national only) — OPEN (M3).
+- A committed sample of real swisstopo data as a test fixture — asked at M2 planning
+  (above).
+- An export over 100 MB on `dist` — asked at M2 planning (above); nothing was over at
+  0.1.0 (D16).
 - Game type — OPEN (later).
 
 ## Next, in order (confirmed by the owner, 2026-09-24)
@@ -44,7 +56,7 @@ Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0; the close in full is
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0
 and M1 are closed.
 
-1. M2 Buildings — ARC, next
+1. M2 Buildings — ARC, running
 2. M3 Surfaces and trees — ARC
 3. M4 Sun cycle — ARC
 4. M5 Scale up — ARC

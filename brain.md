@@ -2,8 +2,9 @@
 
 Orientation for any session. Current as of **2026-09-25 — version 0.1.0 shipped at the
 close of arc M1 (Terrain): the village terrain at 0.5 m in Terrain3D, a free-fly camera, a
-pause screen with the credits; builds on the `dist` branch. Next: arc M2 (Buildings), not
-yet planned** (update this header when a phase closes). `CLAUDE.md` (rules) and
+pause screen with the credits; builds on the `dist` branch. Arc M2 (Buildings) is running,
+planned, built and closed in one session by the owner's word (RULINGS 2026-09-25)**
+(update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
 ## 1. WHAT
@@ -41,12 +42,10 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-M2 Buildings, planned in a fresh `design` session. Its first briefs carry M1's review
-residue, fifteen findings with the fix named (`docs/history/ARCS.md` §M1, the carry-over
-table). It asks the owner how builds reach them once a file passes GitHub's 100 MiB limit
-(the `.pck` has 8.3 MiB of room; D16) and the access route for swissBUILDINGS3D, and it
-fixes the spawn prompts' sync line (H14). The owner's first look at 0.1.0 comes back
-through `feedback`. The board is the live version.
+M2 Buildings is running (the board). M2-01 and M2-02 carry M1's review residue; M2-03 to
+M2-05 bring swissBUILDINGS3D's buildings into the pipeline and the game, once the owner
+has chosen the access route. The owner's first look at 0.1.0 comes back through
+`feedback`. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -172,7 +171,9 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   origin main` fast-forwards (M1-05 Findings 8; the M1 close, where the old ref was the
   repository's first commit). `git checkout -B main origin/main` was refused by the
   auto-mode classifier once and accepted once. Fetch `origin main` by name: a plain fetch
-  of every branch also pulls `dist`'s builds.
+  of every branch also pulls `dist`'s builds. Since M2 planning every spawn prompt and
+  CLAUDE.md's spawn-word line read `git fetch --unshallow origin main || git fetch origin
+  main`, then `git checkout main && git pull --ff-only origin main` (D21).
 - **H15 — Exports (measured at the M1 close, 2026-09-25).** The executables are Godot's
   release templates unchanged: the Windows one is 104'659'456 bytes, 198 KB under GitHub's
   100 MiB file limit, so a later Godot's template may cross it alone. The release template

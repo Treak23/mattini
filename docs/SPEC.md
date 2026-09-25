@@ -179,8 +179,10 @@ screen is generated from it. From M1 its top level is exactly `schema`, `terrain
 **The terrain grid (M1; designed at M1 planning, 2026-09-25).** Tier 1 territory: it
 places heights in the world (WORKFLOW §Review policy).
 
-- *Config:* `config/terrain.json`, `{"schema": 1, "areas": {"village": {"spacing_m":
-  0.5}}}`: one area in M1; spacing 0.5, 1 or 2 m (the source is 0.5 m).
+- *Config:* `config/terrain.json`, `{"schema": 1, "areas": {"village":
+  {"expected_sha256": {"0.5": …, "1": …, "2": …}, "spacing_m": 0.5}}}`: one area, which is
+  also the area the download, the lock and the buildings serve (M2-01, M1 R1 T-06);
+  spacing 0.5, 1 or 2 m (the source is 0.5 m); the expected output per spacing (below).
 - *Inputs:* the tiles listed in the download's `provenance.json` only (D9), refused
   unless its edition, resolution and tile list match the config; every file's SHA-256
   equal to the lock's; every tile where its id says (EPSG:2056, 2000 × 2000 pixels of
@@ -215,7 +217,23 @@ places heights in the world (WORKFLOW §Review policy).
   `python -m mattini terrain` builds it and rewrites the manifest; `manifest` refuses a
   built terrain whose `world_sha256`, spacing, edition, resolution or heights file no
   longer match, naming `python -m mattini terrain` (a changed height offset would
-  otherwise lift or sink the world, Hard Rule 4).
+  otherwise lift or sink the world, Hard Rule 4). From M2 it also refuses a `source` that
+  is not exactly the datasets config's attribution, collection, edition and resolution
+  and, in order, the tiles covering the area with the SHA-256s the lock pins (exact key
+  sets; M1 R1 T-03, T-04).
+- *The expected output (M2 planning, 2026-09-25; lesson 38):* the SHA-256 of every
+  heights file the configured area can be built to is design data in
+  `config/terrain.json`, keyed by spacing as swisstopo writes it (`"0.5"`, `"1"`, `"2"`).
+  The village: 0.5 m `b6334c1f…` (above), 1 m
+  `71bd4f174dfc3d07a3becace073c62bdf6b5cc010072a5e483a484210e8bc333` (24'020'004 bytes),
+  2 m `d6c1d558fee28c91472f2fea9c5db06d9b74480dd22f77554bf7037beec794ce` (6'010'004 bytes),
+  each computed two independent ways (the pipeline's code and an exact area-overlap
+  implementation that shares none of it). `terrain` compares its output with the value
+  for its spacing before writing anything and refuses a difference, naming both;
+  `manifest` refuses any other file. So the owner's switch to 1 or 2 m (§7) stays a
+  config change, and a machine or a code change that computes other heights says so
+  itself (M1 R1 T-01). A gate test builds a terrain from 2 × 2 synthetic tiles cut by
+  its area, pinned to exact bytes at 2 m and 0.5 m.
 - *The game:* `TerrainGrid` reads the block and the file, checks the file's size and
   SHA-256 and the block against its own manifest, and places the grid through
   `WorldConfig` (x_min, z_min from the box's north-west corner), never by subtracting an
@@ -229,7 +247,13 @@ places heights in the world (WORKFLOW §Review policy).
   (a synthetic world with a different origin and a 1000 m height offset, a 23 × 40 pixel
   source and the expected output, computed by design two independent ways): the pipeline
   must reproduce it byte for byte and the game must read its heights back from Terrain3D
-  on their own vertices. That is the seam between the halves (lesson 3).
+  on their own vertices. That is the seam between the halves (lesson 3). A second one
+  since M2 (M1 R1 T-02): `tests/shared/terrain_fixture_nw/` and
+  `tests/shared/terrain_vectors_nw.json`, a world whose grid lies north-west of its origin
+  (x −1036 … −1012, z −1034 … −1008), at 2 m, across the edges of four Terrain3D regions,
+  with a height offset of −12.25 m, where the village's placement differs from the first
+  fixture's. Each fixture folder holds a `datasets.lock.json` pinning its source as the
+  1 km tile it lies in (M2-01, for T-04's check).
 
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same
