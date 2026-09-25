@@ -1,0 +1,5 @@
+# Builds are binary: never convert line endings (a Windows clone with core.autocrlf=true
+# must get the same bytes). Only the README is text.
+* binary
+*.md text eol=lf diff
+.gitattributes text eol=lf diff
