@@ -1,0 +1,2 @@
+WorldConfig: user://test_ # the refusal tests write broken manifests under user://test_* on purpose
+WorldConfig: not read from a manifest # test_world_config_unbuilt.gd provokes it on purpose

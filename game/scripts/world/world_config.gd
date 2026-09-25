@@ -8,6 +8,9 @@ extends RefCounted
 ## 64-bit floats: the origin is subtracted before any Vector3 (32-bit) is built
 ## (brain.md H5). height_offset_m is read as the vertical part of the origin
 ## (y = H - height_offset_m), the reading the pipeline took (brief M0-02 Findings).
+## A WorldConfig made with new() instead of from_manifest has a NaN origin, and its
+## conversions call push_error and return NaN: visibly wrong, never the origin (brief
+## M1-02).
 
 const MANIFEST_SCHEMA := 1
 const WORLD_SCHEMA := 1
@@ -16,13 +19,16 @@ const CRS := {"horizontal": "EPSG:2056", "vertical": "EPSG:5728"}
 const SOURCE_AXES := ["e", "n", "h"]
 ## Godot x (right), y (up), z (back): a right-handed frame.
 const GAME_AXES := ["x", "y", "z"]
+const UNBUILT_ERROR := "WorldConfig: not read from a manifest (use WorldConfig.from_manifest)"
 
-var origin_e: float
-var origin_n: float
-var height_offset: float
+var origin_e := NAN
+var origin_n := NAN
+var height_offset := NAN
 ## For each game axis (x, y, z): the index into SOURCE_AXES it reads, and its sign.
 var _source_index := PackedInt32Array([0, 0, 0])
 var _sign := PackedFloat64Array([0.0, 0.0, 0.0])
+## Set only by from_manifest, once the manifest's world block has been read and accepted.
+var _built := false
 
 
 ## Reads the manifest at [param path]. Returns null and calls push_error naming the path
@@ -30,8 +36,12 @@ var _sign := PackedFloat64Array([0.0, 0.0, 0.0])
 static func from_manifest(path: String) -> WorldConfig:
 	var text := FileAccess.get_file_as_string(path)
 	if text.is_empty():
-		var reason := error_string(FileAccess.get_open_error())
-		push_error("WorldConfig: %s: cannot read the manifest (%s)" % [path, reason])
+		var open_error := FileAccess.get_open_error()
+		if open_error == OK:
+			push_error("WorldConfig: %s: the manifest is empty" % path)
+		else:
+			var reason := error_string(open_error)
+			push_error("WorldConfig: %s: cannot read the manifest (%s)" % [path, reason])
 		return null
 	var json := JSON.new()
 	if json.parse(text) != OK:
@@ -43,11 +53,15 @@ static func from_manifest(path: String) -> WorldConfig:
 	if not problem.is_empty():
 		push_error("WorldConfig: %s: %s" % [path, problem])
 		return null
+	world._built = true
 	return world
 
 
 ## LV95 easting, northing and LN02 height to Godot local coordinates in metres.
 func to_local(e: float, n: float, h: float) -> Vector3:
+	if not _built:
+		push_error(UNBUILT_ERROR)
+		return Vector3(NAN, NAN, NAN)
 	# 64-bit subtraction first; only the small local values are narrowed to 32 bits.
 	var source := PackedFloat64Array([e - origin_e, n - origin_n, h - height_offset])
 	return Vector3(
@@ -59,6 +73,9 @@ func to_local(e: float, n: float, h: float) -> Vector3:
 
 ## Godot local coordinates in metres to [e, n, h]: LV95 easting, northing, LN02 height.
 func to_lv95(p: Vector3) -> PackedFloat64Array:
+	if not _built:
+		push_error(UNBUILT_ERROR)
+		return PackedFloat64Array([NAN, NAN, NAN])
 	var source := PackedFloat64Array([0.0, 0.0, 0.0])
 	for axis in GAME_AXES.size():
 		source[_source_index[axis]] = _sign[axis] * p[axis]

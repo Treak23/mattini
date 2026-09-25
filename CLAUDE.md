@@ -15,7 +15,7 @@ uv run --project pipeline pytest pipeline/tests        # pipeline unit tests
 uv run --project pipeline ruff check pipeline          # pipeline lint
 uv run --project pipeline python -m mattini manifest   # writes game/assets/generated/manifest.json
 godot --headless --path game --import                  # asset import; exits 0 even on errors (brain.md §Hazards)
-godot --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit   # game tests (GUT)
+godot --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit -gconfig=   # game tests (GUT), no .gutconfig.json
 uv run --project pipeline gdlint $(find game -path game/addons -prune -o -name '*.gd' -print)   # game lint, vendored addons excluded (the gate's list)
 ```
 
@@ -27,10 +27,12 @@ failure), redirected to a log and chained to the commit by its own exit status
 (`docs/roles/BUILD.md` rule 3c). Godot's own exit status is not enough, so the gate also
 scans its output: error lines at the import and the parse check, an import left
 `valid=false`, and in the GUT run any test script GUT skipped or could not load,
-`SCRIPT ERROR`, and GUT's own `[ERROR]` (brain.md §Hazards). An engine `ERROR` line in
-the GUT run fails only the test running when it is printed; one printed outside a test
-(in `before_all`, measured, or `after_all`, same code path) does not fail the gate yet
-(M0 review G-03, carried into M1).
+`SCRIPT ERROR`, GUT's own `[ERROR]`, and every engine `ERROR` line, inside a test or
+outside one (brain.md §Hazards). The GUT run also fails unless GUT prints
+`---- All tests passed! ----`: a run cut short, a pending test and a test with no assert
+fail it. An error line known to be benign is excepted only in `tools/gate_allowlist.txt`.
+The gate also refuses a `pipeline/uv.lock` out of step with `pyproject.toml` and any Godot
+but 4.6.3.
 There is no never-happen rule (the owner chose none, 2026-09-24); the code that
 guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on both sides,
 the pipeline's determinism) MUST have tests, mutation-proved.

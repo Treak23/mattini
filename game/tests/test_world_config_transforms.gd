@@ -1,6 +1,7 @@
 extends GutTest
 ## WorldConfig's transforms beyond the pinned vectors (brief M0-03): the origin and the
-## height offset come from the manifest it is given, and conversions round-trip.
+## height offset come from the manifest it is given. The round trips, for every rotation
+## and with 64-bit offsets, are in test_world_config_round_trips.gd (brief M1-02).
 ##
 ## The height-offset test pins the same reading as the pipeline's
 ## test_world_transforms.py (brief M0-02 Findings): y = H - height_offset_m. A game that
@@ -51,19 +52,3 @@ func test_height_offset_is_subtracted_from_heights() -> void:
 	assert_eq(back[0], world.origin_e + 3.0)
 	assert_eq(back[1], world.origin_n + 4.0)
 	assert_eq(back[2], 1600.0)
-
-
-func test_round_trips_stay_within_a_millimetre() -> void:
-	var world := WorldConfig.from_manifest(MANIFEST_PATH)
-	assert_not_null(world)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 20260924
-	for i in 200:
-		var e := world.origin_e + rng.randf_range(-20000.0, 20000.0)
-		var n := world.origin_n + rng.randf_range(-20000.0, 20000.0)
-		var h := rng.randf_range(-500.0, 5000.0)
-		var back := world.to_lv95(world.to_local(e, n, h))
-		# 32-bit Vector3 in between: about 2 mm at 20 km, SPEC section 6.
-		assert_almost_eq(back[0], e, 0.002, "e of point %d" % i)
-		assert_almost_eq(back[1], n, 0.002, "n of point %d" % i)
-		assert_almost_eq(back[2], h, 0.001, "h of point %d" % i)
