@@ -27,6 +27,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from computed_for import recorded
 
 from mattini.manifest import write_manifest
 from mattini.terrain import TerrainError
@@ -196,11 +197,18 @@ def test_an_area_that_is_not_whole_cells_is_named(tmp_path):
         block["world_sha256"] = hashlib.sha256(world_path.read_bytes()).hexdigest()
 
     _edit_block(out, "fixture_nw", claim)
+    # the terrain config records the changed world (M2-07), or it is refused as design's step
+    config = json.loads((folder / "terrain.json").read_text(encoding="utf-8"))
+    lock = json.loads((folder / "datasets.lock.json").read_text(encoding="utf-8"))
+    config_path = tmp_path / "terrain.json"
+    config_path.write_text(
+        json.dumps(recorded(config, world_path, lock, "swissalti3d")), encoding="utf-8"
+    )
     with pytest.raises(TerrainError) as refused:
         write_manifest(
             out,
             world_path,
-            terrain_config_path=folder / "terrain.json",
+            terrain_config_path=config_path,
             datasets_path=folder / "datasets.json",
             lock_path=folder / "datasets.lock.json",
         )

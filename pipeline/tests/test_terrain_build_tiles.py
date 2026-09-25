@@ -23,6 +23,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import rasterio
+from computed_for import computed_for
 from rasterio.transform import from_origin
 
 from mattini.datasets import load_datasets
@@ -131,14 +132,21 @@ def four_tiles(tmp_path_factory):
         "lock": lock,
         "raw_root": root / "raw",
         "tile_sha256": {tile: locked[tile]["sha256"] for tile in TILES},
+        "computed_for": computed_for(world_path, lock, "swissalti3d"),
     }
 
 
-def _config(spacing: float, sha256: str) -> dict:
+def _config(spacing: float, sha256: str, computed_for: dict) -> dict:
+    """The terrain config expecting `sha256` at `spacing`, computed for `computed_for`
+    (the fixture's own, since M2-07: its world and lock)."""
     return {
         "schema": 1,
         "areas": {
-            "village": {"expected_sha256": {format(spacing, "g"): sha256}, "spacing_m": spacing}
+            "village": {
+                "computed_for": computed_for,
+                "expected_sha256": {format(spacing, "g"): sha256},
+                "spacing_m": spacing,
+            }
         },
     }
 
@@ -181,7 +189,7 @@ def test_four_tiles_build_to_design_s_bytes(four_tiles, spacing, tmp_path):
         four_tiles["world"],
         load_datasets(),
         four_tiles["lock"],
-        _config(spacing, sha256),
+        _config(spacing, sha256, four_tiles["computed_for"]),
         four_tiles["raw_root"],
         out,
     )
@@ -202,7 +210,7 @@ def test_the_cut_corners_hold_the_designed_heights(four_tiles, tmp_path):
         four_tiles["world"],
         load_datasets(),
         four_tiles["lock"],
-        _config(2.0, sha256),
+        _config(2.0, sha256, four_tiles["computed_for"]),
         four_tiles["raw_root"],
         out,
     )
@@ -235,7 +243,7 @@ def test_a_wrong_expected_value_is_refused_before_anything_is_written(four_tiles
             four_tiles["world"],
             load_datasets(),
             four_tiles["lock"],
-            _config(2.0, wrong),
+            _config(2.0, wrong, four_tiles["computed_for"]),
             four_tiles["raw_root"],
             out,
         )

@@ -31,13 +31,20 @@ The rule, in order (`build_chunks`):
 The file `buildings/<tile>.bin`: the chunk's vertices (x, y, z little-endian float32 each),
 then its triangles (three little-endian uint32 indices into the chunk's vertices each), no
 header. Its description `buildings/<area>.json` lists the chunks; the manifest copies it
-verbatim into its `buildings` block.
+verbatim into its `buildings` block. After writing, the step removes every other `*.bin`
+in `buildings/`, the chunks of an earlier build that this one does not list, and says how
+many (brief M2-07, M2 R1 G-06): an export would otherwise ship them.
 
 The chunks must be the ones design computed: config/buildings.json holds the SHA-256 of
 every chunk, and the step compares the set of tiles and every chunk with it before it
-writes anything (lesson 38). Every refusal is a BuildingsError naming the sheet and UUID,
-the file, or the command that fixes it (Hard Rule 2). Same inputs, same bytes: no times,
-no absolute paths, a fixed order everywhere (Hard Rule 5).
+writes anything (lesson 38). Those values hold only for the world config and the lock
+entry the area's `computed_for` records (brief M2-07, M2 R1 P-02, I-01). The step and the
+manifest compare the world before any output, and the lock's entry before any output once
+the lock is shown to fit the datasets config (a lock that does not fit is refused by its
+own check, naming `lock buildings`); a difference names design's step, never this machine
+or this code. Every refusal is a BuildingsError naming the sheet and UUID, the file, or the
+command that fixes it (Hard Rule 2). Same inputs, same bytes: no times, no absolute paths,
+a fixed order everywhere (Hard Rule 5).
 """
 
 from __future__ import annotations
@@ -58,7 +65,14 @@ from fiona.errors import FionaError
 
 from mattini.download import BUILDINGS, BUILDINGS_LOCK_COMMAND, PROVENANCE, area_sheets
 from mattini.lock import load_lock
-from mattini.terrain import AREA_NAME, check_terrain_config, configured_area
+from mattini.terrain import (
+    AREA_NAME,
+    check_computed_for,
+    check_terrain_config,
+    configured_area,
+    inputs_refusal,
+    world_refusal,
+)
 from mattini.world import REPO, World, parse_world, read_config_bytes
 
 BUILDINGS_CONFIG_PATH = REPO / "config" / "buildings.json"
@@ -76,7 +90,7 @@ SNAP_TOLERANCE_M = 1e-6  # farther from the grid than this is refused (a finer g
 VERTEX_BYTES = 12  # x, y, z as float32
 TRIANGLE_BYTES = 12  # three uint32 indices
 MAX_INDEX = 2**32 - 1
-AREA_CONFIG_KEYS = {"expected_sha256"}
+AREA_CONFIG_KEYS = {"computed_for", "expected_sha256"}
 TILE_ID = re.compile(r"[0-9]+-[0-9]+")
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -114,9 +128,10 @@ def load_buildings_config(path: Path | str = BUILDINGS_CONFIG_PATH) -> dict:
 def check_buildings_config(data: object, where: Path | str = "the buildings config") -> None:
     """Refuse a buildings config that is not schema 1 with exactly one well-formed area.
 
-    The area has exactly the key `expected_sha256`: an object from tile ids `<e km>-<n km>`
-    to the SHA-256 of that tile's chunk file, 64 lower-case hex digits (SPEC §8). The
-    BuildingsError names `where`.
+    The area has exactly the keys `computed_for` and `expected_sha256`: what the values
+    were computed for (`terrain.check_computed_for`), and an object from tile ids
+    `<e km>-<n km>` to the SHA-256 of that tile's chunk file, 64 lower-case hex digits
+    (SPEC §8). The BuildingsError names `where`.
     """
 
     def fail(message: str) -> BuildingsError:
@@ -146,10 +161,11 @@ def check_buildings_config(data: object, where: Path | str = "the buildings conf
                     f"area {name!r}: expected_sha256[{tile!r}] must be a SHA-256 in 64 "
                     f"lower-case hex characters, found {value!r}"
                 )
+        check_computed_for(area["computed_for"], name, fail)
 
 
-def _expected_chunks(buildings_config: dict, area: str, name: str) -> dict[str, str]:
-    """The buildings config's expected chunk SHA-256s, once its area is shown to be `area`.
+def _area_settings(buildings_config: dict, area: str, name: str) -> dict:
+    """The buildings config's area (`computed_for`, `expected_sha256`), once it is `area`.
 
     `name` names the buildings config in the refusal.
     """
@@ -160,7 +176,7 @@ def _expected_chunks(buildings_config: dict, area: str, name: str) -> dict[str, 
             f"{name} expects the chunks of area {configured!r}, the terrain config names the "
             f"area {area!r}; the pipeline serves one area, the terrain config's"
         )
-    return settings["expected_sha256"]
+    return settings
 
 
 # --------------------------------------------------------------------------- reading
@@ -420,13 +436,33 @@ def write_buildings(
     box: Box,
     world_sha256: str,
     source: dict,
+    *,
+    progress: Progress | None = None,
 ) -> dict:
     """Write every `buildings/<tile>.bin` (through a `.part` rename), then `buildings/<area>.json`.
 
-    Returns the description, which is what the `.json` holds.
+    Then remove every other `*.bin` in `buildings/`: the chunks of an earlier build that
+    the new description does not list, which the game never reads and an export would ship
+    (brief M2-07, M2 R1 G-06). Other files, the description among them, are kept. How many
+    were removed goes to `progress` (stderr on the command line). Returns the description,
+    which is what the `.json` holds.
     """
+    say = progress or (lambda message: None)
     block = _describe(area, chunks, box, world_sha256, source)
     _write_files(out_dir, chunks, block)
+    buildings_dir = Path(out_dir) / "buildings"
+    listed = {Path(entry["file"]).name for entry in block["chunks"]}
+    stale = [
+        path
+        for path in sorted(buildings_dir.glob("*.bin"))
+        if path.name not in listed and not path.is_dir()
+    ]
+    for path in stale:
+        path.unlink()
+    say(
+        f"removed {len(stale)} chunk file{'' if len(stale) == 1 else 's'} of an earlier build "
+        f"that {area}.json does not list from {buildings_dir}"
+    )
     return block
 
 
@@ -492,12 +528,16 @@ def build_buildings(
     The area is the terrain config's one area (T-06). Every chunk's SHA-256, and the set of
     tiles, must equal the buildings config's `expected_sha256`; they are compared before
     anything is written, and a difference is a BuildingsError naming the tile and both
-    values (SPEC §8, lesson 38).
+    values (SPEC §8, lesson 38). Before any sheet is read, the area's `computed_for` must
+    name this world config (checked as soon as it is read) and the lock's entry (checked
+    once the lock is shown to pin exactly the area's sheets): each difference is its own
+    BuildingsError naming design's step (brief M2-07).
     """
     say = progress or (lambda message: None)
     check_terrain_config(terrain_config)
     area = configured_area(terrain_config)
-    expected = _expected_chunks(buildings_config, area, BUILDINGS_CONFIG_NAME)
+    settings = _area_settings(buildings_config, area, BUILDINGS_CONFIG_NAME)
+    expected, computed_for = settings["expected_sha256"], settings["computed_for"]
     if area not in world.areas:
         raise BuildingsError(f"{world.path}: no area named {area!r} for the terrain config's area")
     box = world.area(area)
@@ -506,6 +546,10 @@ def build_buildings(
         raise BuildingsError(
             f"{world.path}: the world config changed while the buildings were built"
         )
+    world_sha256 = hashlib.sha256(world_raw).hexdigest()
+    problem = world_refusal(BUILDINGS_CONFIG_NAME, computed_for, world_sha256)
+    if problem:
+        raise BuildingsError(f"area {area!r}: {problem}")
     if BUILDINGS not in datasets:
         raise BuildingsError(f"the datasets config has no {BUILDINGS!r} dataset")
     dataset = datasets[BUILDINGS]
@@ -513,6 +557,11 @@ def build_buildings(
     raw_dir = Path(raw_root) / BUILDINGS / dataset["edition"]
     listed = _provenance_sheets(raw_dir / PROVENANCE, dataset, sheets)
     locked = _locked_sheets(lock, dataset, sheets)
+    problem = inputs_refusal(
+        BUILDINGS_CONFIG_NAME, computed_for, BUILDINGS, lock["datasets"][BUILDINGS]
+    )
+    if problem:
+        raise BuildingsError(f"area {area!r}: {problem}")
 
     features, ranges, source_sheets = [], [], []
     for sheet in sheets:
@@ -560,9 +609,7 @@ def build_buildings(
         "edition": dataset["edition"],
         "sheets": source_sheets,
     }
-    block = write_buildings(
-        out_dir, area, chunks, box, hashlib.sha256(world_raw).hexdigest(), source
-    )
+    block = write_buildings(out_dir, area, chunks, box, world_sha256, source, progress=say)
     say(f"wrote {Path(out_dir) / 'buildings'} ({len(chunks)} chunks and {area}.json)")
     return block
 
@@ -657,6 +704,7 @@ def built_buildings_block(
     out_dir: Path | str,
     buildings_config: dict,
     terrain_config: dict,
+    world: World,
     world_sha256: str,
     datasets: dict,
     lock: dict | Path | str,
@@ -665,12 +713,21 @@ def built_buildings_block(
 
     The area is the terrain config's; with no `buildings/<area>.json` the result is None
     whatever the buildings config says, and nothing else is read. `lock` is the lock or its
-    path; a path is read only when buildings are built. A built description that no longer
-    matches is a BuildingsError naming `python -m mattini buildings` (SPEC §8): key sets
-    that are not exact, another world config, a `source` that is not the datasets config's
-    attribution, collection and edition and, in order, the sheets the lock pins with their
-    SHA-256s, a chunk file whose size or SHA-256 differs from its entry, or chunks that are
-    not the buildings config's.
+    path; a path is read only when buildings are built. `world` is the world config the
+    manifest is written from, parsed from the bytes whose SHA-256 is `world_sha256`.
+
+    First the buildings config's `computed_for` is compared with the world config and,
+    when the lock's entry is for the datasets config's collection and edition, with that
+    entry (brief M2-07): a difference is a BuildingsError naming design's step, not the
+    rebuild, which would be refused for the same reason. A lock that does not fit is left
+    to the source check below, which refuses it naming `python -m mattini lock buildings`
+    (unless an earlier check of the block refuses first). Then a built description that
+    no longer matches is a BuildingsError naming `python -m mattini buildings` (SPEC §8):
+    key sets that are not exact, another world config, an `lv95_box` that is not the world
+    config's box for the area (as floats, like the terrain's; M2 R1 P-03), a `source` that
+    is not the datasets config's attribution, collection and edition and, in order, the
+    sheets the lock pins with their SHA-256s, a chunk file whose size or SHA-256 differs
+    from its entry, or chunks that are not the buildings config's.
     """
     check_terrain_config(terrain_config)
     area = configured_area(terrain_config)
@@ -680,6 +737,26 @@ def built_buildings_block(
 
     def fail(message: str) -> BuildingsError:
         return BuildingsError(f"{path}: {message}; `{BUILDINGS_COMMAND}` rebuilds the buildings")
+
+    try:
+        settings = _area_settings(buildings_config, area, "the buildings config")
+    except BuildingsError as exc:
+        raise fail(str(exc)) from exc
+    problem = world_refusal(BUILDINGS_CONFIG_NAME, settings["computed_for"], world_sha256)
+    if problem:
+        raise BuildingsError(f"area {area!r}: {problem}")
+    if not isinstance(lock, dict):
+        lock = load_lock(lock)
+    entry = lock["datasets"].get(BUILDINGS)
+    dataset = datasets.get(BUILDINGS)
+    if (
+        entry is not None
+        and dataset is not None
+        and all(entry[key] == dataset[key] for key in ("collection", "edition"))
+    ):
+        problem = inputs_refusal(BUILDINGS_CONFIG_NAME, settings["computed_for"], BUILDINGS, entry)
+        if problem:
+            raise BuildingsError(f"area {area!r}: {problem}")
 
     try:
         block = json.loads(path.read_bytes().decode("utf-8"))
@@ -697,13 +774,7 @@ def built_buildings_block(
             f"it was built for the world config with SHA-256 {block['world_sha256']}, "
             f"the world config now has {world_sha256}"
         )
-    box = block["lv95_box"]
-    if not (
-        isinstance(box, dict)
-        and set(box) == BOX_KEYS
-        and all(type(v) in (int, float) and math.isfinite(v) for v in box.values())
-    ):
-        raise fail(f"its lv95_box must be exactly the numbers {sorted(BOX_KEYS)}")
+    _check_box(block["lv95_box"], world, area, fail)
     _check_source(block["source"], datasets, lock, fail)
     entries = _check_chunk_entries(block["chunks"], fail)
     for entry in entries:
@@ -721,10 +792,7 @@ def built_buildings_block(
         actual = _sha256_of(file)
         if actual != entry["sha256"]:
             raise fail(f"{file} has SHA-256 {actual}, the description pins {entry['sha256']}")
-    try:
-        expected = _expected_chunks(buildings_config, area, "the buildings config")
-    except BuildingsError as exc:
-        raise fail(str(exc)) from exc
+    expected = settings["expected_sha256"]
     built = {entry["tile"]: entry["sha256"] for entry in entries}
     for tile in sorted(set(built) | set(expected)):
         if built.get(tile) != expected.get(tile):
@@ -733,6 +801,25 @@ def built_buildings_block(
                 f"expects {expected.get(tile) or 'no chunk'}"
             )
     return block
+
+
+def _check_box(found: object, world: World, area: str, fail) -> None:
+    """Refuse an `lv95_box` that is not the world config's box for the area (M2 R1 P-03).
+
+    Exactly the keys e_max, e_min, n_max and n_min, each a float equal to the world's, as
+    `terrain._check_shape` compares the terrain's; the refusal names the field and both
+    values, and `fail` adds the file and the command.
+    """
+    if area not in world.areas:
+        raise fail(f"the world config has no area {area!r}")
+    e_min, e_max, n_min, n_max = world.area(area)
+    box = {"e_max": e_max, "e_min": e_min, "n_max": n_max, "n_min": n_min}
+    if not (
+        isinstance(found, dict)
+        and set(found) == BOX_KEYS
+        and all(type(found[key]) is float and found[key] == value for key, value in box.items())
+    ):
+        raise fail(f"lv95_box is {found!r}, the world config's area {area!r} is {box!r}")
 
 
 def _check_source(source: object, datasets: dict, lock: dict | Path | str, fail) -> None:

@@ -10,11 +10,14 @@ heights file, the heights design expects for the spacing (config/terrain.json), 
 datasets config's attribution, collection, edition and resolution, or the tiles the lock
 pins (briefs M1-03, M2-01). Its `buildings` block is, likewise, the description the
 buildings step wrote next to the chunk files, or null when none is built in this folder
-for the terrain config's area; built buildings that no longer match the world config, the
-datasets config, the sheets the lock pins, their chunk files or the chunks design expects
-(config/buildings.json) are refused, naming `python -m mattini buildings`, and nothing is
-written (brief M2-04). Written deterministically: sorted keys, fixed formatting, LF line
-endings, no times, no absolute paths (Hard Rule 5).
+for the terrain config's area; built buildings that no longer match the world config (its
+box too, M2-07), the datasets config, the sheets the lock pins, their chunk files or the
+chunks design expects (config/buildings.json) are refused, naming `python -m mattini
+buildings`, and nothing is written (brief M2-04). For a block that is built, the expected
+values' `computed_for` is compared first with the world config and, when the lock fits
+the datasets config, with the lock's entry: a difference names design's step instead,
+since a rebuild would be refused too (brief M2-07). Written deterministically: sorted
+keys, fixed formatting, LF line endings, no times, no absolute paths (Hard Rule 5).
 """
 
 from __future__ import annotations
@@ -63,6 +66,7 @@ def build_manifest(
         out_dir,
         load_buildings_config(buildings_config_path),
         terrain_config,
+        world,
         world_sha256,
         datasets,
         lock_path,

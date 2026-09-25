@@ -15,11 +15,16 @@ other (`with_entry`), and committed, like `uv.lock`; `download terrain` and `dow
 buildings` refuse a published checksum that differs from it (Hard Rule 5). Written
 deterministically: sorted keys, 2-space indent, UTF-8, LF, a final newline. A malformed
 lock is a LockError naming the file (Hard Rule 2).
+
+The expected values in config/terrain.json and config/buildings.json record the inputs
+they were computed from as `entry_sha256` of the dataset's entry (brief M2-07, SPEC §8):
+the entry rendered canonically, so the lock file's own formatting does not count.
 """
 
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import math
 import os
@@ -54,9 +59,10 @@ def terrain_entry(
     """The lock's swissALTI3D entry: the tiles of `area` at the pinned edition and resolution.
 
     From the STAC items only. The command line passes the area config/terrain.json names
-    (brief M2-01, M1 R1 T-06).
+    (brief M2-01, M1 R1 T-06). A datasets config without `swissalti3d` is a DownloadError
+    naming config/datasets.json.
     """
-    alti = datasets[download.DATASET]
+    alti = download.dataset_of(datasets, download.DATASET)
     return {
         "collection": alti["collection"],
         "edition": alti["edition"],
@@ -73,9 +79,10 @@ def buildings_entry(
 ) -> dict:
     """The lock's swissBUILDINGS3D entry: the map sheets of `area` at the pinned edition.
 
-    From the STAC items only; the sheets are `download.area_sheets(world, area)`.
+    From the STAC items only; the sheets are `download.area_sheets(world, area)`. A datasets
+    config without `swissbuildings3d` is a DownloadError naming config/datasets.json.
     """
-    buildings = datasets[download.BUILDINGS]
+    buildings = download.dataset_of(datasets, download.BUILDINGS)
     return {
         "collection": buildings["collection"],
         "edition": buildings["edition"],
@@ -84,6 +91,17 @@ def buildings_entry(
             for sheet in download.published_sheets(world, datasets, fetch_json, area=area)
         },
     }
+
+
+def entry_sha256(entry: dict) -> str:
+    """The SHA-256 of a dataset's lock entry rendered canonically (brief M2-07, SPEC §8).
+
+    `json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` in
+    UTF-8: what `computed_for.inputs_sha256` in config/terrain.json and
+    config/buildings.json records for the entry design computed the expected values from.
+    """
+    text = json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def with_entry(lock: dict | None, dataset: str, entry: dict) -> dict:

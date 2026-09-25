@@ -14,7 +14,8 @@ Every tile's published file name and SHA-256 must equal the tile lock's
 (config/datasets.lock.json, brief M1-01): all the STAC items are read and compared with the
 lock before any file is fetched or deleted, so a tile swisstopo republished inside the
 edition is refused, never adopted silently (Hard Rule 5); `python -m mattini lock terrain`
-adopts it deliberately.
+adopts it deliberately, and design then recomputes the expected values in
+config/terrain.json, which record the lock entry they were computed from (brief M2-07).
 
 `provenance.json` records what was fetched and its attribution: sorted keys, LF endings, no
 times, no absolute paths, so two runs on the same inputs write identical bytes. It is
@@ -27,8 +28,14 @@ map sheets of the pinned edition that `sheets.sheets_near` gives for the area's 
 sheet within 100 m, SPEC §8 *Sheets*): item `swissbuildings3d_3_0_<edition>_<sheet>`, the
 one asset whose key ends `_2056_5728.gdb.zip`, compared with the lock's `swissbuildings3d`
 entry before anything on disk changes, into `<out_root>/swissbuildings3d/<edition>/` with
-its own provenance.json. A sheet swisstopo republished is adopted only by `python -m mattini
-lock buildings`. The zips are not opened here (M2-04 reads them).
+its own provenance.json. The lock's entry must pin exactly the area's sheets, as the
+buildings step and the manifest require (brief M2-07, M2 R1 I-04). A sheet swisstopo
+republished is adopted only by `python -m mattini lock buildings`, and design then
+recomputes config/buildings.json. The zips are not opened here (M2-04 reads them).
+
+A datasets config without the dataset, and an area the sheet grid cannot place, are
+DownloadErrors naming config/datasets.json or the world config and the area, never a
+traceback (M2 R1 I-05).
 """
 
 from __future__ import annotations
@@ -65,6 +72,14 @@ TIMEOUT_S = 60
 USER_AGENT = "mattini-pipeline"
 LOCK_COMMAND = "python -m mattini lock terrain"
 BUILDINGS_LOCK_COMMAND = "python -m mattini lock buildings"
+DATASETS_CONFIG_NAME = "config/datasets.json"  # the home of the datasets, for messages
+# the config whose expected values design recomputes when a dataset's inputs change, and
+# the step the republish refusals name after the lock command (brief M2-07)
+EXPECTED_CONFIG_NAMES = {DATASET: "config/terrain.json", BUILDINGS: "config/buildings.json"}
+_RECOMPUTE = {
+    name: f"then design recomputes the expected values in {config} (docs/SPEC.md §8)"
+    for name, config in EXPECTED_CONFIG_NAMES.items()
+}
 
 FetchJson = Callable[[str], object]
 FetchFile = Callable[[str, Path], None]
@@ -72,6 +87,20 @@ FetchFile = Callable[[str, Path], None]
 
 class DownloadError(RuntimeError):
     """A download could not be completed or verified; the message names the tile and URL."""
+
+
+def dataset_of(datasets: dict, name: str) -> dict:
+    """The datasets config's entry for `name`; its absence is a DownloadError naming the file.
+
+    `lock` and `download` read the collection and edition from it; without this check a
+    datasets config lacking the dataset ended in a KeyError traceback (M2 R1 I-05).
+    """
+    if name not in datasets:
+        raise DownloadError(
+            f"{DATASETS_CONFIG_NAME} has no {name!r} dataset: its collection, edition and "
+            f"attribution are read from there"
+        )
+    return datasets[name]
 
 
 def area_tiles(world: World, area: str) -> list[str]:
@@ -91,9 +120,14 @@ def area_sheets(world: World, area: str) -> list[str]:
 
     Every sheet within `sheets.DEFAULT_MARGIN_M` (100 m) of the area's box: a building can
     overhang its own sheet (SPEC §8 *Sheets*). The order of the download, the lock and
-    provenance.json.
+    provenance.json. A box the sheet grid cannot place (outside it, or within the margin
+    of its east edge) is a DownloadError naming the area and the world config (M2 R1 I-05).
     """
-    return sheets_near(world.area(area))
+    box = world.area(area)
+    try:
+        return sheets_near(box)
+    except ValueError as exc:
+        raise DownloadError(f"area {area!r} of {world.path}: {exc}") from exc
 
 
 def parse_multihash_sha256(text: object) -> str:
@@ -119,7 +153,7 @@ def published_assets(
     world: World, datasets: dict, fetch_json: FetchJson, *, area: str
 ) -> list[PublishedAsset]:
     """Read the STAC item of every tile of `area`, in tile order; no file is fetched."""
-    alti = datasets[DATASET]
+    alti = dataset_of(datasets, DATASET)
     edition = alti["edition"]
     suffix = f"_{_resolution_tag(alti['resolution_m'])}_2056_5728.tif"
     assets = []
@@ -150,7 +184,7 @@ def published_sheets(
     A sheet with no item in the pinned edition is a DownloadError naming the sheet and the
     item's URL.
     """
-    buildings = datasets[BUILDINGS]
+    buildings = dataset_of(datasets, BUILDINGS)
     sheets = []
     for sheet in area_sheets(world, area):
         item_id = BUILDINGS_ITEM.format(edition=buildings["edition"], sheet=sheet)
@@ -180,7 +214,7 @@ def download_terrain(
     Returns the provenance entries, one per tile in tile order, and writes them with the
     dataset's edition and attribution to `provenance.json` in the same directory.
     """
-    alti = datasets[DATASET]
+    alti = dataset_of(datasets, DATASET)
     _resolution_tag(alti["resolution_m"])
     pinned = _locked_tiles(lock, alti, area_tiles(world, area), area)
     assets = published_assets(world, datasets, fetch_json, area=area)
@@ -191,7 +225,7 @@ def download_terrain(
                 f"tile {asset.tile} of area {area!r}: swisstopo now publishes {asset.name} with "
                 f"SHA-256 {asset.sha256}, the tile lock pins {locked['file']} with SHA-256 "
                 f"{locked['sha256']}; nothing was fetched. A republished tile is adopted "
-                f"only on purpose: `{LOCK_COMMAND}`, then commit the lock"
+                f"only on purpose: `{LOCK_COMMAND}`, then commit the lock, {_RECOMPUTE[DATASET]}"
             )
 
     out_dir = Path(out_root) / DATASET / alti["edition"]
@@ -239,12 +273,13 @@ def download_buildings(
     """Fetch and verify the map sheets of `area` into `<out_root>/swissbuildings3d/<edition>/`.
 
     `lock` is the lock (`mattini.lock.load_lock()`): its `swissbuildings3d` entry must be
-    for the config's collection and edition and list every sheet of the area, and every
-    published file name and SHA-256 must equal it, all checked before anything on disk
-    changes. Returns the provenance entries, one per sheet in sheet order, and writes them
-    with the dataset's edition and attribution to `provenance.json` in the same directory.
+    for the config's collection and edition and pin exactly the sheets of the area, as the
+    buildings step and the manifest require, and every published file name and SHA-256
+    must equal it, all checked before anything on disk changes (M2 R1 I-02, I-04). Returns
+    the provenance entries, one per sheet in sheet order, and writes them with the
+    dataset's edition and attribution to `provenance.json` in the same directory.
     """
-    buildings = datasets[BUILDINGS]
+    buildings = dataset_of(datasets, BUILDINGS)
     pinned = _locked_sheets(lock, buildings, area_sheets(world, area), area)
     published = published_sheets(world, datasets, fetch_json, area=area)
     for sheet in published:
@@ -254,7 +289,8 @@ def download_buildings(
                 f"sheet {sheet.sheet} of area {area!r}: swisstopo now publishes {sheet.name} "
                 f"with SHA-256 {sheet.sha256}, the lock pins {locked['file']} with SHA-256 "
                 f"{locked['sha256']}; nothing was fetched. A republished sheet is adopted "
-                f"only on purpose: `{BUILDINGS_LOCK_COMMAND}`, then commit the lock"
+                f"only on purpose: `{BUILDINGS_LOCK_COMMAND}`, then commit the lock, "
+                f"{_RECOMPUTE[BUILDINGS]}"
             )
 
     out_dir = Path(out_root) / BUILDINGS / buildings["edition"]
@@ -341,7 +377,11 @@ def _locked_tiles(lock: object, alti: dict, tiles: list[str], area: str) -> dict
 
 
 def _locked_sheets(lock: object, buildings: dict, sheets: list[str], area: str) -> dict:
-    """The lock's sheet entries, once its buildings entry is shown to be for these sheets."""
+    """The lock's sheet entries, once its buildings entry is shown to be for these sheets.
+
+    Exactly these sheets, as `buildings._locked_sheets` and the manifest require: a lock
+    that pins others too would download here and then be refused by the step (M2 R1 I-04).
+    """
 
     def fail(message: str) -> DownloadError:
         return DownloadError(
@@ -364,6 +404,8 @@ def _locked_sheets(lock: object, buildings: dict, sheets: list[str], area: str) 
     missing = [sheet for sheet in sheets if sheet not in entries]
     if missing:
         raise fail(f"pins no checksum for the sheets {missing} of the area")
+    if sorted(entries) != sheets:
+        raise fail(f"pins the sheets {sorted(entries)}, the area needs exactly {sheets}")
     return entries
 
 

@@ -18,6 +18,16 @@ value for its spacing before it writes anything (lesson 38, M1 R1 T-01). The man
 re-checks a built terrain against that value, the datasets config and the tile lock, and
 its box, rows and columns against the world config's area at the spacing (M2-06).
 
+The expected values hold only for the world config and the inputs design computed them
+for, which the area records as `computed_for` (brief M2-07, M2 R1 P-02, I-01): the SHA-256
+of config/world.json's bytes and of the lock's `swissalti3d` entry rendered canonically
+(`lock.entry_sha256`). The step and the manifest compare the world before any output, and
+the lock's entry before any output once the lock is shown to fit the datasets config and
+the area (a lock that does not fit is refused by its own check, naming `lock terrain`); a
+difference is a refusal that names design's step, since no command of the owner's can
+make the heights match an expected value computed for another world or other inputs. The
+buildings share this check (`world_refusal`, `inputs_refusal`).
+
 The inputs are the tiles `provenance.json` lists (D9), never the folder's listing; every
 file's SHA-256 must equal its provenance entry and the tile lock's (D7), and every tile
 must be where its id says with no nodata and no non-finite height in the area. Each
@@ -44,8 +54,8 @@ import numpy as np
 from rasterio.errors import RasterioError
 from rasterio.io import MemoryFile
 
-from mattini.download import DATASET, PROVENANCE, area_tiles
-from mattini.lock import LOCK_PATH, load_lock
+from mattini.download import DATASET, PROVENANCE, area_tiles, dataset_of
+from mattini.lock import LOCK_PATH, entry_sha256, load_lock
 from mattini.world import REPO, SOURCE_AXES, World, parse_world, read_config_bytes
 
 TERRAIN_CONFIG_PATH = REPO / "config" / "terrain.json"
@@ -53,7 +63,8 @@ TERRAIN_CONFIG_NAME = "config/terrain.json"  # the home of the expected heights,
 SCHEMA = 1
 SPACINGS = (0.5, 1.0, 2.0)
 SPACING_KEYS = ("0.5", "1", "2")  # SPACINGS as swisstopo writes them: format(s, "g")
-AREA_CONFIG_KEYS = {"expected_sha256", "spacing_m"}
+AREA_CONFIG_KEYS = {"computed_for", "expected_sha256", "spacing_m"}
+COMPUTED_FOR_KEYS = {"inputs_sha256", "world_sha256"}  # what the expected values hold for
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 SOURCE_M = 0.5  # swissALTI3D pixel size; every spacing is a whole number of pixels
 FORMAT = "float32-le"
@@ -109,10 +120,11 @@ def load_terrain_config(path: Path | str = TERRAIN_CONFIG_PATH) -> dict:
 def check_terrain_config(data: object, where: Path | str = "the terrain config") -> None:
     """Refuse a terrain config that is not schema 1 with exactly one well-formed area.
 
-    An area has exactly the keys `expected_sha256` and `spacing_m`: an allowed spacing, and
-    an object from spacings as swisstopo writes them ("0.5", "1", "2") to the SHA-256 of
-    the heights file at that spacing, 64 lower-case hex digits, holding the configured
-    spacing (SPEC §8). The TerrainError names `where`.
+    An area has exactly the keys `computed_for`, `expected_sha256` and `spacing_m`: an
+    allowed spacing; an object from spacings as swisstopo writes them ("0.5", "1", "2") to
+    the SHA-256 of the heights file at that spacing, 64 lower-case hex digits, holding the
+    configured spacing; and what those values were computed for (`check_computed_for`).
+    SPEC §8. The TerrainError names `where`.
     """
 
     def fail(message: str) -> TerrainError:
@@ -156,6 +168,54 @@ def check_terrain_config(data: object, where: Path | str = "the terrain config")
                 f"area {name!r}: expected_sha256 holds no value for the configured spacing "
                 f"{spacing_key(area['spacing_m'])!r}"
             )
+        check_computed_for(area["computed_for"], name, fail)
+
+
+def check_computed_for(value: object, area: str, fail: Callable[[str], Exception]) -> None:
+    """Refuse a `computed_for` that is not exactly {inputs_sha256, world_sha256}, each a
+    SHA-256 in 64 lower-case hex digits (brief M2-07); `fail` names the config."""
+    if not isinstance(value, dict) or set(value) != COMPUTED_FOR_KEYS:
+        raise fail(
+            f"area {area!r}: computed_for must have exactly the keys {sorted(COMPUTED_FOR_KEYS)}"
+        )
+    for key in sorted(COMPUTED_FOR_KEYS):
+        if not (isinstance(value[key], str) and SHA256_HEX.fullmatch(value[key])):
+            raise fail(
+                f"area {area!r}: computed_for[{key!r}] must be a SHA-256 in 64 lower-case hex "
+                f"characters, found {value[key]!r}"
+            )
+
+
+def world_refusal(config_name: str, computed_for: dict, world_sha256: str) -> str | None:
+    """Why the expected values in `config_name` do not hold for this world config, or None.
+
+    `world_sha256` is the SHA-256 of the world config's bytes (brief M2-07, M2 R1 P-02).
+    """
+    recorded = computed_for["world_sha256"]
+    if recorded == world_sha256:
+        return None
+    return (
+        f"the expected values in {config_name} were computed for the world config with "
+        f"SHA-256 {recorded}; config/world.json now has {world_sha256}. A changed world is a "
+        f"design change: design recomputes the expected values (docs/SPEC.md §8)"
+    )
+
+
+def inputs_refusal(config_name: str, computed_for: dict, dataset: str, entry: dict) -> str | None:
+    """Why the expected values in `config_name` do not hold for the lock's entry, or None.
+
+    `entry` is the lock's entry for `dataset`, compared by `lock.entry_sha256` (brief M2-07,
+    M2 R1 I-01).
+    """
+    recorded, current = computed_for["inputs_sha256"], entry_sha256(entry)
+    if recorded == current:
+        return None
+    return (
+        f"the expected values in {config_name} were computed from the {dataset} lock entry "
+        f"with SHA-256 {recorded}; config/datasets.lock.json's entry now has {current} (a new "
+        f"edition or an adopted republished file). Adopting new inputs is a design change: "
+        f"design recomputes the expected values (docs/SPEC.md §5, §8)"
+    )
 
 
 def configured_area(terrain_config: dict) -> str:
@@ -289,7 +349,10 @@ def build_terrain(
 
     The heights' SHA-256 must equal the terrain config's `expected_sha256` for the spacing;
     it is compared before anything is written, and a difference is a TerrainError naming
-    both values (SPEC §8, lesson 38).
+    both values (SPEC §8, lesson 38). Before any tile is read, the area's `computed_for`
+    must name this world config (checked as soon as it is read) and the lock's entry
+    (checked once the lock is shown to fit the datasets config and the area): each
+    difference is its own TerrainError naming design's step (brief M2-07).
     """
     say = progress or (lambda message: None)
     if world.mapping != OWNER_AXES:
@@ -314,8 +377,13 @@ def build_terrain(
     world_raw = read_config_bytes(world.path)
     if parse_world(world_raw, world.path) != world:
         raise TerrainError(f"{world.path}: the world config changed while the terrain was built")
+    world_sha256 = hashlib.sha256(world_raw).hexdigest()
+    computed_for = terrain_config["areas"][area]["computed_for"]
+    problem = world_refusal(TERRAIN_CONFIG_NAME, computed_for, world_sha256)
+    if problem:
+        raise TerrainError(f"area {area!r}: {problem}")
 
-    alti = datasets[DATASET]
+    alti = dataset_of(datasets, DATASET)
     if alti["resolution_m"] != SOURCE_M:
         raise TerrainError(
             f"the terrain is built from {SOURCE_M} m swissALTI3D pixels, the datasets config "
@@ -325,6 +393,9 @@ def build_terrain(
     raw_dir = Path(raw_root) / DATASET / alti["edition"]
     listed = _provenance_tiles(raw_dir / PROVENANCE, alti, tiles)
     locked = _locked_tiles(lock, alti, tiles)
+    problem = inputs_refusal(TERRAIN_CONFIG_NAME, computed_for, DATASET, lock["datasets"][DATASET])
+    if problem:
+        raise TerrainError(f"area {area!r}: {problem}")
 
     height, width = _whole_count(n_max - n_min, SOURCE_M), _whole_count(e_max - e_min, SOURCE_M)
     mosaic = np.full((height, width), np.nan, dtype=np.float32)
@@ -363,9 +434,7 @@ def build_terrain(
         "resolution_m": alti["resolution_m"],
         "tiles": source_tiles,
     }
-    data, block = _describe(
-        area, heights, box, spacing, hashlib.sha256(world_raw).hexdigest(), source
-    )
+    data, block = _describe(area, heights, box, spacing, world_sha256, source)
     del heights
     if block["sha256"] != expected:
         raise TerrainError(
@@ -400,6 +469,13 @@ def built_terrain_block(
     (SPEC §8; M1 R1 T-01, T-03, T-04; M2-06). `world` is the world config the manifest is
     written from, parsed from the bytes whose SHA-256 is `world_sha256`. The lock is read
     only when a terrain is built.
+
+    Before any of that, the terrain config's `computed_for` is compared with the world
+    config and, when the lock fits the datasets config and the area, with the lock's entry
+    (brief M2-07): a difference is a TerrainError naming design's step, not the rebuild,
+    which would be refused for the same reason. A lock that does not fit is left to the
+    lock check at the end, which refuses it naming `python -m mattini lock terrain` (unless
+    an earlier check of the block refuses first).
     """
     check_terrain_config(terrain_config)
     area = configured_area(terrain_config)
@@ -410,6 +486,20 @@ def built_terrain_block(
 
     def fail(message: str) -> TerrainError:
         return TerrainError(f"{path}: {message}; `{TERRAIN_COMMAND}` rebuilds the terrain")
+
+    problem = world_refusal(TERRAIN_CONFIG_NAME, settings["computed_for"], world_sha256)
+    if problem:
+        raise TerrainError(f"area {area!r}: {problem}")
+    lock = load_lock(lock_path)
+    if (
+        area in world.areas
+        and DATASET in datasets
+        and _lock_problem(lock, datasets[DATASET], area_tiles(world, area)) is None
+    ):
+        entry = lock["datasets"][DATASET]
+        problem = inputs_refusal(TERRAIN_CONFIG_NAME, settings["computed_for"], DATASET, entry)
+        if problem:
+            raise TerrainError(f"area {area!r}: {problem}")
 
     try:
         block = json.loads(path.read_bytes().decode("utf-8"))
@@ -436,6 +526,8 @@ def built_terrain_block(
     if area not in world.areas:
         raise fail(f"the world config has no area {area!r}")
     _check_shape(block, world, area, settings["spacing_m"], fail)
+    if DATASET not in datasets:
+        raise fail(f"the datasets config has no {DATASET!r} dataset")
     alti = datasets[DATASET]
     source = block["source"]
     if not isinstance(source, dict) or set(source) != SOURCE_KEYS:
@@ -476,7 +568,7 @@ def built_terrain_block(
             f"{spacing_key(settings['spacing_m'])} m"
         )
     tiles = area_tiles(world, area)
-    locked = _locked_tiles(load_lock(lock_path), alti, tiles)
+    locked = _locked_tiles(lock, alti, tiles)
     built = [entry["tile"] for entry in built_tiles]
     if built != tiles:
         raise fail(f"it was built from the tiles {built}, the area needs {tiles}")
@@ -583,21 +675,25 @@ def _provenance_tiles(path: Path, alti: dict, tiles: list[str]) -> dict[str, dic
 
 def _locked_tiles(lock: dict, alti: dict, tiles: list[str]) -> dict[str, dict]:
     """The lock's entries for the area's tiles, once it is shown to be for the config (D7)."""
+    problem = _lock_problem(lock, alti, tiles)
+    if problem:
+        raise TerrainError(f"the tile lock {problem}; `{LOCK_COMMAND}` writes the lock")
+    return lock["datasets"][DATASET]["tiles"]
 
-    def fail(message: str) -> TerrainError:
-        return TerrainError(f"the tile lock {message}; `{LOCK_COMMAND}` writes the lock")
 
+def _lock_problem(lock: dict, alti: dict, tiles: list[str]) -> str | None:
+    """Why the lock does not fit the datasets config's swissALTI3D and the tiles, or None."""
     locked = lock.get("datasets", {}).get(DATASET) if isinstance(lock, dict) else None
     if not isinstance(locked, dict):
-        raise fail(f"has no {DATASET!r} entry")
+        return f"has no {DATASET!r} entry"
     for key in ("collection", "edition", "resolution_m"):
         if locked.get(key) != alti[key]:
-            raise fail(f"is for {key} {locked.get(key)!r}, the config pins {alti[key]!r}")
+            return f"is for {key} {locked.get(key)!r}, the config pins {alti[key]!r}"
     entries = locked.get("tiles")
     missing = [tile for tile in tiles if not isinstance(entries, dict) or tile not in entries]
     if missing:
-        raise fail(f"pins no checksum for the tiles {missing}")
-    return entries
+        return f"pins no checksum for the tiles {missing}"
+    return None
 
 
 def _place_tile(mosaic: np.ndarray, box: Box, tile: str, path: Path, raw: bytes) -> None:

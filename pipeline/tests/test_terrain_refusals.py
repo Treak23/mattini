@@ -7,7 +7,9 @@ wrong and the command that fixes it, and nothing is written. The test world is o
 (its id and corner are read from the world config's own origin) at 2 m spacing; since
 M2-01 its terrain config expects the SHA-256 an independent reference computes from the
 tile's own heights (window_mean.py), and the manifest over the shared fixture reads the
-fixture's own tile lock.
+fixture's own tile lock. Since M2-07 the config records the test world and lock as what
+its value was computed for (computed_for.py); a test that changes the lock and means to
+reach a later check records the change (`_adopt`).
 """
 
 import hashlib
@@ -19,6 +21,7 @@ import shutil
 import numpy as np
 import pytest
 import rasterio
+from computed_for import recorded
 from rasterio.transform import from_origin
 from window_mean import expected_sha256
 
@@ -46,11 +49,13 @@ def _heights():
 HEIGHTS_SHA256 = expected_sha256(_heights(), 2.0)
 
 
-def _config(area="village"):
-    return {
+def _config(world, lock, area="village"):
+    """The terrain config, recording `world` and `lock` as what its value was computed for."""
+    config = {
         "schema": 1,
         "areas": {area: {"expected_sha256": {"2": HEIGHTS_SHA256}, "spacing_m": 2.0}},
     }
+    return recorded(config, world, lock, "swissalti3d")
 
 
 def _write_tile(path, data, west=WEST, north=SOUTH + 1000.0, size=0.5):
@@ -109,15 +114,25 @@ def case(tmp_path):
             }
         },
     }
+    world = _world(tmp_path)
     return {
         "tmp": tmp_path,
-        "world": _world(tmp_path),
+        "world": world,
         "datasets": load_datasets(),
         "lock": lock,
-        "config": _config(),
+        "config": _config(world, lock),
         "raw_dir": raw_dir,
         "out": tmp_path / "generated",
     }
+
+
+def _adopt(case):
+    """Record the case's lock in its terrain config, as design does when it adopts inputs.
+
+    Since M2-07 a lock entry the config was not computed for is refused before any tile is
+    read; a test of what comes after that check changes the lock and adopts it.
+    """
+    case["config"] = recorded(case["config"], case["world"], case["lock"], "swissalti3d")
 
 
 def _build(case, **changes):
@@ -153,7 +168,8 @@ def test_an_area_off_the_vertex_lattice_is_refused(case, tmp_path):
 
 
 def test_an_area_the_world_does_not_have_is_refused(case):
-    _refused(case, "no area named 'backdrop'", config=_config("backdrop"))
+    config = _config(case["world"], case["lock"], "backdrop")
+    _refused(case, "no area named 'backdrop'", config=config)
 
 
 def test_a_source_resolution_other_than_half_a_metre_is_refused(case):
@@ -178,7 +194,9 @@ def test_a_lock_for_other_inputs_is_refused_naming_the_lock_command(case, change
 
 
 def test_provenance_that_differs_from_the_lock_is_refused(case):
+    """The lock adopted (design recorded it), the download not run again since."""
     case["lock"]["datasets"]["swissalti3d"]["tiles"][TILE]["sha256"] = "ab" * 32
+    _adopt(case)
     message = _refused(case, TILE)
     assert "ab" * 32 in message and DOWNLOAD_COMMAND in message
 
@@ -216,6 +234,7 @@ def test_a_tile_of_another_shape_is_refused(case, tile):
     data = json.loads(provenance.read_text(encoding="utf-8"))
     data["tiles"][0]["sha256"] = sha256
     provenance.write_text(json.dumps(data), encoding="utf-8")
+    _adopt(case)
     _refused(case, TILE)
 
 

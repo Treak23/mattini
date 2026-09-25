@@ -2,6 +2,10 @@
   "schema": 1,
   "areas": {
     "village": {
+      "computed_for": {
+        "inputs_sha256": "4000a69820545fa500976a42c908eea5a77ba17b54630193058197361f81605b",
+        "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b"
+      },
       "expected_sha256": {
         "2623-1095": "85273add6ae6a3f8968b4e78944a2ea5113e401f7eedbb40130b9b5b202adb96",
         "2623-1096": "e2c657fd0c3550fe11ddcf211781a1da3ba40210b545452a05acb8ff846a2c5d",

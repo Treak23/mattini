@@ -9,6 +9,10 @@ and otherwise that description copied verbatim. `manifest` refuses a built block
 attribution, collection and edition and, in order, the sheets the lock pins with their
 SHA-256s, a chunk file's size or SHA-256 differs from its entry, or the chunks are not the
 buildings config's. The shared buildings fixture's generated files stand in for a build.
+Since M2-07 also when its `lv95_box` is not the world config's box for the area, as floats
+with exact keys (M2 R1 P-03); and a test that changes the world or the lock to reach these
+checks records the change in the buildings config (`_adopted`), since a config computed
+for another world or lock entry is refused first, naming design's step.
 
 Does NOT prove: that the game reads the block (M2-05); that the real village's block is
 accepted (the real run writes the manifest after the step, Findings).
@@ -19,6 +23,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from computed_for import recorded
 
 from mattini.buildings import BuildingsError
 from mattini.lock import write_lock
@@ -145,10 +150,86 @@ def test_a_description_that_does_not_match_is_refused(tmp_path, change):
     _refused(out)
 
 
+WORLD_BOX = json.loads((FIXTURE / "world.json").read_bytes())["areas"]["fixture"]
+
+
+@pytest.mark.parametrize(
+    ("key", "shift"),
+    [("e", 1000.0), ("e", -1000.0), ("n", 1000.0), ("n", -1000.0)],
+    ids=["east", "west", "north", "south"],
+)
+def test_a_box_shifted_by_a_kilometre_is_refused(tmp_path, key, shift):
+    """M2 R1 P-03's case: the box moved 1 km, the chunks, world, source and lock all fine.
+
+    Harm: a later consumer (chunk loading by distance) trusting a box the manifest let
+    through 1 km off the world's area. The refusal names the field and both boxes.
+    """
+    out = _out(tmp_path)
+
+    def move(block):
+        for edge in (f"{key}_min", f"{key}_max"):
+            block["lv95_box"][edge] += shift
+
+    _edit_description(out, move)
+    found = json.loads((out / "buildings" / "fixture.json").read_bytes())["lv95_box"]
+    assert found != WORLD_BOX
+    message = _refused(out)
+    for part in ("lv95_box", repr(found), repr(dict(sorted(WORLD_BOX.items())))):
+        assert part in message, (part, message)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda box: box.update(e_max=box["e_max"] + 0.5),
+        lambda box: box.update(n_min=box["n_min"] - 0.001),
+        lambda box: box.update(e_min=int(box["e_min"])),
+        lambda box: box.update(n_max=str(box["n_max"])),
+        lambda box: box.pop("n_min"),
+        lambda box: box.update(e_min=box.pop("e_max"), e_max=box["e_min"]),
+    ],
+    ids=["an-edge-moved", "a-millimetre", "a-whole-number", "a-string", "a-key-missing", "swapped"],
+)
+def test_a_box_that_is_not_exactly_the_world_s_is_refused(tmp_path, change):
+    """The box as floats with exactly the four keys, as the buildings step writes it."""
+    out = _out(tmp_path)
+    _edit_description(out, lambda b: change(b["lv95_box"]))
+    found = json.loads((out / "buildings" / "fixture.json").read_bytes())["lv95_box"]
+    message = _refused(out)
+    assert "lv95_box" in message and repr(found) in message, message
+
+
+def test_the_fixture_s_box_is_the_world_s():
+    """Positive control for the two tests above: the built block's box passes as it is."""
+    block = json.loads((GENERATED / "buildings" / "fixture.json").read_bytes())
+    assert block["lv95_box"] == WORLD_BOX
+    assert all(type(value) is float for value in block["lv95_box"].values())
+
+
+def _adopted(tmp_path, world: Path = FIXTURE / "world.json", lock: Path | None = None) -> Path:
+    """The fixture's buildings config recording `world` and `lock` (design has adopted them).
+
+    Since M2-07 the config's `computed_for` is compared with the world and the lock first;
+    a test of the checks of the built block that follow records the world or lock it
+    changes, so it reaches them.
+    """
+    config = json.loads((FIXTURE / "buildings.json").read_text(encoding="utf-8"))
+    lock_data = json.loads((lock or FIXTURE / "datasets.lock.json").read_bytes())
+    path = tmp_path / "adopted-buildings.json"
+    path.write_text(
+        json.dumps(recorded(config, world, lock_data, "swissbuildings3d")), encoding="utf-8"
+    )
+    return path
+
+
 def test_buildings_built_for_another_world_are_refused(tmp_path):
+    """Design has recomputed for the changed world: the old block is refused, naming the
+    rebuild. Without design's step the refusal names design's (test_expected_inputs_steps)."""
     world = _copy_with(tmp_path, FIXTURE / "world.json", lambda d: d.update(height_offset_m=0.0))
-    message = _refused(_out(tmp_path), config_path=world)
-    assert "world config" in message
+    message = _refused(
+        _out(tmp_path), config_path=world, buildings_config_path=_adopted(tmp_path, world)
+    )
+    assert "built for the world config" in message
 
 
 @pytest.mark.parametrize("key", ["attribution", "collection", "edition"])
@@ -180,20 +261,23 @@ def _lock_with(tmp_path, change) -> Path:
     ids=["sha256", "another-sheet", "other-sheet", "edition"],
 )
 def test_sheets_that_are_not_the_lock_s_are_refused(tmp_path, change):
-    _refused(_out(tmp_path), lock_path=_lock_with(tmp_path, change))
+    """The lock changed and adopted by design, the buildings not rebuilt since."""
+    lock = _lock_with(tmp_path, change)
+    _refused(_out(tmp_path), lock_path=lock, buildings_config_path=_adopted(tmp_path, lock=lock))
 
 
 def test_the_sheets_must_come_in_the_lock_s_order(tmp_path):
     out = _out(tmp_path)
     lock = _lock_with(tmp_path, lambda e: e["sheets"].update({"1249-41": e["sheets"]["1249-42"]}))
+    config = _adopted(tmp_path, lock=lock)
     sheets = json.loads(lock.read_bytes())["datasets"]["swissbuildings3d"]["sheets"]
     in_order = [{"sha256": sheets[s]["sha256"], "sheet": s} for s in ("1249-41", "1249-42")]
     _edit_description(out, lambda b: b["source"].update(sheets=in_order))
-    written = json.loads(_write(out, lock_path=lock).read_bytes())
+    written = json.loads(_write(out, lock_path=lock, buildings_config_path=config).read_bytes())
     assert written["buildings"]["source"]["sheets"] == in_order
     (out / "manifest.json").unlink()
     _edit_description(out, lambda b: b["source"]["sheets"].reverse())
-    _refused(out, lock_path=lock)
+    _refused(out, lock_path=lock, buildings_config_path=config)
 
 
 def test_a_lock_without_buildings_is_refused(tmp_path):

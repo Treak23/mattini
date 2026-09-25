@@ -11,11 +11,13 @@ GeoTIFF for the valley's tile, and the manifest ends up holding the valley's ter
 Does NOT prove: anything about M5's larger area (not designed yet); a real download.
 """
 
+import hashlib
 import json
 
 import numpy as np
 import pytest
 import rasterio
+from computed_for import computed_for
 from fake_swisstopo import VILLAGE_TILES, FakeSwisstopo
 from rasterio.transform import from_origin
 from window_mean import expected_sha256
@@ -60,10 +62,30 @@ def valley(tmp_path, monkeypatch):
     world["areas"]["valley"] = dict(VALLEY)
     world_path = tmp_path / "world.json"
     world_path.write_text(json.dumps(world, indent=2), encoding="utf-8")
+    geotiff = _geotiff(tmp_path / "valley.tif")
+    # the lock entry `lock terrain` writes from what the fake publishes, which the
+    # expected value was computed for (M2-07)
+    published = {
+        "collection": "ch.swisstopo.swissalti3d",
+        "edition": "2024",
+        "resolution_m": 0.5,
+        "tiles": {
+            VALLEY_TILE: {
+                "file": f"swissalti3d_2024_{VALLEY_TILE}_0.5_2056_5728.tif",
+                "sha256": hashlib.sha256(geotiff).hexdigest(),
+            }
+        },
+    }
     config = {
         "schema": 1,
         "areas": {
-            "valley": {"expected_sha256": {"2": expected_sha256(_heights(), 2.0)}, "spacing_m": 2.0}
+            "valley": {
+                "computed_for": computed_for(
+                    world_path, {"datasets": {"swissalti3d": published}}, "swissalti3d"
+                ),
+                "expected_sha256": {"2": expected_sha256(_heights(), 2.0)},
+                "spacing_m": 2.0,
+            }
         },
     }
     config_path = tmp_path / "terrain.json"
@@ -71,7 +93,7 @@ def valley(tmp_path, monkeypatch):
     lock_path = tmp_path / "datasets.lock.json"
 
     fake = FakeSwisstopo(tiles=VILLAGE_TILES + [VALLEY_TILE])
-    fake._publish(VALLEY_TILE, _geotiff(tmp_path / "valley.tif"))
+    fake._publish(VALLEY_TILE, geotiff)
     load_terrain_config = terrain.load_terrain_config
     monkeypatch.setattr(download, "urllib_fetch_json", fake.fetch_json)
     monkeypatch.setattr(download, "urllib_fetch_file", fake.fetch_file)
