@@ -9,7 +9,9 @@ Open items only. Shipped and answered items live in `docs/history/` and
 **Last shipped:** nothing yet. Arc M0 closed on 2026-09-24 without a version, because
 there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
-### Arc M1 — Terrain (planned 2026-09-25; the go below)
+### Arc M1 — Terrain (planned 2026-09-25)
+
+Supervision: ON · M1 · since 2026-09-25T04:00Z
 
 **OPEN briefs** (lanes may run at once: no shared file, no dependency):
 
