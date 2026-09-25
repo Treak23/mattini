@@ -6,31 +6,30 @@ extends GutTest
 ## the pause screen promises. Every test sets manifest_path, so no result depends on what
 ## this machine has generated.
 ##
+## Brief M2-05: the shared terrain fixture has no buildings, and a missing buildings block
+## is refused on screen, so these tests read a complete world (complete_world.gd): the
+## terrain fixture plus one box. A test that means something is missing says so.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); how the controls feel.
 
+const CompleteWorld := preload("res://tests/complete_world.gd")
 const SCRATCH_DIR := "user://test_main_scene_errors"
 const DEPRECATION := "instance_reset_physics_interpolation() is deprecated"
 
 var _cases := 0
-
-
-func _repo_file(rel: String) -> String:
-	return ProjectSettings.globalize_path("res://").path_join("..").path_join(rel)
+var _complete := ""
 
 
 func _fixture_manifest_path() -> String:
-	return _repo_file("tests/shared/terrain_fixture/generated/manifest.json")
+	return _complete
 
 
 func before_all() -> void:
-	DirAccess.make_dir_recursive_absolute(SCRATCH_DIR.path_join("terrain"))
+	_complete = CompleteWorld.write(SCRATCH_DIR.path_join("complete"))
 
 
 func after_all() -> void:
-	for folder in [SCRATCH_DIR.path_join("terrain"), SCRATCH_DIR]:
-		for file in DirAccess.get_files_at(folder):
-			DirAccess.remove_absolute(folder.path_join(file))
-		DirAccess.remove_absolute(folder)
+	CompleteWorld.remove_tree(SCRATCH_DIR)
 
 
 func after_each() -> void:
@@ -59,31 +58,16 @@ func _main_with(manifest_path: String) -> Node3D:
 	return main
 
 
-## The fixture's manifest with [param change] applied, written under SCRATCH_DIR next to a
-## copy of the fixture's heights; returns its path.
+## The complete world with [param change] applied and [param heights] (the fixture's when
+## empty), written into a fresh folder under SCRATCH_DIR; returns its manifest's path.
 func _write_manifest(change: Callable, heights := PackedByteArray()) -> String:
-	var fixture := _fixture_manifest_path()
-	var manifest: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(fixture))
-	if heights.is_empty():
-		heights = FileAccess.get_file_as_bytes(
-			fixture.get_base_dir().path_join("terrain/fixture.f32")
-		)
-	var heights_file := FileAccess.open(
-		SCRATCH_DIR.path_join("terrain/fixture.f32"), FileAccess.WRITE
-	)
-	heights_file.store_buffer(heights)
-	heights_file.close()
-	change.call(manifest)
 	_cases += 1
-	var path := SCRATCH_DIR.path_join("manifest_%d.json" % _cases)
-	var file := FileAccess.open(path, FileAccess.WRITE)
-	file.store_string(JSON.stringify(manifest))
-	file.close()
-	return path
+	return CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), change, heights)
 
 
 func _write_text(text: String) -> String:
 	_cases += 1
+	DirAccess.make_dir_recursive_absolute(SCRATCH_DIR)
 	var path := SCRATCH_DIR.path_join("manifest_%d.json" % _cases)
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	file.store_string(text)
@@ -219,7 +203,14 @@ func test_a_manifest_that_is_not_json_shows_its_refusal_and_the_manifest_command
 	assert_string_contains(message, "not valid JSON")
 	assert_string_contains(message, path)
 	assert_string_contains(message, "uv run --project pipeline python -m mattini manifest")
+	assert_true(
+		message.begins_with("mattini cannot show the terrain and the buildings.\n"),
+		"a refused manifest shows neither (M2-05)"
+	)
 	assert_null(main.get_node_or_null("Terrain"))
+	assert_null(main.get_node_or_null("Buildings"))
+	var credits: String = main.get_node("UI/PauseMenu/Credits").text
+	assert_string_contains(credits, "\nNo generated data is loaded, so no dataset is shown.\n")
 	assert_push_error("not valid JSON", "the refusal is logged once, by WorldConfig")
 	assert_push_error_count(1, "and only once")
 
@@ -237,11 +228,14 @@ func test_a_damaged_heights_file_shows_its_refusal_and_the_terrain_commands() ->
 	var build := message.rfind("uv run --project pipeline python -m mattini terrain")
 	assert_gt(download, -1, "the download command is named")
 	assert_gt(build, download, "then the terrain command")
+	assert_false(message.contains("buildings"), "the buildings are not refused (M2-05)")
 	assert_null(main.get_node_or_null("Terrain"))
+	assert_is(main.get_node_or_null("Buildings"), Node3D, "the buildings stay")
 	assert_push_error("SHA-256", "the refusal is logged once, by TerrainGrid")
 	assert_push_error_count(1, "and only once")
 
 
+## The complete world without its terrain: the buildings stay (M2-05).
 func test_without_terrain_the_camera_still_flies_and_no_version_shows() -> void:
 	var path := _write_manifest(func(manifest: Dictionary) -> void: manifest["terrain"] = null)
 	var main := _main_with(path)
@@ -265,7 +259,8 @@ func test_without_terrain_the_camera_still_flies_and_no_version_shows() -> void:
 			assert_false(text.contains(version), "%s shows no version" % control.get_path())
 	assert_gt(shown, 0, "the error panel's message is shown and looked at")
 	var credits: String = main.get_node("UI/PauseMenu/Credits").text
-	assert_string_contains(credits, "No terrain is loaded")
+	assert_false(credits.contains("swissalti3d"), "no terrain, so no terrain dataset")
+	assert_string_contains(credits, "\nswissbuildings3d 2020, © swisstopo\n", "the buildings'")
 
 
 func test_the_credits_hold_the_dataset_and_every_licence_text() -> void:

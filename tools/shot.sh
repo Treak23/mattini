@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Software screenshots of the main scene reading a manifest (docs/SPEC.md §12; briefs M1-04,
-# M1-05; game/tools/shot.gd renders main.tscn): its terrain, sun, sky, error panel and
-# pause screen. Evidence, never a gate: Godot's Compatibility renderer on Mesa's llvmpipe
-# under Xvfb, not the Forward+ look (brain.md H12).
+# M1-05, M2-05; game/tools/shot.gd renders main.tscn): its terrain, buildings, sun, sky,
+# error panel and pause screen. Evidence, never a gate: Godot's Compatibility renderer on
+# Mesa's llvmpipe under Xvfb, not the Forward+ look (brain.md H12).
 #
 #   tools/shot.sh <manifest> <out_dir> "<view>;<view>;..."
 #

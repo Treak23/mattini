@@ -15,29 +15,29 @@ extends GutTest
 ## (owner: only there), the controls, the credits (every dataset's attribution from the
 ## manifest, the licences of Godot and Terrain3D; docs/RELEASE.md §A), Resume and Quit.
 ## Does NOT prove: that anything renders or looks right (no GPU).
+##
+## Brief M2-05: the shared terrain fixture has no buildings, and a missing buildings block
+## is refused on screen, so these tests read a complete world (complete_world.gd): the
+## terrain fixture plus one box. The terrain's placement and heights are the fixture's.
 
+const CompleteWorld := preload("res://tests/complete_world.gd")
 const SCRATCH_DIR := "user://test_main_scene"
 const DEPRECATION := "instance_reset_physics_interpolation() is deprecated"
 
 var _cases := 0
-
-
-func _repo_file(rel: String) -> String:
-	return ProjectSettings.globalize_path("res://").path_join("..").path_join(rel)
+var _complete := ""
 
 
 func _fixture_manifest_path() -> String:
-	return _repo_file("tests/shared/terrain_fixture/generated/manifest.json")
+	return _complete
 
 
 func before_all() -> void:
-	DirAccess.make_dir_recursive_absolute(SCRATCH_DIR)
+	_complete = CompleteWorld.write(SCRATCH_DIR.path_join("complete"))
 
 
 func after_all() -> void:
-	for file in DirAccess.get_files_at(SCRATCH_DIR):
-		DirAccess.remove_absolute(SCRATCH_DIR.path_join(file))
-	DirAccess.remove_absolute(SCRATCH_DIR)
+	CompleteWorld.remove_tree(SCRATCH_DIR)
 
 
 ## Terrain3D 1.0.2 prints this warning once per process, when the first terrain enters the
@@ -56,22 +56,17 @@ func _main_with(manifest_path: String) -> Node3D:
 	return main
 
 
+## The complete world without its terrain (its buildings stay).
 func _write_manifest_without_terrain() -> String:
-	var manifest: Dictionary = JSON.parse_string(
-		FileAccess.get_file_as_string(_fixture_manifest_path())
-	)
-	manifest["terrain"] = null
 	_cases += 1
-	var path := SCRATCH_DIR.path_join("manifest_%d.json" % _cases)
-	var file := FileAccess.open(path, FileAccess.WRITE)
-	file.store_string(JSON.stringify(manifest))
-	file.close()
-	return path
+	var no_terrain := func(manifest: Dictionary) -> void: manifest["terrain"] = null
+	return CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), no_terrain)
 
 
 func test_the_fixture_terrain_is_shown_with_no_error() -> void:
 	var main := _main_with(_fixture_manifest_path())
 	assert_is(main.get_node_or_null("Terrain"), Terrain3D, "the terrain is built")
+	assert_is(main.get_node_or_null("Buildings"), Node3D, "and the buildings (M2-05)")
 	assert_is(main.get_node_or_null("Camera"), FreeFlyCamera)
 	assert_is(main.get_node_or_null("Sun"), DirectionalLight3D)
 	assert_is(main.get_node_or_null("Environment"), WorldEnvironment)
@@ -111,9 +106,12 @@ func test_no_terrain_built_opens_the_error_panel_naming_the_command() -> void:
 	var path := _write_manifest_without_terrain()
 	var main := _main_with(path)
 	assert_null(main.get_node_or_null("Terrain"), "no terrain without a built terrain")
+	assert_is(main.get_node_or_null("Buildings"), Node3D, "the buildings stay (M2-05)")
 	assert_true(main.get_node("UI/ErrorPanel").visible, "the error panel is open")
 	var message: String = main.get_node("UI/ErrorPanel/Message").text
+	assert_true(message.begins_with("mattini cannot show the terrain.\n"), "names the terrain")
 	assert_string_contains(message, "python -m mattini terrain")
+	assert_false(message.contains("buildings"), "only the terrain is missing")
 	assert_push_error(path, "the refusal is also logged, naming the manifest")
 
 

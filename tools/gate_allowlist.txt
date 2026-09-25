@@ -1,3 +1,4 @@
 WorldConfig: user://test_ # the refusal tests write broken manifests under user://test_* on purpose
 WorldConfig: not read from a manifest @ res://tests/test_world_config_unbuilt.gd # it provokes the unbuilt-config refusal on purpose, and only it may
 TerrainGrid: user://test_ # the terrain refusal tests write broken manifests under user://test_* on purpose
+BuildingChunks: user://test_ @ res://tests/test_building_chunks_indices.gd # it refuses chunks whose indices it set to 2^31 or more on purpose (brief M2-05)
