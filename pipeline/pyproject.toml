@@ -4,6 +4,7 @@ version = "0.0.0"
 description = "Offline data pipeline for mattini: swisstopo geodata to game assets"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "fiona>=1.10.1",
     "numpy>=2.5.3",
     "rasterio>=1.5.1",
 ]

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "areas": {
+    "village": {
+      "expected_sha256": {
+        "2623-1095": "85273add6ae6a3f8968b4e78944a2ea5113e401f7eedbb40130b9b5b202adb96",
+        "2623-1096": "e2c657fd0c3550fe11ddcf211781a1da3ba40210b545452a05acb8ff846a2c5d",
+        "2623-1097": "7484d4bfbad6325c304dfd1d4b6a694688ba490a7e7f08b221cd431e38e6dd00",
+        "2624-1095": "72155f75dcb0b44a1bb49f06a041ee0e2157b185d0d3fcc5395356fb00e320db",
+        "2624-1096": "32068ec65f52078bf668209cb95c24234d3eb8aaeed0a452f1a876fba1004d0e",
+        "2624-1097": "5d64e30f6e52d78134c567d313d9bbea53fe5b0aabf20e11891459f5885c05f3"
+      }
+    }
+  }
+}

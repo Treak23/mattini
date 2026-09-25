@@ -1,5 +1,5 @@
 # Brief: M2-04 — The village buildings from the downloaded sheets
-Status: OPEN
+Status: DONE (b980214)
 
 Written in the design realm; executed under `docs/roles/BUILD.md` (in M2 by an Opus agent
 of the one M2 session, the owner's word of 2026-09-25, `docs/history/RULINGS.md`).
@@ -129,15 +129,15 @@ M2-01, M2-03.
 
 ## Done when (gates)
 
-- [ ] The pinned copies are in place and byte-identical (`cmp`).
+- [x] The pinned copies are in place and byte-identical (`cmp`).
       - does NOT prove: that the pinned tests are the right tests.
-- [ ] With the real sheets (downloaded to a scratch folder, never committed),
+- [x] With the real sheets (downloaded to a scratch folder, never committed),
       `python -m mattini buildings --raw <scratch>` writes design's six chunks and exits 0;
       the step prints 1'486 buildings (Findings: the run's output).
       - does NOT prove: that the owner's Windows PC reads the same numbers (its GDAL is its
         wheel's; the snapping is meant to absorb that, and the step's own check says so if
         it does not).
-- [ ] Mutations, each run through the full gate (Findings: both runs):
+- [x] Mutations, each run through the full gate (Findings: both runs):
       - the orientation step skipped;
       - the snapping skipped;
       - the chunk rule using the first vertex instead of the bounding-box centre;
@@ -145,7 +145,7 @@ M2-01, M2-03.
 
       Each fails a named test. State the owner-visible harm each one reproduces.
       - does NOT prove: that the game draws the buildings where the terrain is (M2-05).
-- [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
+- [x] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that anything renders or looks right.
 
 ## Forbidden
@@ -154,3 +154,152 @@ A change to the rule or to the fixture's or config's expected bytes (BLOCKED ins
 second new dependency; writing glTF.
 
 ## Findings (executor writes)
+
+Executor: an Opus agent of the one M2 session, in its own worktree (branch
+`worktree-wf_4de6848a-f86-2`, fast-forwarded to 7abf9e1 first). Implementation commit
+b980214. Nothing pushed, no Routine fired (the owner's M2 ruling, RULINGS 2026-09-25).
+
+**The gates, with their evidence**
+
+1. *Pinned copies.* `cp -r docs/briefs/pinning/M2-04/. .`, then `cmp` of the four files
+   (`config/buildings.json`, `test_buildings_fixture.py`, `test_buildings_read.py`,
+   `test_buildings_rules.py`) against their pinned copies: identical before each commit.
+   All 27 pinned tests passed at the new module's first run.
+2. *The real run.* `uv run --project pipeline python -m mattini buildings --raw
+   <scratch>/raw --out <scratch>/m204/out` over the six 2020 sheets and their
+   provenance.json in the session's scratchpad (never in the repository): exit 0, 7.2 s.
+   Its stderr, verbatim but for the scratch path:
+
+   ```
+   reading <scratch>/raw/swissbuildings3d/2020/swissbuildings3d_3_0_2020_1328-33_2056_5728.gdb.zip
+   … (the same line for 1328-34, 1348-11, 1348-12, 1348-13, 1348-14)
+   sheet 1328-33: 3 features read, 0 selected
+   sheet 1328-34: 68 features read, 0 selected
+   sheet 1348-11: 1359 features read, 1236 selected
+   sheet 1348-12: 440 features read, 250 selected
+   sheet 1348-13: 229 features read, 0 selected
+   sheet 1348-14: 35 features read, 0 selected
+   1486 buildings in 6 chunks: 92594 vertices, 178910 triangles, 3258048 bytes
+   the 6 chunks have the SHA-256s config/buildings.json expects
+   wrote <scratch>/m204/out/buildings (6 chunks and village.json)
+   ```
+
+   Its stdout: the manifest's path. `sha256sum` of the six chunk files gives the brief's
+   six values, and the block's counts are the table's (369 / 21'595 / 41'688 … 279 /
+   17'522 / 33'894). `buildings/village.json` is byte-identical (`cmp`) to the description
+   of design's second implementation (`cfddb51d…`, scratchpad `f2/real/`). The manifest is
+   `ebd3fdef…`, its top level `buildings, schema, terrain, world, world_sha256`, and
+   `python -m mattini manifest` over the same folder rewrites the same bytes. `python -m
+   mattini terrain` into the same folder afterwards (heights `b6334c1f…`, as expected)
+   wrote a manifest holding both blocks. The step's own comparison of the six hashes runs
+   before anything is written (lesson 38), so the owner's first run carries the check.
+3. *Mutations*, each through the full gate (`tools/gate.sh`, logs in the scratchpad), each
+   undone with `git apply -R` of its saved diff; after each, `buildings.py` was back to
+   SHA-256 `eb18a978…` and `git status` showed only the intended changes. The second run of
+   every row is the commit's gate (green, below), whose `buildings.py` is that same file.
+
+   | Mutation | Gate | What failed: named test, message | Same code on the real sheets |
+   |---|---|---|---|
+   | 1. orientation skipped (the reversal → `pass`) | exit 1 at pytest, 12 failed | `test_buildings_rules.py::test_a_negative_solid_is_reversed_and_placed`: `assert [(0, 1, 2), …] == [(0, 2, 1), …]`; `test_buildings_fixture.py::test_the_chunks_hold_the_designed_buildings`: `2650-1149` differs at byte 460; the step tests: `config/buildings.json expects c92aa635…` | the step refuses: chunk 2623-1095 `18562d4a…`, expected `85273add…`; nothing written |
+   | 2. snapping skipped (`snapped = value`) | exit 1 at pytest: 3 failed at its first run, 5 at its second | first run: `test_buildings_rules.py::test_a_coordinate_off_the_storage_grid_is_refused[e]`, `[n]`, `[h]`: `DID NOT RAISE BuildingsError`. Second run, once `test_buildings_snapping.py` existed (item 7): those three, `test_one_noisy_reading_of_a_corner_still_welds` (`not a closed, consistently oriented triangle mesh`) and `test_noise_does_not_move_a_centre_off_the_west_edge` (the building dropped) | six float32 values of chunk 2623-1095 one step off (z −0.015 → −0.015000001), so the step refuses |
+   | 2b. added: the grid checked, the raw value kept (`return value`), snapping's likeliest twin | exit 1 at pytest: 2 failed, 621 passed | only the two new snapping tests: without them the whole gate passed this twin | as 2 |
+   | 3. the chunk by the first vertex, not the bounding-box centre | exit 1 at pytest, 10 failed | `test_buildings_fixture.py::test_the_chunks_hold_the_designed_buildings`: tiles `'2651-1149' != '2651-1150'` (building c's vertex 0 lies east of E 2'651'000); `test_buildings_rules.py::test_chunks_follow_the_bounding_box_centre_and_uuid_order` | the step refuses: chunk 2623-1095 `ae998d84…`, expected `85273add…` |
+   | 4. axis mapping bypassed (x = E − origin_e, y = H − offset, z = −(N − origin_n) hard-coded) | exit 1 at pytest, 1 failed | `test_buildings_rules.py::test_placement_follows_any_rotation_of_the_world`: `(950.47…, 1020.12…, 19.875) != (-19.875, 1020.12…, 950.47…)` | exit 0, the six chunks design's: on the owner's axes the hard-coded mapping writes the same bytes |
+
+   The owner-visible harm each reproduces. (1) All of swisstopo's solids read V < 0, so
+   every building would be written wound inward, and the game takes the file's order as
+   outward (SPEC §8, M2-05): walls and roofs facing inside, culled or lit from behind seen
+   from outside. (2, 2b) The chunks would follow the last bits of GDAL's decoding, which
+   the owner's Windows GDAL may produce differently: other chunks than design's on his
+   PC, refused there by the step's check, so no buildings; a corner read two ways would
+   not weld (the building refused); a centre on the area's edge could drop out of the
+   village. (3) A building astride a kilometre line filed under the tile of whichever
+   corner swisstopo lists first: once chunks load by distance, it appears or vanishes with
+   the wrong tile. (4) A second home for the axis mapping (Hard Rule 4): the day
+   config/world.json's axes change, the game follows the manifest while the buildings keep
+   the old mapping, the village silently rotated or mirrored against everything else. Only
+   the rotation test sees it; the real run cannot.
+4. *Standard gate.* `tools/gate.sh > <scratch>/gate-M2-04.log 2>&1 && git commit -F …` →
+   b980214. The log: `uv lock --check` passed; pytest `623 passed, 4 deselected`; ruff
+   check and format clean; the manifest step; Godot 4.6.3 import and parse check; GUT
+   `---- All tests passed! ----` (16 scripts, 76 tests, 1726 asserts); gdlint and
+   gdformat; `== gate: all steps passed`. This Findings commit is chained on the gate too.
+
+**Numbers and surprises**
+
+5. *fiona.* `uv add --project pipeline fiona` locked fiona 1.10.1 (bundling GDAL 3.9.2,
+   `fiona.__gdal_version__`, measured) with its cp313 wheels for manylinux x86_64, macOS
+   and **`fiona-1.10.1-cp313-cp313-win_amd64.whl`** (sha256 `15751c90…`, 24'461'486 bytes)
+   in `pipeline/uv.lock`. It brought two packages of its own, click-plugins 1.1.1.2 and
+   cligj 0.7.2 (attrs, certifi and click were locked already); nothing else was added. It
+   runs beside rasterio 1.5.1 in one process (the gate's pytest and the real runs import
+   both).
+6. *Snapping on the real sheets (measured).* It moves 2'120'072 of the 2'259'594
+   coordinates read, by at most 1.86e-9 m in E and N and 7.3e-12 m in H (fiona hands over
+   `2622709.7309999987` for 2'622'709.731). All 2'134 features pass the reader's checks and
+   the 1e-6 m tolerance; the 1'486 selected are closed, consistently oriented and all
+   reversed (V < 0), as design measured.
+7. *The pinned noise test cannot see a missing snap* (lesson 34).
+   `test_reader_noise_is_snapped_to_the_storage_grid` moves every reading of a corner by
+   the same 64-bit step, which the float32 rounding absorbs and which welds anyway: it
+   passed under mutation 2, and mutation 2b passed every pinned test. Added
+   `test_buildings_snapping.py`: one reading of a corner off by 1e-9 m must still weld, and
+   a building whose centre is on the west edge once snapped (1e-9 m west of it as read,
+   which the test asserts) must stay in. Both fail under 2 and 2b.
+8. *A FileGDB that fiona writes cannot stand in for a sheet end to end* (measured). GDAL
+   regroups a MultiPolygon's rings by their orientation seen from above when it reads the
+   layer back (two of the fixture's eleven buildings came back with four-ring polygons,
+   all eleven with their triangles in another order), and its writer re-winds each ring
+   (clockwise seen from above). `CREATE_MULTIPATCH=YES` changed nothing through fiona's
+   OpenFileGDB (the layer stays 3D MultiPolygon). So `test_buildings_step.py` stands the
+   fixture's `source.json` in for sheet 1249-42, as the fixture's own lock pins it, with a
+   stand-in reader that records the bytes it is handed (they must be the bytes hashed); it
+   reproduces the fixture's `generated/` files and manifest byte for byte. The real reader
+   runs inside the step in one refusal test (a quad, naming sheet and UUID) and in the
+   pinned and added reader tests; swisstopo's own format is proved by the real run alone,
+   as the brief says.
+9. *Golden manifest.* The live golden (`test_golden_outputs.py`, and the same value in
+   `test_terrain_manifest.py`) moves from `a04c269d…` to `ba8383ff…`: the old bytes with
+   the one line `  "buildings": null,` inserted (removing that line gives `a04c269d…`
+   again, measured). The two terrain fixtures' manifests gained that line and nothing else.
+
+**Readings taken where the brief left a choice** (reversible; none changes the rule, the
+fixture or the config)
+
+10. `build_buildings` requires the lock's buildings entry to pin exactly the area's sheets,
+    not the superset `download buildings` accepts: `manifest` checks a block's sheets
+    against the lock's, in order, and `built_buildings_block` has no world from which to
+    derive the area's sheets, so a lock pinning more would yield buildings the manifest
+    refuses. The committed lock pins exactly the six.
+11. `built_buildings_block(…, lock)` takes the lock or its path; the manifest passes the
+    path, read only when buildings are built (the terrain's rule: a manifest with nothing
+    built depends on no lock). The manifest always loads and validates the buildings config,
+    as it does the terrain config, but compares its area only once a block is built
+    ("whatever the buildings config says": the terrain fixtures run with the committed
+    config, area village).
+12. `read_sheet` returns exactly `{uuid, objektart, triangles}`; `build_buildings` adds a
+    `sheet` key to each feature, so that `build_chunks`' refusals name sheet and UUID as
+    SPEC §8 asks (without it they name the UUID).
+13. Refusals the rule implies without listing them, each naming the UUID: a null or empty
+    geometry (reader); a non-finite coordinate, a feature without triangles, a face that is
+    not three points (rule). None occurs in the six sheets. The per-building checks (weld,
+    closed, volume) run on the selected buildings only, snapping and its tolerance on every
+    feature read ("every coordinate is snapped"). Entries of a zip beside its one `.gdb`
+    folder are not read.
+14. Pipeline code may not name an area (`test_download_area.py` counts the word "village"
+    in `pipeline/mattini/`): the module's first line and a parser variable are worded
+    around it.
+
+**Out-of-scope touches:** none. Every changed file is on the brief's list
+(`pipeline/tests/` holds `test_repo_tracked.py`, whose REQUIRED list now also names
+`config/buildings.json` and `tests/shared/buildings_vectors.json`).
+
+**Follow-up candidates**
+
+- `write_buildings` does not remove chunk files that an earlier build wrote and the new
+  description no longer lists (after a changed area or config); an export would ship them.
+- CLAUDE.md §Layout does not list `config/buildings.json`.
+- SPEC §8 could record items 7 and 8, and brain.md §Hazards item 8 (a fiona-written
+  FileGDB does not give back the triangles it was given).
+- The real reader's format becomes a gate only with the owner's sample (SPEC §13 row 24);
+  today the real run's hashes prove it.

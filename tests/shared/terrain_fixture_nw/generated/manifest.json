@@ -1,4 +1,5 @@
 {
+  "buildings": null,
   "schema": 1,
   "terrain": {
     "area": "fixture_nw",
