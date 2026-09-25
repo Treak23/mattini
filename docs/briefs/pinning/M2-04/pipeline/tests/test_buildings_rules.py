@@ -22,8 +22,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from mattini.buildings import BuildingsError, build_chunks, write_buildings
 
+from mattini.buildings import BuildingsError, build_chunks, write_buildings
 from mattini.world import load_world
 
 REPO = Path(__file__).resolve().parents[2]

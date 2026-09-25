@@ -19,6 +19,7 @@ from pathlib import Path
 import fiona
 import pytest
 from fiona.crs import CRS
+
 from mattini.buildings import BuildingsError, read_sheet
 
 REPO = Path(__file__).resolve().parents[2]

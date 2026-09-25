@@ -22,7 +22,6 @@ import json
 from pathlib import Path
 
 from mattini.buildings import build_chunks, load_buildings_config, write_buildings
-
 from mattini.manifest import write_manifest
 from mattini.world import load_world
 

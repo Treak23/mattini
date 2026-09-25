@@ -11,6 +11,7 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-09-25 · design · M2-03 · the pinned test_sheets.py fails the gate's ruff check once in place (I001) → design's fault (linted where the module did not exist yet); the pinned copies of M2-03 and M2-04 corrected, test_sheets.py put in place by design (docs/history/blocked/2026-09-25-1.md)
 2026-09-25 · design · M2-01 F6, its check · the manifest's refusal of a lock that does not fit names `lock terrain`, not `terrain` as the brief listed → kept: it names the command that fixes it (BUILD.md rule 1 was followed: the choice was put in Findings)
 2026-09-25 · design · M2-01's check (P2) · the manifest does not re-derive the terrain block's box, rows and columns from the world config → brief M2-06, with the check's three P3 test gaps
 2026-09-25 · design · M2-02 F7 · the gate's scoped allowlist window ends at the script's `passed.` line, beyond the brief's literal mechanism → kept: otherwise a script without tests borrows the previous script's entry (measured by the builder)
