@@ -13,6 +13,7 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01EEAeJBE7KpsQsoGUEmhTVm · Routine trig_01LxXVtmJjWGmvzExTFWz4m9 · since 2026-09-25T05:24Z
+Tick: session_011aAzn6wpccxzxsPN2VtCqW · started 2026-09-25T06:20Z
 Last tick: 2026-09-25T06:16Z · main 303ba66 · ticks 8
 Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $8.98 (ticks 1–7; tick 8 unread) · builders $30.89 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38; M1-05, M1-06's $11.01) · lenses $8.89 (R1 terrain $8.89) (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Lens: session_01AkH5MvA3pEEQS5zJF8BEzF · R1 game · spawned 2026-09-25T05:43Z
