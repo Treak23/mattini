@@ -11,6 +11,9 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-09-25 · design · M2-01 F6, its check · the manifest's refusal of a lock that does not fit names `lock terrain`, not `terrain` as the brief listed → kept: it names the command that fixes it (BUILD.md rule 1 was followed: the choice was put in Findings)
+2026-09-25 · design · M2-01's check (P2) · the manifest does not re-derive the terrain block's box, rows and columns from the world config → brief M2-06, with the check's three P3 test gaps
+2026-09-25 · design · M2-02 F7 · the gate's scoped allowlist window ends at the script's `passed.` line, beyond the brief's literal mechanism → kept: otherwise a script without tests borrows the previous script's entry (measured by the builder)
 2026-09-25 · owner's word, at M2 planning · M2 · how is M2 run? → in one session, "ultracode design … do everything in this session here, no spawning of other worker, all just opus 5.5 ultracode": design, build, review and close in the one Opus 5.5 session, with in-session workflow agents and no waker, ticks, builder or lens sessions; so DESIGN.md rule 5 (no production code by design), WORKFLOW §Supervision and SUPERVISE.md do not apply to M2 (WORKFLOW §Rules about rules 2); the briefs, pinning tests, gates, review and release record stay
 2026-09-25 · design · M1 close · the builders' reversible choices (M1-01 F6, M1-02 F6, M1-03 F6, M1-04 F8, M1-05 F6–7, M1-06 F9) → all kept; M1-06 F9's unscanned export output joins G-02's fix (D13)
 2026-09-25 · design · M1 close · a fix tranche before 0.1.0? → no: 0.1.0 ships now; T-01's real-data half, G-02 and G-08 were done by hand at the close; the rest go into M2's first briefs (D14)
