@@ -1,11 +1,12 @@
-"""Against the real swisstopo servers: opt-in with `pytest -m network` (briefs M0-04, M1-01).
+"""Against the real swisstopo servers: opt-in with `pytest -m network` (M0-04, M1-01, M2-03).
 
 Excluded from the default run and the gate (pipeline/pyproject.toml). They check the fake
 servers' assumptions against the live STAC API: the pinned edition's items exist for all
 six village tiles with exactly one GeoTIFF asset at the pinned resolution and a SHA-256
-multihash; the committed tile lock equals what swisstopo publishes today (it fails when a
-tile was republished); and a real download of the small 2 m files verifies end to end
-against a lock written for them.
+multihash; each entry of the committed lock, the terrain's and the buildings', equals what
+swisstopo publishes today (it fails when a tile or a sheet was republished); the six
+village sheets' items hold one `.gdb.zip` asset each; and a real download of the small
+2 m files verifies end to end against a lock written for them.
 """
 
 import pytest
@@ -32,10 +33,25 @@ def test_pinned_items_publish_one_asset_with_a_sha256_each():
 
 
 def test_the_committed_lock_is_what_swisstopo_publishes():
-    published = lock.build_lock(
+    world, datasets, fetch = load_world(), load_datasets(), download.urllib_fetch_json
+    committed = lock.load_lock()["datasets"]
+    assert set(committed) == {"swissalti3d", "swissbuildings3d"}
+    assert committed["swissalti3d"] == lock.terrain_entry(world, datasets, fetch, area="village")
+    assert committed["swissbuildings3d"] == lock.buildings_entry(
+        world, datasets, fetch, area="village"
+    )
+
+
+def test_the_village_sheets_publish_one_gdb_zip_each():
+    sheets = download.published_sheets(
         load_world(), load_datasets(), download.urllib_fetch_json, area="village"
     )
-    assert published == lock.load_lock()
+    assert [s.sheet for s in sheets] == download.area_sheets(load_world(), "village")
+    for sheet in sheets:
+        assert sheet.name == f"{sheet.item_id}_2056_5728.gdb.zip"
+        assert sheet.href.startswith("https://data.geo.admin.ch/") and sheet.href.endswith(
+            sheet.name
+        )
 
 
 def test_a_real_download_of_the_2m_tiles_verifies(tmp_path):

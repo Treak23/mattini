@@ -1,9 +1,9 @@
-"""swissALTI3D download for the terrain's area (briefs M0-04, M2-01; docs/SPEC.md §5, §7, §9).
+"""swisstopo downloads for the configured area (briefs M0-04, M2-01, M2-03; SPEC §5, §7-§9).
 
-The 1 km tiles covering the area config/terrain.json names (its one area; the box is in
-config/world.json) are fetched at the edition and resolution pinned in
-config/datasets.json, never "the latest" (Hard Rule 5); the caller passes the area, so the
-download, the lock and the terrain step serve one area (M1 R1 T-06). STAC items are
+swissALTI3D (`download terrain`): the 1 km tiles covering the area config/terrain.json names
+(its one area; the box is in config/world.json) are fetched at the edition and resolution
+pinned in config/datasets.json, never "the latest" (Hard Rule 5); the caller passes the
+area, so the download, the lock and the terrain step serve one area (M1 R1 T-06). STAC items are
 addressed by id. Every file is checked against swisstopo's published SHA-256 (`file:checksum`,
 a `1220…` multihash): it downloads to `<name>.part`, is verified, and only then takes its
 final name, so a file under its final name matched the published checksum when it was
@@ -21,6 +21,14 @@ times, no absolute paths, so two runs on the same inputs write identical bytes. 
 removed before the run's first change on disk (an unlink or a file fetch) and written at
 its end, so it exists only after a run that completed; a run that fails before changing
 anything leaves the previous one as it was.
+
+swissBUILDINGS3D 3.0 (`download buildings`, brief M2-03) follows the same rules, for the
+map sheets of the pinned edition that `sheets.sheets_near` gives for the area's box (every
+sheet within 100 m, SPEC §8 *Sheets*): item `swissbuildings3d_3_0_<edition>_<sheet>`, the
+one asset whose key ends `_2056_5728.gdb.zip`, compared with the lock's `swissbuildings3d`
+entry before anything on disk changes, into `<out_root>/swissbuildings3d/<edition>/` with
+its own provenance.json. A sheet swisstopo republished is adopted only by `python -m mattini
+lock buildings`. The zips are not opened here (M2-04 reads them).
 """
 
 from __future__ import annotations
@@ -37,9 +45,13 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from mattini.sheets import sheets_near
 from mattini.world import REPO, World
 
 DATASET = "swissalti3d"
+BUILDINGS = "swissbuildings3d"
+BUILDINGS_ITEM = "swissbuildings3d_3_0_{edition}_{sheet}"  # a STAC item of the collection
+BUILDINGS_SUFFIX = "_2056_5728.gdb.zip"  # the zipped FileGDB; the item also holds a DWG
 STAC_ITEM = "https://data.geo.admin.ch/api/stac/v1/collections/{collection}/items/{item_id}"
 DEFAULT_OUT = REPO / "data" / "raw"
 PROVENANCE = "provenance.json"
@@ -52,6 +64,7 @@ FETCH_ERRORS = (OSError, http.client.HTTPException)  # urllib's errors are OSErr
 TIMEOUT_S = 60
 USER_AGENT = "mattini-pipeline"
 LOCK_COMMAND = "python -m mattini lock terrain"
+BUILDINGS_LOCK_COMMAND = "python -m mattini lock buildings"
 
 FetchJson = Callable[[str], object]
 FetchFile = Callable[[str, Path], None]
@@ -71,6 +84,16 @@ def area_tiles(world: World, area: str) -> list[str]:
     east = range(math.floor(e_min / TILE_M), math.ceil(e_max / TILE_M))
     north = range(math.floor(n_min / TILE_M), math.ceil(n_max / TILE_M))
     return [f"{e}-{n}" for e in east for n in north]
+
+
+def area_sheets(world: World, area: str) -> list[str]:
+    """The map sheets the named area's buildings are read from, sorted as text.
+
+    Every sheet within `sheets.DEFAULT_MARGIN_M` (100 m) of the area's box: a building can
+    overhang its own sheet (SPEC §8 *Sheets*). The order of the download, the lock and
+    provenance.json.
+    """
+    return sheets_near(world.area(area))
 
 
 def parse_multihash_sha256(text: object) -> str:
@@ -108,6 +131,37 @@ def published_assets(
     return assets
 
 
+@dataclass(frozen=True)
+class PublishedSheet:
+    """What a map sheet's STAC item publishes for the pinned swissBUILDINGS3D edition."""
+
+    sheet: str
+    item_id: str
+    name: str
+    href: str
+    sha256: str
+
+
+def published_sheets(
+    world: World, datasets: dict, fetch_json: FetchJson, *, area: str
+) -> list[PublishedSheet]:
+    """Read the STAC item of every sheet of `area`, in sheet order; no file is fetched.
+
+    A sheet with no item in the pinned edition is a DownloadError naming the sheet and the
+    item's URL.
+    """
+    buildings = datasets[BUILDINGS]
+    sheets = []
+    for sheet in area_sheets(world, area):
+        item_id = BUILDINGS_ITEM.format(edition=buildings["edition"], sheet=sheet)
+        item_url = STAC_ITEM.format(collection=buildings["collection"], item_id=item_id)
+        name, href, sha256 = _published_asset(
+            fetch_json, item_url, item_id, sheet, area, BUILDINGS_SUFFIX, kind="sheet"
+        )
+        sheets.append(PublishedSheet(sheet, item_id, name, href, sha256))
+    return sheets
+
+
 def download_terrain(
     world: World,
     datasets: dict,
@@ -142,28 +196,95 @@ def download_terrain(
 
     out_dir = Path(out_root) / DATASET / alti["edition"]
     out_dir.mkdir(parents=True, exist_ok=True)
-    provenance = out_dir / PROVENANCE
     entries = []
     for asset in assets:
-        dest = out_dir / asset.name
-        if dest.exists() and not (dest.is_file() and _sha256(dest) == asset.sha256):
-            provenance.unlink(missing_ok=True)  # it would list a file this run removes
-            dest.unlink()  # stale or damaged: never leave it looking valid
-        if not dest.exists():
-            provenance.unlink(missing_ok=True)
-            _fetch_verified(fetch_file, asset.href, dest, asset.sha256, asset.tile, area)
+        where = f"tile {asset.tile} of area {area!r}"
+        size = _fetch_into(out_dir, asset.name, asset.href, asset.sha256, fetch_file, where)
         entries.append(
             {
                 "file": asset.name,
                 "item": asset.item_id,
                 "sha256": asset.sha256,
-                "size_bytes": dest.stat().st_size,
+                "size_bytes": size,
                 "tile": asset.tile,
                 "url": asset.href,
             }
         )
 
-    _write_provenance(out_dir, alti, entries)
+    _write_provenance(
+        out_dir,
+        {
+            "attribution": alti["attribution"],
+            "collection": alti["collection"],
+            "dataset": DATASET,
+            "edition": alti["edition"],
+            "resolution_m": alti["resolution_m"],
+            "schema": PROVENANCE_SCHEMA,
+            "tiles": entries,
+        },
+    )
+    return entries
+
+
+def download_buildings(
+    world: World,
+    datasets: dict,
+    out_root: Path | str,
+    fetch_json: FetchJson,
+    fetch_file: FetchFile,
+    *,
+    lock: dict,
+    area: str,
+) -> list[dict]:
+    """Fetch and verify the map sheets of `area` into `<out_root>/swissbuildings3d/<edition>/`.
+
+    `lock` is the lock (`mattini.lock.load_lock()`): its `swissbuildings3d` entry must be
+    for the config's collection and edition and list every sheet of the area, and every
+    published file name and SHA-256 must equal it, all checked before anything on disk
+    changes. Returns the provenance entries, one per sheet in sheet order, and writes them
+    with the dataset's edition and attribution to `provenance.json` in the same directory.
+    """
+    buildings = datasets[BUILDINGS]
+    pinned = _locked_sheets(lock, buildings, area_sheets(world, area), area)
+    published = published_sheets(world, datasets, fetch_json, area=area)
+    for sheet in published:
+        locked = pinned[sheet.sheet]
+        if (sheet.name, sheet.sha256) != (locked["file"], locked["sha256"]):
+            raise DownloadError(
+                f"sheet {sheet.sheet} of area {area!r}: swisstopo now publishes {sheet.name} "
+                f"with SHA-256 {sheet.sha256}, the lock pins {locked['file']} with SHA-256 "
+                f"{locked['sha256']}; nothing was fetched. A republished sheet is adopted "
+                f"only on purpose: `{BUILDINGS_LOCK_COMMAND}`, then commit the lock"
+            )
+
+    out_dir = Path(out_root) / BUILDINGS / buildings["edition"]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for sheet in published:
+        where = f"sheet {sheet.sheet} of area {area!r}"
+        size = _fetch_into(out_dir, sheet.name, sheet.href, sheet.sha256, fetch_file, where)
+        entries.append(
+            {
+                "file": sheet.name,
+                "item": sheet.item_id,
+                "sha256": sheet.sha256,
+                "sheet": sheet.sheet,
+                "size_bytes": size,
+                "url": sheet.href,
+            }
+        )
+
+    _write_provenance(
+        out_dir,
+        {
+            "attribution": buildings["attribution"],
+            "collection": buildings["collection"],
+            "dataset": BUILDINGS,
+            "edition": buildings["edition"],
+            "schema": PROVENANCE_SCHEMA,
+            "sheets": entries,
+        },
+    )
     return entries
 
 
@@ -219,13 +340,50 @@ def _locked_tiles(lock: object, alti: dict, tiles: list[str], area: str) -> dict
     return entries
 
 
-def _published_asset(
-    fetch_json: FetchJson, item_url: str, item_id: str, tile: str, area: str, suffix: str
-) -> tuple[str, str, str]:
-    """The (file name, href, SHA-256) of the one asset of the item whose key ends `suffix`."""
+def _locked_sheets(lock: object, buildings: dict, sheets: list[str], area: str) -> dict:
+    """The lock's sheet entries, once its buildings entry is shown to be for these sheets."""
 
     def fail(message: str) -> DownloadError:
-        return DownloadError(f"tile {tile} of area {area!r}: {item_url}: {message}")
+        return DownloadError(
+            f"the lock {message} (area {area!r}); `{BUILDINGS_LOCK_COMMAND}` writes the "
+            f"lock's buildings entry for the config"
+        )
+
+    datasets = lock.get("datasets") if isinstance(lock, dict) else None
+    locked = datasets.get(BUILDINGS) if isinstance(datasets, dict) else None
+    if not isinstance(locked, dict):
+        raise fail(f"has no {BUILDINGS!r} entry")
+    for key in ("collection", "edition"):
+        if locked.get(key) != buildings[key]:
+            raise fail(
+                f"is for {BUILDINGS} {key} {locked.get(key)!r}, the config pins {buildings[key]!r}"
+            )
+    entries = locked.get("sheets")
+    if not isinstance(entries, dict):
+        raise fail("has no sheets")
+    missing = [sheet for sheet in sheets if sheet not in entries]
+    if missing:
+        raise fail(f"pins no checksum for the sheets {missing} of the area")
+    return entries
+
+
+def _published_asset(
+    fetch_json: FetchJson,
+    item_url: str,
+    item_id: str,
+    tile: str,
+    area: str,
+    suffix: str,
+    *,
+    kind: str = "tile",
+) -> tuple[str, str, str]:
+    """The (file name, href, SHA-256) of the one asset of the item whose key ends `suffix`.
+
+    `tile` is the item's tile or, with `kind="sheet"`, its map sheet; errors name it.
+    """
+
+    def fail(message: str) -> DownloadError:
+        return DownloadError(f"{kind} {tile} of area {area!r}: {item_url}: {message}")
 
     try:
         item = fetch_json(item_url)
@@ -254,9 +412,27 @@ def _published_asset(
     return name, href, sha256
 
 
-def _fetch_verified(
-    fetch_file: FetchFile, url: str, dest: Path, sha256: str, tile: str, area: str
-) -> None:
+def _fetch_into(
+    out_dir: Path, name: str, href: str, sha256: str, fetch_file: FetchFile, where: str
+) -> int:
+    """Make `<out_dir>/<name>` the verified file; return its size in bytes.
+
+    A file already there that matches is kept; one that does not is removed first. Either
+    change removes provenance.json before it happens, since that would list the file.
+    `where` names the tile or sheet in errors.
+    """
+    provenance = out_dir / PROVENANCE
+    dest = out_dir / name
+    if dest.exists() and not (dest.is_file() and _sha256(dest) == sha256):
+        provenance.unlink(missing_ok=True)  # it would list a file this run removes
+        dest.unlink()  # stale or damaged: never leave it looking valid
+    if not dest.exists():
+        provenance.unlink(missing_ok=True)
+        _fetch_verified(fetch_file, href, dest, sha256, where)
+    return dest.stat().st_size
+
+
+def _fetch_verified(fetch_file: FetchFile, url: str, dest: Path, sha256: str, where: str) -> None:
     """Fetch `url` to `dest` via `<dest>.part`, keeping it only if its SHA-256 matches."""
     part = dest.with_name(dest.name + ".part")
     problem = ""
@@ -272,9 +448,7 @@ def _fetch_verified(
             problem = f"fetch failed: {exc}"
         finally:
             part.unlink(missing_ok=True)
-    raise DownloadError(
-        f"tile {tile} of area {area!r}: {url}: {problem} (after {ATTEMPTS} attempts)"
-    )
+    raise DownloadError(f"{where}: {url}: {problem} (after {ATTEMPTS} attempts)")
 
 
 def _sha256(path: Path) -> str:
@@ -282,16 +456,8 @@ def _sha256(path: Path) -> str:
         return hashlib.file_digest(file, "sha256").hexdigest()
 
 
-def _write_provenance(out_dir: Path, dataset: dict, entries: list[dict]) -> Path:
-    provenance = {
-        "attribution": dataset["attribution"],
-        "collection": dataset["collection"],
-        "dataset": DATASET,
-        "edition": dataset["edition"],
-        "resolution_m": dataset["resolution_m"],
-        "schema": PROVENANCE_SCHEMA,
-        "tiles": entries,
-    }
+def _write_provenance(out_dir: Path, provenance: dict) -> Path:
+    """Write `<out_dir>/provenance.json` through a `.part` rename: sorted keys, LF, no times."""
     text = json.dumps(provenance, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     path = out_dir / PROVENANCE
     part = path.with_name(path.name + ".part")

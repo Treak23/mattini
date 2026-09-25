@@ -30,6 +30,36 @@
           "sha256": "b6a322f4039431ba0805a4a4a19ae2b2603a2a0d0701a4cb280bb42ec09e032e"
         }
       }
+    },
+    "swissbuildings3d": {
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "edition": "2020",
+      "sheets": {
+        "1328-33": {
+          "file": "swissbuildings3d_3_0_2020_1328-33_2056_5728.gdb.zip",
+          "sha256": "72b2502856d315b9f265f8279a9491cfa3f45065a42cc492824fd9731d7c4292"
+        },
+        "1328-34": {
+          "file": "swissbuildings3d_3_0_2020_1328-34_2056_5728.gdb.zip",
+          "sha256": "0af21388ab8e665665ed61218fce7d9a276d260319ab77661ab652d039f5d4a9"
+        },
+        "1348-11": {
+          "file": "swissbuildings3d_3_0_2020_1348-11_2056_5728.gdb.zip",
+          "sha256": "14d4aea6a24ab8ae5fd9f287f07ffbac93a28bcab342f06a3e1a841aa5233ab4"
+        },
+        "1348-12": {
+          "file": "swissbuildings3d_3_0_2020_1348-12_2056_5728.gdb.zip",
+          "sha256": "d7fd32c439a633bae9d87cd94c1b793cdd64152be529344c5220b49fd50250b0"
+        },
+        "1348-13": {
+          "file": "swissbuildings3d_3_0_2020_1348-13_2056_5728.gdb.zip",
+          "sha256": "d886a6baa4697631e49fd2281a3f011bbe034b01ea79708c9d46b9dca9730a16"
+        },
+        "1348-14": {
+          "file": "swissbuildings3d_3_0_2020_1348-14_2056_5728.gdb.zip",
+          "sha256": "32c47a7da978832ba56c3e2709d692bf96dc1e386016c80dfda09f9f093db1e2"
+        }
+      }
     }
   },
   "schema": 1
