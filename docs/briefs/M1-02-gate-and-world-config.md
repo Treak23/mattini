@@ -1,5 +1,5 @@
 # Brief: M1-02 — The gate cannot be switched off; WorldConfig's corners are tested (the M0 carry-over, gate and game half)
-Status: OPEN
+Status: DONE (c635411)
 
 Written in the design realm; executed by one fresh executor session. Executor rules:
 `docs/roles/BUILD.md`.
@@ -112,3 +112,89 @@ Switching GUT's error tracking off; an allowlist entry wider than the two above;
 
 ## Findings (executor writes)
 
+Executor session, 2026-09-25. Code commit `c635411` (rebased twice onto M1-01's commits and
+the board's; the gate re-run after each rebase: exit 0).
+
+1. **Pinned copies:** `cmp` of `docs/briefs/pinning/M1-02/game/tests/test_world_config_round_trips.gd`
+   and `…/test_world_config_unbuilt.gd` against `game/tests/`: both exit 0.
+2. **The gate on the pushed head:** exit 0 in about 21 s. `uv lock --check` 66 ms offline
+   (`Resolved 17 packages in 5ms`); pytest 275 passed, 3 deselected; GUT 8 scripts,
+   18 tests, 1195 asserts, `---- All tests passed! ----`. The GUT run prints 44 `ERROR`
+   lines, each excepted by one of the two allowlist entries: 42 contain
+   `WorldConfig: user://test_` (41 refusals plus the empty manifest), 2 contain
+   `WorldConfig: not read from a manifest`. No other `ERROR` line anywhere in the log.
+3. **Mutation proofs.** Each row is one full `tools/gate.sh` run (stdout and stderr to one
+   log) in its own fresh detached worktree of `3f3cde0` (this commit before the rebase; the
+   rebase brought M1-01's pipeline, config and test files and docs, none of this brief's), made with `git worktree add`
+   and removed after the run, so nothing was undone by hand. Control, the same way: exit 0,
+   all steps passed. Two worktrees ran at a time (lesson 20), each gate with its own
+   `user://` (G-10).
+
+   | Run | Mutation | Exit, step | Evidence | Owner-visible harm it reproduces |
+   |---|---|---|---|---|
+   | a | allowlist entry ` # Terrain3D prints a benign line at import` + `game/tests/test_scratch_node.gd` extending `Node` | 1, `godot import` | `gate allowlist entry with an empty text:  # Terrain3D prints a benign line at import` | one typo in the allowlist switches off every scan, and a skipped test script ships green |
+   | a3 | the same with `  # reason` (a text of two spaces) | 1, `godot import` | `gate allowlist entry with an empty text:   # reason` | the same, through a blank text |
+   | b | `test_aaa_quit.gd` whose test calls `get_tree().quit()` | 1, `gut` | no `Tests` line; `ERROR: 3 resources still in use at exit` caught by the scan, and `GUT printed no line '---- All tests passed! ----'` | a run that stops after the first script: every later test (the coordinate tests) never runs |
+   | b2 | a test calling `pending("not written yet")` | 1, `gut` | `---- 1 pending/risky tests. ----`, no `ERROR` line, `GUT printed no line …`: the summary check alone | a skipped test passes as green (D10) |
+   | c | `before_all()` loads `res://assets/missing_heightmap.res`, plus one passing test | 1, `gut` | GUT: `Passing Tests 19`, `---- All tests passed! ----`; the gate: `error lines in the output: ERROR: Cannot open file 'res://assets/missing_heightmap.res'.` | a missing terrain resource loaded once for a whole script, green |
+   | d | `game/.gutconfig.json` = `{"failure_error_types": []}` + a test loading a missing resource in its body | 1, `gut` | GUT ignored the file: `[Failed]: Unexpected Errors`, `---- 1 failing tests ----`; also the `ERROR` scan and the summary check | one committed file turns GUT's error tracking off for every test (H4's "quickest wrong fix") |
+   | d2 | `game/.gutconfig.json` = `{"suffix": "_settings.gd"}` | 0 | `Scripts 8`, `Tests 18`: the file is ignored | — (isolates `-gconfig=`, see d2-control) |
+   | d2-control | d2 with `-gconfig=` taken out of `tools/gate.sh` | 0, all steps passed | `Scripts 1`, `Tests 1` | the harm `-gconfig=` prevents: a committed config quietly runs 1 of 8 scripts, green |
+   | e | a direct call of `run_scanned '^(ERROR\|SCRIPT ERROR)'` over a function printing `native output\0with a NUL` then `ERROR: boom from native code` (the gate's functions sourced, its steps cut; a direct call is enough for this row, per the brief) | 1 | `== gate: error lines in the output: ERROR: boom from native code` | — |
+   | e-control | e with `grep -a -E "$pattern"` back to `grep -E` | 0 | `grep: …/out.log: binary file matches`, the ERROR line not reported | native output holding a NUL (Terrain3D, M1) blinds the scan |
+   | f | `GODOT` = a wrapper printing `4.6.2.stable.official.deadbeef` for `--version` | 1, `godot version` | `== gate: Godot 4.6.3.stable required, …/fake-godot-462.sh is: 4.6.2.stable.official.deadbeef` | a PC with another Godot whose error lines the scans may not know |
+   | g | `"requests>=2"` added to `dependencies` in `pipeline/pyproject.toml`, no `uv lock` | 1, `uv lock --check` | `The lockfile at uv.lock needs to be updated, but --locked was provided.` | the committed lockfile no longer describes the environment; another machine installs something else |
+   | h | two control runs started together in two worktrees | 0 and 0, 21 s each | both `Scripts 8`, `Tests 18`, all steps passed | — (see 5) |
+   | i | the review's H4: `source[axis] = _sign[_source_index[axis]] * p[_source_index[axis]]` in `to_lv95` | 1, `gut` | `test_every_rotation_round_trips` fails for exactly the 8 cyclic rotations (`[+n,+h,+e]`, `[+n,-h,-e]`, `[-n,+h,-e]`, `[-n,-h,+e]`, `[+h,+e,+n]`, `[+h,-e,-n]`, `[-h,+e,-n]`, `[-h,-e,+n]`); e.g. e 2624606.37 for 2623825.13 | a coordinate readout about 1 km off if design ever picks a cyclic mapping |
+   | j | both `if not _built:` guards removed from `to_local` and `to_lv95` | 1, `gut` | `Failing Tests 2`: the two pinned `…_on_an_unbuilt_config_is_nan_and_an_error` (`Expected push_error error containing 'WorldConfig: not read from a manifest'`) | a hand-built WorldConfig gives wrong answers without a word |
+   | j2 | the three NaN defaults back to `0.0`, guards kept | 1, `gut` | `test_an_unbuilt_config_has_a_nan_origin_and_offset`: `origin_e is NaN: 0.0` (and n, offset) | code reading an unbuilt config's origin gets 0 m, which looks like a real place |
+
+   - does NOT prove: that other Godot error formats are caught (G-09 limits the gate to
+     4.6.3); that no other way to switch the gate off exists; that the G-10 race happens
+     without the fix (no concurrent run without it was made, see 5).
+4. **The M0 classes still fail the gate** (the M0-R1-gate table), the same way:
+
+   | Run | Mutation | Exit, step | Evidence |
+   |---|---|---|---|
+   | m4 | a GUT test `assert_eq(1, 2)` | 1, `gut` | `[Failed]: [1] expected to equal [2]`, `---- 1 failing tests ----`, and the summary check |
+   | m5 | a GUT test script using an undeclared class | 1, `godot parse check` | `SCRIPT ERROR: Parse Error: Identifier "UndeclaredThing" not declared in the current scope.`, `ERROR: Failed to load script "res://tests/test_scratch_undeclared.gd" with error "Parse error".` |
+   | m7 | 4 KB of random bytes as `game/corrupt_mutation.png` | 1, `godot import` | `ERROR: Condition "!success" is true. Returning: ERR_FILE_CORRUPT`, `ERROR: Error importing 'res://corrupt_mutation.png'.` (a fresh worktree: the gate's import was the first) |
+
+   - does NOT prove: m1–m3, m6, m8, m9 (not re-run), and the classes the review's
+     does-NOT-prove names.
+5. **G-10, measured.** A probe script printing `OS.get_user_data_dir()`: without
+   `XDG_DATA_HOME`, `/root/.local/share/godot/app_userdata/mattini`; with it,
+   `$XDG_DATA_HOME/godot/app_userdata/mattini`. Run h shows two gates at once passing; it
+   does not show that they collided before (the refusal tests take under a second, and no
+   run without the fix was made).
+6. **Choices inside the brief's scope** (reversible):
+   - `XDG_DATA_HOME` is set on each Godot command through one wrapper, `run_godot`, which
+     every Godot call in the gate goes through (version, import, parse check, GUT), not
+     exported to the whole script: the brief asks for it "for the Godot steps", and the uv
+     steps then run with the environment they had.
+   - `uv lock --check` is the first step, before any `uv run --frozen`.
+   - Both allowlist refusals (the new empty-text case and the old missing-reason case) now
+     print on stdout as well as stderr. Before, `tools/gate.sh > gate.log` kept only
+     `FAILED at step: godot import` and not the reason.
+   - The allowlist is still read at every scanned step, so a bad entry fails at the first
+     one, `godot import`, after the pipeline steps.
+   - The GUT step runs both checks every time and prints each reason (run b shows both).
+     It deletes the scan's `out.log` first, so a log left by the parse check can never
+     satisfy the summary check. The summary line may carry trailing whitespace (a CR from a
+     Windows console would otherwise fail every run there; not measured on Windows).
+   - The version check reads the whole `--version` output, so anything printed before the
+     version fails it.
+   - My own test, `game/tests/test_world_config_unbuilt_origin.gd`: an unbuilt config's
+     `origin_e`, `origin_n` and `height_offset` are NaN. The pinned tests reach only the
+     conversions, which the guard answers first, so without it the NaN defaults the brief
+     decides were untested (run j2).
+   - WorldConfig knows it was built by a `_built` flag that only `from_manifest` sets,
+     after the world block was accepted; a hand-set origin on a `new()` object is still
+     refused by the conversions.
+   - `test_world_config_transforms.gd`'s header no longer claims round trips; it names the
+     file that holds them.
+7. **For M1-04 (next):** the GUT step now fails on every engine `ERROR` line, so every
+   Terrain3D `ERROR` in brain.md H11 (`Resource file not found: res://`, `Cannot find the
+   active camera`, `min_height > max_height`) fails the gate unless the loader avoids it
+   or M1-04's third allowlist entry names it. `WARNING` lines (H4's deprecation) are not
+   scanned.
