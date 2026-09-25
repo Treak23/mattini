@@ -1,5 +1,5 @@
 # Brief: M2-05 — The buildings in the game
-Status: BLOCKED
+Status: DONE (86d764c)
 
 Written in the design realm; executed under `docs/roles/BUILD.md` (in M2 by an Opus agent
 of the one M2 session, the owner's word of 2026-09-25, `docs/history/RULINGS.md`).
@@ -107,9 +107,12 @@ M2-02 (main.gd, export.sh), M2-04 (the generated buildings and the manifest bloc
 
 ## Done when (gates)
 
-- [ ] The pinned copies are in place and byte-identical (`cmp`).
+- [x] The pinned copies are in place and byte-identical (`cmp`).
       - does NOT prove: that the pinned tests are the right tests.
-- [ ] The seam: `test_building_chunks.gd` finds every named vertex of
+      - Was BLOCKED (design's pinned tests failed as pinned); answered by design
+        (`docs/history/blocked/2026-09-25-2.md`): the corrected copies were pinned and put
+        in place at `86d764c`, `cmp` identical for all three.
+- [x] The seam: `test_building_chunks.gd` finds every named vertex of
       `buildings_vectors.json` at `WorldConfig.to_local` of its LV95 point, and
       `test_building_loader.gd` finds every roof normal pointing up and every triangle
       front-facing from outside (Godot's winding, checked against `SurfaceTool`'s own
@@ -118,14 +121,24 @@ M2-02 (main.gd, export.sh), M2-04 (the generated buildings and the manifest bloc
       - x and z swapped when reading positions;
       - the roof threshold on the normal's x instead of y.
       - does NOT prove: that the buildings render or look right.
+      - Re-run by design on the live suite at `86d764c` (GUT over `res://tests`, each
+        undone with `git apply -R`): W, the winding as in the file, fails
+        `test_normals_face_out_and_front_faces_are_godot_s`; X, x and z swapped after
+        reading, fails `test_every_named_vertex_lies_where_the_world_config_puts_it`; R,
+        the roof test on the normal's x, fails `test_roofs_and_walls_by_the_normal` and
+        `test_a_flat_roof_faces_the_sky`. The executor's runs on corrected copies:
+        Findings item 6.
 - [x] The main scene with the real village loads 1'486 buildings in six chunks (a headless
       run's startup lines, in Findings), and the software screenshots show buildings on
       the terrain.
       - does NOT prove: the Forward+ look on the owner's PC.
 - [x] `tools/export.sh` passes with the real village and buildings, including its step 6.
       - does NOT prove: that the Windows build starts.
-- [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
+- [x] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that it renders or looks right.
+      - Green and chained for `e926a15` (without the pinned tests) and for `86d764c`
+        (with them): pytest 662 passed, 4 deselected; GUT 20 scripts, 98 tests, 2692
+        asserts.
 
 ## Forbidden
 

@@ -16,8 +16,8 @@ waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
 | M2-02 | M1's residue, the game and tools half (T-02, G-01 to G-07) | none | DONE (2cf5660), checked |
 | M2-03 | The building inputs: sheets, lock, download | M2-01 | DONE (ad12280), was BLOCKED on design's pinned lint |
 | M2-04 | The village buildings from the sheets | M2-03 | DONE (b980214), checked |
-| M2-05 | The buildings in the game | M2-02, M2-04 | building |
-| M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | building |
+| M2-05 | The buildings in the game | M2-02, M2-04 | DONE (86d764c), was BLOCKED on design's pinned tests |
+| M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | DONE (cefa1ac), checked |
 
 Each brief is built by one agent in its own worktree, then checked by a second agent that
 re-runs the gate, compares the pinned copies and proves the new tests by mutation. Residue
