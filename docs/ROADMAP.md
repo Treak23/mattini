@@ -13,9 +13,8 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_019do6LK4hFYQ9c4ykJwQcNw · Routine trig_011umFC7mvuuPiadHHw9DE56 · since 2026-09-25T04:21Z
-Tick: session_01RDGSCQm3yq8URfoMD7YVDJ · started 2026-09-25T04:23Z
-Last tick: 2026-09-25T04:18Z · main c635411 · ticks 2
-Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $1.31 (tick 1; tick 2 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
+Last tick: 2026-09-25T04:25Z · main 1f2578e · ticks 3
+Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $2.55 (ticks 1–2; tick 3 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Builder: session_01UxbykwYFJSxYM4GVUxoxky · M1-01, M1-03 · spawned 2026-09-25T04:04Z
 Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T04:04Z
 
@@ -31,8 +30,8 @@ Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T
 | M1-06 | Release preparation for 0.1.0: presets, `tools/export.sh`, a real export | M1-05 | — |
 
 Landed: M1-01 `25972d4` (DONE) — full gate green on `7fa1470` at tick 2 (pytest 275
-passed, GUT 13/13, exit 0). M1-02 code `c635411`: full gate green on it at tick 2's end
-(pytest 275 passed, GUT 18/18); its status line and Findings are still to come.
+passed, GUT 13/13, exit 0). M1-02 `c635411` (DONE, Findings `bdba171`) — full gate green on
+`1f2578e` at tick 3 (pytest 275 passed, GUT 18/18, exit 0).
 
 **Review** (WORKFLOW §Review policy): Tier 1 covers the terrain grid on both sides (the
 pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the manifest's
@@ -41,7 +40,10 @@ pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the man
 
 **The close** ships 0.1.0 (SPEC §11): the owner's first look at the village.
 
-**Decisions for the close:** none yet.
+**Decisions for the close:**
+- Keep or reverse the builders' reversible choices inside scope: M1-01 Findings 6 (lock
+  check order, `load_lock` strictness, module layout), M1-02 Findings 6 (gate's
+  `run_godot` wrapper and step order, WorldConfig's `_built` flag and own NaN test).
 
 **Parked questions:** none.
 
