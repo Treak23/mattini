@@ -16,8 +16,8 @@ Waker: session_01EEAeJBE7KpsQsoGUEmhTVm · Routine trig_01LxXVtmJjWGmvzExTFWz4m9
 Tick: session_01X6QWucdq2PdcnnthGwjLX9 · started 2026-09-25T05:39Z
 Last tick: 2026-09-25T05:28Z · main 14460ce · ticks 6
 Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $7.00 (ticks 1–6; tick 7 unread) · builders $30.89 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38; M1-05, M1-06's $11.01) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
-Lens: spawning · R1 terrain · spawned 2026-09-25T05:52Z
-Lens: spawning · R1 game · spawned 2026-09-25T05:52Z
+Lens: session_01XJY3cAYkoCiJxwb7EVLcki · R1 terrain · spawned 2026-09-25T05:42Z
+Lens: session_01AkH5MvA3pEEQS5zJF8BEzF · R1 game · spawned 2026-09-25T05:43Z
 
 **OPEN briefs:** none. The arc's six, all DONE:
 
