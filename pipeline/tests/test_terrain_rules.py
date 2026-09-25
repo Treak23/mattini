@@ -7,6 +7,13 @@ square centred on it, clipped to the area, minus height_offset_m, in 64-bit, rou
 to 32-bit. The reference below computes that definition with exact fractions; resample
 must match it bit for bit. Anything else is refused with TerrainError, never a plausible
 grid: a non-finite height would become 0 m in Terrain3D (brain.md H11), invented ground.
+
+"Rounded once" holds on SPEC §8's condition: the height offset subtracts exactly in
+64-bit, as every offset tested here does (0, 1000 and -12.25 m) and every offset in use.
+Then the mean and the difference are exact, and both resample and the reference round
+once, to 32-bit. An offset with many binary fraction digits (such as 2**-14 + 2**-45)
+would round the subtraction as well, in resample and in the reference alike, so this
+test does not cover it (M1 R1 T-08); a non-zero offset is a design change (SPEC §6).
 """
 
 from fractions import Fraction
@@ -20,7 +27,10 @@ SOURCE_M = Fraction(1, 2)
 
 
 def _reference(mosaic, box, spacing, offset):
-    """The rule, by its definition: exact overlap areas, one rounding at the end."""
+    """The rule, by its definition: exact overlap areas and an exact mean, then `float()`
+    and `np.float32()`. That is one rounding, to 32-bit, while the mean minus the offset is
+    a 64-bit number (the offset subtracts exactly, SPEC §8); otherwise `float()` rounds
+    first."""
     e_min, e_max, n_min, n_max = (Fraction(v) for v in box)
     s = Fraction(spacing)
     rows = int((n_max - n_min) / s) + 1

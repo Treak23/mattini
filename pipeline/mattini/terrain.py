@@ -1,4 +1,4 @@
-"""The terrain grid: swissALTI3D tiles to a heights file for Terrain3D (brief M1-03; SPEC §8).
+"""The terrain grid: swissALTI3D tiles to a heights file for Terrain3D (M1-03, M2-01; SPEC §8).
 
 A vertex every `spacing_m` from the area's north-west corner, its edges included: row r,
 column c is LV95 (e_min + c·s, n_max − r·s). Its height is the area-weighted mean of the
@@ -6,9 +6,16 @@ column c is LV95 (e_min + c·s, n_max − r·s). Its height is the area-weighted
 `height_offset_m` (so local y). The square always covers whole or equally cut pixels, so
 the mean is the plain mean of the 2 × 2 (0.5 and 1 m) or 4 × 4 (2 m) pixels around the
 vertex, fewer at the area's edges; the counts are powers of two. The sums of up to 16
-32-bit heights are exact in 64-bit, so the mean is exact, the height offset is subtracted
-with one 64-bit rounding and the result is rounded once to 32-bit: the same bits on every
-machine, whatever the summation order (Hard Rule 5).
+32-bit heights are exact in 64-bit, so the mean is exact. The height offset is subtracted
+in 64-bit, which is exact for every offset in use (0, 1000 and -12.25 m), and the result
+is rounded once to 32-bit: the same bits on every machine, whatever the summation order
+(Hard Rule 5). An offset with many binary fraction digits would make the subtraction round
+too, a second rounding of at most one 32-bit step (SPEC §8, M1 R1 T-08).
+
+The heights must be the ones design computed: config/terrain.json holds, per spacing, the
+SHA-256 of the heights file (`expected_sha256`), and the step compares its output with the
+value for its spacing before it writes anything (lesson 38, M1 R1 T-01). The manifest
+re-checks a built terrain against that value, the datasets config and the tile lock.
 
 The inputs are the tiles `provenance.json` lists (D9), never the folder's listing; every
 file's SHA-256 must equal its provenance entry and the tile lock's (D7), and every tile
@@ -36,12 +43,17 @@ import numpy as np
 from rasterio.errors import RasterioError
 from rasterio.io import MemoryFile
 
-from mattini.download import DATASET, PROVENANCE
+from mattini.download import DATASET, PROVENANCE, area_tiles
+from mattini.lock import LOCK_PATH, load_lock
 from mattini.world import REPO, SOURCE_AXES, World, parse_world, read_config_bytes
 
 TERRAIN_CONFIG_PATH = REPO / "config" / "terrain.json"
+TERRAIN_CONFIG_NAME = "config/terrain.json"  # the home of the expected heights, for messages
 SCHEMA = 1
 SPACINGS = (0.5, 1.0, 2.0)
+SPACING_KEYS = ("0.5", "1", "2")  # SPACINGS as swisstopo writes them: format(s, "g")
+AREA_CONFIG_KEYS = {"expected_sha256", "spacing_m"}
+SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 SOURCE_M = 0.5  # swissALTI3D pixel size; every spacing is a whole number of pixels
 FORMAT = "float32-le"
 TILE_M = 1000
@@ -69,6 +81,8 @@ BLOCK_KEYS = {
     "spacing_m",
     "world_sha256",
 }
+SOURCE_KEYS = {"attribution", "collection", "dataset", "edition", "resolution_m", "tiles"}
+SOURCE_TILE_KEYS = {"sha256", "tile"}
 
 Box = tuple[float, float, float, float]  # e_min, e_max, n_min, n_max
 Progress = Callable[[str], None]
@@ -79,18 +93,30 @@ class TerrainError(ValueError):
 
 
 def load_terrain_config(path: Path | str = TERRAIN_CONFIG_PATH) -> dict:
-    """config/terrain.json, validated: schema 1, exactly one area (M1), an allowed spacing."""
+    """config/terrain.json, validated by `check_terrain_config`; an error names the file."""
     path = Path(path)
-
-    def fail(message: str) -> TerrainError:
-        return TerrainError(f"{path}: {message}")
-
     try:
         data = json.loads(path.read_bytes().decode("utf-8"))
     except OSError as exc:
-        raise fail(f"cannot read the terrain config: {exc}") from exc
+        raise TerrainError(f"{path}: cannot read the terrain config: {exc}") from exc
     except (UnicodeDecodeError, ValueError) as exc:
-        raise fail(f"not valid JSON: {exc}") from exc
+        raise TerrainError(f"{path}: not valid JSON: {exc}") from exc
+    check_terrain_config(data, path)
+    return data
+
+
+def check_terrain_config(data: object, where: Path | str = "the terrain config") -> None:
+    """Refuse a terrain config that is not schema 1 with exactly one well-formed area.
+
+    An area has exactly the keys `expected_sha256` and `spacing_m`: an allowed spacing, and
+    an object from spacings as swisstopo writes them ("0.5", "1", "2") to the SHA-256 of
+    the heights file at that spacing, 64 lower-case hex digits, holding the configured
+    spacing (SPEC §8). The TerrainError names `where`.
+    """
+
+    def fail(message: str) -> TerrainError:
+        return TerrainError(f"{where}: {message}")
+
     if not isinstance(data, dict) or set(data) != {"schema", "areas"}:
         raise fail("the top level must have exactly the keys ['areas', 'schema']")
     if type(data["schema"]) is not int or data["schema"] != SCHEMA:
@@ -98,18 +124,48 @@ def load_terrain_config(path: Path | str = TERRAIN_CONFIG_PATH) -> dict:
     areas = data["areas"]
     if not isinstance(areas, dict) or len(areas) != 1:
         found = sorted(areas) if isinstance(areas, dict) else areas
-        raise fail(f"areas must hold exactly one area in M1, found {found!r}")
+        raise fail(f"areas must hold exactly one area, found {found!r}")
     for name, area in areas.items():
         if not AREA_NAME.fullmatch(name):
             raise fail(f"area name {name!r} must be lower-case letters, digits and '_'")
-        if not isinstance(area, dict) or set(area) != {"spacing_m"}:
-            raise fail(f"area {name!r} must have exactly the key 'spacing_m'")
+        if not isinstance(area, dict) or set(area) != AREA_CONFIG_KEYS:
+            raise fail(f"area {name!r} must have exactly the keys {sorted(AREA_CONFIG_KEYS)}")
         if not _is_spacing(area["spacing_m"]):
             raise fail(
                 f"area {name!r}: spacing_m must be one of {list(SPACINGS)}, "
                 f"found {area['spacing_m']!r}"
             )
-    return data
+        expected = area["expected_sha256"]
+        if not isinstance(expected, dict):
+            raise fail(f"area {name!r}: expected_sha256 must be an object, found {expected!r}")
+        unknown = [key for key in expected if key not in SPACING_KEYS]
+        if unknown:
+            raise fail(
+                f"area {name!r}: expected_sha256 holds only the spacings {list(SPACING_KEYS)} "
+                f"as swisstopo writes them, found {unknown!r}"
+            )
+        for key, value in expected.items():
+            if not (isinstance(value, str) and SHA256_HEX.fullmatch(value)):
+                raise fail(
+                    f"area {name!r}: expected_sha256[{key!r}] must be a SHA-256 in 64 "
+                    f"lower-case hex characters, found {value!r}"
+                )
+        if spacing_key(area["spacing_m"]) not in expected:
+            raise fail(
+                f"area {name!r}: expected_sha256 holds no value for the configured spacing "
+                f"{spacing_key(area['spacing_m'])!r}"
+            )
+
+
+def configured_area(terrain_config: dict) -> str:
+    """The one area a validated terrain config names: the area the pipeline serves (T-06)."""
+    ((area, _),) = terrain_config["areas"].items()
+    return area
+
+
+def spacing_key(spacing_m: float) -> str:
+    """A spacing as swisstopo writes it, the key of `expected_sha256`: 0.5 -> "0.5", 2.0 -> "2"."""
+    return format(spacing_m, "g")
 
 
 def resample(mosaic: np.ndarray, box: Box, spacing_m: float, height_offset_m: float) -> np.ndarray:
@@ -175,12 +231,24 @@ def write_terrain(
 
     Returns the description, which is what the `.json` holds.
     """
+    data, block = _describe(area, heights, box, spacing_m, world_sha256, source)
+    _write_files(out_dir, data, block)
+    return block
+
+
+def _describe(
+    area: str,
+    heights: np.ndarray,
+    box: Box,
+    spacing_m: float,
+    world_sha256: str,
+    source: dict,
+) -> tuple[bytes, dict]:
+    """The heights file's bytes and its description; nothing is written."""
     if heights.ndim != 2 or heights.dtype != np.float32:
         raise TerrainError("heights must be a two-dimensional array of 32-bit floats")
     if not AREA_NAME.fullmatch(area):
         raise TerrainError(f"area name {area!r} must be lower-case letters, digits and '_'")
-    terrain_dir = Path(out_dir) / "terrain"
-    terrain_dir.mkdir(parents=True, exist_ok=True)
     data = np.ascontiguousarray(heights, dtype="<f4").tobytes()
     e_min, e_max, n_min, n_max = (float(v) for v in box)
     block = {
@@ -195,9 +263,15 @@ def write_terrain(
         "spacing_m": float(spacing_m),
         "world_sha256": world_sha256,
     }
-    _replace(terrain_dir / f"{area}.f32", data)
-    _replace(terrain_dir / f"{area}.json", _json_bytes(block))
-    return block
+    return data, block
+
+
+def _write_files(out_dir: Path | str, data: bytes, block: dict) -> None:
+    """Write `terrain/<area>.f32` (through a `.part` rename), then `terrain/<area>.json`."""
+    terrain_dir = Path(out_dir) / "terrain"
+    terrain_dir.mkdir(parents=True, exist_ok=True)
+    _replace(terrain_dir / f"{block['area']}.f32", data)
+    _replace(terrain_dir / f"{block['area']}.json", _json_bytes(block))
 
 
 def build_terrain(
@@ -210,14 +284,21 @@ def build_terrain(
     *,
     progress: Progress | None = None,
 ) -> dict:
-    """Build the configured area's terrain from the downloaded, locked tiles; return its block."""
+    """Build the configured area's terrain from the downloaded, locked tiles; return its block.
+
+    The heights' SHA-256 must equal the terrain config's `expected_sha256` for the spacing;
+    it is compared before anything is written, and a difference is a TerrainError naming
+    both values (SPEC §8, lesson 38).
+    """
     say = progress or (lambda message: None)
     if world.mapping != OWNER_AXES:
         raise TerrainError(
             f"{world.path}: the terrain supports only the axes x = +e, y = +h, z = -n"
         )
-    ((area, settings),) = terrain_config["areas"].items()
-    spacing = settings["spacing_m"]
+    check_terrain_config(terrain_config)
+    area = configured_area(terrain_config)
+    spacing = terrain_config["areas"][area]["spacing_m"]
+    expected = terrain_config["areas"][area]["expected_sha256"][spacing_key(spacing)]
     if area not in world.areas:
         raise TerrainError(f"{world.path}: no area named {area!r} for the terrain config's area")
     box = world.area(area)
@@ -239,7 +320,7 @@ def build_terrain(
             f"the terrain is built from {SOURCE_M} m swissALTI3D pixels, the datasets config "
             f"pins resolution_m {alti['resolution_m']!r}"
         )
-    tiles = _tiles_covering(box)
+    tiles = area_tiles(world, area)
     raw_dir = Path(raw_root) / DATASET / alti["edition"]
     listed = _provenance_tiles(raw_dir / PROVENANCE, alti, tiles)
     locked = _locked_tiles(lock, alti, tiles)
@@ -281,22 +362,44 @@ def build_terrain(
         "resolution_m": alti["resolution_m"],
         "tiles": source_tiles,
     }
-    block = write_terrain(
-        out_dir, area, heights, box, spacing, hashlib.sha256(world_raw).hexdigest(), source
+    data, block = _describe(
+        area, heights, box, spacing, hashlib.sha256(world_raw).hexdigest(), source
     )
+    del heights
+    if block["sha256"] != expected:
+        raise TerrainError(
+            f"area {area!r} at {spacing_key(spacing)} m: the heights built here have SHA-256 "
+            f"{block['sha256']}, {TERRAIN_CONFIG_NAME} expects {expected}. Design computed "
+            f"the expected value two independent ways, so this machine or this code produces "
+            f"other heights than the design's; nothing was written"
+        )
+    say(f"the heights have the SHA-256 {TERRAIN_CONFIG_NAME} expects, {expected}")
+    _write_files(out_dir, data, block)
     say(f"wrote {Path(out_dir) / block['file']} ({block['columns']} × {block['rows']} vertices)")
     return block
 
 
 def built_terrain_block(
-    out_dir: Path | str, terrain_config: dict, world_sha256: str, datasets: dict
+    out_dir: Path | str,
+    terrain_config: dict,
+    world: World,
+    world_sha256: str,
+    datasets: dict,
+    *,
+    lock_path: Path | str = LOCK_PATH,
 ) -> dict | None:
     """The description of the terrain built in `out_dir`, or None when none is built.
 
-    A built terrain that no longer matches the world config, the spacing, the pinned
-    edition and resolution, or its heights file, is a TerrainError naming the command.
+    A built terrain that no longer matches is a TerrainError naming the command: its world
+    config, its spacing, a `source` that is not exactly the datasets config's attribution,
+    collection, edition and resolution (exact key sets), its heights file, a heights file
+    whose SHA-256 is not the terrain config's expected value for the spacing, or tiles
+    that are not, in order, the area's tiles with the SHA-256s the tile lock pins (SPEC §8;
+    M1 R1 T-01, T-03, T-04). The lock is read only when a terrain is built.
     """
-    ((area, settings),) = terrain_config["areas"].items()
+    check_terrain_config(terrain_config)
+    area = configured_area(terrain_config)
+    settings = terrain_config["areas"][area]
     path = Path(out_dir) / "terrain" / f"{area}.json"
     if not path.exists():
         return None
@@ -327,11 +430,23 @@ def built_terrain_block(
             f"{settings['spacing_m']!r} m"
         )
     alti = datasets[DATASET]
-    source = block["source"] if isinstance(block["source"], dict) else {}
-    for key in ("edition", "resolution_m"):
-        if source.get(key) != alti[key]:
+    source = block["source"]
+    if not isinstance(source, dict) or set(source) != SOURCE_KEYS:
+        raise fail(f"its source must have exactly the keys {sorted(SOURCE_KEYS)}")
+    built_tiles = source["tiles"]
+    if not isinstance(built_tiles, list) or not all(
+        isinstance(entry, dict) and set(entry) == SOURCE_TILE_KEYS for entry in built_tiles
+    ):
+        raise fail(
+            f"its source's tiles must be a list of entries with exactly the keys "
+            f"{sorted(SOURCE_TILE_KEYS)}"
+        )
+    if source["dataset"] != DATASET:
+        raise fail(f"it was built from the dataset {source['dataset']!r}, not {DATASET!r}")
+    for key in ("attribution", "collection", "edition", "resolution_m"):
+        if source[key] != alti[key]:
             raise fail(
-                f"it was built from swissALTI3D {key} {source.get(key)!r}, the datasets "
+                f"it was built from swissALTI3D {key} {source[key]!r}, the datasets "
                 f"config pins {alti[key]!r}"
             )
     rows, columns = block["rows"], block["columns"]
@@ -349,6 +464,26 @@ def built_terrain_block(
     actual = _sha256_of(heights)
     if actual != block["sha256"]:
         raise fail(f"{heights} has SHA-256 {actual}, the description pins {block['sha256']}")
+    expected = settings["expected_sha256"][spacing_key(settings["spacing_m"])]
+    if actual != expected:
+        raise fail(
+            f"{heights} has SHA-256 {actual}, the terrain config expects {expected} at "
+            f"{spacing_key(settings['spacing_m'])} m"
+        )
+    if area not in world.areas:
+        raise fail(f"the world config has no area {area!r}")
+    tiles = area_tiles(world, area)
+    locked = _locked_tiles(load_lock(lock_path), alti, tiles)
+    built = [entry["tile"] for entry in built_tiles]
+    if built != tiles:
+        raise fail(f"it was built from the tiles {built}, the area needs {tiles}")
+    for entry in built_tiles:
+        pinned = locked[entry["tile"]]["sha256"]
+        if entry["sha256"] != pinned:
+            raise fail(
+                f"tile {entry['tile']} was read with SHA-256 {entry['sha256']}, the tile lock "
+                f"{lock_path} now pins {pinned}"
+            )
     return block
 
 
@@ -371,14 +506,6 @@ def _window_counts(vertices: int, step: int, half: int, pixels: int) -> np.ndarr
     """How many pixels of each vertex's window lie inside the area, along one axis."""
     centre = np.arange(vertices) * step
     return (np.minimum(centre + half, pixels) - np.maximum(centre - half, 0)).astype(np.float64)
-
-
-def _tiles_covering(box: Box) -> list[str]:
-    """The ids (`<e km>-<n km>`) of the 1 km tiles the box touches, sorted like the download."""
-    e_min, e_max, n_min, n_max = box
-    east = range(math.floor(e_min / TILE_M), math.ceil(e_max / TILE_M))
-    north = range(math.floor(n_min / TILE_M), math.ceil(n_max / TILE_M))
-    return [f"{e}-{n}" for e in east for n in north]
 
 
 def _provenance_tiles(path: Path, alti: dict, tiles: list[str]) -> dict[str, dict]:

@@ -61,7 +61,7 @@ class Server:
 
 def _lock():
     """The tile lock for what an untouched server publishes at the pinned config (M1-01)."""
-    return build_lock(load_world(), load_datasets(), Server().fetch_json)
+    return build_lock(load_world(), load_datasets(), Server().fetch_json, area="village")
 
 
 def _run(server, out_root, datasets=None):
@@ -72,6 +72,7 @@ def _run(server, out_root, datasets=None):
         fetch_json=server.fetch_json,
         fetch_file=server.fetch_file,
         lock=_lock(),
+        area="village",
     )
 
 
@@ -222,7 +223,13 @@ def test_an_unreadable_stac_item_is_a_download_error(tmp_path, error):
 
     with pytest.raises(DownloadError, match="cannot read the STAC item") as caught:
         download_terrain(
-            load_world(), load_datasets(), tmp_path, fetch_json, server.fetch_file, lock=_lock()
+            load_world(),
+            load_datasets(),
+            tmp_path,
+            fetch_json,
+            server.fetch_file,
+            lock=_lock(),
+            area="village",
         )
     assert TILE in str(caught.value) and ITEM_URL in str(caught.value)
     _assert_nothing_looks_valid(tmp_path)

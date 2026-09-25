@@ -7,7 +7,9 @@ refuses a built terrain that no longer matches: another world config (its height
 H - height_offset_m, so a changed offset would shift the world vertically, Hard Rule 4),
 another spacing, another edition or resolution, or a heights file whose SHA-256 differs;
 each refusal names `python -m mattini terrain`. The gate runs `manifest` in containers
-with no terrain built, where `terrain` is null.
+with no terrain built, where `terrain` is null. Since M2-01 the fixture carries its own
+tile lock, which the manifest reads (M1 R1 T-04), and its terrain config the expected
+SHA-256 (T-01).
 """
 
 import hashlib
@@ -36,7 +38,11 @@ def _fixture_out(tmp_path) -> Path:
 
 def _write(out, world=FIXTURE / "world.json", terrain=FIXTURE / "terrain.json"):
     return write_manifest(
-        out, world, terrain_config_path=terrain, datasets_path=FIXTURE / "datasets.json"
+        out,
+        world,
+        terrain_config_path=terrain,
+        datasets_path=FIXTURE / "datasets.json",
+        lock_path=FIXTURE / "datasets.lock.json",
     )
 
 
@@ -76,9 +82,10 @@ def test_terrain_built_for_another_world_is_refused(tmp_path):
 
 
 def test_terrain_built_at_another_spacing_is_refused(tmp_path):
-    terrain = _copy_with(
-        tmp_path, "terrain.json", lambda d: d["areas"]["fixture"].update(spacing_m=1.0)
-    )
+    def one_metre(d):  # the config must still expect a value at its spacing
+        d["areas"]["fixture"].update(spacing_m=1.0, expected_sha256={"1": "0" * 64})
+
+    terrain = _copy_with(tmp_path, "terrain.json", one_metre)
     with pytest.raises(TerrainError, match=TERRAIN_COMMAND):
         _write(_fixture_out(tmp_path), terrain=terrain)
 
@@ -93,6 +100,7 @@ def test_terrain_from_another_edition_is_refused(tmp_path):
             FIXTURE / "world.json",
             terrain_config_path=FIXTURE / "terrain.json",
             datasets_path=datasets,
+            lock_path=FIXTURE / "datasets.lock.json",
         )
 
 
@@ -115,14 +123,15 @@ def test_a_heights_file_that_does_not_match_is_refused(tmp_path, damage):
 
 def test_the_committed_terrain_config_is_the_owners_choice():
     config = load_terrain_config()
-    assert config == {"schema": 1, "areas": {"village": {"spacing_m": 0.5}}}
+    assert list(config["areas"]) == ["village"]
+    assert config["areas"]["village"]["spacing_m"] == 0.5  # the owner, 2026-09-25 (SPEC §7)
 
 
 @pytest.mark.parametrize(
     "change",
     [
         lambda d: d["areas"]["village"].update(spacing_m=0.25),
-        lambda d: d["areas"].update(backdrop={"spacing_m": 2.0}),
+        lambda d: d["areas"].update(backdrop=dict(d["areas"]["village"], spacing_m=2.0)),
         lambda d: d["areas"].clear(),
         lambda d: d.update(schema=2),
     ],

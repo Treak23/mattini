@@ -1,4 +1,8 @@
-"""Command line: `python -m mattini <command>`."""
+"""Command line: `python -m mattini <command>`.
+
+`lock terrain`, `download terrain` and `terrain` all serve the one area config/terrain.json
+names (brief M2-01, M1 R1 T-06): the area has one home.
+"""
 
 from __future__ import annotations
 
@@ -22,9 +26,17 @@ def main(argv: list[str] | None = None) -> int:
     pin = commands.add_parser(
         "lock", help="pin the published SHA-256 of the inputs in config/datasets.lock.json"
     )
-    pin.add_argument("dataset", choices=["terrain"], help="terrain: swissALTI3D, village area")
+    pin.add_argument(
+        "dataset",
+        choices=["terrain"],
+        help="terrain: swissALTI3D, the area config/terrain.json names",
+    )
     fetch = commands.add_parser("download", help="fetch and verify pinned swisstopo inputs")
-    fetch.add_argument("dataset", choices=["terrain"], help="terrain: swissALTI3D, village area")
+    fetch.add_argument(
+        "dataset",
+        choices=["terrain"],
+        help="terrain: swissALTI3D, the area config/terrain.json names",
+    )
     fetch.add_argument(
         "--out", default=download.DEFAULT_OUT, help="download root (default: data/raw)"
     )
@@ -43,7 +55,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "manifest":
             print(write_manifest(args.out))
         elif args.command == "lock":
-            pinned = lock.build_lock(load_world(), load_datasets(), download.urllib_fetch_json)
+            area = terrain.configured_area(terrain.load_terrain_config())
+            pinned = lock.build_lock(
+                load_world(), load_datasets(), download.urllib_fetch_json, area=area
+            )
             print(lock.write_lock(pinned, lock.LOCK_PATH))
         elif args.command == "download":
             return _download_terrain(Path(args.out))
@@ -62,9 +77,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _download_terrain(out_root: Path) -> int:
-    """Fetch the village tiles the committed lock vouches for, with urllib.
+    """Fetch the tiles of the terrain config's area that the committed lock vouches for.
 
-    Progress on stderr, the provenance path on stdout.
+    With urllib; progress on stderr, the provenance path on stdout.
     """
     fetched = []
 
@@ -73,10 +88,11 @@ def _download_terrain(out_root: Path) -> int:
         fetched.append(url)
         download.urllib_fetch_file(url, dest)
 
+    area = terrain.configured_area(terrain.load_terrain_config())
     world, datasets = load_world(), load_datasets()
     pinned = lock.load_lock(lock.LOCK_PATH)
     entries = download.download_terrain(
-        world, datasets, out_root, download.urllib_fetch_json, fetch_file, lock=pinned
+        world, datasets, out_root, download.urllib_fetch_json, fetch_file, lock=pinned, area=area
     )
     out_dir = out_root / download.DATASET / datasets[download.DATASET]["edition"]
     print(f"{len(entries)} tiles verified, {len(fetched)} fetches", file=sys.stderr)

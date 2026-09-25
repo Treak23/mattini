@@ -25,12 +25,13 @@ def _download(fake, out_root, lock):
         fetch_json=fake.fetch_json,
         fetch_file=fake.fetch_file,
         lock=lock,
+        area="village",
     )
 
 
 def _setup(tmp_path):
     fake = FakeSwisstopo()
-    lock = build_lock(load_world(), load_datasets(), fake.fetch_json)
+    lock = build_lock(load_world(), load_datasets(), fake.fetch_json, area="village")
     _download(fake, tmp_path, lock)
     out_dir = tmp_path / "swissalti3d" / "2024"
     assert (out_dir / "provenance.json").is_file()

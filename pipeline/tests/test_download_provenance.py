@@ -11,7 +11,7 @@ import json
 import re
 
 from mattini.datasets import load_datasets
-from mattini.download import download_terrain, village_tiles
+from mattini.download import area_tiles, download_terrain
 from mattini.lock import build_lock
 from mattini.world import REPO, load_world
 
@@ -48,7 +48,8 @@ class Server:
 
 def _run(out_root, datasets=None, world=None):
     world, datasets = world or load_world(), datasets or load_datasets()
-    lock = build_lock(world, datasets, Server().fetch_json)  # read by another server's log
+    # read by another server's log
+    lock = build_lock(world, datasets, Server().fetch_json, area="village")
     server = Server()
     entries = download_terrain(
         world,
@@ -57,6 +58,7 @@ def _run(out_root, datasets=None, world=None):
         fetch_json=server.fetch_json,
         fetch_file=server.fetch_file,
         lock=lock,
+        area="village",
     )
     return server, entries
 
@@ -100,7 +102,7 @@ def test_tiles_follow_the_village_box_in_the_world_config(tmp_path):
     config.write_text(json.dumps(data), encoding="utf-8")
     world = load_world(config)
     expected = ["2623-1095", "2624-1095"]
-    assert village_tiles(world) == expected  # every tile the box touches, none it does not
+    assert area_tiles(world, "village") == expected  # every tile the box touches, no other
     _, entries = _run(tmp_path / "out", world=world)
     assert [e["tile"] for e in entries] == expected
 

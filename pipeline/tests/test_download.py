@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from mattini.datasets import load_datasets
-from mattini.download import DownloadError, download_terrain, parse_multihash_sha256, village_tiles
+from mattini.download import DownloadError, area_tiles, download_terrain, parse_multihash_sha256
 from mattini.lock import build_lock
 from mattini.world import load_world
 
@@ -65,12 +65,13 @@ def _download(fake, out_root):
         out_root,
         fetch_json=fake.fetch_json,
         fetch_file=fake.fetch_file,
-        lock=build_lock(load_world(), load_datasets(), fake.fetch_json),
+        lock=build_lock(load_world(), load_datasets(), fake.fetch_json, area="village"),
+        area="village",
     )
 
 
 def test_village_tiles_are_the_six_measured_tiles():
-    assert village_tiles(load_world()) == VILLAGE_TILES
+    assert area_tiles(load_world(), "village") == VILLAGE_TILES
 
 
 def test_edition_resolution_and_attribution_are_pinned_in_config():

@@ -48,7 +48,7 @@ def test_manifest_bytes_for_a_fixed_world_config(tmp_path):
 
 def test_provenance_bytes_for_a_fixed_fake_server(tmp_path):
     fake = FakeSwisstopo()
-    lock = build_lock(load_world(), load_datasets(), fake.fetch_json)
+    lock = build_lock(load_world(), load_datasets(), fake.fetch_json, area="village")
     download_terrain(
         load_world(),
         load_datasets(),
@@ -56,6 +56,7 @@ def test_provenance_bytes_for_a_fixed_fake_server(tmp_path):
         fetch_json=fake.fetch_json,
         fetch_file=fake.fetch_file,
         lock=lock,
+        area="village",
     )
     raw = (tmp_path / "swissalti3d" / "2024" / "provenance.json").read_bytes()
     provenance = json.loads(raw)
