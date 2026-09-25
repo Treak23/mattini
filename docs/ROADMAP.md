@@ -13,10 +13,8 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_019do6LK4hFYQ9c4ykJwQcNw · Routine trig_011umFC7mvuuPiadHHw9DE56 · since 2026-09-25T04:21Z
-Tick: session_01QHegXTq5Z4seMJyWAbX2HR · started 2026-09-25T04:31Z
-Last tick: 2026-09-25T04:25Z · main 1f2578e · ticks 3
-Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $2.55 (ticks 1–2; tick 3 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
-Builder: session_01UxbykwYFJSxYM4GVUxoxky · M1-01, M1-03 · spawned 2026-09-25T04:04Z
+Last tick: 2026-09-25T04:34Z · main 3a3fe0e · ticks 4
+Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $3.52 (ticks 1–3; tick 4 unread) · builders $7.50 (M1-01 and M1-03's builder) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T04:04Z
 
 **OPEN briefs** (lanes may run at once: no shared file, no dependency):
@@ -32,7 +30,9 @@ Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T
 
 Landed: M1-01 `25972d4` (DONE) — full gate green on `7fa1470` at tick 2 (pytest 275
 passed, GUT 13/13, exit 0). M1-02 `c635411` (DONE, Findings `bdba171`) — full gate green on
-`1f2578e` at tick 3 (pytest 275 passed, GUT 18/18, exit 0).
+`1f2578e` at tick 3 (pytest 275 passed, GUT 18/18, exit 0). M1-03 `0794554` (DONE, Findings
+`1dbb31e`, `7d94d4c`) — full gate green on `3a3fe0e` at tick 4 (pytest 361 passed, GUT
+18/18, exit 0).
 
 **Review** (WORKFLOW §Review policy): Tier 1 covers the terrain grid on both sides (the
 pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the manifest's
@@ -44,7 +44,12 @@ pipeline's grid and resampling, `TerrainGrid`/`TerrainLoader` placement, the man
 **Decisions for the close:**
 - Keep or reverse the builders' reversible choices inside scope: M1-01 Findings 6 (lock
   check order, `load_lock` strictness, module layout), M1-02 Findings 6 (gate's
-  `run_godot` wrapper and step order, WorldConfig's `_built` flag and own NaN test).
+  `run_godot` wrapper and step order, WorldConfig's `_built` flag and own NaN test), M1-03
+  Findings 6 (resampling as the plain 64-bit window mean, the refusal order, the terrain
+  config's strictness, how `manifest` reads the terrain description, the `progress`
+  keyword).
+- M1-03 Findings 7, for design: the pinned stray-tile test fails the folder-reading
+  mutation only through the stray tile's unknown id, never through its content.
 
 **Parked questions:** none.
 
@@ -89,6 +94,9 @@ Nothing deferred: the inbox is empty.
   and M3 need an access route before any download.
 - An exported build may exceed GitHub's 100 MB file limit on `dist` (SPEC §11): at 0.5 m
   the village's heights are 96 MB.
+- While M1-05 and M1-06 wait on M1-04 they have no `Builder:` line, so the waker's due
+  rule (SUPERVISE §The waker 2.5) counts a tick at every wake until M1-04 lands (tick 4,
+  2026-09-25): for design.
 - Landing wakes. In M0 no landing started a tick; every tick came from a scheduled wake
   (ledger, 2026-09-24). Checked at M1 tick 1 (2026-09-25T04:05Z): `fire_trigger` on the
   waker's Routine turned its session running within a second. The next miss lies in the
