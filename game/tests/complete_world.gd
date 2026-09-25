@@ -1,18 +1,23 @@
 extends RefCounted
-## Test helper for the main scene's tests (brief M2-05): a complete world, the shared terrain
-## fixture's manifest and heights plus a buildings block for one closed 2 m box standing at
-## the terrain's centre, in the same world, written into a folder under user://. The shared
-## terrain fixture has no buildings (its manifest says "buildings": null), so a main-scene
-## test that means "everything is there" reads this world; a test that means "no buildings"
-## says so. Built as the pinned test_main_scene_buildings.gd builds its world. The box is
-## test data, invented here, not swisstopo's (Hard Rule 2). Not a test script: GUT runs only
-## scripts named test_*.
+## Test helper for the main scene's tests (briefs M2-05, M2-08): a complete world, the shared
+## terrain fixture's manifest and heights plus a buildings block for one closed box, 2 m wide
+## and BOX_HEIGHT tall, standing on the terrain's centre, in the same world, written into a
+## folder under user://. The shared terrain fixture has no buildings (its manifest says
+## "buildings": null), so a main-scene test that means "everything is there" reads this
+## world; a test that means "no buildings" says so. Built as the pinned
+## test_main_scene_buildings.gd builds its world. The box is test data, invented here, not
+## swisstopo's (Hard Rule 2). Not a test script: GUT runs only scripts named test_*.
 
 const TERRAIN_FIXTURE := "tests/shared/terrain_fixture/generated/manifest.json"
 const TILE := "2601-1199"
 const CHUNK_FILE := "buildings/2601-1199.bin"
-## The box's floor, local: at the fixture terrain's centre, 599 m (LN02 1599 m).
-const BOX_FLOOR := Vector3(1024.0, 599.0, 15.5)
+## The box's floor, local: at the fixture terrain's centre, 603 m (LN02 1603 m). The
+## fixture's ground under the box lies from about 604.2 to 606.7 m (605.4 m at its middle),
+## between the floor and the roof, as a building stands on its terrain (brief M2-08, M2 R1
+## P-01: until then the box's roof lay 4 m under the ground).
+const BOX_FLOOR := Vector3(1024.0, 603.0, 15.5)
+## The box's height from its floor to its roof, in metres.
+const BOX_HEIGHT := 6.0
 
 
 static func repo_file(rel: String) -> String:
@@ -75,8 +80,9 @@ static func write(dir: String, change := Callable(), heights := PackedByteArray(
 	return path
 
 
-## One closed box, 2 m wide, its floor's corner at BOX_FLOOR, counter-clockwise from outside
-## as the pipeline writes: 8 vertices as float32 x, y, z, then 12 triangles as uint32.
+## One closed box, 2 m wide and BOX_HEIGHT tall, its floor's corner at BOX_FLOOR,
+## counter-clockwise from outside as the pipeline writes: 8 vertices as float32 x, y, z, then
+## 12 triangles as uint32.
 static func box_chunk() -> PackedByteArray:
 	var o := BOX_FLOOR
 	var corners := [
@@ -84,10 +90,10 @@ static func box_chunk() -> PackedByteArray:
 		o + Vector3(2, 0, 0),
 		o + Vector3(2, 0, 2),
 		o + Vector3(0, 0, 2),
-		o + Vector3(0, 2, 0),
-		o + Vector3(2, 2, 0),
-		o + Vector3(2, 2, 2),
-		o + Vector3(0, 2, 2),
+		o + Vector3(0, BOX_HEIGHT, 0),
+		o + Vector3(2, BOX_HEIGHT, 0),
+		o + Vector3(2, BOX_HEIGHT, 2),
+		o + Vector3(0, BOX_HEIGHT, 2),
 	]
 	# Each face as two triangles whose right-hand normal points out of the box: bottom (-y),
 	# top (+y), the sides facing -z, +z, -x and +x.

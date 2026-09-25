@@ -9,9 +9,12 @@ extends RefCounted
 ## are local coordinates the pipeline computed for the world config that the block's
 ## world_sha256 pins; this reader never converts a coordinate. It ties the block to its
 ## manifest instead: the block's world_sha256 must be the manifest's, and the WorldConfig
-## given must be read from the same manifest (Hard Rule 4). Every problem is refused with
-## one push_error naming the manifest and a null result, never a plausible set of
-## buildings.
+## given must be the manifest's own (Hard Rule 4): its origin and height offset equal the
+## manifest's world block's, and it maps one metre east, north and up to the same local
+## vectors as a WorldConfig read from the manifest (_check_world). Every problem is refused
+## with one push_error naming the manifest and a null result, never a plausible set of
+## buildings. When WorldConfig itself refuses the manifest's world block, its own
+## push_error comes first.
 
 const FORMAT := "mesh-f32-u32-le"
 const BUILDINGS_COMMAND := "python -m mattini buildings"
@@ -54,7 +57,7 @@ func _read(path: String, world: WorldConfig) -> String:
 		return manifest
 	var problem := _check_built(manifest)
 	if problem.is_empty():
-		problem = _check_world(world, manifest.get("world"))
+		problem = _check_world(world, path, manifest.get("world"))
 	if problem.is_empty():
 		problem = _read_block(manifest["buildings"])
 	if problem.is_empty():
@@ -86,8 +89,12 @@ static func _check_built(manifest: Dictionary) -> String:
 
 
 ## The WorldConfig given must be this manifest's own: the positions are local for the world
-## that the manifest's world block describes.
-static func _check_world(world: WorldConfig, block: Variant) -> String:
+## that the manifest's world [param block] describes. Compared: the origin and the height
+## offset, the fields the positions depend on, with the block's own values; then the axes:
+## a WorldConfig read from the manifest at [param path] and the one given must map one metre
+## east, north and up from the origin (to_local of unit steps) to the same local vectors.
+## Returns what differs, or "".
+static func _check_world(world: WorldConfig, path: String, block: Variant) -> String:
 	if typeof(block) != TYPE_DICTIONARY or typeof(block.get("origin_lv95")) != TYPE_DICTIONARY:
 		return "the manifest has no world block with an origin"
 	var origin: Dictionary = block["origin_lv95"]
@@ -96,7 +103,21 @@ static func _check_world(world: WorldConfig, block: Variant) -> String:
 		or origin.get("n") != world.origin_n
 		or block.get("height_offset_m") != world.height_offset
 	):
-		return "the WorldConfig given was not read from this manifest (its origin differs)"
+		return (
+			"the WorldConfig given was not read from this manifest"
+			+ " (its origin or height offset differs)"
+		)
+	var own := WorldConfig.from_manifest(path)
+	if own == null:
+		return "the manifest's world block is refused (WorldConfig's error above says why)"
+	var e := world.origin_e
+	var n := world.origin_n
+	var h := world.height_offset
+	for step: Vector3 in [Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1)]:
+		var given := world.to_local(e + step.x, n + step.y, h + step.z) - world.to_local(e, n, h)
+		var its := own.to_local(e + step.x, n + step.y, h + step.z) - own.to_local(e, n, h)
+		if given != its:
+			return "the WorldConfig given was not read from this manifest (its axes differ)"
 	return ""
 
 

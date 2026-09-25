@@ -12,12 +12,15 @@ extends GutTest
 ## exactly, since a narrower filter still holds the texts a substring check looks for
 ## ("assets/generated/*.json" contains "assets/generated/*") and ships a build without its
 ## heights; godot-cpp's licence ships for the credits.
+##
+## Brief M2-08 (M2 R1 G-06): the development tools under res://tools/ (the screenshot
+## script) do not ship: both presets exclude tools/*.
 
 const PRESETS := "res://export_presets.cfg"
 const INCLUDE_FILTER := (
 	"assets/generated/*, addons/terrain_3d/LICENSE.txt, " + "credits/godot-cpp-LICENSE.txt"
 )
-const EXCLUDE_FILTER := "tests/*, addons/gut/*"
+const EXCLUDE_FILTER := "tests/*, addons/gut/*, tools/*"
 
 
 func _presets() -> Dictionary:
