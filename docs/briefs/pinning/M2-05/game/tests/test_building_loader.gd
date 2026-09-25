@@ -10,6 +10,9 @@ extends GutTest
 ## (0,0,0), (1,0,0), (0,0,1), whose right-hand normal is (0, -1, 0)), so each triangle goes
 ## into the arrays as (a, c, b); a triangle whose normal has y >= 0.5 is roof, the rest wall;
 ## surfaces named "walls" and "roofs" with the materials under res://materials/.
+## Measured in M2-05: SurfaceTool.generate_normals averages over shared positions unless
+## the smooth group is -1, and an ArrayMesh gives its normals back through 16-bit octahedral
+## storage (about 1e-4 per component), so normals are compared within 1e-4.
 ##
 ## Does NOT prove: that the buildings render or look right (no GPU); the look itself (the
 ## owner's to judge).
@@ -133,6 +136,7 @@ func test_normals_face_out_and_front_faces_are_godot_s() -> void:
 			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 			var tool := SurfaceTool.new()
 			tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+			tool.set_smooth_group(-1)  # flat: one normal per triangle, never averaged
 			for v in vertices:
 				tool.add_vertex(v)
 			tool.generate_normals()
@@ -144,7 +148,7 @@ func test_normals_face_out_and_front_faces_are_godot_s() -> void:
 					"%s: triangle %d is a file triangle as (a, c, b)" % [mesh.name, t]
 				)
 				if outward.has(key):
-					assert_almost_eq(normals[3 * t], outward[key], Vector3.ONE * 1e-5)
+					assert_almost_eq(normals[3 * t], outward[key], Vector3.ONE * 1e-4)
 				assert_almost_eq(
 					godot_normals[3 * t], normals[3 * t], Vector3.ONE * 1e-4, "Godot's front face"
 				)
@@ -164,6 +168,6 @@ func test_a_flat_roof_faces_the_sky() -> void:
 			(mesh.mesh as ArrayMesh).surface_get_arrays(surfaces["roofs"])[Mesh.ARRAY_NORMAL]
 		)
 		for n in normals:
-			if n.is_equal_approx(Vector3.UP):
+			if n.distance_to(Vector3.UP) < 1e-4:
 				found = true
 	assert_true(found, "some roof triangle faces straight up")

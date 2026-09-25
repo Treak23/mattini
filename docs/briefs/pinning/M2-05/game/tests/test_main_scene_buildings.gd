@@ -234,4 +234,5 @@ func test_without_terrain_and_buildings_the_panel_names_both() -> void:
 	assert_string_contains(message, "the terrain and the buildings")
 	assert_string_contains(message, "python -m mattini terrain")
 	assert_string_contains(message, "python -m mattini buildings")
-	assert_push_error(path, "the refusals are logged, naming the manifest")
+	assert_push_error("TerrainGrid: " + path, "the terrain's refusal is logged")
+	assert_push_error("BuildingChunks: " + path, "the buildings' refusal is logged")

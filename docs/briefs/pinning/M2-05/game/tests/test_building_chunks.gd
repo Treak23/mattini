@@ -151,7 +151,7 @@ func _assert_refused(path: String, why: String, needle := "") -> void:
 	assert_true(found, "%s: one push_error names %s %s" % [why, path, needle])
 
 
-func _set(key: String, value: Variant) -> Callable:
+func _set_key(key: String, value: Variant) -> Callable:
 	return func(m: Dictionary) -> void: m["buildings"][key] = value
 
 
@@ -161,12 +161,12 @@ func test_no_buildings_built_names_the_commands() -> void:
 
 
 func test_buildings_built_for_another_world_are_refused() -> void:
-	var path := _write_case(_set("world_sha256", "0".repeat(64)))
+	var path := _write_case(_set_key("world_sha256", "0".repeat(64)))
 	_assert_refused(path, "another world's buildings", BUILDINGS_COMMAND)
 
 
 func test_another_format_is_refused() -> void:
-	_assert_refused(_write_case(_set("format", "glb")), "another format", "format")
+	_assert_refused(_write_case(_set_key("format", "glb")), "another format", "format")
 
 
 func test_a_missing_chunk_file_is_refused() -> void:
