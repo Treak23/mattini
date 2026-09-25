@@ -11,6 +11,10 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-09-25 · owner's word, in the M2 session · M2 · a committed real swisstopo sample (SPEC §14)? → "yes": sheet 1328-33 of the 2020 edition (45'668 bytes, © swisstopo) becomes the buildings reader's fixture, the one file of raw geodata in git; Hard Rule 3's "never enter git history" is overridden for that one file, which `test_repo_hygiene.py` names with its SHA-256 (SPEC §13 row 24; brief M2-09)
+2026-09-25 · owner's word, in the M2 session · M2 · where does the session push? → "push to main": the session's work goes to `main` as usual (SPEC §13 row 27)
+2026-09-25 · owner's word, in the M2 session · M2 · an export over 100 MiB (D16)? → "later": stays open until M5, as design proposed; `tools/export.sh` keeps refusing any file over 100 MiB (SPEC §13 row 23)
+2026-09-25 · owner's word, in the M2 session · M2 · the swissBUILDINGS3D access route (SPEC §14)? → "a": swissBUILDINGS3D 3.0, edition 2020, per map sheet, as design proposed and M2-03 to M2-05 built (SPEC §13 row 22)
 2026-09-25 · design · M2-05 · all three pinned tests fail as pinned (a `_set` helper overriding Object._set; generate_normals smoothing and 16-bit octahedral normals; one assert_push_error for two refusals) → design's fault; the executor's six corrections pinned, the tests put in place with two scoped allowlist entries (docs/history/blocked/2026-09-25-2.md)
 2026-09-25 · design · M2-03 · the pinned test_sheets.py fails the gate's ruff check once in place (I001) → design's fault (linted where the module did not exist yet); the pinned copies of M2-03 and M2-04 corrected, test_sheets.py put in place by design (docs/history/blocked/2026-09-25-1.md)
 2026-09-25 · design · M2-01 F6, its check · the manifest's refusal of a lock that does not fit names `lock terrain`, not `terrain` as the brief listed → kept: it names the command that fixes it (BUILD.md rule 1 was followed: the choice was put in Findings)

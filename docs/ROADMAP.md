@@ -20,6 +20,7 @@ waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
 | M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | DONE (cefa1ac), checked |
 | M2-07 | M2 R1's fixes, the pipeline half | none | OPEN |
 | M2-08 | M2 R1's fixes, the game and tools half | none | OPEN |
+| M2-09 | The real sample, the buildings reader's fixture (the owner's "yes") | M2-07 | OPEN |
 
 Review round M2 R1 (`docs/reviews/M2-round1.md`): clean, no P0 or P1; its five P2s and
 fifteen of its sixteen P3s are M2-07 and M2-08; I-07 goes to M5 planning. Then one
@@ -37,21 +38,9 @@ fiona (the manifest imports the buildings module), an earlier build's chunk file
 removed and an export would ship them, the real reader's output meets the step only in
 the real run.
 
-M2-03 to M2-05 are written on the source design PROPOSES (question 1 below: (a), the 2020
-edition per map sheet), so the work goes on while the owner's answer is awaited. Nothing of
-it reaches `main` or a build before the answer; another answer rewrites them. The real
-sample (question 4) is not committed before the owner agrees.
-
-**Asked of the owner at M2 planning (2026-09-25), waiting:**
-1. The swissBUILDINGS3D access route (SPEC §14): (a) 3.0, 2020 edition, per map sheet,
-   design's recommendation; (b) 2.0, 2024-05, per sheet (DXF); (c) the 14 GB national
-   3.0 file.
-2. An export over 100 MiB (D16): design recommends leaving it open until M5; the
-   buildings add about 3 to 6 MB and there are 8.3 MiB of room.
-3. Where the session pushes: `main` as usual, or the session branch only; and `dist` for
-   0.2.0.
-4. A committed real swisstopo sample (SPEC §14): the 45.7 KB buildings sheet 1328-33 as
-   a reader fixture; design recommends yes.
+**The owner's answers (2026-09-25; RULINGS, SPEC §13 rows 22–24, 27):** 1 "a", the 2020
+edition per map sheet, on which M2-03 to M2-05 were built; 2 "later", an export over
+100 MiB stays open until M5; 3 "push to main"; 4 "yes", the real sample, brief M2-09.
 
 **Last shipped:** 0.1.0, 2026-09-25: the village terrain at 0.5 m with a free-fly camera
 (`docs/releases/v0.1.0.md`; `dist` `2e81625`, built from `main` `05f86ef`).
@@ -67,12 +56,8 @@ prompts' sync line (D21) is fixed at M2 planning (brain.md H14).
 - Licence of mattini's own code — OPEN.
 - Weather: simulated or real data — OPEN (M6).
 - Backdrop and larger-area extents and resolutions — OPEN (M5).
-- Access route for swissBUILDINGS3D — asked at M2 planning (above); for swissTLM3D
-  (national only) — OPEN (M3).
-- A committed sample of real swisstopo data as a test fixture — asked at M2 planning
-  (above).
-- An export over 100 MB on `dist` — asked at M2 planning (above); nothing was over at
-  0.1.0 (D16).
+- Access route for swissTLM3D (national only) — OPEN (M3).
+- An export over 100 MB on `dist` — OPEN until M5 (the owner, 2026-09-25: "later"; D16).
 - Game type — OPEN (later).
 
 ## Next, in order (confirmed by the owner, 2026-09-24)

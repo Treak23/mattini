@@ -20,8 +20,8 @@ Walk it top to bottom before any version bump.
       godot-cpp, which is compiled into Terrain3D's library (all MIT; its notice since
       M2-02, `game/credits/godot-cpp-LICENSE.txt`; 0.1.0 lacked it, D17).
 - [ ] **No raw data or unmanaged binaries** entered git history in this arc, but the
-      one real sample the owner may allow (SPEC §13 row 24), which
-      `test_repo_hygiene.py` names.
+      one real sample the owner allowed (SPEC §13 row 24), which `test_repo_hygiene.py`
+      names with its SHA-256.
 
 ## B. The bump
 

@@ -82,7 +82,7 @@ Items are addressed by id; assets carry `file:checksum` as a multihash (`1220` +
 |---|---|---|---|
 | swissALTI3D | `ch.swisstopo.swissalti3d` | 1 km tiles, editions 2019 and 2024 for all six village tiles; COG GeoTIFF at 0.5 m (18.1 MB per tile) and 2 m (1.2 MB); EPSG:2056 + EPSG:5728 (LN02 heights) | Terrain (M1) |
 | swissSURFACE3D | `ch.swisstopo.swisssurface3d` / `…-raster` | LAZ point cloud 213 MB per tile (2021); 0.5 m surface-model COG per tile | Canopy height, steep rock (M3) |
-| swissBUILDINGS3D 3.0 | `ch.swisstopo.swissbuildings3d_3_0` | Current edition (2026) only as ONE national FileGDB of 14.1 GB; per-map-sheet items exist for 2015/2016 and 2020 (sheet 1348-11: 9.1 MB GDB zip; the village's six sheets 14.2 MB together, 14'210'379 bytes, measured 2026-09-25). 2.0 (`ch.swisstopo.swissbuildings3d_2`) has per-sheet DXF up to 2024-05, but 1'272 of its 2'376 village parts are open meshes (measured) | Buildings (M2): the 2020 edition per map sheet, PROPOSED (§8 *The buildings*; §13 row 22) |
+| swissBUILDINGS3D 3.0 | `ch.swisstopo.swissbuildings3d_3_0` | Current edition (2026) only as ONE national FileGDB of 14.1 GB; per-map-sheet items exist for 2015/2016 and 2020 (sheet 1348-11: 9.1 MB GDB zip; the village's six sheets 14.2 MB together, 14'210'379 bytes, measured 2026-09-25). 2.0 (`ch.swisstopo.swissbuildings3d_2`) has per-sheet DXF up to 2024-05, but 1'272 of its 2'376 village parts are open meshes (measured) | Buildings (M2): the 2020 edition per map sheet, the owner's choice (§8 *The buildings*; §13 row 22) |
 | SWISSIMAGE 10 cm | `ch.swisstopo.swissimage-dop10` | 1 km tiles, 2023 edition: 43.2 MB (0.1 m), 0.2 MB (2 m) | Surface classification (M3) |
 | swissTLM3D | `ch.swisstopo.swisstlm3d` | National only (2026-02): 2.9 GB GDB / 4.8 GB GPKG | Paths, roads, rivers, rail, lifts, land cover (M3) — access route **OPEN** |
 | swissNAMES3D | `ch.swisstopo.swissnames3d` | National (2026): CSV/GDB/GPKG/SHP | Place names |
@@ -269,8 +269,8 @@ places heights in the world (WORKFLOW §Review policy).
   fixture's. Each fixture folder holds a `datasets.lock.json` pinning its source as the
   1 km tile it lies in (M2-01, for T-04's check).
 
-**The buildings (M2; designed at M2 planning, 2026-09-25, on the source §13 row 22
-PROPOSES).** Tier 1 territory: it places buildings in the world (WORKFLOW §Review
+**The buildings (M2; designed at M2 planning, 2026-09-25, on the source of §13 row 22,
+which the owner chose).** Tier 1 territory: it places buildings in the world (WORKFLOW §Review
 policy).
 
 - *Source:* swissBUILDINGS3D 3.0 beta, edition 2020, per map sheet: STAC collection
@@ -420,7 +420,9 @@ inputs gives identical bytes, and tests say so.
 - **Screenshots:** software-rendered evidence from builders of visual briefs (§12) in
   `docs/briefs/shots/<brief>-<view>.jpg`, JPEG, 1280 × 720, a few per brief.
 - **Test data:** synthetic data generated inside the tests, and the small shared files in
-  `tests/shared/`. A committed sample of real swisstopo data is **OPEN**.
+  `tests/shared/`. One file of real swisstopo data, by the owner's word (§13 row 24):
+  `tests/shared/buildings_sample/`, sheet 1328-33 of swissBUILDINGS3D 3.0, edition 2020,
+  45'668 bytes, © swisstopo, with a README naming its source and terms (brief M2-09).
 - Nothing over 10 MB is committed without a design decision naming it; GitHub rejects any
   file over 100 MB.
 
@@ -553,12 +555,12 @@ line stays on every visual gate.
 | 19 | Camera controls (the design's proposal) | Kept as proposed (Godot editor fly mode) | Owner (no change asked) |
 | 20 | Form of the tile pin (D7) | `config/datasets.lock.json`, written by `python -m mattini lock terrain` | Design (M0 close: "M1 planning picks the form") |
 | 21 | Raster libraries | rasterio and numpy confirmed | Design, delegated (CLAUDE.md §Stack) |
-| 22 | swissBUILDINGS3D access route (M2 planning, 2026-09-25) | **PROPOSED** by design, the owner's answer awaited: (a) swissBUILDINGS3D 3.0, edition 2020, per map sheet (the village's six sheets, 14.2 MB: closed solids with attributes). The alternatives: (b) 2.0, 2024-05, per sheet (DXF; 1'272 of the village's 2'376 parts are open meshes, measured); (c) the 3.0 national file, 2026 (14.1 GB for about 1'500 buildings) | Owner (asked) |
-| 23 | An export over 100 MiB (D16) | **PROPOSED**: stays open until M5; the village's buildings add 3.1 MiB to a `.pck` with 8.3 MiB of room, and `tools/export.sh` refuses any file over 100 MiB | Owner (asked) |
-| 24 | A committed sample of real swisstopo data | **PROPOSED**: yes, sheet 1328-33 of the 2020 edition (45'668 bytes, three buildings) as the buildings reader's fixture, the one file of real geodata in git; nothing is committed before the owner agrees, since a committed file stays in the history | Owner (asked) |
+| 22 | swissBUILDINGS3D access route (M2 planning, 2026-09-25) | (a) swissBUILDINGS3D 3.0, edition 2020, per map sheet (the village's six sheets, 14.2 MB: closed solids with attributes), as design proposed. Not taken: (b) 2.0, 2024-05, per sheet (DXF; 1'272 of the village's 2'376 parts are open meshes, measured); (c) the 3.0 national file, 2026 (14.1 GB for about 1'500 buildings) | Owner ("a", 2026-09-25) |
+| 23 | An export over 100 MiB (D16) | Stays open until M5 (§14), as design proposed: the village's buildings add 3.1 MiB to a `.pck` with 8.3 MiB of room, and `tools/export.sh` refuses any file over 100 MiB | Owner ("later", 2026-09-25) |
+| 24 | A committed sample of real swisstopo data | Yes: sheet 1328-33 of the 2020 edition (45'668 bytes, three buildings, © swisstopo) in `tests/shared/buildings_sample/` as the buildings reader's fixture, the one file of raw geodata in git, named with its SHA-256 by `test_repo_hygiene.py` (brief M2-09). Hard Rule 3's "never enter git history" is overridden for that one file | Owner ("yes", 2026-09-25) |
 | 25 | Vector library | fiona confirmed (pyogrio cannot read the layer) | Design, delegated (CLAUDE.md §Stack) |
 | 26 | The buildings' file format | A raw mesh per 1 km chunk (`.bin`, float32 vertices then uint32 triangles), not glTF: Godot imports a `.glb` under `res://` and an export ships the imported copy, not the file (measured), while a `.bin` ships as it is, like the terrain's `.f32`, and the game checks its SHA-256 | Design (the architecture's "glTF" was a sketch; the owner may reverse) |
-| 27 | How M2 is run | In one session: design, build, review and close with in-session agents; no spawned waker, ticks or builders | Owner (RULINGS 2026-09-25) |
+| 27 | How M2 is run | In one session: design, build, review and close with in-session agents; no spawned waker, ticks or builders. The session pushes to `main` as usual | Owner (RULINGS 2026-09-25; "push to main") |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not
@@ -577,12 +579,10 @@ Asked when the milestone that needs them is planned; each is also on the board.
 - Weather: simulated, or real data (MeteoSwiss open data, Open-Meteo) — M6.
 - Backdrop and larger-area extents and resolutions — M5.
 - Access route for swissTLM3D (national only) — M3.
-- Access route for swissBUILDINGS3D — asked at M2 planning (§13 row 22, PROPOSED).
-- A committed sample of real swisstopo data as a test fixture — asked at M2 planning (§13
-  row 24, PROPOSED).
-- Export over 100 MB on `dist` — asked at M2 planning (§13 row 23, PROPOSED; D16).
+- Export over 100 MB on `dist` — M5 (the owner, 2026-09-25: "later"; §13 row 23; D16).
 - Game type — later.
 
 Answered at M1 planning (2026-09-25; §13 rows 14–19): the terrain resolution, where the
 version shows, the version scheme, whether the owner designs visuals, software rendering
-in containers.
+in containers. Answered in M2 (2026-09-25; §13 rows 22–24, 27): the access route for
+swissBUILDINGS3D, the committed real sample, where the session pushes.

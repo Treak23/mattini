@@ -58,7 +58,8 @@ renders or looks right; the owner's PC is the visual test (brain.md §Hazards).
 config/world.json    local origin, bounding boxes, axis mapping (one home)
 config/datasets.json swisstopo datasets: collection, pinned edition, attribution
 config/datasets.lock.json  the pinned tile checksums, written by `mattini lock` (from M1-01)
-config/terrain.json  the in-game terrain spacing per area
+config/terrain.json  the in-game terrain spacing per area, its expected heights (from M2-01)
+config/buildings.json the expected building chunks per area (from M2-04)
 pipeline/            Python data pipeline (offline, re-runnable); package `mattini`
 data/                raw and intermediate downloads — git-ignored
 game/                Godot project (project.godot)
@@ -92,7 +93,8 @@ These bind the agents. The owner's explicit word overrides any of them except ru
    and no report claims a visual result that nobody rendered.
 3. **Licence-clean data.** Only geodata whose terms allow redistribution enters the
    pipeline. Every shared build shows `© swisstopo` in its credits (plus any
-   dataset-specific wording). Raw downloads stay in `data/` and never enter git history.
+   dataset-specific wording). Raw downloads stay in `data/` and never enter git history,
+   but the one real sample the owner allowed (SPEC §13 row 24).
    Harm prevented: a game that cannot be shared or sold. A soft rule by the owner's choice
    (2026-09-24): enforced by a test and by `docs/RELEASE.md`, reviewed at Tier 2.
 4. **One home for world coordinates.** The local origin and axis mapping exist only in
