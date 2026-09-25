@@ -14,8 +14,8 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01RJDQ3THu2YpVyofW3Pn924 · Routine trig_01UT2z3Zny3tXn481i8nSJGc · since 2026-09-25T04:02Z
 Tick: session_0155cpPoMH3XqcqMNUWBiH7a · started 2026-09-25T04:03Z
-Builder: spawning · M1-01, M1-03 · spawned 2026-09-25T04:04Z
-Builder: spawning · M1-02, M1-04 · spawned 2026-09-25T04:04Z
+Builder: session_01UxbykwYFJSxYM4GVUxoxky · M1-01, M1-03 · spawned 2026-09-25T04:04Z
+Builder: session_018DsC2M2fzoruSxhZSkXs3Z · M1-02, M1-04 · spawned 2026-09-25T04:04Z
 
 **OPEN briefs** (lanes may run at once: no shared file, no dependency):
 
