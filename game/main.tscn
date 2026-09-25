@@ -1,3 +1,137 @@
 [gd_scene format=3]
 
-[node name="Main" type="Node3D" unique_id=1246578984]
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/camera/free_fly_camera.gd" id="2_camera"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+ground_bottom_color = Color(0.4, 0.43, 0.47, 1)
+ground_horizon_color = Color(0.6, 0.63, 0.67, 1)
+
+[sub_resource type="Sky" id="Sky_sky"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_sky")
+ambient_light_source = 3
+tonemap_mode = 2
+tonemap_exposure = 0.85
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_error"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.16, 0.08, 0.07, 0.92)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="Camera" type="Camera3D" parent="."]
+current = true
+script = ExtResource("2_camera")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+shadow_enabled = true
+directional_shadow_max_distance = 3000.0
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="ErrorPanel" type="PanelContainer" parent="UI"]
+visible = false
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 64.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_error")
+
+[node name="Message" type="Label" parent="UI/ErrorPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.74, 1)
+autowrap_mode = 3
+
+[node name="PauseMenu" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="ColorRect" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.11, 0.13, 0.9)
+
+[node name="Version" type="Label" parent="UI/PauseMenu"]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 32.0
+offset_right = 448.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 28
+
+[node name="Controls" type="Label" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 96.0
+offset_right = 448.0
+offset_bottom = -96.0
+grow_vertical = 2
+autowrap_mode = 3
+
+[node name="Credits" type="RichTextLabel" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 480.0
+offset_top = 96.0
+offset_right = -48.0
+offset_bottom = -96.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 2
+scroll_following = false
+
+[node name="Resume" type="Button" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -72.0
+offset_right = 208.0
+offset_bottom = -32.0
+grow_vertical = 0
+text = "Resume"
+
+[node name="Quit" type="Button" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 224.0
+offset_top = -72.0
+offset_right = 384.0
+offset_bottom = -32.0
+grow_vertical = 0
+text = "Quit"

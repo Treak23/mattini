@@ -1,21 +1,24 @@
 extends SceneTree
-## Software screenshots of a manifest's terrain (docs/SPEC.md §12; brief M1-04): evidence of
-## what is drawn and where, never a gate, and not the Forward+ look. Run by tools/shot.sh:
+## Software screenshots of the main scene (docs/SPEC.md §12; briefs M1-04, M1-05): evidence
+## of what is drawn and where, never a gate, and not the Forward+ look. Run by tools/shot.sh:
 ##
 ##   godot --path game --rendering-method gl_compatibility --resolution 1280x720 \
-##     -s res://tools/shot.gd -- <manifest> <out_dir> "<name>,E,N,above_m,bearing,pitch;..."
+##     -s res://tools/shot.gd -- <manifest> <out_dir> "<view>;<view>;..."
 ##
-## Each view is an LV95 point (converted through WorldConfig), the metres above the terrain
-## there, the bearing in degrees clockwise from north and the pitch in degrees below the
-## horizon. The scene: the terrain with the clay look (TerrainLoader), one fixed sun
-## (elevation 35°, azimuth 150°, shadows) and a procedural sky with neutral ground colours.
-## Each view is saved as <out_dir>/<name>.jpg, 1280 × 720, quality 0.85. A view over no
-## terrain, a bad argument or a refused manifest ends the run with exit 1 and a message.
+## The scene is main.tscn reading <manifest>: its terrain, sun, sky, camera, error panel and
+## pause screen. Each view is one of:
+##   name,E,N,above_m,bearing,pitch  the camera at an LV95 point (converted through
+##       WorldConfig), above_m over the terrain there, facing the bearing in degrees
+##       clockwise from north, pitched that many degrees below the horizon;
+##   name                            the camera where it is: the scene's own start view
+##       when it comes first;
+##   name,pause                      the same with the pause screen open.
+## Views run in order. Each is saved as <out_dir>/<name>.jpg, 1280 × 720, quality 0.85. A
+## view over no terrain or a bad argument ends the run with exit 1 and a message; a refused
+## manifest does not: the scene shows its error panel, which is then what is captured.
 
 const SIZE := Vector2i(1280, 720)
 const JPG_QUALITY := 0.85
-const SUN_ELEVATION_DEG := 35.0
-const SUN_AZIMUTH_DEG := 150.0
 ## Frames rendered before each capture, so Terrain3D's mesh follows the camera.
 const SETTLE_FRAMES := 10
 
@@ -25,36 +28,27 @@ func _initialize() -> void:
 	await process_frame
 	var args := OS.get_cmdline_user_args()
 	if args.size() != 3:
-		_fail('usage: -- <manifest> <out_dir> "<name>,E,N,above_m,bearing,pitch;..."')
+		_fail('usage: -- <manifest> <out_dir> "<view>;<view>;..."')
 		return
 	var views := _parse_views(args[2])
 	if views.is_empty():
 		_fail("no valid view in %s" % args[2])
 		return
-	var world := WorldConfig.from_manifest(args[0])
-	var grid: TerrainGrid = null
-	if world != null:
-		grid = TerrainGrid.from_manifest(args[0], world)
-	if grid == null:
-		_fail("the manifest %s was refused (see the error above)" % args[0])
-		return
-	var scene := _build_scene()
-	var camera: Camera3D = scene.get_node("Camera")
-	var terrain := TerrainLoader.create(grid, scene)
+	var main: Node3D = load("res://main.tscn").instantiate()
+	main.manifest_path = args[0]
+	root.add_child(main)
+	var camera: FreeFlyCamera = main.get_node("Camera")
 	for view: Dictionary in views:
-		var local := world.to_local(view["e"], view["n"], world.height_offset)
-		var ground := terrain.data.get_height(Vector3(local.x, 0.0, local.z))
-		if is_nan(ground):
-			_fail("view %s: no terrain under E %s N %s" % [view["name"], view["e"], view["n"]])
+		if view.has("e") and not _place(camera, main.get_node_or_null("Terrain"), args[0], view):
 			return
-		camera.position = Vector3(local.x, ground + view["above"], local.z)
-		camera.basis = Basis.from_euler(
-			Vector3(deg_to_rad(-view["pitch"]), deg_to_rad(-view["bearing"]), 0.0)
-		)
+		if view["pause"]:
+			main.toggle_pause()
 		for i in SETTLE_FRAMES:
 			await process_frame
 		await RenderingServer.frame_post_draw
 		var image := root.get_texture().get_image()
+		if view["pause"]:
+			main.toggle_pause()
 		if image.get_size() != SIZE:
 			image.resize(SIZE.x, SIZE.y, Image.INTERPOLATE_LANCZOS)
 		var path: String = args[1].path_join("%s.jpg" % view["name"])
@@ -66,73 +60,62 @@ func _initialize() -> void:
 	quit(0)
 
 
-## Parses "name,E,N,above_m,bearing,pitch;..."; returns [] (after printing why) on any error.
+## Puts the camera over the view's LV95 point; returns false (after failing the run) when
+## there is no terrain there.
+func _place(camera: FreeFlyCamera, terrain: Terrain3D, manifest: String, view: Dictionary) -> bool:
+	var world: WorldConfig = null
+	if terrain != null:
+		world = WorldConfig.from_manifest(manifest)
+	if world == null:
+		_fail("view %s: the scene has no terrain (see its error panel)" % view["name"])
+		return false
+	var e: float = view["e"]
+	var n: float = view["n"]
+	var h := world.height_offset
+	var local := world.to_local(e, n, h)
+	var ground := terrain.data.get_height(Vector3(local.x, 0.0, local.z))
+	if is_nan(ground):
+		_fail("view %s: no terrain under E %s N %s" % [view["name"], e, n])
+		return false
+	# The bearing's direction through WorldConfig: north and east are measured, not assumed.
+	var bearing := deg_to_rad(view["bearing"])
+	var facing := (
+		(world.to_local(e + 1.0, n, h) - local) * sin(bearing)
+		+ (world.to_local(e, n + 1.0, h) - local) * cos(bearing)
+	)
+	var at := Vector3(local.x, ground + view["above"], local.z)
+	camera.set_view(at, atan2(-facing.x, -facing.z), -deg_to_rad(view["pitch"]))
+	return true
+
+
+## Parses the views; returns [] (after printing why) on any error.
 func _parse_views(text: String) -> Array[Dictionary]:
 	var views: Array[Dictionary] = []
 	for spec in text.split(";", false):
 		var parts := spec.strip_edges().split(",")
-		var valid := parts.size() == 6 and parts[0].is_valid_filename()
-		for i in range(1, parts.size()):
-			valid = valid and parts[i].strip_edges().is_valid_float()
+		for i in parts.size():
+			parts[i] = parts[i].strip_edges()
+		var valid := parts[0].is_valid_filename()
+		if parts.size() == 6:
+			for i in range(1, parts.size()):
+				valid = valid and parts[i].is_valid_float()
+		elif parts.size() == 2:
+			valid = valid and parts[1] == "pause"
+		else:
+			valid = valid and parts.size() == 1
 		if not valid:
-			printerr("shot: bad view %s (want name,E,N,above_m,bearing_deg,pitch_deg)" % spec)
+			printerr("shot: bad view %s (want name,E,N,above_m,bearing_deg,pitch_deg" % spec)
+			printerr("shot: or name, or name,pause)")
 			return []
-		(
-			views
-			. append(
-				{
-					"name": parts[0],
-					"e": parts[1].to_float(),
-					"n": parts[2].to_float(),
-					"above": parts[3].to_float(),
-					"bearing": parts[4].to_float(),
-					"pitch": parts[5].to_float(),
-				}
-			)
-		)
+		var view := {"name": parts[0], "pause": parts.size() == 2}
+		if parts.size() == 6:
+			view["e"] = parts[1].to_float()
+			view["n"] = parts[2].to_float()
+			view["above"] = parts[3].to_float()
+			view["bearing"] = parts[4].to_float()
+			view["pitch"] = parts[5].to_float()
+		views.append(view)
 	return views
-
-
-## The sun, the sky and the camera under a new root; the camera is current before the
-## terrain enters the tree, which Terrain3D needs.
-func _build_scene() -> Node3D:
-	var scene := Node3D.new()
-	scene.name = "Shot"
-	var sky_material := ProceduralSkyMaterial.new()
-	sky_material.ground_bottom_color = Color(0.42, 0.42, 0.42)
-	sky_material.ground_horizon_color = Color(0.62, 0.62, 0.62)
-	var sky := Sky.new()
-	sky.sky_material = sky_material
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_SKY
-	environment.sky = sky
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	var world_environment := WorldEnvironment.new()
-	world_environment.environment = environment
-	scene.add_child(world_environment)
-
-	var sun := DirectionalLight3D.new()
-	sun.name = "Sun"
-	var elevation := deg_to_rad(SUN_ELEVATION_DEG)
-	var azimuth := deg_to_rad(SUN_AZIMUTH_DEG)
-	# Towards the sun, in Godot's axes (x east, y up, z south).
-	var to_sun := Vector3(
-		sin(azimuth) * cos(elevation), sin(elevation), -cos(azimuth) * cos(elevation)
-	)
-	sun.basis = Basis.looking_at(-to_sun, Vector3.UP)
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 3000.0
-	scene.add_child(sun)
-
-	var camera := Camera3D.new()
-	camera.name = "Camera"
-	camera.near = 0.5
-	camera.far = 20000.0
-	scene.add_child(camera)
-	root.add_child(scene)
-	camera.make_current()
-	return scene
 
 
 func _fail(message: String) -> void:
