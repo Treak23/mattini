@@ -149,11 +149,19 @@ func test_the_pause_menu_shows_version_controls_and_credits() -> void:
 	assert_true(camera.input_enabled)
 
 
+## Brief M2-02 (M1 R1 G-05): every visible Control with a text property (Label, Button,
+## RichTextLabel, LineEdit and the rest), not only Labels, outside UI/PauseMenu.
 func test_the_version_shows_only_in_the_pause_menu() -> void:
 	var main := _main_with(_fixture_manifest_path())
 	var version: String = ProjectSettings.get_setting("application/config/version")
 	var menu: Node = main.get_node("UI/PauseMenu")
-	for label in main.find_children("*", "Label", true, false):
-		if label.is_visible_in_tree() and not menu.is_ancestor_of(label):
-			assert_false(label.text.contains(version), "%s shows no version" % label.name)
+	var texts := 0
+	for control: Control in main.find_children("*", "Control", true, false):
+		var text: Variant = control.get("text")
+		if typeof(text) != TYPE_STRING or menu == control or menu.is_ancestor_of(control):
+			continue
+		texts += 1
+		if control.is_visible_in_tree():
+			assert_false(text.contains(version), "%s shows no version" % control.get_path())
+	assert_gt(texts, 0, "the texts outside the menu are found (the error panel's, hidden)")
 	assert_false(get_tree().root.title.contains(version), "nor the window title")

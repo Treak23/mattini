@@ -254,9 +254,16 @@ func test_without_terrain_the_camera_still_flies_and_no_version_shows() -> void:
 	assert_ne(camera.position, start, "the camera flies with no terrain")
 	var version: String = ProjectSettings.get_setting("application/config/version")
 	var menu: Node = main.get_node("UI/PauseMenu")
-	for label in main.find_children("*", "Label", true, false):
-		if label.is_visible_in_tree() and not menu.is_ancestor_of(label):
-			assert_false(label.text.contains(version), "%s shows no version" % label.name)
+	# Every visible Control with a text property outside the menu, not only Labels (M2-02).
+	var shown := 0
+	for control: Control in main.find_children("*", "Control", true, false):
+		var text: Variant = control.get("text")
+		if typeof(text) != TYPE_STRING or menu == control or menu.is_ancestor_of(control):
+			continue
+		if control.is_visible_in_tree():
+			shown += 1
+			assert_false(text.contains(version), "%s shows no version" % control.get_path())
+	assert_gt(shown, 0, "the error panel's message is shown and looked at")
 	var credits: String = main.get_node("UI/PauseMenu/Credits").text
 	assert_string_contains(credits, "No terrain is loaded")
 
@@ -275,6 +282,30 @@ func test_the_credits_hold_the_dataset_and_every_licence_text() -> void:
 	assert_false(terrain3d.is_empty(), "Terrain3D's licence file is there")
 	assert_true(credits.contains("Terrain3D 1.0.2\n" + terrain3d), "Terrain3D's licence")
 	assert_true(main.get_node("UI/PauseMenu/Credits").scroll_active, "the credits scroll")
+
+
+## Brief M2-02 (M1 R1 G-06; M1 close, D17): godot-cpp is compiled into Terrain3D's library,
+## so its MIT notice follows Terrain3D's licence, from its LICENSE.md vendored verbatim.
+func test_the_credits_carry_godot_cpp_after_terrain3d() -> void:
+	var main := _main_with(_fixture_manifest_path())
+	var credits: String = main.get_node("UI/PauseMenu/Credits").text
+	var heading := "godot-cpp (compiled into Terrain3D's library)"
+	var copyright := "Copyright (c) 2017-present Godot Engine contributors."
+	assert_string_contains(credits, "\n" + heading + "\n")
+	assert_string_contains(credits, copyright)
+	var godot_cpp := FileAccess.get_file_as_string("res://credits/godot-cpp-LICENSE.txt")
+	assert_string_contains(godot_cpp, copyright, "the vendored file holds the copyright line")
+	assert_string_contains(godot_cpp, "Permission is hereby granted", "and the MIT licence")
+	assert_true(credits.contains(heading + "\n" + godot_cpp), "the whole file after the heading")
+	var terrain3d := FileAccess.get_file_as_string("res://addons/terrain_3d/LICENSE.txt")
+	var terrain3d_at := credits.find("Terrain3D 1.0.2\n" + terrain3d)
+	assert_gt(terrain3d_at, -1, "Terrain3D's licence is there")
+	assert_gt(credits.find(heading), terrain3d_at, "godot-cpp's notice follows it")
+	assert_eq(
+		FileAccess.get_sha256("res://credits/godot-cpp-LICENSE.txt"),
+		"26a5b210d90760156ce886267ce9df235787dcc6cebfd7ecd95ef5b6fdcc95bf",
+		"godot-cpp's LICENSE.md at 6388e26d, the commit Terrain3D 1.0.2 builds with, unchanged"
+	)
 
 
 func test_the_controls_name_every_action_and_the_wheel() -> void:

@@ -56,6 +56,10 @@ const SUN_ELEVATION_DEG := 35.0
 const SUN_AZIMUTH_DEG := 150.0
 const TERRAIN3D_TITLE := "Terrain3D 1.0.2"
 const TERRAIN3D_LICENSE := "res://addons/terrain_3d/LICENSE.txt"
+## godot-cpp is compiled into Terrain3D's library (M1 close, D17). Its LICENSE.md, verbatim,
+## at the godot-cpp commit Terrain3D 1.0.2 builds with (brief M2-02's Findings name it).
+const GODOT_CPP_TITLE := "godot-cpp (compiled into Terrain3D's library)"
+const GODOT_CPP_LICENSE := "res://credits/godot-cpp-LICENSE.txt"
 ## The pause screen's list of controls: each InputMap action and what it does.
 const CONTROLS := [
 	[&"fly_forward", "fly forward, along the view"],
@@ -287,14 +291,17 @@ func _credits_text(source: Dictionary) -> String:
 	var licences := Engine.get_license_info()
 	for licence: String in licences:
 		lines.append_array(["", "Licence %s" % licence, licences[licence]])
-	lines.append_array(["", TERRAIN3D_TITLE, _terrain3d_licence()])
+	lines.append_array(["", TERRAIN3D_TITLE, _licence(TERRAIN3D_LICENSE)])
+	lines.append_array(["", GODOT_CPP_TITLE, _licence(GODOT_CPP_LICENSE)])
 	return "\n".join(lines)
 
 
-func _terrain3d_licence() -> String:
-	var text := FileAccess.get_file_as_string(TERRAIN3D_LICENSE)
+## The licence text in the file at [param path]; when it cannot be read, an ERROR line and a
+## sentence saying so in its place (Hard Rule 2).
+func _licence(path: String) -> String:
+	var text := FileAccess.get_file_as_string(path)
 	if text.is_empty():
 		var reason := error_string(FileAccess.get_open_error())
-		push_error("Main: cannot read %s (%s)" % [TERRAIN3D_LICENSE, reason])
-		return "Its licence text could not be read from %s." % TERRAIN3D_LICENSE
+		push_error("Main: cannot read %s (%s)" % [path, reason])
+		return "Its licence text could not be read from %s." % path
 	return text

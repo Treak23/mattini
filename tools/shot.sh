@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
-# Software screenshots of a manifest's terrain (docs/SPEC.md §12; brief M1-04). Evidence,
-# never a gate: Godot's Compatibility renderer on Mesa's llvmpipe under Xvfb, not the
-# Forward+ look (brain.md H12).
+# Software screenshots of the main scene reading a manifest (docs/SPEC.md §12; briefs M1-04,
+# M1-05; game/tools/shot.gd renders main.tscn): its terrain, sun, sky, error panel and
+# pause screen. Evidence, never a gate: Godot's Compatibility renderer on Mesa's llvmpipe
+# under Xvfb, not the Forward+ look (brain.md H12).
 #
-#   tools/shot.sh <manifest> <out_dir> "<name>,E,N,above_m,bearing_deg,pitch_deg;..."
+#   tools/shot.sh <manifest> <out_dir> "<view>;<view>;..."
 #
-# E and N are LV95 metres; above_m is the height above the terrain there; the bearing is
-# clockwise from north; the pitch is degrees below the horizon. Writes <out_dir>/<name>.jpg
-# (1280 x 720) per view, and fails unless every one was written: Godot exits 0 even when
-# its script does not parse (brain.md H2), and a runtime error in a script run with -s
-# leaves Godot running, so the run is killed after SHOT_TIMEOUT seconds (default 300).
+# Views run in order; each is one of:
+#   name,E,N,above_m,bearing_deg,pitch_deg   the camera over an LV95 point: E and N in
+#       metres, above_m over the terrain there, facing the bearing (clockwise from north),
+#       pitched that many degrees below the horizon;
+#   name                                     the camera where it is (the scene's start
+#       view when it comes first);
+#   name,pause                               the same with the pause screen open.
+# A manifest the scene refuses (missing, not built, stale) does not stop the run: the scene
+# shows its error panel, and that is what the views name and name,pause capture; a
+# six-field view then fails, having no terrain to stand over. The manifest's folder must
+# exist (the path is resolved first). Writes <out_dir>/<name>.jpg (1280 x 720) per view,
+# and fails unless every one was written: Godot exits 0 even when its script does not parse
+# (brain.md H2), and a runtime error in a script run with -s leaves Godot running, so the
+# run is killed after SHOT_TIMEOUT seconds (default 300).
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then
-	echo "usage: tools/shot.sh <manifest> <out_dir> \"<name>,E,N,above_m,bearing_deg,pitch_deg;...\"" >&2
+	echo "usage: tools/shot.sh <manifest> <out_dir> \"<view>;<view>;...\"" >&2
+	echo "  each view: name,E,N,above_m,bearing_deg,pitch_deg  or  name  or  name,pause" >&2
 	exit 2
 fi
 if ! command -v xvfb-run > /dev/null; then
