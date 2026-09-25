@@ -13,6 +13,7 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
 Waker: session_01RJDQ3THu2YpVyofW3Pn924 · Routine trig_01UT2z3Zny3tXn481i8nSJGc · since 2026-09-25T04:02Z
+Tick: session_01H8a28u2bPTo3gpVd4cxyVe · started 2026-09-25T04:16Z
 Last tick: 2026-09-25T04:05Z · main 1419199 · ticks 1
 Cost: waker $0.54 (to 04:02Z) · ticks $? (tick 1 unread) · builders $0 · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so tick 1 at a later tick or the close's usage page)
 Builder: session_01UxbykwYFJSxYM4GVUxoxky · M1-01, M1-03 · spawned 2026-09-25T04:04Z
