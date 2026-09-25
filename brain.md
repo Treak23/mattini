@@ -1,10 +1,9 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-09-24 — no version yet — arc M0 closed:
-the pipeline downloads the village terrain and writes the manifest, the Godot project reads
-the origin from it, and one gate checks both; M1 (terrain in Godot) is next, not yet
-planned** (update this header when a phase closes). `CLAUDE.md` (rules) and `docs/SPEC.md`
-(design) outrank this file.
+Orientation for any session. Current as of **2026-09-25 — no version yet — arc M0 closed;
+arc M1 (terrain in Godot, six briefs) planned and started: the village terrain at 0.5 m in
+Terrain3D with a free-fly camera, and version 0.1.0 at its close** (update this header when
+a phase closes). `CLAUDE.md` (rules) and `docs/SPEC.md` (design) outrank this file.
 
 ## 1. WHAT
 A desktop game (Windows, Linux) set in Zermatt on swisstopo open geodata; stylised diorama
@@ -31,8 +30,8 @@ copies it into the generated manifest, and the game learns the origin only from 
 
 ## 4. STACK
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
-4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff. Why each: SPEC §4 and
-§13. Test counts at the last gate (the M0 close, 2026-09-24): pytest 209 passed, 2 network
+4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
+from M1-03. Why each: SPEC §4 and §13. Test counts at the last gate (the M0 close, 2026-09-24): pytest 209 passed, 2 network
 tests deselected; GUT 5 scripts, 13 tests, 943 asserts.
 
 ## 5. HISTORY
@@ -40,11 +39,12 @@ Per-arc record: `docs/history/ARCS.md`. Lessons: `docs/LESSONS.md`. Ledger:
 `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-M1 Terrain, planned in a fresh `design` session. It starts with the M0 carry-over (the
-review's P2/P3 fixes to the gate and to the Hard Rule 4 and 5 tests, board §Next), then the
-downloaded tiles become Terrain3D terrain with a free-fly camera. Asked at M1 planning: the
-in-game terrain resolution (SPEC §7), and where the version shows and the version scheme
-(the first version is planned for M1's close, SPEC §11). The board is the live version.
+Arc M1 runs (board): M1-01 ‖ M1-02 (the M0 carry-over plus the tile lock), then M1-03 ‖
+M1-04 (the terrain step; Terrain3D in the game), then M1-05 (the main scene: free-fly over
+the village, pause screen, credits) and M1-06 (export and 0.1.0). The owner answered M1's
+questions on 2026-09-25 (SPEC §13 rows 14–19): 0.5 m, the version only on the pause screen,
+the scheme confirmed, no owner designs, software screenshots as evidence. Its close ships
+0.1.0. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -70,8 +70,13 @@ builders, and by its review (M0 R1, `docs/reviews/`).
 - **H4 — Terrain3D 1.0.2 prints a deprecation warning GUT counts as a failure.** Adding a
   `Terrain3D` node to the tree prints `WARNING: instance_reset_physics_interpolation() is
   deprecated.`; GUT 9.6.1 then reports `[Failed]: Unexpected Errors: [1] <engine-1>
-  instance_reset_physics_interpolation() is deprecated.` Handle it explicitly in the tests
-  that add Terrain3D to the tree; never switch GUT's error tracking off globally.
+  instance_reset_physics_interpolation() is deprecated.` It prints once per process, for
+  the first Terrain3D only (measured 2026-09-25), so which test sees it depends on the run
+  order. Handle it explicitly in every test that adds Terrain3D to the tree: mark a
+  matching entry of `get_errors()` handled if one is there (the helper in
+  `docs/briefs/pinning/M1-05/game/tests/test_main_scene_terrain.gd`). Note that
+  `assert_engine_error_count(0)` also counts handled errors. Never switch GUT's error
+  tracking off globally.
 - **H5 — 32-bit coordinates.** `Vector3` is 32-bit: an LV95 easting near 2.6 million keeps
   only 0.25 m. Subtract the origin in 64-bit `float` first (SPEC §6); the shared vectors
   hold a trap point that fails otherwise (measured: 825.25 instead of 825.13).
@@ -106,8 +111,45 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   `core.autocrlf=true` (Git for Windows' default install choice) gets CRLF: `tools/gate.sh`
   then fails in bash (`set: pipefail: invalid option name`) and `config/world.json`'s
   SHA-256, so the manifest, changes (R1 C-04, simulated on Linux; the owner's settings are
-  not measured). Until M1 adds `.gitattributes`, clone with `git clone -c
-  core.autocrlf=false`.
+  not measured). Until M1-01 adds `.gitattributes`, clone with `git clone -c
+  core.autocrlf=false`. Raw `.f32` files hold 0x0A bytes and must be marked binary.
+- **H11 — Terrain3D 1.0.2 in Godot 4.6.3, measured at M1 planning (2026-09-25).** Each
+  line below was measured in a cloud container; the M1-04 loader is built around them.
+  - A fresh checkout's first headless Godot run that discovers the GDExtension aborts at
+    exit (`Aborted`, exit 134) after importing; the second run exits 0. Writing
+    `game/.godot/extension_list.cfg` (one `res://…/terrain.gdextension` per line) before
+    the first run avoids it.
+  - `import_images()` puts the image's first pixel at the corner of the region that holds
+    the position given, not at the position (a heightmap placed at z = −2000 at region size
+    1024 landed at z = −2048, 48 m north). Pass region-aligned images.
+  - It turns every height that is not a normal float (0.0, NaN, ±inf) into the `offset`
+    argument: NaN is not a hole, it is 0 m.
+  - `get_height()` is NaN outside the regions and on holes, 0.0 on region parts no image
+    filled, and bilinear between vertices.
+  - Properties set before the node enters the tree: `region_size` and `collision_mode` are
+    silently ignored (stay 256 and 1); `free_editor_textures` and `vertex_spacing` work.
+    `region_size` set before entering, together with `set_camera()`, crashed Godot once
+    (signal 11). Use `change_region_size()` after entering the tree.
+  - `material` is null until the node enters the tree. Its `show_checkered` debug view is
+    on by default and paints a checkerboard over any shader, an override included; with
+    it off and no textures the default shader is black. Its `world_background` defaults to
+    a flat plane at 0 m.
+  - A Terrain3D made in code prints `ERROR: Resource file not found: res://` and `ERROR:
+    Error loading resource: ''` on entering the tree unless `free_editor_textures` is set
+    false first (terrain_3d.cpp:853–857). With no camera in the viewport it prints
+    `ERROR: … Cannot find the active camera`.
+  - Collision (on by default) over areas that are all holes makes Godot print `ERROR:
+    Condition "min_height > max_height" is true.`, 13 times for the fixture. M1 turns
+    collision off; walking (M6) needs an answer.
+  - The editor plugin enabled makes every headless import print two leak ERROR lines at
+    exit: it is not vendored.
+  - Loading 4001 × 6001 heights (the village at 0.5 m) takes 2.9 s and about 540 MB
+    headless; 2001 × 3001, 0.3 s.
+- **H12 — Software rendering in containers (measured 2026-09-25).** Xvfb and Mesa's
+  llvmpipe are preinstalled: `xvfb-run -a godot --path game --rendering-method
+  gl_compatibility …` renders Terrain3D and saves screenshots. Forward+ on Mesa's lavapipe
+  (Vulkan, installable with apt) crashes as soon as Terrain3D draws. A Compatibility image
+  is not the Forward+ look.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

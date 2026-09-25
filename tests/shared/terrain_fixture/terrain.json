@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "areas": {
+    "fixture": {
+      "spacing_m": 0.5
+    }
+  }
+}

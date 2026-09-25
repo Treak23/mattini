@@ -108,10 +108,13 @@ Hard Rules 4 and 5 only (below).
 
 - **Briefs are ARC-sized** unless the owner says otherwise. **Owner testing is never a
   gate**: owner checks in Findings are notes; bugs return through feedback.
-- **Visual work:** containers cannot render (start.md Part 1A). A brief that changes what
+- **Visual work:** containers have no GPU (start.md Part 1A). A brief that changes what
   is drawn is DONE on its headless gates plus the line *"does NOT prove: that it renders
   or looks right"*; the owner's first look is recorded through feedback, never waited
-  for.
+  for. Its builder also commits a few software screenshots (Compatibility renderer,
+  `tools/shot.sh`, SPEC §12) under `docs/briefs/shots/` and names them in Findings: evidence
+  of what is drawn and where, never a gate, and not the Forward+ look (the owner's choice,
+  2026-09-25).
 - **When the owner designs** (files in `docs/design/`): the design files are the spec;
   a designed surface is DONE only when every element is built or on a "NOT BUILT — needs
   owner decision" list. Nothing is silently simplified.

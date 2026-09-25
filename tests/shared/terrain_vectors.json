@@ -1,0 +1,256 @@
+{
+  "about": "The shared terrain fixture (SPEC section 8, the terrain grid; briefs M1-03 and M1-04). tests/shared/terrain_fixture/ holds a synthetic world (world.json: origin E 2600000 / N 1200000, height_offset_m 1000.0, the owner's axes), its terrain and datasets configs, a synthetic 0.5 m source (source.f32) and the expected pipeline output under generated/ (manifest.json, terrain/fixture.json, terrain/fixture.f32), computed by design two independent ways (an exact rational area-weighted mean and the 64-bit window rule; identical bits). The pipeline must reproduce generated/ byte for byte; the game must load it into Terrain3D and read these heights back. Heights are local y = H - height_offset_m, float32; every y below is exactly representable in 32 bits.",
+  "source": {
+    "file": "tests/shared/terrain_fixture/source.f32",
+    "format": "float32-le, row-major, 23 rows (row 0 north) x 40 columns (column 0 west), 0.5 m pixels",
+    "rows": 23,
+    "columns": 40,
+    "resolution_m": 0.5,
+    "lv95_box": {
+      "e_min": 2601015.0,
+      "e_max": 2601035.0,
+      "n_min": 1199978.0,
+      "n_max": 1199989.5
+    },
+    "formula": "pixel (i, j) = float32(1600.0 + 0.40625*j - 0.21875*i + 0.0625*(-1)**(i+j) + 0.000123*((37*i + 17*j) % 11)), evaluated in 64-bit left to right; documentation only, the file is the source"
+  },
+  "grid": {
+    "columns": 41,
+    "rows": 24,
+    "spacing_m": 0.5,
+    "x_min": 1015.0,
+    "z_min": 10.5,
+    "height_offset_m": 1000.0
+  },
+  "terrain3d": {
+    "vertex_spacing": 0.5,
+    "region_size": 2048,
+    "region_locations": [
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  "tolerance_m": 0.0001,
+  "vertices": [
+    {
+      "name": "north-west corner: one source pixel",
+      "row": 0,
+      "column": 0,
+      "lv95": [
+        2601015.0,
+        1199989.5
+      ],
+      "local_xz": [
+        1015.0,
+        10.5
+      ],
+      "y": 600.0625
+    },
+    {
+      "name": "north-east corner: one source pixel",
+      "row": 0,
+      "column": 40,
+      "lv95": [
+        2601035.0,
+        1199989.5
+      ],
+      "local_xz": [
+        1035.0,
+        10.5
+      ],
+      "y": 615.7816162109375
+    },
+    {
+      "name": "south-west corner: one source pixel",
+      "row": 23,
+      "column": 0,
+      "lv95": [
+        2601015.0,
+        1199978.0
+      ],
+      "local_xz": [
+        1015.0,
+        22.0
+      ],
+      "y": 595.25
+    },
+    {
+      "name": "south-east corner: one source pixel",
+      "row": 23,
+      "column": 40,
+      "lv95": [
+        2601035.0,
+        1199978.0
+      ],
+      "local_xz": [
+        1035.0,
+        22.0
+      ],
+      "y": 610.9691162109375
+    },
+    {
+      "name": "west edge: two source pixels",
+      "row": 11,
+      "column": 0,
+      "lv95": [
+        2601015.0,
+        1199984.0
+      ],
+      "local_xz": [
+        1015.0,
+        16.0
+      ],
+      "y": 597.7035522460938
+    },
+    {
+      "name": "north edge, last column before the region boundary",
+      "row": 0,
+      "column": 17,
+      "lv95": [
+        2601023.5,
+        1199989.5
+      ],
+      "local_xz": [
+        1023.5,
+        10.5
+      ],
+      "y": 606.7037963867188
+    },
+    {
+      "name": "interior, on the region boundary x = 1024",
+      "row": 12,
+      "column": 18,
+      "lv95": [
+        2601024.0,
+        1199983.5
+      ],
+      "local_xz": [
+        1024.0,
+        16.5
+      ],
+      "y": 604.5943603515625
+    },
+    {
+      "name": "interior, first column past the region boundary",
+      "row": 12,
+      "column": 19,
+      "lv95": [
+        2601024.5,
+        1199983.5
+      ],
+      "local_xz": [
+        1024.5,
+        16.5
+      ],
+      "y": 605.000732421875
+    },
+    {
+      "name": "interior",
+      "row": 7,
+      "column": 25,
+      "lv95": [
+        2601027.5,
+        1199986.0
+      ],
+      "local_xz": [
+        1027.5,
+        14.0
+      ],
+      "y": 608.5318603515625
+    },
+    {
+      "name": "south edge, on the region boundary x = 1024",
+      "row": 23,
+      "column": 18,
+      "lv95": [
+        2601024.0,
+        1199978.0
+      ],
+      "local_xz": [
+        1024.0,
+        22.0
+      ],
+      "y": 602.297607421875
+    }
+  ],
+  "holes": [
+    {
+      "name": "one vertex west of the grid",
+      "local_xz": [
+        1014.5,
+        16.0
+      ]
+    },
+    {
+      "name": "one vertex east of the grid",
+      "local_xz": [
+        1035.5,
+        16.0
+      ]
+    },
+    {
+      "name": "one vertex north of the grid",
+      "local_xz": [
+        1020.0,
+        10.0
+      ]
+    },
+    {
+      "name": "one vertex south of the grid",
+      "local_xz": [
+        1020.0,
+        22.5
+      ]
+    },
+    {
+      "name": "far inside region (0, 0)",
+      "local_xz": [
+        100.0,
+        100.0
+      ]
+    },
+    {
+      "name": "far inside region (1, 0)",
+      "local_xz": [
+        1500.0,
+        500.0
+      ]
+    }
+  ],
+  "outside_regions": [
+    {
+      "name": "west of region (0, 0)",
+      "local_xz": [
+        -1.0,
+        16.0
+      ]
+    },
+    {
+      "name": "east of region (1, 0)",
+      "local_xz": [
+        2049.0,
+        16.0
+      ]
+    },
+    {
+      "name": "north of the regions",
+      "local_xz": [
+        1020.0,
+        -1.0
+      ]
+    },
+    {
+      "name": "south of the regions",
+      "local_xz": [
+        1020.0,
+        1025.0
+      ]
+    }
+  ]
+}

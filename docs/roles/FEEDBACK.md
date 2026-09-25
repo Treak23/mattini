@@ -55,7 +55,7 @@ New entries at the TOP of §Open.
 ```
 ### FB-014 · 2026-10-02 · bug · Terrain / Matterhorn north face
 Machine: windows | linux | not stated
-Build: <version line> | not stated | unreachable (crash)
+Build: <version from the pause screen> | not stated | unreachable (crash)
 Impact: blocks-use | degraded | wish
 Owner's words: "the matterhorn looks like melted cheese from the gornergrat side"
 What happened: Steep rock faces on the Matterhorn appear stretched and smeared when viewed
@@ -80,8 +80,9 @@ from a screenshot you were shown.
 `degraded` (works, badly), `wish` (nothing broken). A `blocks-use` commit subject starts
 with `!`: `feedback: ! FB-061 crash on start`.
 
-**`Build:`** from the owner's words or a screenshot of the version line (where the game
-shows it is still OPEN, SPEC §Open decisions); otherwise `not stated`.
+**`Build:`** from the owner's words or a screenshot of the pause screen (Escape), the only
+place the game shows its version (owner, 2026-09-25; SPEC §11); otherwise `not stated`.
+A screenshot without the pause screen open does not show the version: never guess it.
 
 ## The `crash` kind
 

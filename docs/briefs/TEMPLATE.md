@@ -51,4 +51,5 @@ the standing rules.>
 
 <Numbers, surprises, out-of-scope touches, follow-up candidates. A measurement that argues
 with the design goes HERE; the build follows the spec. For visual briefs: what the owner
-should look at, and where the camera should be.>
+should look at, and where the camera should be, and the software screenshots committed
+under `docs/briefs/shots/` (SPEC §12).>

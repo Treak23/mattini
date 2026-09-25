@@ -40,7 +40,8 @@ spawning session's prompt). Fallback:
    failure class, that is a BLOCKED question (lesson 6). **Exception, recorded here by
    design:** "renders / looks right" cannot be gated in a container without a GPU; for
    that claim alone, the brief's `does NOT prove: that it renders or looks right` line is
-   the accepted answer, and the owner's PC is the check.
+   the accepted answer, and the owner's PC is the check. Software screenshots
+   (WORKFLOW §Pace and risk) are evidence in Findings, never a gate.
 3. **Done = gates green**, not "looks done".
 3b. **What a gate is made of matters.** Every gate carries its "does NOT prove:" line. A
    source census proves text, never behaviour; it is never the sole gate for code that

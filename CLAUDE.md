@@ -55,16 +55,19 @@ renders or looks right; the owner's PC is the visual test (brain.md §Hazards).
 ```
 config/world.json    local origin, bounding boxes, axis mapping (one home)
 config/datasets.json swisstopo datasets: collection, pinned edition, attribution
+config/datasets.lock.json  the pinned tile checksums, written by `mattini lock` (from M1-01)
+config/terrain.json  the in-game terrain spacing per area
 pipeline/            Python data pipeline (offline, re-runnable); package `mattini`
 data/                raw and intermediate downloads — git-ignored
 game/                Godot project (project.godot)
 game/addons/         vendored plugins (Terrain3D, GUT) — committed, SPEC §Storage
-game/assets/generated/  pipeline output: chunks + manifest — git-ignored, regenerated
+game/assets/generated/  pipeline output: terrain + manifest — git-ignored, regenerated
+build/               exports made by tools/export.sh — git-ignored (from M1-06)
 tests/shared/        fixtures read by both pipeline and game tests (the seam)
 tools/gate.sh        the standard gate
 docs/SPEC.md         design of record
 docs/WORKFLOW.md     the process skeleton; docs/roles/ the role docs
-docs/briefs/         briefs (the unit of work) and BLOCKED.md
+docs/briefs/         briefs (the unit of work), BLOCKED.md, shots/ (software screenshots)
 docs/feedback/       the inbox the clerk files into
 docs/releases/       one record per shipped version
 brain.md             compressed whole-project handoff
