@@ -15,7 +15,8 @@ too, a second rounding of at most one 32-bit step (SPEC §8, M1 R1 T-08).
 The heights must be the ones design computed: config/terrain.json holds, per spacing, the
 SHA-256 of the heights file (`expected_sha256`), and the step compares its output with the
 value for its spacing before it writes anything (lesson 38, M1 R1 T-01). The manifest
-re-checks a built terrain against that value, the datasets config and the tile lock.
+re-checks a built terrain against that value, the datasets config and the tile lock, and
+its box, rows and columns against the world config's area at the spacing (M2-06).
 
 The inputs are the tiles `provenance.json` lists (D9), never the folder's listing; every
 file's SHA-256 must equal its provenance entry and the tile lock's (D7), and every tile
@@ -391,11 +392,14 @@ def built_terrain_block(
     """The description of the terrain built in `out_dir`, or None when none is built.
 
     A built terrain that no longer matches is a TerrainError naming the command: its world
-    config, its spacing, a `source` that is not exactly the datasets config's attribution,
-    collection, edition and resolution (exact key sets), its heights file, a heights file
-    whose SHA-256 is not the terrain config's expected value for the spacing, or tiles
-    that are not, in order, the area's tiles with the SHA-256s the tile lock pins (SPEC §8;
-    M1 R1 T-01, T-03, T-04). The lock is read only when a terrain is built.
+    config, its spacing, a box, columns or rows that are not the world config's area at
+    the spacing (`_check_shape`), a `source` that is not exactly the datasets config's
+    attribution, collection, edition and resolution (exact key sets), its heights file, a
+    heights file whose SHA-256 is not the terrain config's expected value for the spacing,
+    or tiles that are not, in order, the area's tiles with the SHA-256s the tile lock pins
+    (SPEC §8; M1 R1 T-01, T-03, T-04; M2-06). `world` is the world config the manifest is
+    written from, parsed from the bytes whose SHA-256 is `world_sha256`. The lock is read
+    only when a terrain is built.
     """
     check_terrain_config(terrain_config)
     area = configured_area(terrain_config)
@@ -429,6 +433,9 @@ def built_terrain_block(
             f"it was built at {block['spacing_m']!r} m, the terrain config asks for "
             f"{settings['spacing_m']!r} m"
         )
+    if area not in world.areas:
+        raise fail(f"the world config has no area {area!r}")
+    _check_shape(block, world, area, settings["spacing_m"], fail)
     alti = datasets[DATASET]
     source = block["source"]
     if not isinstance(source, dict) or set(source) != SOURCE_KEYS:
@@ -450,8 +457,6 @@ def built_terrain_block(
                 f"config pins {alti[key]!r}"
             )
     rows, columns = block["rows"], block["columns"]
-    if not (type(rows) is int and type(columns) is int and rows > 0 and columns > 0):
-        raise fail("rows and columns must be positive whole numbers")
     heights = Path(out_dir) / block["file"]
     try:
         size = heights.stat().st_size
@@ -470,8 +475,6 @@ def built_terrain_block(
             f"{heights} has SHA-256 {actual}, the terrain config expects {expected} at "
             f"{spacing_key(settings['spacing_m'])} m"
         )
-    if area not in world.areas:
-        raise fail(f"the world config has no area {area!r}")
     tiles = area_tiles(world, area)
     locked = _locked_tiles(load_lock(lock_path), alti, tiles)
     built = [entry["tile"] for entry in built_tiles]
@@ -485,6 +488,41 @@ def built_terrain_block(
                 f"{lock_path} now pins {pinned}"
             )
     return block
+
+
+def _check_shape(
+    block: dict, world: World, area: str, spacing_m: float, fail: Callable[[str], TerrainError]
+) -> None:
+    """Refuse a description whose box, columns or rows are not the area's at the spacing.
+
+    `lv95_box` must be the world config's box for the area: exactly the keys e_max, e_min,
+    n_max and n_min, each a float equal to the world's. `columns` must be
+    (e_max − e_min) / s + 1 and `rows` (n_max − n_min) / s + 1, whole numbers (SPEC §8, the
+    grid; brief M2-06). Each refusal names the field and both values; `fail` adds the file
+    and the command. The size check that follows compares the heights file with these.
+    """
+    e_min, e_max, n_min, n_max = world.area(area)
+    box = {"e_max": e_max, "e_min": e_min, "n_max": n_max, "n_min": n_min}
+    found = block["lv95_box"]
+    if not (
+        isinstance(found, dict)
+        and set(found) == set(box)
+        and all(type(found[key]) is float and found[key] == value for key, value in box.items())
+    ):
+        raise fail(f"lv95_box is {found!r}, the world config's area {area!r} is {box!r}")
+    for field, length in (("columns", e_max - e_min), ("rows", n_max - n_min)):
+        count, wanted = block[field], length / spacing_m + 1
+        if type(count) is not int or count != wanted:
+            if not wanted.is_integer():  # no grid fits: the area is not whole cells
+                needs = f"{wanted!r}, and the area is not a whole number of {spacing_m:g} m cells"
+            elif type(count) is not int:
+                needs = f"{int(wanted)}, a whole number"
+            else:
+                needs = f"{int(wanted)}"
+            raise fail(
+                f"{field} is {count!r}, the world config's area {area!r} at {spacing_m:g} m "
+                f"needs {needs}"
+            )
 
 
 def _is_spacing(value: object) -> bool:

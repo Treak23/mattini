@@ -8,7 +8,8 @@ tile must lie where its id says (EPSG:2056, 2000 x 2000 pixels of 0.5 m, its 1 k
 and hold no nodata or non-finite value in the area; each refusal names the tile. The test
 world is one tile (2623-1096) at 2 m spacing, so the step runs in about a second. Since
 M2-01 its terrain config carries the heights' expected SHA-256, computed from the test's
-own source by an independent reference (window_mean.py).
+own source by an independent reference (window_mean.py); since M2-06 a refused build is
+shown to leave a good terrain already on disk byte for byte.
 """
 
 import hashlib
@@ -245,6 +246,29 @@ def test_heights_other_than_the_expected_ones_are_refused_before_anything_is_wri
     assert expected_sha256(_heights() + np.float32(0.25), 2.0) in message
     assert "'village'" in message and "config/terrain.json" in message
     assert not one_tile["out"].exists()
+
+
+def test_a_refused_build_leaves_the_good_terrain_byte_for_byte(one_tile):
+    """A good terrain in place, then a build refused by its expected value (brief M2-06).
+
+    The test above starts from an empty folder, so a step that wrote its files, compared,
+    then deleted them on a mismatch passed it (M2-01's checker). Here the good terrain is
+    on disk first; the refused build's heights differ from it (the tile rewritten 0.25 m
+    higher, provenance and lock made to vouch for it), so neither leaving the new files nor
+    deleting them keeps the good bytes. Harm: `terrain` refusing the owner's changed inputs
+    takes the working terrain with it, or replaces it with heights design never computed.
+    """
+    _build(one_tile)
+    terrain_dir = one_tile["out"] / "terrain"
+    before = {path.name: path.read_bytes() for path in sorted(terrain_dir.iterdir())}
+    assert sorted(before) == ["village.f32", "village.json"]
+    _write_tile(one_tile["raw_dir"] / NAME, _heights() + np.float32(0.25))
+    _relock(one_tile)
+    with pytest.raises(TerrainError) as refused:
+        _build(one_tile)
+    assert HEIGHTS_SHA256 in str(refused.value)  # refused by its expected value
+    assert sorted(path.name for path in one_tile["out"].iterdir()) == ["terrain"]
+    assert {path.name: path.read_bytes() for path in sorted(terrain_dir.iterdir())} == before
 
 
 def _relock(case):

@@ -9,12 +9,17 @@ collection; the fourth member, the code, is the expected SHA-256 of
 test_terrain_expected.py). The one-tile world of test_terrain_refusals.py is built for
 real, then its inputs change the way the owner would change them, with no `terrain` run.
 
+Since M2-06 (M2-01's checker, a P3): the lock comparison is shown to reach past the first
+tile. The 2 x 2 tile world of test_terrain_build_tiles.py is built once, and each of its
+four tiles in turn gets another SHA-256 in the lock; `manifest` refuses every one.
+
 Does NOT prove: a real republish by swisstopo (simulated with a synthetic tile); that the
 game shows the new attribution (the manifest is its only source, SPEC §8).
 """
 
 import hashlib
 import json
+import shutil
 
 import numpy as np
 import pytest
@@ -211,4 +216,64 @@ def test_the_tiles_must_come_in_the_area_s_order(four_tiles, tmp_path):  # noqa:
     with pytest.raises(TerrainError, match=TERRAIN_COMMAND) as refused:
         manifest()
     assert str(FOUR_TILES) in str(refused.value)
+    assert not (out / "manifest.json").exists()
+
+
+@pytest.fixture(scope="module")
+def four_built(four_tiles, tmp_path_factory):  # noqa: F811
+    """The 2 x 2 tile world built once at 2 m, with its terrain config and lock on disk."""
+    root = tmp_path_factory.mktemp("four_built")
+    config = four_tiles_config(2.0, EXPECTED[2.0][0])
+    build_terrain(
+        four_tiles["world"],
+        load_datasets(),
+        four_tiles["lock"],
+        config,
+        four_tiles["raw_root"],
+        root / "generated",
+    )
+    terrain_path = root / "terrain.json"
+    terrain_path.write_text(json.dumps(config), encoding="utf-8")
+    return dict(four_tiles, built=root / "generated" / "terrain", terrain_path=terrain_path)
+
+
+def _four_manifest(four_built, tmp_path, lock_data):
+    """The manifest over a copy of the built terrain, with `lock_data` as the tile lock."""
+    out = tmp_path / "generated"
+    shutil.copytree(four_built["built"], out / "terrain")
+    lock_path = tmp_path / "datasets.lock.json"
+    lock.write_lock(lock_data, lock_path)
+    return out, lambda: write_manifest(
+        out,
+        four_built["world"].path,
+        terrain_config_path=four_built["terrain_path"],
+        lock_path=lock_path,
+    )
+
+
+def test_the_four_tile_terrain_passes_with_the_lock_it_was_built_from(four_built, tmp_path):
+    """Positive control for the test below: the unchanged lock is accepted."""
+    _, manifest = _four_manifest(four_built, tmp_path, four_built["lock"])
+    written = json.loads(manifest().read_bytes())["terrain"]
+    assert [entry["tile"] for entry in written["source"]["tiles"]] == FOUR_TILES
+
+
+@pytest.mark.parametrize("tile", FOUR_TILES)
+def test_every_tile_s_lock_sha256_is_compared(four_built, tmp_path, tile):
+    """Each tile in turn re-pinned in the lock, the others unchanged: every one is refused.
+
+    M2-01's checker found no test changing a tile other than the first, so a comparison of
+    the first tile only passed the gate. Harm: a republished tile in the east of the village
+    adopted in the lock, the old terrain kept; two machines, one commit, two villages.
+    """
+    lock_data = json.loads(json.dumps(four_built["lock"]))
+    entry = lock_data["datasets"]["swissalti3d"]["tiles"][tile]
+    old = entry["sha256"]
+    entry["sha256"] = hashlib.sha256(f"{tile} republished".encode()).hexdigest()
+    out, manifest = _four_manifest(four_built, tmp_path, lock_data)
+    with pytest.raises(TerrainError) as refused:
+        manifest()
+    message = str(refused.value)
+    for part in (TERRAIN_COMMAND, f"tile {tile}", old, entry["sha256"]):
+        assert part in message, (part, message)
     assert not (out / "manifest.json").exists()

@@ -16,7 +16,7 @@ before running the gate.
 
 Does NOT prove: that a fresh clone was made and runs (the harm follows from what git
 stores); anything about files outside the five folders and the two root files; that a
-file deleted from disk and index together is missed (test_the_required_ones_exist covers
+file deleted from disk and index together is caught (test_the_required_ones_exist covers
 the named ones).
 """
 
@@ -32,6 +32,12 @@ ROOT_FILES = (".gitattributes", ".gitignore")
 EXCLUDED_DIRS = ("game/.godot", "game/assets/generated", "pipeline/.venv")
 CACHE_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache"}
 CACHE_SUFFIXES = (".pyc", ".pyo", ".pyd")
+TERRAIN3D_BINARIES = [
+    "libterrain.linux.debug.x86_64.so",
+    "libterrain.linux.release.x86_64.so",
+    "libterrain.windows.debug.x86_64.dll",
+    "libterrain.windows.release.x86_64.dll",
+]
 REQUIRED = [
     ".gitattributes",
     ".gitignore",
@@ -98,8 +104,9 @@ def test_the_scan_reaches_the_files_m1_s_list_missed():
         "tools/export.sh",
     ):
         assert rel in scanned, rel
-    binaries = [rel for rel in scanned if rel.startswith("game/addons/terrain_3d/bin/")]
-    assert len(binaries) >= 2, binaries  # the Windows and the Linux library
+    # all four Terrain3D libraries: Linux and Windows, debug and release (M2-06)
+    for name in TERRAIN3D_BINARIES:
+        assert f"game/addons/terrain_3d/bin/{name}" in scanned, name
 
 
 @pytest.mark.parametrize(
