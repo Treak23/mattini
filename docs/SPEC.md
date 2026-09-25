@@ -1,4 +1,4 @@
-# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close and at M2 planning, 2026-09-25)
+# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close, at M2 planning and at M2's review, 2026-09-25)
 
 Written by the design realm with the owner from `docs/start.md` Part 1 / 1A and the
 owner's day-one answers. Only the design realm edits this file. `CLAUDE.md` holds the
@@ -82,7 +82,7 @@ Items are addressed by id; assets carry `file:checksum` as a multihash (`1220` +
 |---|---|---|---|
 | swissALTI3D | `ch.swisstopo.swissalti3d` | 1 km tiles, editions 2019 and 2024 for all six village tiles; COG GeoTIFF at 0.5 m (18.1 MB per tile) and 2 m (1.2 MB); EPSG:2056 + EPSG:5728 (LN02 heights) | Terrain (M1) |
 | swissSURFACE3D | `ch.swisstopo.swisssurface3d` / `…-raster` | LAZ point cloud 213 MB per tile (2021); 0.5 m surface-model COG per tile | Canopy height, steep rock (M3) |
-| swissBUILDINGS3D 3.0 | `ch.swisstopo.swissbuildings3d_3_0` | Current edition (2026) only as ONE national FileGDB of 14.1 GB; per-map-sheet items exist for 2015/2016 and 2020 (sheet 1348-11: 9.1 MB GDB zip; the village's six sheets 14.1 MB together, measured 2026-09-25). 2.0 (`ch.swisstopo.swissbuildings3d_2`) has per-sheet DXF up to 2024-05, but 1'272 of its 2'376 village parts are open meshes (measured) | Buildings (M2): the 2020 edition per map sheet, PROPOSED (§8 *The buildings*; §13 row 22) |
+| swissBUILDINGS3D 3.0 | `ch.swisstopo.swissbuildings3d_3_0` | Current edition (2026) only as ONE national FileGDB of 14.1 GB; per-map-sheet items exist for 2015/2016 and 2020 (sheet 1348-11: 9.1 MB GDB zip; the village's six sheets 14.2 MB together, 14'210'379 bytes, measured 2026-09-25). 2.0 (`ch.swisstopo.swissbuildings3d_2`) has per-sheet DXF up to 2024-05, but 1'272 of its 2'376 village parts are open meshes (measured) | Buildings (M2): the 2020 edition per map sheet, PROPOSED (§8 *The buildings*; §13 row 22) |
 | SWISSIMAGE 10 cm | `ch.swisstopo.swissimage-dop10` | 1 km tiles, 2023 edition: 43.2 MB (0.1 m), 0.2 MB (2 m) | Surface classification (M3) |
 | swissTLM3D | `ch.swisstopo.swisstlm3d` | National only (2026-02): 2.9 GB GDB / 4.8 GB GPKG | Paths, roads, rivers, rail, lifts, land cover (M3) — access route **OPEN** |
 | swissNAMES3D | `ch.swisstopo.swissnames3d` | National (2026): CSV/GDB/GPKG/SHP | Place names |
@@ -96,16 +96,20 @@ repository pins the SHA-256 of every tile the pipeline uses, and the download re
 published checksum that differs from the pinned one, so a republished tile is a deliberate
 change like a new edition.
 
-**The tile lock** (form chosen at M1 planning, 2026-09-25; brief M1-01):
-`config/datasets.lock.json`, written only by `python -m mattini lock terrain` from the
-checksums swisstopo publishes (STAC items only, no file is downloaded) and committed, like
-`uv.lock`: `{"schema": 1, "datasets": {"swissalti3d": {"collection", "edition",
-"resolution_m", "tiles": {"<tile>": {"file", "sha256"}}}}}`, sorted keys, 2-space indent, LF.
-`download terrain` compares every published checksum with the lock before it fetches or
-deletes anything, and refuses a difference, naming the tile, both values and the command.
-A lock written by a command (rather than checksums typed into `datasets.json`) scales to
-M5's many tiles. The six 2024 village tiles' checksums were re-read from the live STAC
-items on 2026-09-25 and equal those brief M0-04 recorded.
+**The lock** (form chosen at M1 planning, 2026-09-25, brief M1-01; the buildings' entry
+since M2-03): `config/datasets.lock.json`, written only by `python -m mattini lock terrain`
+and `python -m mattini lock buildings` from the checksums swisstopo publishes (STAC items
+only, no file is downloaded) and committed, like `uv.lock`. Each command replaces its own
+entry and keeps the other. `{"schema": 1, "datasets": {"swissalti3d": {"collection",
+"edition", "resolution_m", "tiles": {"<tile>": {"file", "sha256"}}}, "swissbuildings3d":
+{"collection", "edition", "sheets": {"<sheet>": {"file", "sha256"}}}}}`, exact key sets,
+sorted keys, 2-space indent, LF. `download terrain` and `download buildings` compare every
+published checksum with the lock before they fetch or delete anything, and refuse a
+difference, naming the tile or sheet, both values and the command. A lock written by a
+command (rather than checksums typed into `datasets.json`) scales to M5's many tiles. The
+six 2024 village tiles' checksums were re-read from the live STAC items on 2026-09-25 and
+equal those brief M0-04 recorded; the six 2020 village sheets' were read at M2 planning
+and again by the M2 review (identical).
 
 ## 6. Coordinates (confirmed by the owner on day one)
 
@@ -180,10 +184,11 @@ screen is generated from it. From M1 its top level is exactly `schema`, `terrain
 **The terrain grid (M1; designed at M1 planning, 2026-09-25).** Tier 1 territory: it
 places heights in the world (WORKFLOW §Review policy).
 
-- *Config:* `config/terrain.json`, `{"schema": 1, "areas": {"village":
-  {"expected_sha256": {"0.5": …, "1": …, "2": …}, "spacing_m": 0.5}}}`: one area, which is
-  also the area the download, the lock and the buildings serve (M2-01, M1 R1 T-06);
-  spacing 0.5, 1 or 2 m (the source is 0.5 m); the expected output per spacing (below).
+- *Config:* `config/terrain.json`, `{"schema": 1, "areas": {"village": {"computed_for":
+  {…}, "expected_sha256": {"0.5": …, "1": …, "2": …}, "spacing_m": 0.5}}}`: one area,
+  which is also the area the download, the lock and the buildings serve (M2-01, M1 R1
+  T-06); spacing 0.5, 1 or 2 m (the source is 0.5 m); the expected output per spacing and
+  what it was computed for (below).
 - *Inputs:* the tiles listed in the download's `provenance.json` only (D9), refused
   unless its edition, resolution and tile list match the config; every file's SHA-256
   equal to the lock's; every tile where its id says (EPSG:2056, 2000 × 2000 pixels of
@@ -235,6 +240,14 @@ places heights in the world (WORKFLOW §Review policy).
   config change, and a machine or a code change that computes other heights says so
   itself (M1 R1 T-01). A gate test builds a terrain from 2 × 2 synthetic tiles cut by
   its area, pinned to exact bytes at 2 m and 0.5 m.
+  Each area also records what its values were computed for (M2 R1 P-02, I-01; brief
+  M2-07): `computed_for`, exactly `{"inputs_sha256", "world_sha256"}`, the SHA-256 of
+  `config/world.json`'s bytes and of the lock's entry for the dataset rendered canonically
+  (`json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`, UTF-8).
+  The step and `manifest` compare both before any output, and refuse a difference as what
+  it is: a changed world or adopted new inputs, a design change after which design
+  recomputes the expected values, never a fault of the machine or the code. An area's keys
+  are exactly `computed_for`, `expected_sha256` and `spacing_m`.
 - *The game:* `TerrainGrid` reads the block and the file, checks the file's size and
   SHA-256 and the block against its own manifest, and places the grid through
   `WorldConfig` (x_min, z_min from the box's north-west corner), never by subtracting an
@@ -330,17 +343,22 @@ policy).
   "sheet": <sheet id>} … sorted by sheet]}`; `world_sha256`: the SHA-256 of the world
   config's bytes.
 - *Expected output (lesson 38):* `config/buildings.json`, `{"schema": 1, "areas":
-  {"village": {"expected_sha256": {"<tile>": "<sha256>", …}}}}`, the one area being the
-  terrain config's. The village's six chunks were computed by design two independent ways
-  at M2 planning (identical bytes): 1'486 buildings, 92'594 vertices, 178'910 triangles,
-  3'258'048 bytes in all. The buildings step compares every chunk with it before writing
+  {"village": {"computed_for": {…}, "expected_sha256": {"<tile>": "<sha256>", …}}}}`, the
+  one area being the terrain config's, `computed_for` as the terrain's (above, for the
+  `swissbuildings3d` entry). The village's six chunks were computed by design two
+  independent ways at M2 planning (identical bytes): 1'486 buildings, 92'594 vertices,
+  178'910 triangles, 3'258'048 bytes in all. The buildings step compares every chunk with it before writing
   anything; `manifest` refuses any other file. `manifest` also refuses a block whose key
   sets are not exact, whose `world_sha256` is not the world config's, whose `source` is not
   the datasets config's attribution, collection and edition and the lock's sheets with
   their SHA-256s in order, or whose chunk files' sizes or SHA-256s differ; each refusal
-  names `python -m mattini buildings`.
+  names `python -m mattini buildings`. It also refuses a `lv95_box` other than the world
+  config's box for the area (M2 R1 P-03). A build removes the chunk files of an earlier
+  build that its block no longer lists (M2 R1 G-06).
 - *The game:* `BuildingChunks` reads the block and the files, checks each file's path, size
-  and SHA-256, the indices, and the block's `world_sha256` against its manifest, and never
+  and SHA-256, the indices, and the block's `world_sha256` against its manifest, and that
+  the `WorldConfig` it is given was read from that manifest (the same origin, height
+  offset, and local vectors for one metre east, north and up; M2 R1 P-04), and never
   converts a coordinate: the pipeline wrote local coordinates for the world config that
   `world_sha256` pins. `BuildingLoader` makes one flat-shaded mesh per chunk under a
   `Buildings` node. Each triangle's normal is `normalize((b − a) × (c − a))` in the file's
@@ -353,8 +371,18 @@ policy).
   below its lowest corner. So no building floats and nothing is added under them. Twelve
   of 1'486 stand above the 2024 terrain at a corner, by up to 4.1 m (four by more than
   1 m, two of them marked *Im Bau*). The terrain is 2024, the buildings' survey mostly
-  2012. They are shown as the data has them (Hard Rule 2), and the release record names
-  them for the owner to look at.
+  2012. The other way round, eight have their roof below the 2024 ground at their
+  bounding-box centre, so the game shows them barely or not at all (M2 R1 P-05): one is
+  *Gebaeude unsichtbar* (swisstopo's own invisible class,
+  `{B7632268-A860-45C7-B4F7-8A5A24657354}`), one *Im Bau*
+  (`{CEB91F2C-E78C-4334-885C-6E386C2E6B8B}`), and six *Gebaeude Einzelhaus*
+  (`{051BEC10-3D8E-4FE3-8B36-F759B9BFE607}`, `{0D9071AA-1931-406C-B945-635254849B3F}`,
+  `{2CA4128A-BFC7-4E4B-859D-8BE908BFD458}`, `{366C806F-F781-43DD-A7E5-6F46D0D0A1F5}`,
+  `{93962B42-C282-4FB5-A849-802A203901F1}`, `{E4B87A5D-EEC6-4C07-B910-622D217D1EC7}`).
+  In all, 1'475 of the 1'486 have the ground at their centre between floor and roof, the
+  same count in the game with Terrain3D loaded and on the pipeline's grid. They are shown
+  as the data has them (Hard Rule 2), and the release record names both groups for the
+  owner to look at.
 - *Shared fixture:* `tests/shared/buildings_fixture/` and
   `tests/shared/buildings_vectors.json`: a synthetic world (origin E 2'650'000 /
   N 1'150'000, height offset 500 m) with eleven buildings as the reader hands them over.
@@ -437,7 +465,13 @@ design realm proposes and the owner reacts through `feedback`):**
   The two materials are `.tres` files the owner can tune in the editor.
 - *Loading:* after the terrain; a refusal opens the error panel with the refusal and the
   commands (`download buildings`, then `buildings`) while the terrain stays; the panel
-  names what cannot be shown. A second startup line counts the buildings.
+  names what cannot be shown. A second startup line counts the buildings. With the
+  terrain refused and the buildings loaded, the camera starts over the centre of the
+  buildings' bounds, 150 m above the highest vertex, at the same bearing and pitch (M2 R1
+  G-02; brief M2-08).
+- *Tests of the look (M2 R1 G-01):* on the meshes the loader built, every surface is
+  lit per pixel, back faces culled, opaque and untextured, and the roofs' luminance lies
+  below the walls' and above 0.3. The colours themselves stay the owner's to tune.
 - *Credits:* one line per loaded dataset (`swissalti3d 2024, © swisstopo`,
   `swissbuildings3d 2020, © swisstopo`), then the software licences, godot-cpp's included
   (D17).
@@ -519,7 +553,7 @@ line stays on every visual gate.
 | 19 | Camera controls (the design's proposal) | Kept as proposed (Godot editor fly mode) | Owner (no change asked) |
 | 20 | Form of the tile pin (D7) | `config/datasets.lock.json`, written by `python -m mattini lock terrain` | Design (M0 close: "M1 planning picks the form") |
 | 21 | Raster libraries | rasterio and numpy confirmed | Design, delegated (CLAUDE.md §Stack) |
-| 22 | swissBUILDINGS3D access route (M2 planning, 2026-09-25) | **PROPOSED** by design, the owner's answer awaited: (a) swissBUILDINGS3D 3.0, edition 2020, per map sheet (the village's six sheets, 14.1 MB: closed solids with attributes). The alternatives: (b) 2.0, 2024-05, per sheet (DXF; 1'272 of the village's 2'376 parts are open meshes, measured); (c) the 3.0 national file, 2026 (14.1 GB for about 1'500 buildings) | Owner (asked) |
+| 22 | swissBUILDINGS3D access route (M2 planning, 2026-09-25) | **PROPOSED** by design, the owner's answer awaited: (a) swissBUILDINGS3D 3.0, edition 2020, per map sheet (the village's six sheets, 14.2 MB: closed solids with attributes). The alternatives: (b) 2.0, 2024-05, per sheet (DXF; 1'272 of the village's 2'376 parts are open meshes, measured); (c) the 3.0 national file, 2026 (14.1 GB for about 1'500 buildings) | Owner (asked) |
 | 23 | An export over 100 MiB (D16) | **PROPOSED**: stays open until M5; the village's buildings add 3.1 MiB to a `.pck` with 8.3 MiB of room, and `tools/export.sh` refuses any file over 100 MiB | Owner (asked) |
 | 24 | A committed sample of real swisstopo data | **PROPOSED**: yes, sheet 1328-33 of the 2020 edition (45'668 bytes, three buildings) as the buildings reader's fixture, the one file of real geodata in git; nothing is committed before the owner agrees, since a committed file stays in the history | Owner (asked) |
 | 25 | Vector library | fiona confirmed (pyogrio cannot read the layer) | Design, delegated (CLAUDE.md §Stack) |

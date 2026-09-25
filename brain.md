@@ -42,10 +42,12 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-M2 Buildings is running (the board). M2-01 and M2-02 carry M1's review residue; M2-03 to
-M2-05 bring swissBUILDINGS3D's buildings into the pipeline and the game, once the owner
-has chosen the access route. The owner's first look at 0.1.0 comes back through
-`feedback`. The board is the live version.
+M2 Buildings is running (the board). M2-01 and M2-02 carried M1's review residue; M2-03
+to M2-05 brought swissBUILDINGS3D's buildings into the pipeline and the game, built on the
+access route design PROPOSES (SPEC §13 row 22) while the owner's answer is awaited:
+nothing of it reaches `main` or a build before that answer. M2-07 and M2-08 are the
+review's fixes. The owner's first look at 0.1.0 comes back through `feedback`. The board
+is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -182,6 +184,28 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   import of a fresh checkout may print `WARNING: Canceling suspended execution of
   "_enter_tree" due to a script reload.`, a warning line. The started build logs to
   `user://logs/godot.log` (Linux `~/.local/share/godot/app_userdata/mattini/logs/`).
+- **H16 — Godot's meshes (measured at M2 planning and in M2-05, 2026-09-25).** Front
+  faces are clockwise: `SurfaceTool.generate_normals` gives (0, 1, 0) for the triangle
+  (0,0,0), (1,0,0), (0,0,1), whose right-hand normal is (0, −1, 0), so a counter-clockwise
+  triangle goes in as (a, c, b) (SPEC §8). `generate_normals` smooths across shared
+  vertices unless `set_smooth_group(-1)` is set first. An `ArrayMesh` stores normals as
+  16-bit octahedral pairs: read back, they differ by up to about 1e-4. A `.glb` under
+  `res://` is imported and an export ships the imported copy, not the file; a `.bin` or
+  `.f32` ships as it is.
+- **H17 — Reading swissBUILDINGS3D (measured at M2 planning, 2026-09-25).** The 2020
+  per-sheet FileGDB's `Building_solid` layer is an Esri MultiPatch. fiona 1.10.1 (its
+  wheel's GDAL 3.9.2) reads it as a MultiPolygon Z of triangles; pyogrio refuses the
+  layer's TIN Z / MultiPatch type. fiona's and rasterio's Windows wheels each bundle their
+  own renamed GDAL DLLs, so they do not clash (the M2 review).
+- **H18 — ruff's import order depends on the tree (measured in M2-03, 2026-09-25).** ruff
+  classifies `mattini.x` as first-party only when it finds the module, so a pinned test
+  that imports a module not written yet lints clean in `docs/briefs/pinning/` and fails
+  `I001` once the module exists. Lint pinned tests in a layout that holds the modules
+  (lesson 40).
+- **H19 — Worktrees of in-session workflow agents start from the default branch
+  (measured in M2, 2026-09-25).** An agent run with worktree isolation got a worktree of
+  `main`, not of the session's branch: every M2 builder's first step was `git merge
+  --ff-only <base>` and a check of the head.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

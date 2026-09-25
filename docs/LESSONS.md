@@ -251,3 +251,25 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     panel (M1 R1 G-02, 2026-09-25). Every chain that ends in something the owner receives
     ends in one step that runs it: the close started the Linux build before shipping 0.1.0,
     and `export.sh` will.
+
+40. `[design]` **A pinned test is code: run it before pinning it.** Two of M2's six briefs
+    blocked on design's own pinned tests, not on the work (2026-09-25). M2-03's pinned
+    Python failed ruff's import order once the module it imports existed, because ruff
+    calls an import first-party only when it finds the module. M2-05's GDScript overrode
+    `Object._set`, expected faceted normals from `SurfaceTool.generate_normals`, which
+    smooths unless told not to, and compared Godot's 16-bit octahedral normals exactly.
+    Before pinning, design lints every pinned test in the live layout and runs it against a
+    throwaway implementation, and sees it fail without one (M2-08's were: 5/5 and 2/2).
+
+41. `[all]` **A stored expected value names what it was computed from.** M2's expected
+    hashes catch a wrong build, but after a changed world config or an adopted republished
+    tile the same check said "this machine or this code computes other bytes" and named a
+    command that could not succeed (M2 R1 P-02, I-01, 2026-09-25). A comparison with a
+    stored value first compares the inputs the value was computed for, and refuses each
+    difference as what it is.
+
+42. `[all]` **A fixture's words are claims too.** The complete test world's helper said
+    its box stood on the terrain; the box's roof lay 4 m under the ground, and every test
+    that used it passed (M2 R1 P-01). The buildings fixture's terrain config carried
+    another fixture's hash, unlabelled (P-06). A fixture that describes a relation (on the
+    ground, inside the area, a placeholder) gets a test of that relation, or a label.
