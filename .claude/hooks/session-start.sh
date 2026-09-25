@@ -46,7 +46,15 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 
 # Warm-up: first asset import, soft-fail; the Godot project exists from brief M0-03 on.
+# A fresh checkout's first run that discovers a GDExtension (Terrain3D) aborts at exit
+# unless game/.godot/extension_list.cfg lists it first (brain.md H11), as tools/gate.sh does.
 if [ -f "$CLAUDE_PROJECT_DIR/game/project.godot" ]; then
+  EXTENSION_LIST="$CLAUDE_PROJECT_DIR/game/.godot/extension_list.cfg"
+  if [ ! -f "$EXTENSION_LIST" ]; then
+    mkdir -p "$(dirname "$EXTENSION_LIST")"
+    (cd "$CLAUDE_PROJECT_DIR/game" && find addons -name '*.gdextension' -print | LC_ALL=C sort \
+      | sed 's|^|res://|') > "$EXTENSION_LIST"
+  fi
   "$GODOT_BIN" --headless --path "$CLAUDE_PROJECT_DIR/game" --import > /dev/null 2>&1 \
     || echo "session-start: godot import warm-up failed (non-fatal)"
 fi

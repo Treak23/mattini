@@ -107,6 +107,19 @@ run_scanned() {
 	fi
 }
 
+# A fresh checkout's first headless Godot run that discovers a GDExtension (Terrain3D)
+# aborts at exit, exit 134, after importing; with game/.godot/extension_list.cfg written
+# first it exits 0 (brain.md H11). Written only when missing, listing every
+# res://addons/**/*.gdextension, one per line, as Godot writes it.
+extension_list() {
+	local list="game/.godot/extension_list.cfg"
+	[ -f "$list" ] && return 0
+	mkdir -p game/.godot || return 1
+	find game/addons -name '*.gdextension' -print | LC_ALL=C sort | sed 's|^game/|res://|' > "$list"
+	echo "wrote $list:"
+	cat "$list"
+}
+
 # The scans match the output formats measured on Godot 4.6.3; another version may print
 # its errors differently, so it is refused, naming what it found (M0 review G-09).
 godot_version() {
@@ -172,6 +185,7 @@ step "pytest" "${UV_RUN[@]}" pytest pipeline/tests
 step "ruff check" "${UV_RUN[@]}" ruff check pipeline
 step "ruff format --check" "${UV_RUN[@]}" ruff format --check pipeline
 step "manifest" "${UV_RUN[@]}" python -m mattini manifest
+step "godot extension list" extension_list
 step "godot version" godot_version
 step "godot import" godot_import
 step "godot parse check" parse_check
