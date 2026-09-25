@@ -1,5 +1,5 @@
 # Brief: M2-03 — The building inputs: sheets, lock and download
-Status: BLOCKED
+Status: DONE (ad12280)
 
 Written in the design realm; executed under `docs/roles/BUILD.md` (in M2 by an Opus agent
 of the one M2 session, the owner's word of 2026-09-25, `docs/history/RULINGS.md`).
@@ -107,12 +107,12 @@ M2-01 (the area helper, the lock and download modules it changes).
 
 ## Done when (gates)
 
-- [ ] The pinned copies are in place and byte-identical (`cmp`).
+- [x] The pinned copies are in place and byte-identical (`cmp`).
       - does NOT prove: that the pinned tests are the right tests.
-      - NOT MET, BLOCKED (`docs/briefs/BLOCKED.md`, Findings 2): `config/datasets.json` and
-        `pipeline/tests/test_buildings_download.py` are in place, and `cmp` exits 0 for both
-        before each commit. `pipeline/tests/test_sheets.py` is not in the tree: its
-        byte-identical copy fails the gate's `ruff check` (I001).
+      - Was BLOCKED (Findings 2): the pinned `test_sheets.py` failed `ruff check` once in
+        place. Answered by design (`docs/history/blocked/2026-09-25-1.md`): the pinned copy
+        was corrected and put in place at `ad12280`; `cmp` exits 0 for all three pinned
+        files there.
 - [x] `python -m mattini lock buildings` against the live STAC writes the six sheets with
       design's SHA-256s, and `git diff config/datasets.lock.json` shows only the new entry;
       then `download buildings --out <scratch>` fetches six files, and a second run
@@ -135,11 +135,11 @@ M2-01 (the area helper, the lock and download modules it changes).
         `test_a_republished_sheet_is_refused_before_anything_changes` and my
         `test_a_sheet_whose_lock_sha256_differs_by_one_digit_is_refused_before_anything`;
         both fail when the comparison is removed (run M1).
-- [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
+- [x] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that the buildings are placed right (M2-04, M2-05).
-      - NOT MET for the brief's full tree (BLOCKED): with the pinned `test_sheets.py` in
-        place, it fails at `ruff check`. Without that file, the gate is green, and it
-        was chained to the commit of `4035f08` (Findings 1).
+      - Green and chained for `4035f08` without `test_sheets.py` (Findings 1), and for
+        `ad12280` with it: pytest 507 passed, 4 deselected; GUT 16 scripts, 76 tests,
+        1726 asserts.
 
 ## Forbidden
 
