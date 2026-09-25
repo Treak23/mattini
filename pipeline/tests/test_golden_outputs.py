@@ -21,7 +21,8 @@ from mattini.world import load_world
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE_WORLD = REPO / "tests" / "shared" / "terrain_fixture" / "world.json"
-MANIFEST_SHA256 = "ec4b3c017252fa4bbcedf34c6bf4c5508dd9c9c87dfd9e2552c56b2f69e2e860"
+# M1-03 added the terrain block (null here: no terrain is built): a new key set and golden.
+MANIFEST_SHA256 = "a04c269d19ba62f7600733abf52defb4817da419bfa1ed7adfa42b33bd8c8828"
 PROVENANCE_SHA256 = "2efd91929da1aa4aa7a987c39a1b66ad25af330ba51eabcde84da3809b77b73a"
 PROVENANCE_KEYS = {
     "attribution",
@@ -38,7 +39,8 @@ TILE_KEYS = {"file", "item", "sha256", "size_bytes", "tile", "url"}
 def test_manifest_bytes_for_a_fixed_world_config(tmp_path):
     raw = write_manifest(tmp_path, FIXTURE_WORLD).read_bytes()
     manifest = json.loads(raw)
-    assert set(manifest) == {"schema", "world", "world_sha256"}
+    assert set(manifest) == {"schema", "terrain", "world", "world_sha256"}
+    assert manifest["terrain"] is None
     assert manifest["world"] == json.loads(FIXTURE_WORLD.read_text(encoding="utf-8"))
     assert manifest["world_sha256"] == hashlib.sha256(FIXTURE_WORLD.read_bytes()).hexdigest()
     assert hashlib.sha256(raw).hexdigest() == MANIFEST_SHA256

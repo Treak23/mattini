@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from mattini import download, lock
+from mattini import download, lock, terrain
 from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.manifest import DEFAULT_OUT, write_manifest
 from mattini.world import WorldConfigError, load_world
@@ -28,6 +28,15 @@ def main(argv: list[str] | None = None) -> int:
     fetch.add_argument(
         "--out", default=download.DEFAULT_OUT, help="download root (default: data/raw)"
     )
+    build = commands.add_parser(
+        "terrain", help="build the terrain heights from the downloaded tiles, then the manifest"
+    )
+    build.add_argument(
+        "--raw", default=download.DEFAULT_OUT, help="download root (default: data/raw)"
+    )
+    build.add_argument(
+        "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -38,7 +47,15 @@ def main(argv: list[str] | None = None) -> int:
             print(lock.write_lock(pinned, lock.LOCK_PATH))
         elif args.command == "download":
             return _download_terrain(Path(args.out))
-    except (WorldConfigError, DatasetsConfigError, lock.LockError, download.DownloadError) as exc:
+        elif args.command == "terrain":
+            print(_build_terrain(Path(args.raw), Path(args.out)))
+    except (
+        WorldConfigError,
+        DatasetsConfigError,
+        lock.LockError,
+        download.DownloadError,
+        terrain.TerrainError,
+    ) as exc:
         print(f"mattini: error: {exc}", file=sys.stderr)
         return 1
     return 0
@@ -65,6 +82,24 @@ def _download_terrain(out_root: Path) -> int:
     print(f"{len(entries)} tiles verified, {len(fetched)} fetches", file=sys.stderr)
     print(out_dir / download.PROVENANCE)
     return 0
+
+
+def _build_terrain(raw_root: Path, out_dir: Path) -> Path:
+    """Build the configured area's terrain, then the manifest; progress on stderr."""
+
+    def progress(message: str) -> None:
+        print(message, file=sys.stderr, flush=True)
+
+    terrain.build_terrain(
+        load_world(),
+        load_datasets(),
+        lock.load_lock(lock.LOCK_PATH),
+        terrain.load_terrain_config(),
+        raw_root,
+        out_dir,
+        progress=progress,
+    )
+    return write_manifest(out_dir)
 
 
 if __name__ == "__main__":
