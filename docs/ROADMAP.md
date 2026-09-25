@@ -12,9 +12,9 @@ there was nothing to play yet: record in `docs/history/ARCS.md` §M0.
 ### Arc M1 — Terrain (planned 2026-09-25)
 
 Supervision: ON · M1 · since 2026-09-25T04:00Z
-Waker: session_019do6LK4hFYQ9c4ykJwQcNw · Routine trig_011umFC7mvuuPiadHHw9DE56 · since 2026-09-25T04:21Z
+Waker: session_01EEAeJBE7KpsQsoGUEmhTVm · Routine trig_01LxXVtmJjWGmvzExTFWz4m9 · since 2026-09-25T05:24Z
 Last tick: 2026-09-25T04:57Z · main 589c63a · ticks 5
-Cost: waker $1.68 (first waker, handed off 04:20Z; successor unread) · ticks $4.52 (ticks 1–4; tick 5 unread) · builders $19.88 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
+Cost: waker $3.38 (first waker $1.68, handed off 04:20Z; second $1.70, handed off 05:22Z; third unread) · ticks $4.52 (ticks 1–4; tick 5 unread) · builders $19.88 (M1-01, M1-03's builder $7.50; M1-02, M1-04's $12.38) · lenses $0 (read from each other session's `usage.cost_usd`; a session cannot read its own, so the last tick at a later tick or the close's usage page)
 Builder: session_01C1AkkQheFeaoMGMvdomW9k · M1-05, M1-06 · spawned 2026-09-25T04:56Z
 
 **OPEN briefs** (lanes may run at once: no shared file, no dependency):
