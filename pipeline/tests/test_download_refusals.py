@@ -15,6 +15,7 @@ import pytest
 
 from mattini.datasets import load_datasets
 from mattini.download import DownloadError, download_terrain
+from mattini.lock import build_lock
 from mattini.world import load_world
 
 TILES = ["2623-1095", "2623-1096", "2623-1097", "2624-1095", "2624-1096", "2624-1097"]
@@ -58,6 +59,11 @@ class Server:
         Path(dest).write_bytes(outcome)
 
 
+def _lock():
+    """The tile lock for what an untouched server publishes at the pinned config (M1-01)."""
+    return build_lock(load_world(), load_datasets(), Server().fetch_json)
+
+
 def _run(server, out_root, datasets=None):
     return download_terrain(
         load_world(),
@@ -65,6 +71,7 @@ def _run(server, out_root, datasets=None):
         out_root,
         fetch_json=server.fetch_json,
         fetch_file=server.fetch_file,
+        lock=_lock(),
     )
 
 
@@ -214,7 +221,9 @@ def test_an_unreadable_stac_item_is_a_download_error(tmp_path, error):
         return server.items[url]
 
     with pytest.raises(DownloadError, match="cannot read the STAC item") as caught:
-        download_terrain(load_world(), load_datasets(), tmp_path, fetch_json, server.fetch_file)
+        download_terrain(
+            load_world(), load_datasets(), tmp_path, fetch_json, server.fetch_file, lock=_lock()
+        )
     assert TILE in str(caught.value) and ITEM_URL in str(caught.value)
     _assert_nothing_looks_valid(tmp_path)
 

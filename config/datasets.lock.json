@@ -1,0 +1,36 @@
+{
+  "datasets": {
+    "swissalti3d": {
+      "collection": "ch.swisstopo.swissalti3d",
+      "edition": "2024",
+      "resolution_m": 0.5,
+      "tiles": {
+        "2623-1095": {
+          "file": "swissalti3d_2024_2623-1095_0.5_2056_5728.tif",
+          "sha256": "a6ea488ecbb54b97100f22d867c38b8cd1efc37b68d61f175c98e53fb2c810ca"
+        },
+        "2623-1096": {
+          "file": "swissalti3d_2024_2623-1096_0.5_2056_5728.tif",
+          "sha256": "0e251928c93b53107618d576cf11a52299352d08532f50e3f764c635e72cc581"
+        },
+        "2623-1097": {
+          "file": "swissalti3d_2024_2623-1097_0.5_2056_5728.tif",
+          "sha256": "294bb2c6420f191dbf15d5104d130d982117528ce3fe3b271548a1e008d6ac24"
+        },
+        "2624-1095": {
+          "file": "swissalti3d_2024_2624-1095_0.5_2056_5728.tif",
+          "sha256": "57f12bcf71d823f32a3186667f8d7dbbfac80e2335454fd4d505dd17ce6e08aa"
+        },
+        "2624-1096": {
+          "file": "swissalti3d_2024_2624-1096_0.5_2056_5728.tif",
+          "sha256": "cdc98b65fccf96f1eeb2ba65009bf12cd41716d8bd2ba18260f4a072a8921f59"
+        },
+        "2624-1097": {
+          "file": "swissalti3d_2024_2624-1097_0.5_2056_5728.tif",
+          "sha256": "b6a322f4039431ba0805a4a4a19ae2b2603a2a0d0701a4cb280bb42ec09e032e"
+        }
+      }
+    }
+  },
+  "schema": 1
+}

@@ -8,8 +8,17 @@ final name, so a file under its final name matched the published checksum when i
 written. A mismatch deletes the temporary file; after one retry it is a DownloadError naming
 the tile and the URL (Hard Rule 2). A file already on disk that matches is not fetched again.
 
+Every tile's published file name and SHA-256 must equal the tile lock's
+(config/datasets.lock.json, brief M1-01): all the STAC items are read and compared with the
+lock before any file is fetched or deleted, so a tile swisstopo republished inside the
+edition is refused, never adopted silently (Hard Rule 5); `python -m mattini lock terrain`
+adopts it deliberately.
+
 `provenance.json` records what was fetched and its attribution: sorted keys, LF endings, no
-times, no absolute paths, so two runs on the same inputs write identical bytes.
+times, no absolute paths, so two runs on the same inputs write identical bytes. It is
+removed before the run's first change on disk (an unlink or a file fetch) and written at
+its end, so it exists only after a run that completed; a run that fails before changing
+anything leaves the previous one as it was.
 """
 
 from __future__ import annotations
@@ -23,6 +32,7 @@ import re
 import shutil
 import urllib.request
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from mattini.world import REPO, World
@@ -39,6 +49,7 @@ SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 FETCH_ERRORS = (OSError, http.client.HTTPException)  # urllib's errors are OSErrors
 TIMEOUT_S = 60
 USER_AGENT = "mattini-pipeline"
+LOCK_COMMAND = "python -m mattini lock terrain"
 
 FetchJson = Callable[[str], object]
 FetchFile = Callable[[str, Path], None]
@@ -64,42 +75,82 @@ def parse_multihash_sha256(text: object) -> str:
     return match.group(1).lower()
 
 
+@dataclass(frozen=True)
+class PublishedAsset:
+    """What a tile's STAC item publishes for the pinned edition and resolution."""
+
+    tile: str
+    item_id: str
+    name: str
+    href: str
+    sha256: str
+
+
+def published_assets(world: World, datasets: dict, fetch_json: FetchJson) -> list[PublishedAsset]:
+    """Read the STAC item of every village tile, in tile order; no file is fetched."""
+    alti = datasets[DATASET]
+    edition = alti["edition"]
+    suffix = f"_{_resolution_tag(alti['resolution_m'])}_2056_5728.tif"
+    assets = []
+    for tile in village_tiles(world):
+        item_id = f"{DATASET}_{edition}_{tile}"
+        item_url = STAC_ITEM.format(collection=alti["collection"], item_id=item_id)
+        name, href, sha256 = _published_asset(fetch_json, item_url, item_id, tile, suffix)
+        assets.append(PublishedAsset(tile, item_id, name, href, sha256))
+    return assets
+
+
 def download_terrain(
     world: World,
     datasets: dict,
     out_root: Path | str,
     fetch_json: FetchJson,
     fetch_file: FetchFile,
+    *,
+    lock: dict,
 ) -> list[dict]:
     """Fetch and verify the village tiles into `<out_root>/swissalti3d/<edition>/`.
 
+    `lock` is the tile lock (`mattini.lock.load_lock()`): it must be for the config's
+    collection, edition and resolution and list every tile of the area, and every published
+    file name and SHA-256 must equal it, all checked before anything on disk changes.
     Returns the provenance entries, one per tile in tile order, and writes them with the
     dataset's edition and attribution to `provenance.json` in the same directory.
     """
     alti = datasets[DATASET]
-    edition = alti["edition"]
-    suffix = f"_{_resolution_tag(alti['resolution_m'])}_2056_5728.tif"
-    out_dir = Path(out_root) / DATASET / edition
-    out_dir.mkdir(parents=True, exist_ok=True)
+    _resolution_tag(alti["resolution_m"])
+    pinned = _locked_tiles(lock, alti, village_tiles(world))
+    assets = published_assets(world, datasets, fetch_json)
+    for asset in assets:
+        locked = pinned[asset.tile]
+        if (asset.name, asset.sha256) != (locked["file"], locked["sha256"]):
+            raise DownloadError(
+                f"tile {asset.tile}: swisstopo now publishes {asset.name} with SHA-256 "
+                f"{asset.sha256}, the tile lock pins {locked['file']} with SHA-256 "
+                f"{locked['sha256']}; nothing was fetched. A republished tile is adopted "
+                f"only on purpose: `{LOCK_COMMAND}`, then commit the lock"
+            )
 
+    out_dir = Path(out_root) / DATASET / alti["edition"]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    provenance = out_dir / PROVENANCE
     entries = []
-    for tile in village_tiles(world):
-        item_id = f"{DATASET}_{edition}_{tile}"
-        item_url = STAC_ITEM.format(collection=alti["collection"], item_id=item_id)
-        name, href, sha256 = _published_asset(fetch_json, item_url, item_id, tile, suffix)
-        dest = out_dir / name
-        if dest.exists() and not (dest.is_file() and _sha256(dest) == sha256):
+    for asset in assets:
+        dest = out_dir / asset.name
+        if dest.exists() and not (dest.is_file() and _sha256(dest) == asset.sha256):
+            provenance.unlink(missing_ok=True)  # it would list a file this run removes
             dest.unlink()  # stale or damaged: never leave it looking valid
         if not dest.exists():
-            _fetch_verified(fetch_file, href, dest, sha256, tile)
+            provenance.unlink(missing_ok=True)
+            _fetch_verified(fetch_file, asset.href, dest, asset.sha256, asset.tile)
         entries.append(
             {
-                "file": name,
-                "item": item_id,
-                "sha256": sha256,
+                "file": asset.name,
+                "item": asset.item_id,
+                "sha256": asset.sha256,
                 "size_bytes": dest.stat().st_size,
-                "tile": tile,
-                "url": href,
+                "tile": asset.tile,
+                "url": asset.href,
             }
         )
 
@@ -132,6 +183,30 @@ def _resolution_tag(resolution_m: object) -> str:
             f"{DATASET}: resolution_m must be a positive number of metres, found {resolution_m!r}"
         )
     return format(resolution_m, "g")
+
+
+def _locked_tiles(lock: object, alti: dict, tiles: list[str]) -> dict:
+    """The lock's tile entries, once it is shown to be for this config's tiles."""
+
+    def fail(message: str) -> DownloadError:
+        return DownloadError(
+            f"the tile lock {message}; `{LOCK_COMMAND}` writes the lock for the config"
+        )
+
+    datasets = lock.get("datasets") if isinstance(lock, dict) else None
+    locked = datasets.get(DATASET) if isinstance(datasets, dict) else None
+    if not isinstance(locked, dict):
+        raise fail(f"has no {DATASET!r} entry")
+    for key in ("collection", "edition", "resolution_m"):
+        if locked.get(key) != alti[key]:
+            raise fail(f"is for {key} {locked.get(key)!r}, the config pins {alti[key]!r}")
+    entries = locked.get("tiles")
+    if not isinstance(entries, dict):
+        raise fail("has no tiles")
+    missing = [tile for tile in tiles if tile not in entries]
+    if missing:
+        raise fail(f"pins no checksum for the tiles {missing} of the area")
+    return entries
 
 
 def _published_asset(

@@ -1,0 +1,16 @@
+# Line endings: LF in every checkout, whatever core.autocrlf says, so file bytes and
+# their SHA-256 are the same on every machine (docs/history/ARCS.md §M0, D5).
+* text=auto eol=lf
+
+# Binary formats, never converted even when their bytes look like text.
+*.f32 binary
+*.jpg binary
+*.png binary
+*.webp binary
+*.exr binary
+*.tif binary
+*.zip binary
+*.so binary
+*.dll binary
+*.res binary
+*.glb binary

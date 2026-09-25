@@ -12,6 +12,7 @@ import re
 
 from mattini.datasets import load_datasets
 from mattini.download import download_terrain, village_tiles
+from mattini.lock import build_lock
 from mattini.world import REPO, load_world
 
 TILES = ["2623-1095", "2623-1096", "2623-1097", "2624-1095", "2624-1096", "2624-1097"]
@@ -46,13 +47,16 @@ class Server:
 
 
 def _run(out_root, datasets=None, world=None):
+    world, datasets = world or load_world(), datasets or load_datasets()
+    lock = build_lock(world, datasets, Server().fetch_json)  # read by another server's log
     server = Server()
     entries = download_terrain(
-        world or load_world(),
-        datasets or load_datasets(),
+        world,
+        datasets,
         out_root,
         fetch_json=server.fetch_json,
         fetch_file=server.fetch_file,
+        lock=lock,
     )
     return server, entries
 

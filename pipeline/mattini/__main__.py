@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from mattini import download
+from mattini import download, lock
 from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.manifest import DEFAULT_OUT, write_manifest
 from mattini.world import WorldConfigError, load_world
@@ -19,6 +19,10 @@ def main(argv: list[str] | None = None) -> int:
     manifest.add_argument(
         "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
     )
+    pin = commands.add_parser(
+        "lock", help="pin the published SHA-256 of the inputs in config/datasets.lock.json"
+    )
+    pin.add_argument("dataset", choices=["terrain"], help="terrain: swissALTI3D, village area")
     fetch = commands.add_parser("download", help="fetch and verify pinned swisstopo inputs")
     fetch.add_argument("dataset", choices=["terrain"], help="terrain: swissALTI3D, village area")
     fetch.add_argument(
@@ -29,16 +33,22 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "manifest":
             print(write_manifest(args.out))
+        elif args.command == "lock":
+            pinned = lock.build_lock(load_world(), load_datasets(), download.urllib_fetch_json)
+            print(lock.write_lock(pinned, lock.LOCK_PATH))
         elif args.command == "download":
             return _download_terrain(Path(args.out))
-    except (WorldConfigError, DatasetsConfigError, download.DownloadError) as exc:
+    except (WorldConfigError, DatasetsConfigError, lock.LockError, download.DownloadError) as exc:
         print(f"mattini: error: {exc}", file=sys.stderr)
         return 1
     return 0
 
 
 def _download_terrain(out_root: Path) -> int:
-    """Fetch the village tiles with urllib; progress on stderr, the provenance path on stdout."""
+    """Fetch the village tiles the committed lock vouches for, with urllib.
+
+    Progress on stderr, the provenance path on stdout.
+    """
     fetched = []
 
     def fetch_file(url: str, dest: Path) -> None:
@@ -46,9 +56,10 @@ def _download_terrain(out_root: Path) -> int:
         fetched.append(url)
         download.urllib_fetch_file(url, dest)
 
-    datasets = load_datasets()
+    world, datasets = load_world(), load_datasets()
+    pinned = lock.load_lock(lock.LOCK_PATH)
     entries = download.download_terrain(
-        load_world(), datasets, out_root, download.urllib_fetch_json, fetch_file
+        world, datasets, out_root, download.urllib_fetch_json, fetch_file, lock=pinned
     )
     out_dir = out_root / download.DATASET / datasets[download.DATASET]["edition"]
     print(f"{len(entries)} tiles verified, {len(fetched)} fetches", file=sys.stderr)

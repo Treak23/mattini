@@ -14,6 +14,7 @@ import pytest
 
 from mattini.datasets import load_datasets
 from mattini.download import DownloadError, download_terrain, parse_multihash_sha256, village_tiles
+from mattini.lock import build_lock
 from mattini.world import load_world
 
 VILLAGE_TILES = ["2623-1095", "2623-1096", "2623-1097", "2624-1095", "2624-1096", "2624-1097"]
@@ -57,12 +58,14 @@ class FakeSwisstopo:
 
 
 def _download(fake, out_root):
+    # M1-01: the download needs the tile lock; this one pins what the fake publishes.
     return download_terrain(
         load_world(),
         load_datasets(),
         out_root,
         fetch_json=fake.fetch_json,
         fetch_file=fake.fetch_file,
+        lock=build_lock(load_world(), load_datasets(), fake.fetch_json),
     )
 
 
