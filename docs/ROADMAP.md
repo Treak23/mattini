@@ -55,7 +55,8 @@ prompts' sync line (D21) is fixed at M2 planning (brain.md H14).
 - macOS builds — OPEN.
 - Licence of mattini's own code — OPEN.
 - Weather: simulated or real data — OPEN (M6).
-- Backdrop and larger-area extents and resolutions — OPEN (M5).
+- Backdrop and larger-area extents and resolutions — OPEN (M5), with the buildings' missing
+  sheets near Zermatt (M2 R1 I-07, SPEC §14).
 - Access route for swissTLM3D (national only) — OPEN (M3).
 - An export over 100 MB on `dist` — OPEN until M5 (the owner, 2026-09-25: "later"; D16).
 - Game type — OPEN (later).

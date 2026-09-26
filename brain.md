@@ -195,7 +195,10 @@ builders, and by its review (M0 R1, `docs/reviews/`).
 - **H17 — Reading swissBUILDINGS3D (measured at M2 planning, 2026-09-25).** The 2020
   per-sheet FileGDB's `Building_solid` layer is an Esri MultiPatch. fiona 1.10.1 (its
   wheel's GDAL 3.9.2) reads it as a MultiPolygon Z of triangles; pyogrio refuses the
-  layer's TIN Z / MultiPatch type. fiona's and rasterio's Windows wheels each bundle their
+  layer's TIN Z / MultiPatch type. GDAL cannot write a MultiPatch, and a FileGDB that fiona
+  writes does not give back the triangles it was given (M2-04 Findings 8): the tests feed
+  the step synthetic features, and only swisstopo's own file (the committed sample, the
+  real run) exercises the reader. fiona's and rasterio's Windows wheels each bundle their
   own renamed GDAL DLLs, so they do not clash (the M2 review).
 - **H18 — ruff's import order depends on the tree (measured in M2-03, 2026-09-25).** ruff
   classifies `mattini.x` as first-party only when it finds the module, so a pinned test

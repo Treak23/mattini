@@ -109,7 +109,10 @@ difference, naming the tile or sheet, both values and the command. A lock writte
 command (rather than checksums typed into `datasets.json`) scales to M5's many tiles. The
 six 2024 village tiles' checksums were re-read from the live STAC items on 2026-09-25 and
 equal those brief M0-04 recorded; the six 2020 village sheets' were read at M2 planning
-and again by the M2 review (identical).
+and again by the M2 review (identical). Adopting a new edition or a republished file is a
+design change, not a command: after `lock`, design recomputes the expected values in
+`config/terrain.json` and `config/buildings.json` and their `computed_for` (§8), and until
+it does, the steps and `manifest` refuse, saying so (M2 R1 P-02, I-01).
 
 ## 6. Coordinates (confirmed by the owner on day one)
 
@@ -249,7 +252,9 @@ places heights in the world (WORKFLOW §Review policy).
   recomputes the expected values, never a fault of the machine or the code. An area's keys
   are exactly `computed_for`, `expected_sha256` and `spacing_m`.
 - *The game:* `TerrainGrid` reads the block and the file, checks the file's size and
-  SHA-256 and the block against its own manifest, and places the grid through
+  SHA-256 and the block against its own manifest (not the box against the world config's
+  area: `manifest` is the one check of the box, rows and columns, M2-06, and every
+  manifest the game reads is written by it), and places the grid through
   `WorldConfig` (x_min, z_min from the box's north-west corner), never by subtracting an
   origin itself. `TerrainLoader` builds the Terrain3D node: vertex spacing = the grid's
   spacing; regions 1024 m wide (region size 1024 / spacing vertices; with Terrain3D's 32 × 32
@@ -584,7 +589,10 @@ Asked when the milestone that needs them is planned; each is also on the board.
 - Licence of mattini's own code (the repository is private; without a licence file it is
   all rights reserved by default).
 - Weather: simulated, or real data (MeteoSwiss open data, Open-Meteo) — M6.
-- Backdrop and larger-area extents and resolutions — M5.
+- Backdrop and larger-area extents and resolutions — M5. With them: the 2020 per-sheet
+  buildings have gaps near Zermatt (1348-22, -32, -34, -43 have no item), and `lock
+  buildings` refuses a sheet without one as a failed read; M5 decides whether such a
+  sheet means "no buildings" (M2 R1 I-07).
 - Access route for swissTLM3D (national only) — M3.
 - Export over 100 MB on `dist` — M5 (the owner, 2026-09-25: "later"; §13 row 23; D16).
 - Game type — later.
