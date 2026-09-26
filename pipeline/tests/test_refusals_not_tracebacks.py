@@ -17,11 +17,14 @@ found and their twins).
 
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 
 import pytest
 
+from mattini.manifest import write_manifest
+from mattini.terrain import TerrainError
 from mattini.world import REPO
 
 # Run in a process of its own: an uncaught exception prints a traceback on stderr there.
@@ -109,6 +112,41 @@ def test_a_datasets_config_without_the_dataset_is_a_refusal(tmp_path, argv, data
     done = _run(tmp_path, argv, datasets=_without(dataset))
     _refused(done, "config/datasets.json", f"has no {dataset!r} dataset")
     assert not (tmp_path / "raw").exists()
+
+
+def test_the_terrain_step_without_swissalti3d_is_a_refusal(tmp_path):
+    """The terrain's twin reaches the step as well: refused before any tile is looked for."""
+    done = _run(
+        tmp_path,
+        ["terrain", "--raw", "raw", "--out", "generated"],
+        datasets=_without("swissalti3d"),
+    )
+    _refused(done, "config/datasets.json", "has no 'swissalti3d' dataset")
+    assert not (tmp_path / "generated").exists()
+
+
+def test_manifest_over_a_built_terrain_without_swissalti3d_is_a_refusal(tmp_path):
+    """A built terrain, then a datasets config without swissalti3d: `manifest` refuses it,
+    naming the dataset and the rebuild, where it used to end in a KeyError."""
+    fixture = REPO / "tests" / "shared" / "terrain_fixture"
+    out = tmp_path / "generated"
+    shutil.copytree(fixture / "generated" / "terrain", out / "terrain")
+    data = json.loads((fixture / "datasets.json").read_text(encoding="utf-8"))
+    del data["datasets"]["swissalti3d"]
+    datasets = tmp_path / "datasets.json"
+    datasets.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(TerrainError) as refused:
+        write_manifest(
+            out,
+            fixture / "world.json",
+            terrain_config_path=fixture / "terrain.json",
+            datasets_path=datasets,
+            lock_path=fixture / "datasets.lock.json",
+        )
+    message = str(refused.value)
+    for part in ("has no 'swissalti3d' dataset", "`python -m mattini terrain`"):
+        assert part in message, (part, message)
+    assert not (out / "manifest.json").exists()
 
 
 EAST_EDGE = (2829000.0, 2829950.0, 1167500.0, 1168500.0)  # the review's box, 50 m from it
