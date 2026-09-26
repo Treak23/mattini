@@ -20,11 +20,12 @@ waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
 | M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | DONE (cefa1ac), checked |
 | M2-07 | M2 R1's fixes, the pipeline half | none | DONE (b3ec242), checked |
 | M2-08 | M2 R1's fixes, the game and tools half | none | DONE (20c5a80), checked |
-| M2-09 | The real sample, the buildings reader's fixture (the owner's "yes") | M2-07 | OPEN |
+| M2-09 | The real sample, the buildings reader's fixture (the owner's "yes") | M2-07 | DONE (eced376), checked; its pinned test corrected by design |
 
 Review round M2 R1 (`docs/reviews/M2-round1.md`): clean, no P0 or P1; its five P2s and
-fifteen of its sixteen P3s are M2-07 and M2-08; I-07 goes to M5 planning. Then one
-verification pass, then the close.
+fifteen of its sixteen P3s were M2-07 and M2-08; I-07 went to M5's open decision. The
+verification pass (`docs/reviews/M2-V1.md`): every R1 finding fixed, seventeen P3s, one
+fixed at the close and sixteen for M3's first briefs. Next: the close.
 
 Each brief is built by one agent in its own worktree, then checked by a second agent that
 re-runs the gate, compares the pinned copies and proves the new tests by mutation. Residue

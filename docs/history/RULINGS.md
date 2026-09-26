@@ -11,6 +11,8 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-09-26 · design · M2-09's check (P2) · the pinned sample test sees only each building's first point, so a turned triangle passes → design's fault; the pinned copy corrected at the close (the SHA-256 of every building's triangles in order, derived through `read_sheet` and through fiona's `zip://` reading), and the README's "north of Zermatt" made "north-west of the village box"; both mutations fail it (docs/reviews/M2-V1.md)
+2026-09-26 · design · M2 V1 · the verification pass: every R1 finding fixed, 17 P3s → clean; V1-P-09 fixed at the close, the other sixteen carried into M3's first briefs (docs/reviews/M2-V1.md; ARCS §M2)
 2026-09-25 · owner's word, in the M2 session · M2 · a committed real swisstopo sample (SPEC §14)? → "yes": sheet 1328-33 of the 2020 edition (45'668 bytes, © swisstopo) becomes the buildings reader's fixture, the one file of raw geodata in git; Hard Rule 3's "never enter git history" is overridden for that one file, which `test_repo_hygiene.py` names with its SHA-256 (SPEC §13 row 24; brief M2-09)
 2026-09-25 · owner's word, in the M2 session · M2 · where does the session push? → "push to main": the session's work goes to `main` as usual (SPEC §13 row 27)
 2026-09-25 · owner's word, in the M2 session · M2 · an export over 100 MiB (D16)? → "later": stays open until M5, as design proposed; `tools/export.sh` keeps refusing any file over 100 MiB (SPEC §13 row 23)

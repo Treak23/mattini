@@ -5,11 +5,18 @@ on a real sheet. The sample is swissBUILDINGS3D 3.0, edition 2020, sheet 1328-33
 buildings, 45'668 bytes, © swisstopo), committed as a test fixture by the owner's word of
 2026-09-25 (SPEC §13 row 24): only a real file holds an Esri MultiPatch.
 
+Every building's triangles, in order and each in ring order, are pinned by the SHA-256 of
+their snapped points, so a reader that keeps the closing point, turns a triangle or
+reorders the triangles fails here (the M2-09 check: the first points alone did not see a
+turned triangle). Design derived the digests two ways, through `read_sheet` and through
+fiona's own `zip://` reading of the layer, with the same result (2026-09-26).
+
 Does NOT prove: that another edition or a larger sheet reads the same way (the real run
 over the village's six sheets, checked against design's chunk hashes, does).
 """
 
 import hashlib
+import json
 from pathlib import Path
 
 from mattini.buildings import read_sheet
@@ -27,6 +34,12 @@ EXPECTED = [  # uuid, triangles, the first triangle's first point on the storage
     ("{B1DC7692-3FBD-4ADF-AEB5-1319B8B50BD2}", 112, (2622709.731, 1098156.074, 2828.6409)),
     ("{5DBC090C-8375-428D-AA75-3EB575FE5F00}", 128, (2620023.258, 1099703.89, 3204.5369)),
     ("{EEC39B2D-5F82-4738-8D83-6301D695D3F6}", 84, (2622659.455, 1100386.429, 3163.127)),
+]
+# The SHA-256 of each building's triangles as compact JSON, [[[E, N, H] × 3] …], snapped.
+TRIANGLES_SHA256 = [
+    "392c38ab0da325a6b98a26bf16e6bbe1260139a6db93cb427632d192c911f20b",
+    "0942f185a9f686de606fa3878ce88ba59fd768fe0994953ae11a8ded0023780d",
+    "fd3755324b715f6a71ef0864f8e87ee80747d4fd56d91fa741692828a43e03d7",
 ]
 
 
@@ -55,3 +68,9 @@ def test_the_real_sheet_reads_in_order_as_triangles():
                 snapped = _snap(point)
                 assert max(abs(a - b) for a, b in zip(point, snapped, strict=True)) < 1e-6
         assert _snap(feature["triangles"][0][0]) == first
+    snapped = [[[list(_snap(p)) for p in t] for t in f["triangles"]] for f in features]
+    digests = [
+        hashlib.sha256(json.dumps(t, separators=(",", ":")).encode("utf-8")).hexdigest()
+        for t in snapped
+    ]
+    assert digests == TRIANGLES_SHA256

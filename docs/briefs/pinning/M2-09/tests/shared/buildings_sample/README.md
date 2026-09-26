@@ -1,10 +1,10 @@
 # A real swissBUILDINGS3D sheet, as a test fixture
 
 `swissbuildings3d_3_0_2020_1328-33_2056_5728.gdb.zip` is swisstopo's own file, unchanged:
-swissBUILDINGS3D 3.0, edition 2020, map sheet 1328-33 (north of Zermatt, three buildings),
-45'668 bytes, SHA-256 `72b2502856d315b9f265f8279a9491cfa3f45065a42cc492824fd9731d7c4292`,
-from the STAC item `swissbuildings3d_3_0_2020_1328-33` of the collection
-`ch.swisstopo.swissbuildings3d_3_0`.
+swissBUILDINGS3D 3.0, edition 2020, map sheet 1328-33 (three buildings north-west of the
+village box), 45'668 bytes, SHA-256
+`72b2502856d315b9f265f8279a9491cfa3f45065a42cc492824fd9731d7c4292`, from the STAC item
+`swissbuildings3d_3_0_2020_1328-33` of the collection `ch.swisstopo.swissbuildings3d_3_0`.
 
 © swisstopo. Used under swisstopo's terms of use for free geodata (OGD), which allow
 redistribution with the source named (docs/SPEC.md §5).
