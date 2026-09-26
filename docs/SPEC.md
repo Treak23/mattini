@@ -290,7 +290,14 @@ policy).
   by the area, never by their sheet. Measured at M2 planning: the grid matches all 34
   sheets of the 2020 edition around Zermatt within 7 mm; buildings overhang their sheet by
   up to about 12 m; three of the 2'134 in the village's six sheets have their bounding-box
-  centre up to 3.6 m outside their own sheet; no building is in two sheets.
+  centre up to 3.6 m outside their own sheet; no building is in two sheets. The grid
+  places only the sheets 1000 to 1999 and nothing east of E 2'830'000: `sheet_box` refuses
+  an id of 2000 or above, and `sheets_near` a box within the margin of that edge, since
+  other ids follow another scheme (M2 R1 I-06). The lock's `swissbuildings3d` entry pins
+  exactly the area's sheets: `download buildings` and the step refuse another set, naming
+  `python -m mattini lock buildings`, and `manifest` refuses it too (I-04). The download's refusal of
+  a republished file adds design's step: after the lock, design recomputes the expected
+  values (P-02, I-01).
 - *Reading:* each zip is opened from the very bytes whose SHA-256 was checked against the
   lock; its one `.gdb` folder, layer `Building_solid`. Every feature must have a
   non-empty text `UUID`, and a geometry that is a MultiPolygon Z whose every polygon is

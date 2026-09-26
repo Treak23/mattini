@@ -28,11 +28,13 @@ failure), redirected to a log and chained to the commit by its own exit status
 scans its output: error lines at the import and the parse check, an import left
 `valid=false`, and in the GUT run any test script GUT skipped or could not load,
 `SCRIPT ERROR`, GUT's own `[ERROR]`, and every engine `ERROR` line, inside a test or
-outside one (brain.md §Hazards). The GUT run also fails unless GUT prints
-`---- All tests passed! ----`: a run cut short, a pending test and a test with no assert
-fail it. An error line known to be benign is excepted only in `tools/gate_allowlist.txt`.
-The gate also refuses a `pipeline/uv.lock` out of step with `pyproject.toml` and any Godot
-but 4.6.3.
+outside one (brain.md §Hazards). The GUT run also fails unless GUT prints its run
+summary and then `---- All tests passed! ----`: a run cut short, a pending test and a test
+with no assert fail it. An error line known to be benign is excepted only in
+`tools/gate_allowlist.txt`, globally or scoped to one test script, by a text specific
+enough (12 characters at least, never a bare scan prefix such as `ERROR`). The gate also
+refuses a `pipeline/uv.lock` out of step with `pyproject.toml`, any Godot but 4.6.3 and
+any GUT but 9.6.1.
 There is no never-happen rule (the owner chose none, 2026-09-24); the code that
 guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on both sides,
 the pipeline's determinism) MUST have tests, mutation-proved.

@@ -18,8 +18,8 @@ waker, ticks or spawned builders (the owner's word, RULINGS 2026-09-25).
 | M2-04 | The village buildings from the sheets | M2-03 | DONE (b980214), checked |
 | M2-05 | The buildings in the game | M2-02, M2-04 | DONE (86d764c), was BLOCKED on design's pinned tests |
 | M2-06 | The terrain block's shape, three test gaps (M2-01's check) | M2-04 | DONE (cefa1ac), checked |
-| M2-07 | M2 R1's fixes, the pipeline half | none | OPEN |
-| M2-08 | M2 R1's fixes, the game and tools half | none | OPEN |
+| M2-07 | M2 R1's fixes, the pipeline half | none | DONE (b3ec242), checked |
+| M2-08 | M2 R1's fixes, the game and tools half | none | DONE (20c5a80), checked |
 | M2-09 | The real sample, the buildings reader's fixture (the owner's "yes") | M2-07 | OPEN |
 
 Review round M2 R1 (`docs/reviews/M2-round1.md`): clean, no P0 or P1; its five P2s and
