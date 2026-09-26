@@ -3,16 +3,20 @@ extends Node3D
 ## manifest at manifest_path, builds its terrain in the clay look (TerrainLoader, node
 ## "Terrain") under a fixed sun and a sky, then its buildings (BuildingLoader, node
 ## "Buildings", beside "Terrain"), and starts the free-fly camera START_ABOVE_M above the
-## grid's centre, facing START_BEARING_DEG. The pause action opens UI/PauseMenu: the version
-## (shown nowhere else, owner 2026-09-25), the controls, the credits, Resume and Quit. A
-## missing, refused or stale manifest, terrain or buildings block opens UI/ErrorPanel: its
-## first line names what cannot be shown, then each refusal with the commands that fix it
-## (Hard Rule 2). What can be shown still is (the terrain without its buildings, and the
-## other way round), and the camera flies either way. Each refusal is logged once, by the
-## reader that refuses it (WorldConfig, TerrainGrid, BuildingChunks); the panel shows what
-## they logged. Every direction (the start view, the sun) is measured through WorldConfig,
-## never assumed, and the buildings stand where the pipeline placed them for the world
-## config the manifest pins (Hard Rule 4).
+## ground at the grid's centre, facing START_BEARING_DEG, pitched START_PITCH_DOWN_DEG down.
+## The pause action opens UI/PauseMenu: the version (shown nowhere else, owner 2026-09-25),
+## the controls, the credits, Resume and Quit. A missing, refused or stale manifest, terrain
+## or buildings block opens UI/ErrorPanel: its first line names what cannot be shown, then
+## each refusal with the commands that fix it (Hard Rule 2). What can be shown still is: the
+## terrain without its buildings, and the buildings without their terrain, the camera then
+## starting START_ABOVE_M above the highest of their vertices, over the centre of their
+## bounds, with the same bearing and pitch (brief M2-08, M2 R1 G-02). With neither, the
+## camera starts at the scene's origin. It flies either way. Each refusal is logged once, by
+## the reader that refuses it (WorldConfig, TerrainGrid, BuildingChunks); the panel shows
+## what they logged. Every direction (the start view, the sun) is measured through
+## WorldConfig, never assumed, and the buildings stand where the pipeline placed them for
+## the world config the manifest pins (Hard Rule 4): the Buildings node and its meshes sit
+## at the scene's origin, unturned and unscaled (test_scene_placement.gd).
 
 
 ## Collects the errors logged while the generated data is read, so that the error panel
@@ -159,7 +163,9 @@ func _load_world() -> PackedStringArray:
 	if buildings == null:
 		refusals.append([BUILDINGS_WHAT, read_buildings[1], BUILDINGS_FIX])
 	else:
-		_show_buildings(buildings)
+		var node := _show_buildings(buildings)
+		if grid == null:
+			_start_view_over(node)
 		datasets.append(_dataset_line(buildings.dataset, buildings.edition, buildings.attribution))
 	if not refusals.is_empty():
 		_show_error(refusals)
@@ -191,8 +197,9 @@ func _show_terrain(grid: TerrainGrid) -> void:
 	)
 
 
-## Builds the buildings beside the terrain and prints the buildings' startup line.
-func _show_buildings(chunks: BuildingChunks) -> void:
+## Builds the buildings beside the terrain, prints the buildings' startup line and returns
+## their node.
+func _show_buildings(chunks: BuildingChunks) -> Node3D:
 	var node := BuildingLoader.create(chunks, self)
 	move_child(node, _ui.get_index())
 	var count := 0
@@ -207,6 +214,7 @@ func _show_buildings(chunks: BuildingChunks) -> void:
 			% [_version(), chunks.area, count, chunks.chunks.size(), triangles]
 		)
 	)
+	return node
 
 
 static func _version() -> String:
@@ -252,10 +260,33 @@ func _place_sun() -> void:
 func _start_view(grid: TerrainGrid) -> void:
 	var x := grid.x_min + (grid.columns - 1) * grid.spacing_m / 2.0
 	var z := grid.z_min + (grid.rows - 1) * grid.spacing_m / 2.0
+	_start_view_at(Vector3(x, _ground_height(x, z) + START_ABOVE_M, z))
+
+
+## Without a terrain: the camera START_ABOVE_M above the highest vertex of the buildings
+## under [param buildings], over the centre of their bounds in the scene (every chunk mesh's
+## box, through its global transform), facing the start bearing, pitched down.
+func _start_view_over(buildings: Node3D) -> void:
+	var bounds := AABB()
+	var first := true
+	for child in buildings.get_children():
+		var mesh := child as MeshInstance3D
+		if mesh == null:
+			continue
+		var box := mesh.global_transform * mesh.get_aabb()
+		bounds = box if first else bounds.merge(box)
+		first = false
+	if first:
+		return
+	var centre := bounds.get_center()
+	_start_view_at(Vector3(centre.x, bounds.end.y + START_ABOVE_M, centre.z))
+
+
+## The camera at [param at], facing the start bearing, pitched START_PITCH_DOWN_DEG down.
+func _start_view_at(at: Vector3) -> void:
 	var facing := _bearing(START_BEARING_DEG)
 	# A camera turned by yaw about +y faces (−sin yaw, 0, −cos yaw).
 	var yaw := atan2(-facing.x, -facing.z)
-	var at := Vector3(x, _ground_height(x, z) + START_ABOVE_M, z)
 	_camera.set_view(at, yaw, -deg_to_rad(START_PITCH_DOWN_DEG))
 
 

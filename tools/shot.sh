@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Software screenshots of the main scene reading a manifest (docs/SPEC.md §12; briefs M1-04,
-# M1-05, M2-05; game/tools/shot.gd renders main.tscn): its terrain, buildings, sun, sky,
-# error panel and pause screen. Evidence, never a gate: Godot's Compatibility renderer on
-# Mesa's llvmpipe under Xvfb, not the Forward+ look (brain.md H12).
+# M1-05, M2-05, M2-08; game/tools/shot.gd renders main.tscn): its terrain, buildings, sun,
+# sky, error panel and pause screen. Evidence, never a gate: Godot's Compatibility renderer
+# on Mesa's llvmpipe under Xvfb, not the Forward+ look (brain.md H12).
 #
 #   tools/shot.sh <manifest> <out_dir> "<view>;<view>;..."
 #
@@ -11,15 +11,19 @@
 #       metres, above_m over the terrain there, facing the bearing (clockwise from north),
 #       pitched that many degrees below the horizon;
 #   name                                     the camera where it is (the scene's start
-#       view when it comes first);
+#       view when it comes first: over the terrain, or over the buildings when only the
+#       terrain is refused);
 #   name,pause                               the same with the pause screen open.
-# A manifest the scene refuses (missing, not built, stale) does not stop the run: the scene
-# shows its error panel, and that is what the views name and name,pause capture; a
-# six-field view then fails, having no terrain to stand over. The manifest's folder must
-# exist (the path is resolved first). Writes <out_dir>/<name>.jpg (1280 x 720) per view,
-# and fails unless every one was written: Godot exits 0 even when its script does not parse
-# (brain.md H2), and a runtime error in a script run with -s leaves Godot running, so the
-# run is killed after SHOT_TIMEOUT seconds (default 300).
+# A manifest the scene refuses, in whole or in part (missing, not built, stale), does not
+# stop the run: the scene shows its error panel over what it can still show, and that is
+# what the views name and name,pause capture. A six-field view fails when the terrain is
+# refused (the whole manifest or only its terrain block), having no terrain to stand over;
+# when only the buildings are refused, it is taken, with the error panel over the terrain.
+# The manifest's folder must exist (the path is resolved first). Writes
+# <out_dir>/<name>.jpg (1280 x 720) per view, and fails unless every one was written: Godot
+# exits 0 even when its script does not parse (brain.md H2), and a runtime error in a
+# script run with -s leaves Godot running, so the run is killed after SHOT_TIMEOUT seconds
+# (default 300).
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then

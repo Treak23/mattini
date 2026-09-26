@@ -4,3 +4,5 @@ TerrainGrid: user://test_ # the terrain refusal tests write broken manifests und
 BuildingChunks: user://test_ @ res://tests/test_building_chunks_indices.gd # it refuses chunks whose indices it set to 2^31 or more on purpose (brief M2-05)
 BuildingChunks: user://test_ @ res://tests/test_building_chunks.gd # its refusal tests write broken manifests under user://test_building_chunks on purpose
 BuildingChunks: user://test_ @ res://tests/test_main_scene_buildings.gd # its stale and missing buildings cases are refused on purpose
+no terrain has been built @ res://tests/test_scene_placement.gd # it opens the main scene on the shared buildings fixture, which has no terrain, on purpose (brief M2-08)
+the WorldConfig given was not read from this manifest @ res://tests/test_scene_placement.gd # it gives BuildingChunks another manifest's WorldConfig on purpose (brief M2-08)

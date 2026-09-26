@@ -8,12 +8,15 @@
 # (its own "[ERROR]:  Nothing was run.", measured on GUT 9.6.1), so the Godot steps also
 # scan their output. The GUT step also scans for engine ERROR lines, which GUT itself
 # charges to no test when they come from before_all or after_all, and it passes only when
-# GUT's last line starting with "---- " (its final line) is "---- All tests passed! ----":
-# a run cut short by a quit prints no such line, and a pending or risky test makes it
-# another (M0 review G-02, G-03; M1 review G-04: a test printing the pass line itself does
-# not count). GUT reads no .gutconfig.json (-gconfig=), so only this command line
+# GUT's last line starting with "---- " (its final line) is "---- All tests passed! ----"
+# and GUT's run summary ("= Run Summary") comes before that line: a run cut short by a quit
+# prints neither, and a pending or risky test makes the final line another (M0 review G-02,
+# G-03; M1 review G-04 and M2-02's check: a test printing the pass line itself and quitting
+# does not count). GUT reads no .gutconfig.json (-gconfig=), so only this command line
 # configures it (G-04). The scans are only as good as the output formats they were
-# measured on, so the first Godot step requires Godot 4.6.3 (G-09).
+# measured on, so the Godot-version step requires Godot 4.6.3 (G-09) and GUT 9.6.1, as
+# game/addons/gut/plugin.cfg names it (M2 R1 G-04: the scoped window below reads GUT's
+# lines).
 #
 # An error line known to be benign may be excepted in tools/gate_allowlist.txt, one entry
 # per line; blank lines and lines starting with # are ignored. Two kinds (M1 review G-03):
@@ -28,8 +31,11 @@
 #       next script's path or GUT's "= Run Summary". A script with no test prints no path,
 #       so its lines belong to no script.
 # An entry without a reason, whose text is empty or only spaces (it would match every
-# line), or scoped to anything but an existing file res://tests/<script>.gd, fails the
-# gate. Every entry is a Findings item of the brief that adds it.
+# line), whose text (spaces at its ends not counted) is shorter than 12 characters or is a
+# scan prefix (ERROR, SCRIPT ERROR or [ERROR], with or without the colon Godot and GUT
+# print after it: every line of its kind holds it), or scoped to anything but an existing
+# file res://tests/<script>.gd, fails the gate (M2 R1 G-05). Every entry is a Findings item
+# of the brief that adds it.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -37,7 +43,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 UV_RUN=(uv run --project pipeline --frozen)
 GODOT="${GODOT:-godot}"
 GODOT_VERSION="4.6.3.stable"
+GUT_VERSION="9.6.1"
+GUT_PLUGIN="game/addons/gut/plugin.cfg"
 ALLOWLIST="tools/gate_allowlist.txt"
+# The shortest allowlist text that is specific enough to except anything (M2 R1 G-05).
+ALLOWLIST_MIN_TEXT=12
 SCRATCH="$(mktemp -d)"
 trap 'rm -rf "$SCRATCH"' EXIT
 
@@ -65,12 +75,14 @@ allowlist_refused() {
 # Reads the allowlist into $SCRATCH/allowed.txt, the global entries' texts one per line,
 # and $SCRATCH/scoped.txt, "<script>\t<text>" per scoped entry; neither holds an empty text
 # (an empty pattern would match every line). Fails when an entry has no reason, a text
-# that is empty or only spaces, or a scope that is not an existing test script.
+# that is empty or only spaces, shorter than ALLOWLIST_MIN_TEXT characters or a scan
+# prefix (spaces at its ends not counted, nor a colon after the prefix), or a scope that is
+# not an existing test script.
 read_allowlist() {
 	: > "$SCRATCH/allowed.txt" || return 1
 	: > "$SCRATCH/scoped.txt" || return 1
 	[ -f "$ALLOWLIST" ] || return 0
-	local line entry text script
+	local line entry text script trimmed bare
 	while IFS= read -r line || [ -n "$line" ]; do
 		case "$line" in
 			"" | "#"*) continue ;;
@@ -92,6 +104,20 @@ read_allowlist() {
 			*[![:space:]]*) ;;
 			*)
 				allowlist_refused "with an empty text" "$line"
+				return 1
+				;;
+		esac
+		trimmed="${text#"${text%%[![:space:]]*}"}"
+		trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+		if [ "${#trimmed}" -lt "$ALLOWLIST_MIN_TEXT" ]; then
+			allowlist_refused "with a text shorter than $ALLOWLIST_MIN_TEXT characters (too short to be specific)" "$line"
+			return 1
+		fi
+		# The text without the colon and spaces printed after a prefix ("SCRIPT ERROR: ").
+		bare="${trimmed%"${trimmed##*[![:space:]:]}"}"
+		case "$bare" in
+			"ERROR" | "SCRIPT ERROR" | "[ERROR]")
+				allowlist_refused "whose text is a scan prefix, which every line of its kind holds" "$line"
 				return 1
 				;;
 		esac
@@ -190,10 +216,12 @@ extension_list() {
 	cat "$list"
 }
 
-# The scans match the output formats measured on Godot 4.6.3; another version may print
-# its errors differently, so it is refused, naming what it found (M0 review G-09).
+# The scans match the output formats measured on Godot 4.6.3 and GUT 9.6.1; another
+# version may print its errors or its per-script lines differently, so it is refused,
+# naming what it found (M0 review G-09; M2 R1 G-04: GUT's version is its plugin.cfg's
+# version line, exactly).
 godot_version() {
-	local found status=0
+	local found status=0 gut
 	found="$(run_godot --version 2>&1)" || status=$?
 	echo "$found"
 	if [ "$status" -ne 0 ]; then
@@ -207,6 +235,12 @@ godot_version() {
 			return 1
 			;;
 	esac
+	gut="$(grep -a -E '^version=' "$GUT_PLUGIN" 2>&1)" || true
+	echo "GUT: $GUT_PLUGIN: ${gut:-no version line}"
+	if [ "$gut" != "version=\"$GUT_VERSION\"" ]; then
+		echo "== gate: GUT $GUT_VERSION required ($GUT_PLUGIN: version=\"$GUT_VERSION\"), found: ${gut:-no version line}"
+		return 1
+	fi
 }
 
 # The headless import, its output scanned. Godot prints an import error only on the run
@@ -236,9 +270,11 @@ parse_check() {
 	return "$status"
 }
 
-# The GUT run, with the scoped allowlist entries. Both checks always run, so a failing run
+# The GUT run, with the scoped allowlist entries. All checks always run, so a failing run
 # names every reason it failed. The second compares GUT's last line starting with "---- ",
-# its trailing spaces removed, so a test that prints the pass line itself passes nothing.
+# its trailing spaces removed, with the pass line; the third requires GUT's run summary
+# ("= Run Summary") before that line, so a test that prints the pass line itself and quits
+# before GUT's summary passes nothing (M2-02's check).
 gut_run() {
 	local status=0 last
 	rm -f "$SCRATCH/out.log"
@@ -249,6 +285,14 @@ gut_run() {
 	last="${last%"${last##*[![:space:]]}"}"
 	if [ "$last" != "---- All tests passed! ----" ]; then
 		echo "== gate: GUT's last '---- ' line is not '---- All tests passed! ----': ${last:-there is none}"
+		status=1
+	fi
+	if ! awk '
+		$0 == "= Run Summary" { summary = NR }
+		/^---- / { last = NR; before = summary }
+		END { exit !(last && before) }
+	' "$SCRATCH/out.log" 2> /dev/null; then
+		echo "== gate: GUT's run summary ('= Run Summary') does not come before its last '---- ' line: the run did not reach GUT's summary"
 		status=1
 	fi
 	return "$status"

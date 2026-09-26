@@ -6,9 +6,12 @@
 #   tools/export.sh
 #
 # In order, stopping with a non-zero exit and a message at the first failure:
-#   1. refuses unless the generated manifest has a terrain block and a buildings block (the
-#      build ships them);
-#   2. rewrites the manifest, which re-checks the generated data against the config;
+#   1. rewrites the generated manifest, which re-checks the generated data against the
+#      config (and writes a block null when its generated data is gone);
+#   2. refuses unless the manifest step 1 has just written has a terrain block and a
+#      buildings block (the build ships them), naming the commands that build the missing
+#      one. Nothing is exported before this check (M2 R1 G-03: it used to run before the
+#      rewrite, so a block the rewrite dropped was found only after both exports);
 #   3. installs Godot 4.6.3-stable's export templates for these two presets into Godot's
 #      templates folder when they are missing, from Godot's download mirror (github.com
 #      release downloads are refused in cloud containers, brain.md H6), verified against
@@ -26,7 +29,8 @@
 #      and "mattini <version>: buildings <area> loaded, <n> buildings in <k> chunks, <t>
 #      triangles" with game/project.godot's version and the manifest's values (brief M2-05),
 #      exit 0 and no ERROR line (M1 review G-02: an export without its terrain passed every
-#      step before this one).
+#      step before this one). A manifest without one of the blocks is refused there too,
+#      with step 2's message.
 #      It needs Linux, and fails on another system. Nothing here starts the Windows build
 #      (the owner's PC is its test).
 set -euo pipefail
@@ -88,17 +92,27 @@ error_lines() {
 	grep -a -E '^(ERROR|SCRIPT ERROR)' "$1" || true
 }
 
+# What steps 2 and 6 say when the manifest lacks a block, naming the commands that build
+# it.
+NO_TERRAIN="$MANIFEST has no terrain block: run uv run --project pipeline python -m mattini download terrain, then uv run --project pipeline python -m mattini terrain"
+NO_BUILDINGS="$MANIFEST has no buildings block: run uv run --project pipeline python -m mattini download buildings, then uv run --project pipeline python -m mattini buildings"
+
 # The two startup lines game/scripts/main.gd prints, one per line: once the terrain is
 # loaded, the version from game/project.godot, the area, columns, rows and spacing from the
 # manifest's terrain block, the spacing written as main.gd writes it (at most two decimals,
 # no trailing zeros); once the buildings are loaded, the version, the area, the count of
-# buildings, of chunks and of triangles from the manifest's buildings block.
+# buildings, of chunks and of triangles from the manifest's buildings block. A missing
+# block is refused with step 2's message, not a traceback.
 expected_startup_lines() {
 	"${UV_RUN[@]}" python -c '
 import json, sys
 
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-terrain, buildings = manifest["terrain"], manifest["buildings"]
+terrain, buildings = manifest.get("terrain"), manifest.get("buildings")
+if not isinstance(terrain, dict):
+    sys.exit(sys.argv[3])
+if not isinstance(buildings, dict):
+    sys.exit(sys.argv[4])
 section, version = "", None
 for line in open(sys.argv[2], encoding="utf-8"):
     line = line.strip()
@@ -116,7 +130,7 @@ count = sum(chunk["buildings"] for chunk in chunks)
 triangles = sum(chunk["triangles"] for chunk in chunks)
 fields = (version, buildings["area"], count, len(chunks), triangles)
 print("mattini %s: buildings %s loaded, %d buildings in %d chunks, %d triangles" % fields)
-' "$MANIFEST" game/project.godot
+' "$MANIFEST" game/project.godot "$NO_TERRAIN" "$NO_BUILDINGS"
 }
 
 # Godot's templates folder for this version (Linux, or Windows under Git Bash).
@@ -127,19 +141,19 @@ templates_dir() {
 	esac
 }
 
-step "1. the manifest has a terrain block and a buildings block"
-[ -f "$MANIFEST" ] || fail "$MANIFEST is missing: run uv run --project pipeline python -m mattini download terrain, then uv run --project pipeline python -m mattini terrain"
 # Exits 0 when the manifest's block named $1 is an object (not null, not missing), else 1.
 has_block() {
 	"${UV_RUN[@]}" python -c 'import json, sys; sys.exit(0 if isinstance(json.load(open(sys.argv[1], encoding="utf-8")).get(sys.argv[2]), dict) else 1)' "$MANIFEST" "$1"
 }
-has_block terrain \
-	|| fail "$MANIFEST has no terrain block: run uv run --project pipeline python -m mattini download terrain, then uv run --project pipeline python -m mattini terrain"
-has_block buildings \
-	|| fail "$MANIFEST has no buildings block: run uv run --project pipeline python -m mattini download buildings, then uv run --project pipeline python -m mattini buildings"
 
-step "2. the manifest, re-checked against the config"
+step "1. the manifest, rewritten and re-checked against the config"
 "${UV_RUN[@]}" python -m mattini manifest || fail "python -m mattini manifest refused the generated data (see above)"
+
+step "2. the manifest step 1 wrote has a terrain block and a buildings block"
+[ -f "$MANIFEST" ] || fail "$MANIFEST is missing after step 1 wrote it"
+has_block terrain || fail "$NO_TERRAIN"
+has_block buildings || fail "$NO_BUILDINGS"
+echo "both blocks are there"
 
 step "3. Godot $GODOT_VERSION's export templates"
 found="$("$GODOT" --version 2>&1)" || fail "$GODOT --version failed: $found"

@@ -1,7 +1,7 @@
 extends SceneTree
-## Software screenshots of the main scene (docs/SPEC.md §12; briefs M1-04, M1-05, M2-05):
-## evidence of what is drawn and where, never a gate, and not the Forward+ look. Run by
-## tools/shot.sh:
+## Software screenshots of the main scene (docs/SPEC.md §12; briefs M1-04, M1-05, M2-05,
+## M2-08): evidence of what is drawn and where, never a gate, and not the Forward+ look. Run
+## by tools/shot.sh:
 ##
 ##   godot --path game --rendering-method gl_compatibility --resolution 1280x720 \
 ##     -s res://tools/shot.gd -- <manifest> <out_dir> "<view>;<view>;..."
@@ -12,11 +12,15 @@ extends SceneTree
 ##       WorldConfig), above_m over the terrain there, facing the bearing in degrees
 ##       clockwise from north, pitched that many degrees below the horizon;
 ##   name                            the camera where it is: the scene's own start view
-##       when it comes first;
+##       when it comes first (over the terrain, or over the buildings when only the terrain
+##       is refused);
 ##   name,pause                      the same with the pause screen open.
 ## Views run in order. Each is saved as <out_dir>/<name>.jpg, 1280 × 720, quality 0.85. A
-## view over no terrain or a bad argument ends the run with exit 1 and a message; a refused
-## manifest does not: the scene shows its error panel, which is then what is captured.
+## view over no terrain or a bad argument ends the run with exit 1 and a message: a
+## six-field view fails when the terrain is refused (the whole manifest or only its
+## terrain block). A refusal alone does not end it: the scene shows its error panel over
+## what it can still show, which is then what is captured; with only the buildings
+## refused, a six-field view is taken with the panel over the terrain.
 
 const SIZE := Vector2i(1280, 720)
 const JPG_QUALITY := 0.85
