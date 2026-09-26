@@ -64,9 +64,10 @@ def values():
     return {"0.5": EXPECTED[0.5][0], "1": expected_sha256(mosaic, 1.0), "2": EXPECTED[2.0][0]}
 
 
-def _config(expected: dict, spacing: float) -> dict:
+def _config(expected: dict, spacing: float, computed_for: dict) -> dict:
     ordered = {key: expected[key] for key in ("0.5", "1", "2")}  # the order is the point
-    return {"schema": 1, "areas": {"village": {"expected_sha256": ordered, "spacing_m": spacing}}}
+    area = {"computed_for": computed_for, "expected_sha256": ordered, "spacing_m": spacing}
+    return {"schema": 1, "areas": {"village": area}}
 
 
 def _exchanged(values: dict) -> dict:
@@ -102,7 +103,7 @@ def test_a_config_holding_all_three_values_builds_and_passes_manifest(
     spacing,
 ):
     out = tmp_path / "generated"
-    config = _config(values, spacing)
+    config = _config(values, spacing, four_tiles["computed_for"])
     block = _build(four_tiles, config, out)
     assert block["sha256"] == values[KEYS[spacing]]
     manifest = json.loads(_manifest(four_tiles, tmp_path, config, out).read_bytes())
@@ -116,7 +117,7 @@ def test_terrain_refuses_the_2_m_value_exchanged_for_the_0_5_m_value(
 ):
     out = tmp_path / "generated"
     with pytest.raises(TerrainError) as refused:
-        _build(four_tiles, _config(_exchanged(values), 2.0), out)
+        _build(four_tiles, _config(_exchanged(values), 2.0, four_tiles["computed_for"]), out)
     message = str(refused.value)
     # the heights built are the 2 m ones; the value it compared with, the 0.5 m one
     assert f"SHA-256 {values['2']}" in message, message
@@ -131,9 +132,10 @@ def test_manifest_refuses_the_2_m_value_exchanged_for_the_0_5_m_value(
 ):
     """A terrain built right at 2 m; then the config's two values exchanged, no `terrain` run."""
     out = tmp_path / "generated"
-    _build(four_tiles, one_value_config(2.0, values["2"]), out)
+    computed_for = four_tiles["computed_for"]
+    _build(four_tiles, one_value_config(2.0, values["2"], computed_for), out)
     with pytest.raises(TerrainError) as refused:
-        _manifest(four_tiles, tmp_path, _config(_exchanged(values), 2.0), out)
+        _manifest(four_tiles, tmp_path, _config(_exchanged(values), 2.0, computed_for), out)
     message = str(refused.value)
     for part in (TERRAIN_COMMAND, f"SHA-256 {values['2']}", f"expects {values['0.5']} at 2 m"):
         assert part in message, (part, message)

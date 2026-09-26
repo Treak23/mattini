@@ -13,6 +13,11 @@ Since M2-06 (M2-01's checker, a P3): the lock comparison is shown to reach past 
 tile. The 2 x 2 tile world of test_terrain_build_tiles.py is built once, and each of its
 four tiles in turn gets another SHA-256 in the lock; `manifest` refuses every one.
 
+Since M2-07 the terrain config records the lock entry its value was computed from, and a
+lock that fits the config but differs from it is refused first, naming design's step; the
+tests here that change the lock to reach the checks of the built terrain record it too
+(computed_for.py), as design does when it adopts new inputs.
+
 Does NOT prove: a real republish by swisstopo (simulated with a synthetic tile); that the
 game shows the new attribution (the manifest is its only source, SPEC §8).
 """
@@ -23,6 +28,7 @@ import shutil
 
 import numpy as np
 import pytest
+from computed_for import recorded
 from test_terrain_build_tiles import EXPECTED, four_tiles  # noqa: F401 (a fixture)
 from test_terrain_build_tiles import TILES as FOUR_TILES
 from test_terrain_build_tiles import _config as four_tiles_config
@@ -102,7 +108,13 @@ def test_a_terrain_built_from_the_locked_tiles_is_accepted(built):
 
 
 def test_a_tile_the_lock_now_pins_differently_is_refused(built):
-    """M1 R1 T-04's proof: the tile republished, then locked and downloaded, but no `terrain`."""
+    """M1 R1 T-04's proof: the tile republished, then locked and downloaded, but no `terrain`.
+
+    Since M2-07 the terrain config records the lock entry its expected value was computed
+    from, so the manifest first names design's step, where `terrain` would be refused too
+    (M2 R1 I-01). Once design has recorded the new entry, the old terrain is refused naming
+    `terrain`, the tile and both of its SHA-256s.
+    """
     path = built["raw_dir"] / NAME
     _write_tile(path, _heights() + np.float32(0.25))
     new = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -110,6 +122,17 @@ def test_a_tile_the_lock_now_pins_differently_is_refused(built):
         built["paths"]["lock"],
         lambda lk: lk["datasets"]["swissalti3d"]["tiles"][TILE].update(sha256=new),
     )
+    with pytest.raises(TerrainError) as refused:
+        _manifest(built)
+    message = str(refused.value)
+    assert "datasets.lock.json" in message and "design recomputes" in message, message
+    assert TERRAIN_COMMAND not in message
+    assert not (built["out"] / "manifest.json").exists()
+
+    adopted = recorded(
+        built["config"], built["world"], lock.load_lock(built["paths"]["lock"]), "swissalti3d"
+    )
+    built["paths"]["terrain"].write_text(json.dumps(adopted), encoding="utf-8")
     old = built["lock"]["datasets"]["swissalti3d"]["tiles"][TILE]["sha256"]
     _refused(built, TILE, old, new)
 
@@ -191,7 +214,7 @@ def test_the_tiles_must_come_in_the_area_s_order(four_tiles, tmp_path):  # noqa:
     """Four tiles, built for real: the same tiles in another order are refused."""
     out = tmp_path / "generated"
     sha256 = EXPECTED[2.0][0]
-    config = four_tiles_config(2.0, sha256)
+    config = four_tiles_config(2.0, sha256, four_tiles["computed_for"])
     build_terrain(
         four_tiles["world"],
         load_datasets(),
@@ -223,7 +246,7 @@ def test_the_tiles_must_come_in_the_area_s_order(four_tiles, tmp_path):  # noqa:
 def four_built(four_tiles, tmp_path_factory):  # noqa: F811
     """The 2 x 2 tile world built once at 2 m, with its terrain config and lock on disk."""
     root = tmp_path_factory.mktemp("four_built")
-    config = four_tiles_config(2.0, EXPECTED[2.0][0])
+    config = four_tiles_config(2.0, EXPECTED[2.0][0], four_tiles["computed_for"])
     build_terrain(
         four_tiles["world"],
         load_datasets(),
@@ -232,21 +255,26 @@ def four_built(four_tiles, tmp_path_factory):  # noqa: F811
         four_tiles["raw_root"],
         root / "generated",
     )
-    terrain_path = root / "terrain.json"
-    terrain_path.write_text(json.dumps(config), encoding="utf-8")
-    return dict(four_tiles, built=root / "generated" / "terrain", terrain_path=terrain_path)
+    return dict(four_tiles, built=root / "generated" / "terrain", config=config)
 
 
 def _four_manifest(four_built, tmp_path, lock_data):
-    """The manifest over a copy of the built terrain, with `lock_data` as the tile lock."""
+    """The manifest over a copy of the built terrain, with `lock_data` as the tile lock.
+
+    The terrain config records `lock_data` (since M2-07): design has adopted the lock, so
+    what is checked is the built terrain against it, not the config against the lock.
+    """
     out = tmp_path / "generated"
     shutil.copytree(four_built["built"], out / "terrain")
     lock_path = tmp_path / "datasets.lock.json"
     lock.write_lock(lock_data, lock_path)
+    terrain_path = tmp_path / "terrain.json"
+    config = recorded(four_built["config"], four_built["world"], lock_data, "swissalti3d")
+    terrain_path.write_text(json.dumps(config), encoding="utf-8")
     return out, lambda: write_manifest(
         out,
         four_built["world"].path,
-        terrain_config_path=four_built["terrain_path"],
+        terrain_config_path=terrain_path,
         lock_path=lock_path,
     )
 

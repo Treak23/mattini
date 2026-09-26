@@ -24,6 +24,7 @@ import re
 from pathlib import Path
 
 import pytest
+from computed_for import recorded
 from synthetic_sheets import raw_folder, sheet_zip
 
 import mattini.__main__ as cli
@@ -75,12 +76,15 @@ def case(tmp_path, monkeypatch):
         return _features(data)
 
     monkeypatch.setattr(buildings, "read_sheet", read_source)
+    # the raw folder names the sheet as the download does, where the fixture's lock names it
+    # source.json: the same SHA-256, another entry, which the config records (M2-07)
+    config = load_buildings_config(FIXTURE / "buildings.json")
     return {
         "tmp": tmp_path,
         "world": load_world(FIXTURE / "world.json"),
         "datasets": datasets,
         "lock": pinned,
-        "buildings": load_buildings_config(FIXTURE / "buildings.json"),
+        "buildings": recorded(config, FIXTURE / "world.json", pinned, "swissbuildings3d"),
         "terrain": load_terrain_config(FIXTURE / "terrain.json"),
         "raw": raw_root,
         "out": tmp_path / "generated",
@@ -140,6 +144,65 @@ def test_a_second_run_writes_the_same_bytes(case):
     _build(case)
     second = {p.name: p.read_bytes() for p in (case["out"] / "buildings").iterdir()}
     assert first == second
+
+
+def test_a_build_removes_the_chunks_an_earlier_build_left(case):
+    """M2 R1 G-06, the pipeline half: chunk files the new description does not list go.
+
+    An earlier build's chunks in `buildings/` (here a village tile and a tile of the
+    fixture's own area the new build does not fill), a stray file that is not a chunk and
+    a chunk-like name that is not `*.bin`: the build removes the two chunks, keeps the rest
+    and the description, and says how many it removed. Harm: every file in
+    assets/generated/ ships in an export, so an earlier build's chunks grow the .pck (M2 R1
+    measured 1 MiB of 5.2 MiB left under GitHub's limit) though the game never reads them.
+    """
+    buildings_dir = case["out"] / "buildings"
+    buildings_dir.mkdir(parents=True)
+    stale = {"2622-1095.bin": b"\0" * 1024, "2651-1149.bin": b"\1" * 24}
+    kept = {"notes.txt": b"not a chunk", "2622-1095.bin.part": b"an interrupted write"}
+    for name, data in {**stale, **kept}.items():
+        (buildings_dir / name).write_bytes(data)
+
+    def build():
+        messages = []
+        block = build_buildings(
+            case["world"],
+            case["datasets"],
+            case["lock"],
+            case["buildings"],
+            case["terrain"],
+            case["raw"],
+            case["out"],
+            progress=messages.append,
+        )
+        return block, [m for m in messages if m.startswith("removed ")]
+
+    block, removed = build()
+    listed = sorted(Path(chunk["file"]).name for chunk in block["chunks"])
+    assert listed == ["2650-1149.bin", "2650-1150.bin", "2651-1150.bin"]
+    after = sorted([*listed, "fixture.json", *kept])
+    assert sorted(p.name for p in buildings_dir.iterdir()) == after
+    for name, data in kept.items():
+        assert (buildings_dir / name).read_bytes() == data
+    for path in sorted((GENERATED / "buildings").iterdir()):
+        assert (buildings_dir / path.name).read_bytes() == path.read_bytes(), path
+    where = f"of an earlier build that fixture.json does not list from {buildings_dir}"
+    assert removed == [f"removed 2 chunk files {where}"]
+
+    _, removed = build()  # nothing left to remove, and it says so
+    assert removed == [f"removed 0 chunk files {where}"]
+    assert sorted(p.name for p in buildings_dir.iterdir()) == after
+
+
+def test_a_refused_build_removes_nothing(case):
+    """The removal comes after writing: a build refused before it leaves every file."""
+    buildings_dir = case["out"] / "buildings"
+    buildings_dir.mkdir(parents=True)
+    (buildings_dir / "2622-1095.bin").write_bytes(b"\0" * 1024)
+    config = _expecting(case, lambda e: e.update({"2650-1150": "0" * 64}))
+    with pytest.raises(BuildingsError, match="2650-1150"):
+        _build(case, buildings=config)
+    assert sorted(p.name for p in buildings_dir.iterdir()) == ["2622-1095.bin"]
 
 
 def test_the_manifest_after_the_step_is_the_fixture_s(case):
@@ -244,6 +307,12 @@ def _locked(case, change):
     return pinned
 
 
+def _adopting(case, pinned):
+    """The case's buildings config recording `pinned` (design adopted it, M2-07): a lock the
+    config was not computed for is refused before any sheet is read."""
+    return recorded(case["buildings"], case["world"], pinned, "swissbuildings3d")
+
+
 @pytest.mark.parametrize(
     ("change", "command"),
     [
@@ -256,7 +325,9 @@ def _locked(case, change):
     ids=["sha256", "file", "edition", "another-sheet", "no-sheet"],
 )
 def test_a_lock_that_does_not_pin_the_downloaded_sheets_is_refused(case, change, command):
-    _refused(case, command, lock=_locked(case, change))
+    """The lock changed and adopted by design; the download not run again since."""
+    pinned = _locked(case, change)
+    _refused(case, command, lock=pinned, buildings=_adopting(case, pinned))
 
 
 def test_a_lock_without_buildings_is_refused(case):
@@ -273,7 +344,8 @@ def test_a_refusal_of_the_rule_names_the_sheet_and_the_uuid(case):
     features[0]["triangles"] = features[0]["triangles"][1:]  # an open solid, inside the area
     data = json.dumps({"features": features}).encode("utf-8")
     pinned = raw_folder(case["raw"], case["datasets"], {SHEET: data})
-    message = _refused(case, re.escape(features[0]["uuid"]), lock=pinned)
+    config = _adopting(case, pinned)
+    message = _refused(case, re.escape(features[0]["uuid"]), lock=pinned, buildings=config)
     assert f"sheet {SHEET}" in message and "closed" in message
 
 
@@ -289,7 +361,8 @@ def test_a_refusal_of_the_real_reader_names_the_sheet_and_the_uuid(case, monkeyp
     quad = dict(triangle, uuid="{QUAD}", triangles=[(a, b, c, d)])
     data = sheet_zip(case["tmp"], [triangle, quad])
     pinned = raw_folder(case["raw"], case["datasets"], {SHEET: data})
-    message = _refused(case, re.escape(f"sheet {SHEET}, UUID {{QUAD}}"), lock=pinned)
+    where = re.escape(f"sheet {SHEET}, UUID {{QUAD}}")
+    message = _refused(case, where, lock=pinned, buildings=_adopting(case, pinned))
     assert "points" in message
 
 
@@ -307,8 +380,29 @@ def test_a_refusal_of_the_real_reader_names_the_sheet_and_the_uuid(case, monkeyp
         lambda d: d["areas"]["village"]["expected_sha256"].update({"1-2": "A" * 64}),
         lambda d: d["areas"]["village"]["expected_sha256"].update({"1-2": "0" * 63}),
         lambda d: d.update(extra=1),
+        lambda d: d["areas"]["village"].pop("computed_for"),
+        lambda d: d["areas"]["village"].update(computed_for=["0" * 64, "0" * 64]),
+        lambda d: d["areas"]["village"]["computed_for"].pop("inputs_sha256"),
+        lambda d: d["areas"]["village"]["computed_for"].update(tiles_sha256="0" * 64),
+        lambda d: d["areas"]["village"]["computed_for"].update(world_sha256="A" * 64),
+        lambda d: d["areas"]["village"]["computed_for"].update(inputs_sha256="0" * 65),
     ],
-    ids=["schema", "two-areas", "no-area", "extra-key", "tile-id", "upper-case", "short", "top"],
+    ids=[
+        "schema",
+        "two-areas",
+        "no-area",
+        "extra-key",
+        "tile-id",
+        "upper-case",
+        "short",
+        "top",
+        "no-computed-for",
+        "computed-for-not-an-object",
+        "computed-for-key-missing",
+        "computed-for-key-added",
+        "computed-for-upper-case",
+        "computed-for-long",
+    ],
 )
 def test_a_bad_buildings_config_is_refused_naming_the_file(tmp_path, change):
     data = json.loads((REPO / "config" / "buildings.json").read_text(encoding="utf-8"))
@@ -334,6 +428,8 @@ def test_the_committed_config_expects_the_village_s_six_chunks():
 def test_the_command_builds_then_writes_the_manifest(case, monkeypatch, capsys):
     lock_path = case["tmp"] / "datasets.lock.json"
     lock.write_lock(case["lock"], lock_path)
+    config_path = case["tmp"] / "buildings.json"
+    config_path.write_text(json.dumps(case["buildings"]), encoding="utf-8")
     monkeypatch.setattr(lock, "LOCK_PATH", lock_path)
     monkeypatch.setattr(cli, "load_world", lambda: case["world"])
     monkeypatch.setattr(cli, "load_datasets", lambda: case["datasets"])
@@ -348,7 +444,7 @@ def test_the_command_builds_then_writes_the_manifest(case, monkeypatch, capsys):
             terrain_config_path=FIXTURE / "terrain.json",
             datasets_path=FIXTURE / "datasets.json",
             lock_path=lock_path,
-            buildings_config_path=FIXTURE / "buildings.json",
+            buildings_config_path=config_path,
         ),
     )
     out = case["out"]
@@ -357,6 +453,7 @@ def test_the_command_builds_then_writes_the_manifest(case, monkeypatch, capsys):
     assert captured.out == f"{out / 'manifest.json'}\n"
     assert f"sheet {SHEET}: 11 features read, 8 selected" in captured.err
     assert "8 buildings in 3 chunks" in captured.err
+    assert "removed 0 chunk files of an earlier build" in captured.err
     written = json.loads((out / "manifest.json").read_bytes())
     assert written["buildings"] == json.loads((out / "buildings" / "fixture.json").read_bytes())
 

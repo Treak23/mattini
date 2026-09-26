@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import rasterio
+from computed_for import recorded
 from rasterio.transform import from_origin
 from window_mean import expected_sha256
 
@@ -106,12 +107,17 @@ def one_tile(tmp_path):
         "world": load_world(world_path),
         "world_sha256": hashlib.sha256(world_path.read_bytes()).hexdigest(),
         "lock": lock,
-        "terrain_config": {
-            "schema": 1,
-            "areas": {
-                "village": {"expected_sha256": {"2": HEIGHTS_SHA256}, "spacing_m": 2.0},
+        "terrain_config": recorded(
+            {
+                "schema": 1,
+                "areas": {
+                    "village": {"expected_sha256": {"2": HEIGHTS_SHA256}, "spacing_m": 2.0},
+                },
             },
-        },
+            world_path,
+            lock,
+            "swissalti3d",
+        ),
         "raw_root": tmp_path / "raw",
         "raw_dir": raw_dir,
         "out": tmp_path / "generated",
@@ -272,12 +278,19 @@ def test_a_refused_build_leaves_the_good_terrain_byte_for_byte(one_tile):
 
 
 def _relock(case):
-    """Make provenance and lock vouch for the rewritten tile, so only its content is wrong."""
+    """Make provenance and lock vouch for the rewritten tile, so only its content is wrong.
+
+    Since M2-07 the terrain config records the new lock entry too (design adopted it):
+    otherwise the step refuses the changed inputs before it reads the tile.
+    """
     path = case["raw_dir"] / NAME
     sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
     case["lock"]["datasets"]["swissalti3d"]["tiles"][TILE]["sha256"] = sha256
     _edit_provenance(
         case, lambda p: p["tiles"][0].update(sha256=sha256, size_bytes=path.stat().st_size)
+    )
+    case["terrain_config"] = recorded(
+        case["terrain_config"], case["world"], case["lock"], "swissalti3d"
     )
 
 

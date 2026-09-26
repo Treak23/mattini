@@ -2,13 +2,21 @@
 
 The pinning tests (test_sheets.py) check ten sheets' boxes, the village's six sheets and
 the margin at 100 m to the half metre. These check the rest of the contract the brief
-states: the grid is the one four-digit sheet numbers can name, every id there round-trips
-through its box, the distance is the shortest one between the boxes (so a sheet across a
-corner counts by the diagonal), and a malformed box, a box not wholly inside the grid and
-a bad margin are ValueErrors naming them (Hard Rule 2).
+states: every id the grid places round-trips through its box, the distance is the
+shortest one between the boxes (so a sheet across a corner counts by the diagonal), and a
+malformed box, a box not wholly inside the grid and a bad margin are ValueErrors naming
+them (Hard Rule 2).
+
+What the grid covers (brief M2-07, M2 R1 I-06): the sheets 1000 to 1999, 20 columns by 50
+rows, E 2'480'000 to 2'830'000 and N 702'000 to 1'302'000. swisstopo numbers the sheets
+east of E 2'830'000 outside this scheme (2180, 2240 and 2260, measured by M2 R1 on the live
+collection), so ids of 2000 and above are refused rather than placed 600 km away, and a
+box within the margin of E 2'830'000 is refused rather than given a sheet list without
+them. West, north and south of the grid lie no LK25 sheets.
 
 Does NOT prove: that swisstopo cuts any edition by this grid (test_sheets.py's note; the
-real run of `lock buildings` read the six village items the grid names).
+real run of `lock buildings` read the six village items the grid names); that no other
+swisstopo sheet lies outside it (M2 R1 compared the 6'724 items of the collection then).
 """
 
 import math
@@ -17,7 +25,8 @@ import pytest
 
 from mattini.sheets import SHEET_ID, sheet_box, sheets_near
 
-GRID = (2480000.0, 2830000.0, -4098000.0, 1302000.0)  # the 4-digit ids' extent, 1000-11 to 9999-44
+GRID = (2480000.0, 2830000.0, 702000.0, 1302000.0)  # the grid's extent, 1000-11 to 1999-44
+EAST = 2830000.0  # the grid's east edge: swisstopo's 2xxx sheets lie beyond it
 
 
 def _inside(box, by=1.0):
@@ -68,11 +77,53 @@ def test_the_distance_across_a_corner_is_the_diagonal():
 
 def test_the_grid_s_corners_name_only_sheets_that_exist():
     assert sheet_box("1000-11") == (2480000.0, 2484375.0, 1299000.0, 1302000.0)
-    assert sheet_box("9999-44") == (2825625.0, 2830000.0, -4098000.0, -4095000.0)
+    assert sheet_box("1019-22") == (2825625.0, 2830000.0, 1299000.0, 1302000.0)
+    assert sheet_box("1980-33") == (2480000.0, 2484375.0, 702000.0, 705000.0)
+    assert sheet_box("1999-44") == (2825625.0, 2830000.0, 702000.0, 705000.0)
     assert sheets_near(sheet_box("1000-11")) == ["1000-11", "1000-12", "1000-13", "1000-14"]
-    assert sheets_near(sheet_box("9999-44")) == ["9999-41", "9999-42", "9999-43", "9999-44"]
-    every = [f"{n}-{q}{s}" for n in range(1000, 10000) for q in range(1, 5) for s in range(1, 5)]
-    assert sheets_near(GRID, margin_m=0.0) == every  # 144'000 parts, each named once
+    assert sheets_near(sheet_box("1980-33")) == ["1980-31", "1980-32", "1980-33", "1980-34"]
+    every = [f"{n}-{q}{s}" for n in range(1000, 2000) for q in range(1, 5) for s in range(1, 5)]
+    short_of_the_east_edge = (GRID[0], EAST - 0.5, GRID[2], GRID[3])
+    assert sheets_near(short_of_the_east_edge, margin_m=0.0) == every  # 16'000, each once
+
+
+@pytest.mark.parametrize("sheet", ["2000-11", "2180-13", "2240-11", "2260-11", "9999-44"])
+def test_ids_of_2000_and_above_are_refused_not_placed(sheet):
+    """M2 R1 I-06: sheet_box('2240-11') was E 2'480'000, N 555'000, 600 km from its data."""
+    assert SHEET_ID.fullmatch(sheet)
+    with pytest.raises(ValueError, match="not an LK25 sheet mattini's grid places") as refused:
+        sheet_box(sheet)
+    assert repr(sheet) in str(refused.value) and "1000 to 1999" in str(refused.value)
+
+
+@pytest.mark.parametrize(
+    ("box", "margin"),
+    [
+        ((2829000.0, 2829950.0, 1167500.0, 1168500.0), 100.0),  # the review's: 2240-11 50 m east
+        ((2825000.0, 2829900.0, 1167500.0, 1168500.0), 100.0),  # 100 m: the margin is inclusive
+        ((2825000.0, 2830000.0, 1167500.0, 1168500.0), 100.0),  # on the edge
+        ((2825000.0, 2830000.0, 1167500.0, 1168500.0), 0.0),  # touching counts with no margin
+        ((2825625.0, 2830000.0, 702000.0, 705000.0), 100.0),  # the grid's south-east sheet
+    ],
+)
+def test_a_box_within_the_margin_of_the_east_edge_is_refused(box, margin):
+    """The sheets east of E 2'830'000 are not in the grid; a box that would need them is
+    refused rather than given a sheet list silently without them (M2 R1 I-06)."""
+    with pytest.raises(ValueError, match="no sheets east of E 2'830'000") as refused:
+        sheets_near(box, margin_m=margin)
+    assert repr(box) in str(refused.value) and "design extends it" in str(refused.value)
+
+
+def test_a_box_just_beyond_the_margin_of_the_east_edge_gets_its_sheets():
+    """Half a metre more than the margin from the edge: the column-19 sheets, as before.
+
+    1239 is row 11, column 19; its sixteenths 21 (E 2'821'250-2'825'625) and 22
+    (E 2'825'625-2'830'000), both N 1'167'000-1'170'000, hold the box.
+    """
+    box = (2825000.0, 2829899.5, 1167500.0, 1168500.0)
+    assert sheets_near(box) == ["1239-21", "1239-22"]
+    touching = (2825000.0, EAST - 0.5, 1167500.0, 1168500.0)
+    assert sheets_near(touching, margin_m=0.0) == ["1239-21", "1239-22"]
 
 
 @pytest.mark.parametrize(
@@ -81,7 +132,7 @@ def test_the_grid_s_corners_name_only_sheets_that_exist():
         (2479999.0, 2481000.0, 1100000.0, 1101000.0),  # west of the grid
         (2600000.0, 2601000.0, 1301500.0, 1302001.0),  # north of it
         (2829000.0, 2830001.0, 1100000.0, 1101000.0),  # east of column 19
-        (2600000.0, 2601000.0, -4098001.0, -4097000.0),  # south of row 449
+        (2600000.0, 2601000.0, 701999.0, 703000.0),  # south of row 49
         (2400000.0, 2401000.0, 1100000.0, 1101000.0),  # wholly outside
     ],
 )

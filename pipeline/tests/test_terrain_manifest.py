@@ -20,6 +20,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from computed_for import recorded
 
 from mattini.manifest import write_manifest
 from mattini.terrain import TerrainError, load_terrain_config
@@ -78,9 +79,22 @@ def test_a_built_terrain_is_copied_verbatim(tmp_path):
 
 
 def test_terrain_built_for_another_world_is_refused(tmp_path):
+    """Design has recomputed for the changed world (the config records it, M2-07): the old
+    terrain is refused, naming `terrain`. Without design's step the refusal names design's
+    (test_expected_inputs_steps.py)."""
     world = _copy_with(tmp_path, "world.json", lambda d: d.update(height_offset_m=900.0))
-    with pytest.raises(TerrainError, match=TERRAIN_COMMAND):
-        _write(_fixture_out(tmp_path), world=world)
+    lock = json.loads((FIXTURE / "datasets.lock.json").read_text(encoding="utf-8"))
+    config = recorded(
+        json.loads((FIXTURE / "terrain.json").read_text(encoding="utf-8")),
+        world,
+        lock,
+        "swissalti3d",
+    )
+    terrain = tmp_path / "adopted-terrain.json"
+    terrain.write_text(json.dumps(config), encoding="utf-8")
+    with pytest.raises(TerrainError, match=TERRAIN_COMMAND) as refused:
+        _write(_fixture_out(tmp_path), world=world, terrain=terrain)
+    assert "built for the world config" in str(refused.value)
 
 
 def test_terrain_built_at_another_spacing_is_refused(tmp_path):

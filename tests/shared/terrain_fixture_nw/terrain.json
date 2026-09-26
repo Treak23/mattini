@@ -2,6 +2,10 @@
   "schema": 1,
   "areas": {
     "fixture_nw": {
+      "computed_for": {
+        "inputs_sha256": "25a8845a3eaab9936c9df59e99235b219d1a69cb2a059b974cc2fa24545adc4a",
+        "world_sha256": "f5bef4818256f23b1e5dc6f99957ccafd4c83a075558d16ceab139c53adb2a40"
+      },
       "expected_sha256": {
         "2": "31096e50ec9127310a807c1180a749fcc28b646870e618e8f99d0b7b02fd55a1"
       },
