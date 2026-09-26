@@ -419,3 +419,121 @@ Totals: design 36.44 (planning) · supervision 17.64 (wakers 5.64, ticks 11.99) 
 Routines: none is enabled on the account at the close. The waker's hourly Routine
 (`trig_01LxXVtmJjWGmvzExTFWz4m9`) is gone; the two M1 30-minute one-shots still listed
 fired and disabled themselves (`run_once_fired`). No M1 Routine remains.
+
+## M2 — Buildings · closed 2026-09-26 · version 0.2.0
+
+The report-back is the release record, `docs/releases/v0.2.0.md`; this is the close in
+full. Arc: planned, built, reviewed and closed in one session (`session_01L8NW1XxtFiiBjahgjyqS94`,
+from 2026-09-25 17:48Z), by the owner's word: nine briefs, one review round, one
+verification pass. Planning `8a713b5` and `9458713`; the last brief landed `6c4b72e`; the
+version `10f0060`.
+
+**Decisions** (numbered on from M1's D13–D21; each keeps what was built unless it says
+otherwise).
+
+- **D22 · How M2 ran** (the owner's word, RULINGS 2026-09-25): design, build, review and
+  close in one Opus session with in-session workflow agents; no waker, ticks, builder or
+  lens sessions. Briefs, pinning tests, the two-agent build (an executor, then a checker
+  that re-runs the gate and proves the new tests by mutation), the review round and the
+  release record stayed. DESIGN.md rule 5 did not apply, so design wrote more than design
+  data: the pinned tests' corrections put in place (M2-03, M2-05, M2-09's check), the
+  version bump (`10f0060`) and the close's docs. No production code under `pipeline/mattini/`,
+  `game/scripts/` or `tools/` was written outside a brief.
+- **D23 · The owner's four answers** (2026-09-25; RULINGS; SPEC §13 rows 22–24, 27): the
+  2020 edition per map sheet ("a"), on which M2-03 to M2-05 had been built as PROPOSED; an
+  export over 100 MiB stays open until M5 ("later"); the session pushes to `main`; the real
+  sample is committed ("yes"), brief M2-09, with Hard Rule 3's one exception written into
+  CLAUDE.md.
+- **D24 · The builders' reversible choices are kept:** M2-01 F6 and M2-02 F7 (already
+  ruled), M2-03 F6 (the Euclidean distance between sheet boxes; a lock the command cannot
+  read is refused, not replaced; the refusals name both lock commands; its grid extent
+  since narrowed by M2-07), M2-04 F10–F14 (the lock pins exactly the area's sheets, the
+  config always validated, `read_sheet`'s three keys, the extra refusals, the wording),
+  M2-05 F7 (BuildingChunks' extra refusals and the shared manifest reader, empty surfaces
+  skipped, one error catcher per reader, the materials' explicit defaults, both startup
+  lines built in one Python call), M2-06 F6 (the box as exact floats, the check order, the
+  1 m value from `window_mean.py` labelled as such), M2-07 F6 (the world check first, the
+  inputs check once the lock fits; the literal file names in the messages; the terrain
+  twin of I-05; `computed_for.py` for tests), M2-08 (the stricter allowlist readings, the
+  block check after the rewrite only, the second manifest read for the axes, the camera
+  over the union of the chunks' boxes). None causes harm; the items that reach further
+  are carried below.
+- **D25 · 0.2.0 ships at this close with no further tranche.** R1 found no P0 or P1 and its
+  fixes were verified (V1: every finding fixed, no P0 to P2). The sixteen V1 P3s and the
+  builders' open follow-ups go into M3's first briefs (the table below), D12's and D14's
+  pattern: none touches the build that ships.
+- **D26 · M2-09's check (P2)** found design's pinned sample test blind to a turned
+  triangle: corrected at the close (RULINGS 2026-09-26), with the README's location.
+- **D27 · Declined:** the credits' `# MIT License` line shown as raw text (the verbatim
+  notice is the licence-clean choice, and its SHA-256 is pinned); a second check of the
+  terrain box in TerrainGrid (`manifest` is the one check of box, rows and columns, and
+  every manifest the game reads is written by it; SPEC §8 says so since `8553563`).
+- **D28 · Delivery:** `dist` as D15 laid it out: `windows/` and `linux/` hold 0.2.0,
+  `mattini-0.2.0/` the same files, `mattini-0.1.0/` stays as the rollback.
+- **D29 · The known items:** brain.md H16 to H19 (Godot's meshes, reading
+  swissBUILDINGS3D, ruff's import order, workflow worktrees), lessons 40 to 42, and the
+  eight buried and twelve raised buildings in SPEC §8 and the release record (R1 P-05).
+
+**Carried into M3:** first work of the arc, before any M3 brief that touches the lock,
+the manifest, the gate or the loaders. Suggested split, as M2's first two: a pipeline
+brief and a game-and-tools brief whose Scopes share no file.
+
+| id | brief | the fix |
+|---|---|---|
+| V1-P-01, V1-P-07 | pipeline | `manifest` tests the lock's fit by the steps' rule (exactly the area's tiles or sheets), before the block's own checks and the inputs check, naming `lock <x>`; a test asserts manifest and step name the same command |
+| V1-P-02 | pipeline | `download terrain` requires exactly the area's tiles, as `download buildings` does |
+| V1-P-03 | pipeline | the terrain step's inputs and world checks proven to run before any tile is read (record the reads) |
+| V1-P-04 | pipeline | two docstrings name `test_computed_for_terrain.py` and `test_computed_for_buildings.py` |
+| V1-P-05 | pipeline | `resolution_m` required for `swissalti3d`; a case in `test_refusals_not_tracebacks.py` |
+| V1-P-06 | pipeline, presets | `*.part` leftovers removed by the steps, or excluded from the export and pinned |
+| V1-P-08 | pipeline | a test with a lock entry's keys reordered (and a non-ASCII value) proves the canonical form |
+| Findings | pipeline | `manifest.py`'s docstring lists the terrain's shape checks (M2-06 F9); fiona imported only where a sheet is read (M2-04's check); the synthetic reader tests compare triangles in order, not as point sets (M2-09 F8) |
+| V1-G-01 | tools | the allowlist never excepts the lines that mean a test script did not run (`Ignoring script`, `Failed to load script`) |
+| V1-G-02 | game | the camera test pins the centre and `highest + START_ABOVE_M`, within a tolerance |
+| V1-G-03 | game | the axes check tested with east kept and north, up turned, and with north kept |
+| V1-G-04 | game | the look test reads `get_active_material(s)` and requires no `material_override` |
+| V1-G-05 | tools | GUT's script count checked against the test scripts under `game/tests/` |
+| V1-G-06 | tools | the gate also requires GUT's own `GUT version:  9.6.1` line |
+| V1-G-07 | tools | CR stripped before the scans (gate.sh, export.sh) |
+| V1-G-08 | game | TerrainGrid's refusal says "origin or height offset" |
+| Findings | tools | `export.sh` refuses a non-Linux system before the templates and the exports (M2-02 F9) |
+
+**RELEASE.md, walked at the close.**
+- §A. `git status` clean. Every brief reads `DONE (<sha>)` and each sha is on
+  `origin/main`: M2-01 `b5a45e5`, M2-02 `2cf5660`, M2-03 `ad12280`, M2-04 `b980214`, M2-05
+  `86d764c`, M2-06 `cefa1ac`, M2-07 `b3ec242`, M2-08 `20c5a80`, M2-09 `eced376`. Design's
+  code is D22's. No brief carries an unfinished review. No census stands alone over
+  load-time code: the loaders and the scene are run by their tests, and the export is
+  started. All 36 gates of the nine briefs carry a does-NOT-prove line, every box ticked.
+  Attribution: the credits are built from the manifest, `swissalti3d 2024, © swisstopo`
+  and `swissbuildings3d 2020, © swisstopo`, then Godot's licence and its components',
+  Terrain3D's and godot-cpp's (M2-02; pinned by `test_main_scene.gd`); the `.pck` holds
+  `© swisstopo` four times and godot-cpp's copyright line once. Raw data: one file entered
+  history, the owner's sample (45'668 bytes, `test_repo_hygiene.py` names it with its
+  SHA-256); no blob over 1 MB entered M2's history.
+- §B. `0.2.0` in `game/project.godot` (`10f0060`), pinned by `test_release_settings.gd` and
+  `test_project_settings.gd`. Full gate from a fresh worktree of `10f0060`, to a log: exit 0
+  in 92 s, pytest 743 passed and 4 deselected, GUT 23 scripts, 110 tests, 2'800 asserts;
+  its 83 `ERROR` lines are the refusal tests' deliberate ones, each excepted.
+- §C. In that worktree: `download terrain` 6 tiles verified, 6 fetches (10 s),
+  `provenance.json` `28523b17…`; `download buildings` 6 sheets verified, 6 fetches (7 s),
+  `8a3da3f2…`; `terrain` `b6334c1f…` (7 s); `buildings` the six chunks equal to
+  `config/buildings.json` (7 s); the manifest `b7c3cfd9…`. `tools/export.sh` exit 0 in 20 s
+  with the installed templates (their SHA-256 checked when installed): six files, no
+  `ERROR` line; `mattini.exe` 104'659'456 bytes (198'144 under the limit, Godot's template
+  unchanged), each `.pck` 99'405'400 bytes (5'452'200 under), identical to each other
+  (`ca4a17bd…`); the executables equal Godot's release templates and the libraries the
+  vendored Terrain3D ones, byte for byte; 156 files stored, none under `tools/` or
+  `tests/`, no `*.part`. Step 6 found both startup lines. Started again by hand: exit 0 in
+  7.8 s for 300 frames, a peak of 875 MiB resident, headless. The `dist` commit `5ce4888`
+  carries the version, the source sha and the gate's line.
+- §D. The release record was committed before the chat message; the board was updated and
+  this narrative moved here; no Routine is enabled on the account (`list_triggers`); the
+  ratio: see the cost below.
+
+**Cost.** One session did everything, so design, builders and review are not separable by
+session: its `usage.cost_usd` read at the close (the release record has the number). The
+build and review agents ran inside it: nine executors and eight checkers (M2-05, blocked
+on design's pinned tests, was finished and mutation-checked by design itself), three R1
+lenses and fifteen skeptic votes, two V1 lenses, eleven measurement agents at planning
+(two independent implementations of each expected value) and one reader for the close. M1, for comparison: $102.87 over twenty sessions.

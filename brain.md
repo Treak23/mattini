@@ -1,9 +1,10 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-09-25 — version 0.1.0 shipped at the
-close of arc M1 (Terrain): the village terrain at 0.5 m in Terrain3D, a free-fly camera, a
-pause screen with the credits; builds on the `dist` branch. Arc M2 (Buildings) is running,
-planned, built and closed in one session by the owner's word (RULINGS 2026-09-25)**
+Orientation for any session. Current as of **2026-09-26 — version 0.2.0 at the close of
+arc M2 (Buildings): the village terrain at 0.5 m in Terrain3D with its 1'486 buildings
+from swissBUILDINGS3D (2020) as a white architectural model, a free-fly camera, a pause
+screen with the credits; builds on the `dist` branch. M2 ran in one session by the
+owner's word (RULINGS 2026-09-25). M3 (Surfaces and trees) is next**
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -33,21 +34,20 @@ copies it into the generated manifest, and the game learns the origin only from 
 ## 4. STACK
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
 4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
-from M1-03. Why each: SPEC §4 and §13. Test counts at the last gate (the M1 close,
-2026-09-25): pytest 367 passed, 3 network tests deselected; GUT 15 scripts, 69 tests,
-1641 asserts.
+from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (the
+M2 close, 2026-09-26): pytest 743 passed, 4 network tests deselected; GUT 23 scripts, 110
+tests, 2800 asserts.
 
 ## 5. HISTORY
-Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25).
+Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
+0.2.0, 2026-09-26).
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-M2 Buildings is running (the board). M2-01 and M2-02 carried M1's review residue; M2-03
-to M2-05 brought swissBUILDINGS3D's buildings into the pipeline and the game, built on the
-access route design PROPOSES (SPEC §13 row 22) while the owner's answer is awaited:
-nothing of it reaches `main` or a build before that answer. M2-07 and M2-08 are the
-review's fixes. The owner's first look at 0.1.0 comes back through `feedback`. The board
-is the live version.
+M3 Surfaces and trees, planned in a fresh `design` session; its first briefs carry M2's
+residue (ARCS §M2, *Carried into M3*), and it asks the access route for swissTLM3D. The
+owner's first looks at 0.1.0 and 0.2.0 come back through `feedback`. The board is the live
+version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -178,7 +178,9 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   main`, then `git checkout main && git pull --ff-only origin main` (D21).
 - **H15 — Exports (measured at the M1 close, 2026-09-25).** The executables are Godot's
   release templates unchanged: the Windows one is 104'659'456 bytes, 198 KB under GitHub's
-  100 MiB file limit, so a later Godot's template may cross it alone. The release template
+  100 MiB file limit, so a later Godot's template may cross it alone. At 0.2.0 the `.pck`
+  is 99'405'400 bytes, 5'452'200 under the limit (the terrain 96 MB, the buildings 3.1 MiB),
+  and the started build peaks at 875 MiB resident, headless. The release template
   ignores `--script`, so a probe cannot run inside an export (the R1 game lens). Exports are
   not byte-reproducible: the `.pck` differs between exports at the same size. The first
   import of a fresh checkout may print `WARNING: Canceling suspended execution of
@@ -214,8 +216,10 @@ builders, and by its review (M0 R1, `docs/reviews/`).
 
 ## 8. PROCESS
 Three realms and a supervisor (`docs/WORKFLOW.md`, `docs/roles/`). Spawn words `design`,
-`ultracode build`, `supervise`, `feedback`. `main` is the only branch. State lives in the
-repo, never in chat. Pinning tests travel with their brief under `docs/briefs/pinning/`
+`ultracode build`, `supervise`, `feedback`. `main` is the only source branch (`dist` holds
+builds). M2 ran instead in one session with in-session workflow agents, by the owner's
+word for M2 (RULINGS 2026-09-25); the realms' sessions are the default again unless the
+owner says otherwise. State lives in the repo, never in chat. Pinning tests travel with their brief under `docs/briefs/pinning/`
 (WORKFLOW §Brief lifecycle).
 
 ## 9. KEY FILES

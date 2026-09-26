@@ -505,9 +505,10 @@ the pipeline regenerates the assets from pinned inputs before export; binaries a
 in the `dist` history, which a plain `git clone` or `git fetch` of every branch downloads
 too (about 140 MB per release; `--single-branch --branch main` avoids it). GitHub rejects
 files over 100 MiB: the first release measured the export size, and a larger export is a
-design question (split the pack file, or LFS on `dist`) — **OPEN**. Measured at 0.1.0:
-nothing over; the largest file is `mattini.exe`, Godot's own Windows template, 198 KB
-under the limit, and each `.pck` has 8.3 MiB of room (D16).
+design question (split the pack file, or LFS on `dist`) — **OPEN** until M5 (the owner,
+2026-09-25). Measured at 0.1.0: nothing over; the largest file is `mattini.exe`, Godot's
+own Windows template, 198 KB under the limit, and each `.pck` had 8.3 MiB of room (D16).
+At 0.2.0, with the buildings: each `.pck` is 99'405'400 bytes, 5.2 MiB of room.
 
 **Version scheme (confirmed by the owner, 2026-09-25):** `0.<n>.<patch>` for releases
 before v1; `1.0.0` when the v1 scope (§2) is complete. The version lives in
@@ -517,7 +518,8 @@ only when the pause screen is open.
 
 **The first version, 0.1.0,** shipped at M1's close (2026-09-25; `docs/releases/v0.1.0.md`),
 the first milestone with something to look at; M0 closed without one, because it had
-nothing to play (ruled at the M0 close).
+nothing to play (ruled at the M0 close). **0.2.0** shipped at M2's close (2026-09-26;
+`docs/releases/v0.2.0.md`): the village's buildings.
 Exports go to `build/` (git-ignored) through `tools/export.sh` (brief M1-06): Linux and
 Windows x86_64 with the `.pck` beside the executable. At 0.5 m the village heights alone
 are 96 MB, so the `.pck` sits just under GitHub's 100 MB file limit; the script measures

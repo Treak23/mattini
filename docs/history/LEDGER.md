@@ -29,6 +29,13 @@ arc closes; opened one section at a time, never at startup.
   stray session ("⚡ Waker · M1 · hourly wake", no repository, $0.24). Cost: $0.24; the
   session is gone at the close. Guard: brain.md H13, and "without `text`" in BUILD.md step
   3 and SUPERVISE §Review rounds.
+- **2026-09-25 · M2 · design (the one M2 session).** DESIGN.md rule 2 and lesson 1: two
+  briefs' pinned tests were pinned without being run where they would live. M2-03's
+  `test_sheets.py` failed ruff's import order once its module existed. M2-05's three game
+  tests failed as pinned: a helper overrode `Object._set`, `generate_normals` smoothed, and
+  16-bit normals were compared exactly. Cost: two BLOCKED rounds and two merges finished by
+  hand. Guard: lesson 40; M2-08's and M2-09's pinned tests were run against the live code
+  before pinning.
 
 ### Fabricated instead of read
 
@@ -38,6 +45,11 @@ Nothing found in M0.
   2026-09-25T06:40Z (READY TO CLOSE)`; its commit `05f86ef` is 06:24:23Z and the session
   ended at 06:24:52Z, so the time was not read from any clock. Cost: none; the close took
   the commit's time. Guard: none new; a time on the board is a commit's or a tool's.
+- **2026-09-25 · M2 · M2-05's builder and design's check of it.** `complete_world.gd`
+  said its box stood on the terrain, and the box's roof lay 4 m under the fixture's ground;
+  every main-scene test used it and passed (R1 P-01). Cost: none shipped; a placement
+  test the arc thought it had was missing until M2-08. Guard: lesson 42;
+  `test_scene_placement.gd` checks the ground between floor and roof.
 
 ### Shipped defects the owner had to find
 
@@ -94,6 +106,16 @@ first look comes back through `feedback`.
   software renderer, the fixture computed two ways), but a context of 741K re-read at every
   call is lesson 32's mechanism in a design session; the next planning can send its sweeps
   and measurements to Opus agents and keep its own context small (DESIGN.md rule 7).
+- **2026-09-26 · M2 · pinned tests that cannot tell the decision from its twin.** Lesson 34
+  again, three times in design's own pins: the camera test accepts a corner and the lowest
+  vertex (V1-G-02), the sample test accepted a turned triangle (M2-09's check, fixed at the
+  close), and no test tells the canonical lock form from an unsorted one (V1-P-08). Each
+  was found by a checker's or lens's mutation, none by the gate. Cost: two carried P3s and
+  one close-time fix. Guard: lesson 34 in design's pinning, and the checkers' own mutations.
+- **2026-09-26 · M2 · cost of the arc.** One session did planning, nine briefs, the
+  review, the verification pass and the close; its `usage.cost_usd` is in the release
+  record. It is not separable by role, so there is no supervision ratio. M1 cost $102.87
+  over twenty sessions. The account reached the seven-day limit's warning during the close.
 
 ### The net
 
@@ -103,3 +125,8 @@ first look comes back through `feedback`.
 - **M1**: six briefs built and verified, one review round clean (no P0 or P1), and 0.1.0
   shipped. Of 18 P2 and P3 findings, two were fixed at the close, two declined, and fifteen
   carried into M2. Before the owner's first look, no defect is known to have reached them.
+- **M2**: nine briefs built and checked, one review round clean (no P0 or P1) and its
+  fixes verified, and 0.2.0 shipped. Twenty-one R1 findings: eighteen fixed by M2-07 and
+  M2-08, two by the close, I-07 moved to M5. Seventeen V1 P3s: one fixed at the close,
+  sixteen carried into M3. Before the owner's first look, no defect is known to have
+  reached them.
