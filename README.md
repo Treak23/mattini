@@ -3,14 +3,15 @@
 The `dist` shelf: exported builds of mattini, never merged, never deleted. Nothing here is
 source; the source is on `main`, and every build names the `main` commit it came from.
 
-## Current version: 0.1.0
+## Current version: 0.2.0
 
-Built from `main` 05f86efce279aa050887df4f708c6e8120d10137 on 2026-09-25 (Godot 4.6.3,
-Terrain3D 1.0.2). The release record is `docs/releases/v0.1.0.md` on `main`.
+Built from `main` 10f00604755837c60753913f47fc7cb0416dd56a on 2026-09-26 (Godot 4.6.3,
+Terrain3D 1.0.2). The release record is `docs/releases/v0.2.0.md` on `main`.
 
 What it is: the village of Zermatt as terrain, 2 km × 3 km at 0.5 m (swissALTI3D 2024),
-in a clay relief-model look, with a free-fly camera. Only the village area is drawn; the
-mountains around it, the Matterhorn included, come later (M5). No buildings yet (M2).
+in a clay relief-model look, with its 1'486 buildings (swissBUILDINGS3D 3.0, 2020) as a
+white architectural model, and a free-fly camera. Only the village area is drawn; the
+mountains around it, the Matterhorn included, come later (M5).
 
 ## Download and start
 
@@ -27,7 +28,7 @@ On GitHub: switch the branch to `dist`, open the folder, open each file, "Downlo
 file". Or clone only this branch:
 `git clone --branch dist --single-branch --depth 1 https://github.com/Treak23/mattini mattini-dist`.
 
-Loading the village takes about 5 seconds after the window opens.
+Loading the village takes a few seconds after the window opens.
 
 ## Controls
 
@@ -44,8 +45,8 @@ version, the controls, the credits, Resume and Quit.
    - Linux: `~/.local/share/godot/app_userdata/mattini/logs/godot.log`
 3. Send the log and a screenshot to the `feedback` session.
 
-The rollback is the named folder of the version before the current one. 0.1.0 is the
-first version, so there is none yet.
+The rollback is the named folder of the version before the current one: `mattini-0.1.0/`
+(the terrain without the buildings). Take its three files of your platform, as above.
 
 ## Layout
 
@@ -56,22 +57,28 @@ first version, so there is none yet.
 Files are not renamed per version: each executable finds its `.pck` by its own name, and
 Terrain3D's library by its fixed name.
 
-## Checksums (SHA-256), 0.1.0
+## Checksums (SHA-256)
+
+0.2.0, in `windows/`, `linux/` and `mattini-0.2.0/`:
 
 ```
 91724f15024a3a545e28ccd83134403d31ce2323a38e51c95e4dfa282f732ab6  windows/mattini.exe
-9fca1a21e74196a378303f51414c848d7e94db511ddd66adfb06140ff7117b00  windows/mattini.pck
+ca4a17bdedbe9756c2112d9613e23070b6d4c84b96087913d18607f956b52172  windows/mattini.pck
 40900e649c3c6c7619c383d28732c3e2e8dc87c2938de43b29122a668aedcf86  windows/libterrain.windows.release.x86_64.dll
 2c78919325d7f29fa7607287c7c1eeac367ea4c94e7b8b6f5f4c6b20492f73d0  linux/mattini.x86_64
-9fca1a21e74196a378303f51414c848d7e94db511ddd66adfb06140ff7117b00  linux/mattini.pck
+ca4a17bdedbe9756c2112d9613e23070b6d4c84b96087913d18607f956b52172  linux/mattini.pck
 e79ebb2e48a63a5d6189a825f1d63ec847319dc8fa030936d95bf6fad8f294ef  linux/libterrain.linux.release.x86_64.so
 ```
 
-The two `.pck` files are the same file. `mattini.exe` and `mattini.x86_64` are Godot
-4.6.3's own release templates, unchanged; the two libraries are Terrain3D 1.0.2's, as
-vendored on `main`.
+0.1.0, in `mattini-0.1.0/`: the same executables and libraries, and the `.pck`
+`9fca1a21e74196a378303f51414c848d7e94db511ddd66adfb06140ff7117b00`.
+
+The two `.pck` files of a version are the same file. `mattini.exe` and `mattini.x86_64`
+are Godot 4.6.3's own release templates, unchanged; the two libraries are Terrain3D
+1.0.2's, as vendored on `main`.
 
 ## Credits
 
-Terrain data © swisstopo. The game's pause screen carries the credits in full: the data's
-attribution and the licences of Godot and its components and of Terrain3D.
+Terrain and building data © swisstopo. The game's pause screen carries the credits in
+full: the data's attribution and the licences of Godot and its components, of Terrain3D
+and of godot-cpp (compiled into Terrain3D's library; 0.1.0 lacked its notice).
