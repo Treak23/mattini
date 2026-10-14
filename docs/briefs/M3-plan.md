@@ -56,7 +56,25 @@ Dependency note: lane C adds the one new dependency, Pillow, for the photo's JPE
 lands in the same wave, so it adds none: the surfaces step writes its PNG with a small
 writer on Python's own zlib (SPEC §8, the surfaces).
 
+**Hints for every lane** (measured in design's rehearsals of both waves, 2026-10-14; each
+would have stopped a lane's gate):
+
+- M2-01's area census forbids the area's name anywhere in `pipeline/mattini/`, comments
+  included: write "the area", never its name.
+- fiona is imported only inside the function that reads a FileGDB (M3-01's
+  `test_fiona_import.py` walks every module of the package).
+- The gate runs `ruff format --check` and `gdformat --check`: format before committing.
+- A docstring or comment that no longer says what the code does is a Hard Rule 2 breach no
+  census sees (the rehearsal's throwaways left stale ones in `lock.py` and `terrain.py`):
+  re-read the ones your change touches.
+- The real village's steps run on one machine shared by seven sessions: keep a step's peak
+  memory near design's (M3-04's is a gate: under 2 GB).
+
 ## Integration notes (the seams the orchestrator checks; lesson 8)
+
+Design rehearsed both waves on throwaway implementations before the GO (the agents' notes:
+the pipeline lanes landed in order, then M3-13, gate exit 0 with 1'007 pytest tests; the
+game and tools lanes, then M3-14). The seams below are the ones they hit.
 
 **After wave 1** (every lane landed; pull `main`; the full gate on the combined head, to a log):
 
@@ -82,6 +100,15 @@ writer on Python's own zlib (SPEC §8, the surfaces).
    counts the scripts present, so wave 1's new ones raise it; the run summary and the version
    line are still required.
 5. **Pillow** is in `pipeline/uv.lock` (lane C), and `uv lock --check` passes.
+6. **`datasets.py`** is edited by M3-01 and M3-03 in the same loop (one lane, in order): the
+   edition rule first, then the `resolution_m` check for `swissalti3d`, `swissimage` and
+   `swisssurface3d`.
+7. **The lock seam:** M3-03's `test_expected_inputs_m3.py` checks the four step configs'
+   `computed_for` against the committed lock; the steps' own tests read no committed lock.
+8. **The TLM's two readers:** M3-07 reads swissTLM3D through M3-06's `read_tlm` and its
+   adapter (integer millimetres to metres); the trees' chunks must still be design's.
+9. **The allowlist:** every lane's appended line is present once (M3-08, M3-09, M3-10,
+   M3-11, M3-12), and no entry holds `Ignoring script` or `Failed to load script` (M3-02).
 
 **After wave 2:**
 
