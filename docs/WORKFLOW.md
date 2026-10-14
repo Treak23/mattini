@@ -11,8 +11,10 @@ follow.
 
 Open a fresh Claude Code session on this repo and type one line:
 
-- **`design`** — everything before the build: ideas, feedback discussion, "this looks
-  wrong", what's next, the arc plan, briefs and their pinning tests, the review plan.
+- **`design`** — everything before the build: it checks the open items and feedback,
+  researches, and recommends the next arc; you answer; it writes the arc plan, briefs,
+  pinning tests and review plan, and waits for your **GO**. Nothing is coded before it.
+  Say GO there and it starts the build session for you.
 - **`ultracode build`** — the arc's orchestrator: spawns parallel builder sessions per the
   arc plan, integrates their work, runs the reviews the design wrote, fixes, and ships the
   release.
@@ -133,8 +135,9 @@ it could have been built at once, and parallel work that collides in the same fi
    plan groups), as many at once as the wave holds, then patches the landings together on
    `main`: the full gate on the combined head, and the seams between briefs fixed
    (lesson 8).
-3. **A design session is per PHASE, not per day:** plan-and-brief in one. The build
-   carries the arc from the go to the release.
+3. **A design session is per arc:** check, research, recommend, prepare, then the
+   owner's GO (DESIGN.md §A design session). The build carries the arc from the GO to the
+   release.
 4. **A session's cost is its context times its calls** (lesson 32): the orchestrator stays
    small (status lines, the board, reports by path), and hands off to a fresh
    `ultracode build` session when its context grows large; the board carries the arc.

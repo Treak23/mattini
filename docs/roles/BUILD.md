@@ -26,7 +26,11 @@ Takes the arc from the go to the release, as wide in parallel as the arc plan al
 1. **Orient.** Sync `main`. Read `CLAUDE.md`, the `[build]` and `[all]` lessons,
    `brain.md` §Key files and §Hazards, the board, `docs/briefs/<arc>-plan.md`, every
    brief's status line (`grep ^Status: docs/briefs/`) and `BLOCKED.md` §Open. Briefs
-   themselves only as a decision needs them; your builders read them.
+   themselves only as a decision needs them; your builders read them. The plan's status
+   reads `GO` (the design session recorded the owner's GO), or `READY` and the owner
+   started you by typing `ultracode build`, which is the GO: set `Status: GO (<date>, the
+   owner)`, commit, push. Neither → the owner has not given the GO; say so and stop.
+   At the release, set `Status: DONE (<version or sha>)`.
 2. **Spawn a wave.** For every lane of the current wave whose briefs are OPEN and have no
    `Builder:` line: write `Builder: <brief ids> · <session id> · since <UTC>` on the board
    (commit and push BEFORE the spawn), then `create_session` with `source_revision` AND
