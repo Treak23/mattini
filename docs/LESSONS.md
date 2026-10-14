@@ -4,7 +4,9 @@ Seeded from start.md Part 5 (I1–I32, renumbered 1–32 in the same order); app
 arc close with the date and the incident. Numbers are never reused or renumbered.
 Build reads `[build]` + `[all]`; design all. The `[build]` lessons were retagged
 `[build]` when the supervisor role was removed (owner, 2026-10-14): the orchestrating
-build session does that work now. Their wording keeps the history.
+build session does that work now. Their incidents stay as written; where a lesson's
+mechanism (supervisor, waker, ticks, an hourly cron) disagrees with `docs/roles/BUILD.md`,
+BUILD.md wins, and the *Now:* line under the lesson says what holds.
 
 1. `[all]` **Output that LOOKS done is the worst failure class.** Plausible placeholders, a
    comment claiming a protection nobody wired, a gate that cannot fail, a status line with
@@ -80,6 +82,8 @@ build session does that work now. Their wording keeps the history.
     that was meant to fix it. What holds is structural: one hourly cron Routine armed at the
     arc's start and deleted at its end, nothing that has to be remembered per turn. (The
     chain itself was later retired for costing more than it caught — lesson 26.)
+    *Now:* the orchestrator keeps one `send_later` check-in armed while lanes run, and
+    every builder reports its landing (BUILD.md §The orchestrator 3).
 
 15. `[design]` **The design realm writes no production code.** The one exception ever taken
     — a one-line fix, last in the arc, reviewed by nobody, with no commit-hash status —
@@ -119,7 +123,8 @@ build session does that work now. Their wording keeps the history.
 22. `[build]` **A dead app and a nice-to-have must not look identical.** "critical:
     crashes on startup" sat for hours at equal weight with an export nicety, and the only
     clock in the process had disabled itself at the close. The `Impact:` field, the `!`
-    commit prefix, the inbox read at step 0 of every tick. (A 24-hour post-release watch was
+    commit prefix, the inbox read at the start of every session that plans (step 0 of
+    every tick then; design's check now, DESIGN.md §A design session). (A 24-hour post-release watch was
     added then and retired by the owner within two weeks: breakage after a publish reaches
     the design chat as their own message, and no Routine outlives its arc.)
 
@@ -139,11 +144,13 @@ build session does that work now. Their wording keeps the history.
 
 26. `[build]` **Supervision must cost less than the work.** One day, two projects: each
     design session spent five to six times its builders, most of a weekly budget, almost all
-    of it answering a single dot — two twenty-hour Fable sessions, each holding a very large
+    of it answering a single dot — two twenty-hour design sessions, each holding a very large
     context, each woken by an hourly cron AND a 30-minute chain, roughly fifty wakes apiece
     re-reading the whole conversation. The work itself (nineteen briefs, three review
     rounds) was cheap beside it. One tick per hour; a design session per phase; the arc run
-    by an Opus supervisor, never the Fable chat; the ratio measured at every close.
+    by a supervisor, never the design chat; the ratio measured at every close. *Now:* a
+    design session per arc that ends at the owner's GO; the arc run by the build
+    orchestrator, never the design chat (WORKFLOW §Parallel by design).
 
 27. `[build]` **A rate-limited session is not dead, and a landing is a sha on GitHub.**
     Two watchdog errors in one day: a builder stopped on its usage limit was read as dead
@@ -175,7 +182,10 @@ build session does that work now. Their wording keeps the history.
     asks only for what is genuinely design — one push carrying the options, answerable with
     a word in its standing session (the waker's, since lesson 32), which is the ruling. What
     it still may never do: write production code, change a brief's shape, touch the owner's
-    data or schema, or rule from an unmeasured premise (lesson 12).
+    data or schema, or rule from an unmeasured premise (lesson 12). *Now:* the build
+    orchestrator decides (BUILD.md §The orchestrator 5); it may write the seam fixes of
+    step 4 and nothing else outside a brief; questions go to the owner by one push each
+    and are answered in `design`.
 
 30. `[build]` **Silence is not a status.** Four times in one arc a supervisor reported
     the absence of a signal as a state: a builder dead on a permission prompt shown as
@@ -203,7 +213,10 @@ build session does that work now. Their wording keeps the history.
     together. A short leg of the same job had cost a fortieth of that: the mechanism is
     length, not the role. The structural fix: nothing that supervises lives for the arc
     except a waker that reads only status lines; the work runs in a fresh tick session per
-    due wake, and the board carries the arc between sessions.
+    due wake, and the board carries the arc between sessions. *Now:* the orchestrator
+    stays small (status lines, the board, reports by path), builders and reviewers run in
+    their own sessions, and it hands off to a successor when its context grows large
+    (BUILD.md §Hand-off).
 
 33. `[all]` **Two runs compared in one minute on one machine cannot see what changes by
     day or by machine.** Every Hard Rule 5 test of arc M0 wrote twice in one run and

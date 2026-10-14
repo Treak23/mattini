@@ -127,20 +127,21 @@ it could have been built at once, and parallel work that collides in the same fi
 
 1. **Design plans for parallelism** (DESIGN.md §The arc plan): it cuts the arc into briefs
    along file and dependency boundaries so that as many as possible can be built at the
-   same time in separate sessions, and groups them into waves in `docs/briefs/<arc>-plan.md`.
-   Briefs in one wave share no file in their Scope and do not depend on each other; a
-   later wave starts when the one before it has landed and been integrated.
+   same time in separate sessions, and groups them into lanes (one builder session each)
+   and waves in `docs/briefs/<arc>-plan.md`. The lanes of one wave share no file in their
+   Scope and do not depend on each other; a later wave starts when the one before it has
+   landed and been integrated.
 2. **Build parallelises as far as the plan allows** (BUILD.md §The orchestrator): one
-   `ultracode build` session spawns a builder session per brief (or per lane of briefs the
-   plan groups), as many at once as the wave holds, then patches the landings together on
+   `ultracode build` session spawns a builder session per lane, every lane of a wave at
+   once, then patches the landings together on
    `main`: the full gate on the combined head, and the seams between briefs fixed
    (lesson 8).
 3. **A design session is per arc:** check, research, recommend, prepare, then the
    owner's GO (DESIGN.md §A design session). The build carries the arc from the GO to the
    release.
 4. **A session's cost is its context times its calls** (lesson 32): the orchestrator stays
-   small (status lines, the board, reports by path), and hands off to a fresh
-   `ultracode build` session when its context grows large; the board carries the arc.
+   small (status lines, the board, reports by path), and hands off to a successor when
+   its context grows large (BUILD.md §Hand-off); the board carries the arc.
 
 ## The reading list per role
 

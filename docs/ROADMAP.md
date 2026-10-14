@@ -65,9 +65,9 @@ Nothing deferred: the inbox is empty.
 - A session's checkout is shallow, and its local `main` can be an old ref that `git pull`
   calls diverged (brain.md H14): the spawn prompts' sync line handles it since M2
   planning.
-- Two M1 tick sessions were not archived at the close, because the auto-mode classifier
-  refused it: `session_01Nf7BgWfr9p8KWviRiSQHKG` (tick 5) and
-  `session_01X6QWucdq2PdcnnthGwjLX9` (tick 7). For the owner, from the session list.
+- Two M1 sessions of the former supervisor were not archived at the close, because the
+  auto-mode classifier refused it: `session_01Nf7BgWfr9p8KWviRiSQHKG` and
+  `session_01X6QWucdq2PdcnnthGwjLX9`. For the owner, from the session list.
 
 ## Later
 

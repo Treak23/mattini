@@ -26,8 +26,9 @@ conversation. WORKFLOW §Rules about rules governs every reading of every rule h
    into it after every push.
 2. Read `CLAUDE.md`, `brain.md`, `docs/WORKFLOW.md`, `docs/ROADMAP.md`, `docs/LESSONS.md`,
    `docs/history/LEDGER.md`. Other histories: one section when a question needs it.
-3. Check `docs/briefs/` status lines, `BLOCKED.md` §Open, the board's *decisions for the
-   close* and `Builder:` lines, and `docs/feedback/INBOX.md` §Open. Read
+3. Check `docs/briefs/` status lines, `BLOCKED.md` §Open, the board's *Decisions for
+   design to audit* (keep or reverse each; a reversal is a brief and a RULINGS line, then
+   the line goes) and its `Builder:` and `Orchestrator:` lines, and `docs/feedback/INBOX.md` §Open. Read
    `docs/history/RULINGS.md` before answering any question.
 4. Then: §A design session, in order.
 
@@ -40,7 +41,8 @@ conversation. WORKFLOW §Rules about rules governs every reading of every rule h
    lifecycle).
 3. **Answers to `BLOCKED.md` are commits.** In the same commit the answered block moves to
    `docs/history/blocked/<date>-<n>.md` and gets one index line per question in
-   `docs/history/RULINGS.md`.
+   `docs/history/RULINGS.md`; the brief goes back to `Status: OPEN`. If the arc's build
+   stopped on the question, the owner's GO restarts it (§A design session, step 6).
 4. **Every arc has a plan** (§The arc plan): its waves for parallel building and its
    review plan. Reviews are designed here and run by the build; their findings that need
    design come back as BLOCKED questions, answered like any other.
@@ -107,11 +109,13 @@ cut decides how fast the arc goes (WORKFLOW §Parallel by design).
   each a shared fixture (`tests/shared/`) and pinned interface so both sides can be built
   against it before the other exists, and keep files that many briefs would touch (the
   manifest, `main.gd`, `gate.sh`) in as few briefs as possible.
-- **Waves.** Wave 1 holds every brief that can start now; each later wave holds the
-  briefs that need an earlier one landed. Within a wave, no two briefs share a file in
-  their Scope and none depends on another; check both from the briefs' Scope and Depends
-  on lines. Briefs that must run in order on the same files form one lane (one builder
-  session works them in order).
+- **Lanes and waves.** A lane is one builder session: one brief, or briefs that must run
+  in order on the same files. Wave 1 holds every lane that can start now; each later wave
+  holds the lanes that need an earlier wave landed. Between the lanes of one wave no two
+  briefs share a file in their Scope and none depends on another; check both from the
+  briefs' Scope and Depends on lines. Inside a lane, briefs may share files and depend on
+  each other in order.
+- **Owner briefs.** A `Builder: owner` brief says whether it blocks the close.
 - **Integration notes.** For each wave, the seams the orchestrator must check when the
   lanes land (lesson 8): which outputs meet which readers, and the test that proves it.
 - **The review plan.** The rounds per WORKFLOW §Review policy: each area's tier, each
