@@ -97,6 +97,12 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   it loads `res://.gutconfig.json` by default, and a committed one with
   `"failure_error_types": []` switches its error tracking off (G-04). The gate closes all
   three since M1-02: the summary line, the `ERROR` scan, `-gconfig=` (its runs b, c, d).
+  Measured at M3 planning (2026-10-14): a test that prints `= Run Summary` and the pass
+  line itself, then quits, passed the whole gate with no allowlist entry; an allowlist entry
+  could except `Ignoring script`; GUT counts an inner test class as one more script; GUT
+  prints its own version as `GUT version:  9.6.1` (two spaces). Brief M3-02's fixes: the
+  script count must equal the `test_*.gd` files on disk, the not-run lines are never
+  excepted, the version line is required.
 - **H9 — Small traps, each measured.** GNU grep treats output holding a NUL byte as binary
   and prints `binary file matches` instead of the lines, exit 0, so a scan without `-a` goes
   blind (G-07; Godot's `print` replaces NUL, native GDExtension output may not). Godot's

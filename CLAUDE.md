@@ -34,7 +34,10 @@ with no assert fail it. An error line known to be benign is excepted only in
 `tools/gate_allowlist.txt`, globally or scoped to one test script, by a text specific
 enough (12 characters at least, never a bare scan prefix such as `ERROR`). The gate also
 refuses a `pipeline/uv.lock` out of step with `pyproject.toml`, any Godot but 4.6.3 and
-any GUT but 9.6.1.
+any GUT but 9.6.1. From brief M3-02 on, it also requires GUT's own `GUT version:  9.6.1`
+line and a script count equal to the `test_*.gd` files under `game/tests/` (so no inner
+test classes), never excepts `Ignoring script` or `Failed to load script`, and strips a CR
+at a line's end before every scan.
 There is no never-happen rule (the owner chose none, 2026-09-24); the code that
 guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on both sides,
 the pipeline's determinism) MUST have tests, mutation-proved.
@@ -48,8 +51,8 @@ renders or looks right; the owner's PC is the visual test (brain.md §Hazards).
   plugin 1.0.2 (vendored in `game/addons/terrain_3d/`). Game tests: GUT 9.6.1 (vendored in
   `game/addons/gut/`). GDScript lint: gdtoolkit 4.5.0. Versions and sources: SPEC §Stack.
 - Python 3.13 via uv for `pipeline/`, lockfile `pipeline/uv.lock` committed; libraries
-  (GDAL/rasterio, numpy, pyproj, shapely, trimesh, laspy) each confirmed by the design
-  realm before it is added.
+  (GDAL/rasterio, numpy, pyproj, shapely, trimesh, laspy; Pillow for the photo's JPEG
+  from M3-04) each confirmed by the design realm before it is added.
 - **Forbidden:** Google Maps Platform content of any kind (its terms forbid storing,
   shipping or deriving assets from it); any geodata whose licence does not allow
   redistribution in a shipped game.
@@ -62,11 +65,15 @@ config/datasets.json swisstopo datasets: collection, pinned edition, attribution
 config/datasets.lock.json  the pinned tile checksums, written by `mattini lock` (from M1-01)
 config/terrain.json  the in-game terrain spacing per area, its expected heights (from M2-01)
 config/buildings.json the expected building chunks per area (from M2-04)
+config/photo.json, roofs.json, surfaces.json, trees.json  the M3 steps' expected values,
+                     design's data (the steps from M3-04 to M3-07)
 pipeline/            Python data pipeline (offline, re-runnable); package `mattini`
 data/                raw and intermediate downloads — git-ignored
 game/                Godot project (project.godot)
 game/addons/         vendored plugins (Terrain3D, GUT) — committed, SPEC §Storage
-game/assets/generated/  pipeline output: terrain + manifest — git-ignored, regenerated
+game/textures/       CC0 detail textures from Poly Haven, with LICENSE.txt (from M3-10)
+game/assets/generated/  pipeline output: terrain, buildings + manifest (photo, roofs,
+                     surfaces, trees from M3-13) — git-ignored, regenerated
 build/               exports made by tools/export.sh — git-ignored (from M1-06)
 tests/shared/        fixtures read by both pipeline and game tests (the seam)
 tools/gate.sh        the standard gate

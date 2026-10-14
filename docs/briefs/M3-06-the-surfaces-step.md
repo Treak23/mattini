@@ -96,6 +96,9 @@ command line and the manifest come in wave 2 (M3-13).
    At 0.2 m: road 74'744 m², path 47'654 m², water 40'737 m², rock 408'266 m². Measured end
    to end on the real zip: 22.6 s, 575 MB. fiona 1.10.1 (GDAL 3.9.2) reads the zip directly;
    its member names use backslashes, and that works.
+7. **fiona is imported inside `read_tlm`,** never at module level. M3-01's pinned
+   `test_fiona_import.py` (lane A) imports every module of the package and requires that no
+   fiona module is loaded; at wave 1's integration it covers `surfaces.py`.
 
 ## Scope — files you may touch
 

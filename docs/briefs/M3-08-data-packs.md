@@ -134,8 +134,11 @@ other new test files under `game/tests/`. Not `main.gd`, not the pipeline, not t
 
 ## Depends on
 
-M3-02 (the same lane, landed just before this brief: `export.sh`, `gate.sh`,
-`gate_allowlist.txt`). It shares no file with any other wave-1 lane.
+M3-02 (the same lane, landed just before this brief: `export.sh`, `gate.sh`). Keep its
+pinned tools tests green: `test_export_checks.py` runs the real `export.sh` with stand-ins,
+and its stand-in export writes real packs for step 4c (measured with design's throwaway of
+this brief: 7 passed). It shares no file with any other wave-1 lane but the allowlist's
+appended lines.
 
 ## Done when (gates)
 

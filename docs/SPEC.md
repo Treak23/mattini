@@ -339,8 +339,13 @@ places heights in the world (WORKFLOW §Review policy).
   (`json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`, UTF-8).
   The step and `manifest` compare both before any output, and refuse a difference as what
   it is: a changed world or adopted new inputs, a design change after which design
-  recomputes the expected values, never a fault of the machine or the code. An area's keys
-  are exactly `computed_for`, `expected_sha256` and `spacing_m`.
+  recomputes the expected values, never a fault of the machine or the code. Their order
+  (from brief M3-01, M2 V1-P-01 and P-07): the world, then the lock's fit, then the inputs,
+  then provenance and files (the step) or the block (`manifest`). The fit is one rule for
+  download, step and `manifest`: the entry's collection, edition and resolution are the
+  datasets config's, and it pins exactly the area's tiles or sheets; an unfitting lock is
+  refused naming `python -m mattini lock <x>` and no other command. An area's keys are
+  exactly `computed_for`, `expected_sha256` and `spacing_m`.
 - *The game:* `TerrainGrid` reads the block and the file, checks the file's size and
   SHA-256 and the block against its own manifest (not the box against the world config's
   area: `manifest` is the one check of the box, rows and columns, M2-06, and every
@@ -742,6 +747,50 @@ design realm proposes and the owner reacts through `feedback`):**
   `swissbuildings3d 2020, © swisstopo`), then the software licences, godot-cpp's included
   (D17).
 - *Not in M2:* collision and walking (M6), names or picking of buildings.
+
+**M3's game (planned 2026-10-14; the owner's look (a), §13 rows 29–34; briefs M3-09 to
+M3-12, M3-14):**
+
+- *Look:* realistic, from data.
+  - The terrain shows the 2023 aerial photo at 0.2 m (`PhotoGrid`, the override shader
+    `terrain_photo.gdshader`: uv from the world position, roughness 0.95, a neutral colour
+    outside the photo).
+  - On it, swissTLM3D's classes (`SurfaceGrid`): roads with a CC0 asphalt grain and paths
+    with gravel, both fading out by 150 m; water darker (albedo × 0.6), smooth (roughness
+    0.05), with two drifting noise normal maps; steep rock (blended in between 35° and 55°)
+    with a triplanar CC0 rock texture tinted to the photo's colour.
+  - Roofs in the colour the photo gives each building (an sRGB vertex colour). Walls one
+    neutral plaster (0.78, 0.76, 0.72), roughness 0.9: a labelled placeholder (§13 row 31).
+  - Trees: one procedural conifer per tree the LiDAR found, scaled to its height and crown
+    radius, its crown coloured from the photo at its position. A generic conifer, labelled:
+    the data gives no species.
+  - Colours enter only through `source_color` samplers and uniforms, or vertex colours
+    marked sRGB, never as raw instance data (brain.md H21).
+- *Light:* the sun at azimuth 183°, elevation 52°, where it stood when the photo was taken
+  (from its shadows and the flight time, 7 September 2023 about 11:30 UTC), so the
+  photo's baked shadows agree with the game's. Tonemap exposure 0.54 and sky ambient
+  contribution 0.25 (Filmic, as M2's): calibrated under the Compatibility renderer so that
+  flat sunlit ground renders at the photo's brightness (measured 1.06×). Forward+ on the
+  owner's GPU is the real check.
+- *Loading:* after the terrain and the buildings come the photo, the surfaces, the trees and
+  the roof colours, each read by its own reader and checked against its manifest and
+  world. A refused or missing block opens the error panel with the refusal and the commands
+  that fix it, and the rest still shows: the terrain falls back to M2's clay without its
+  photo, the trees take a placeholder green, the roofs M2's roof colour. In an exported
+  build the panel says instead to keep `mattini.pck` and the `mattini-*.pck` packs beside
+  the executable and to download the release folder again. One startup line per block,
+  after the packs' lines.
+- *Credits:* the dataset lines from the blocks (`swissalti3d 2024`, `swissbuildings3d
+  2020`, `swissimage 2023`, `swisssurface3d 2021-2022`, `swisstlm3d 2026-02`, each
+  `© swisstopo`), the CC0 textures by name and author (`game/textures/LICENSE.txt`), the
+  placeholder notes (the walls, the trees, the streams' assumed width), then the software
+  licences.
+- *Cost, measured in software:* the village scene builds in about 6 s (2.9 s in M2) and
+  peaks at about 2.4 GiB, with 1.2 GiB of texture memory; the trees are about 34'000
+  instances of 192 triangles in 250 m cells, each cell drawn to 3 km. GPU time is the
+  owner's PC's to measure.
+- *Not in M3:* close-range detail for meadows, scree and forest floor (option b), façades,
+  species, railways, cable cars, names; the moving sun (M4); walking (M6).
 
 ## 11. Delivery (owner, day one: option b)
 
