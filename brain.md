@@ -259,6 +259,15 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   `[remap]\n\nimporter="keep"\n` stops both: 5.8 s, the image left and shipped as it is. The
   steps that write images write it beside them (M3-04, M3-06); `tools/export.sh` step 4c
   checks that every generated file ships once, unchanged (M3-08).
+- **H25 — Terrain3D's material and texture imports, headless (measured at M3 planning,
+  2026-10-14).** `Terrain3DMaterial.get_shader_param()` returns null headless for every
+  uniform; the readable store is the material's `_shader_parameters` Dictionary, which keeps
+  only uniforms the active shader declares (a parameter set before `shader_override` is
+  dropped) and does not check their types; a shader's declarations read through
+  `Shader.get_shader_uniform_list()`. A texture imported without settings is lossless and has
+  no mipmaps (`compress/mode=0`, `mipmaps/generate=false`; "detect 3D" reimports only in the
+  editor): a committed texture that needs mipmaps carries its `.import` file. A SceneTree
+  script that fails in `_initialize` can hang without quitting: wrap such runs in `timeout`.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 
