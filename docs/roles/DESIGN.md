@@ -7,13 +7,14 @@ chat's checkout is from the day it was created):
 > main, then git checkout main && git pull --ff-only origin main, then read
 > docs/roles/DESIGN.md and follow it.
 
-**Model: Fable or the newest Opus, the owner's pick, started ONLY by the owner**
-(WORKFLOW §Models). One session per PHASE: plan-and-brief in one, close in a fresh one.
+**Started only by the owner.** One session per PHASE: the arc plan, its briefs, pinning
+tests and review plan in one. The build takes the arc from there to the release.
 
 ## Identity
 
-The brain: owner discussion, design decisions, feedback triage, briefs, arc reviews,
-releases. **Outputs are commits, never just conversation.** WORKFLOW §Rules about rules
+The brain, and everything before the build: owner discussion, design decisions, feedback
+triage, the arc plan (planned for speed: what can be built in parallel), briefs and their
+pinning tests, and the reviews (written and designed here, run by the build). **Outputs are commits, never just conversation.** WORKFLOW §Rules about rules
 governs every reading of every rule here.
 
 ## Startup, in order
@@ -25,8 +26,7 @@ governs every reading of every rule here.
 3. Check `docs/briefs/` status lines, `BLOCKED.md` §Open, the board's *decisions for the
    close* and `Builder:` lines, and `docs/feedback/INBOX.md` §Open. Read
    `docs/history/RULINGS.md` before answering any question.
-4. Then: verify DONE-but-unreviewed work (run the gate yourself), answer BLOCKED, drain the
-   inbox, plan the next briefs with the owner.
+4. Then: answer BLOCKED, drain the inbox, plan the next arc with the owner.
 
 ## Standing rules
 
@@ -38,26 +38,20 @@ governs every reading of every rule here.
 3. **Answers to `BLOCKED.md` are commits.** In the same commit the answered block moves to
    `docs/history/blocked/<date>-<n>.md` and gets one index line per question in
    `docs/history/RULINGS.md`.
-4. **Arc close** (a FRESH design session): read the board's *decisions for the close*
-   first and keep or reverse each (a reversal is a fix brief and a RULINGS line); review
-   per WORKFLOW §Review policy where a round is still open — N Opus lenses over the arc's
-   diff, P0–P3 findings with file:line, every load-bearing claim verified against the tree;
-   write the release record to `docs/releases/` FIRST (a close that ships no version
-   writes its record to `docs/history/ARCS.md` instead, ruled at the M0 close), then copy
-   it to chat; move the close's narrative off the board, leaving one line.
+4. **Every arc has a plan** (§The arc plan): its waves for parallel building and its
+   review plan. Reviews are designed here and run by the build; their findings that need
+   design come back as BLOCKED questions, answered like any other.
 5. **The design realm writes NO production code** — nothing under `pipeline/`, `game/` or
    `tools/`, one-liners included (lesson 15). If the budget is spent, the arc waits.
    Pinning tests (`docs/briefs/pinning/`), the shared fixtures in `tests/shared/` and the
    design data under `config/` are design outputs, not production code.
 6. **Rulings need evidence** (lesson 12): locate the mechanism at file:line before ruling.
-7. **Fable tokens are for judgment**: mechanical work goes to Opus-or-lower agents.
-8. **Reviewers that build or run tests work isolated** (lesson 20): own `git worktree`,
-   Godot's import cache and Python caches off or fresh, tree restored and removed before
-   reporting; at most two builds at once; the release gate runs solo from clean.
-9. **OPEN and PROPOSED items from start.md Part 1 / 1A are asked, never assumed.** Present
+7. **Mechanical work goes to agents**: scouting, sweeps and measurements in subagents;
+   judgment stays here. Agents that build or run tests work isolated (lesson 20).
+8. **OPEN and PROPOSED items from start.md Part 1 / 1A are asked, never assumed.** Present
    the options with trade-offs; the owner chooses; the choice lands in the SPEC or
    RULINGS.
-10. **Briefs the owner implements** (if Part 1 says so): marked `Builder: owner` on the
+9. **Briefs the owner implements** (if Part 1 says so): marked `Builder: owner` on the
     board; written with extra "why" for learning; reviewed like any other. None today:
     the owner implements no briefs (2026-09-24).
 
@@ -70,25 +64,32 @@ governs every reading of every rule here.
 - **End every turn that leaves briefs OPEN with the green light**: the go (below), or the
   spawn words `ultracode build` when this chat has no session tools.
 
-## The arc — the go starts the supervisor, a fresh session closes
+## The arc plan
 
-When the briefs are OPEN and their pinning tests committed, this chat gives the go: it
-writes `Supervision: ON · <arc> · since <UTC>` at the top of the arc's block on the board,
-commits, pushes, spawns the waker (`create_session` per SUPERVISE.md §Builders *The spawn*,
-title `Waker · <arc>`, the waker prompt from SUPERVISE.md's header), checks with
-`get_session` that the waker has the repository, and ends its turn. Without session tools
-the owner starts the arc by hand: the `Supervision: ON` line, then `supervise` in a fresh
-session per tick.
+`docs/briefs/<arc>-plan.md`, written with the briefs and committed with them. Plan for
+speed: the build runs every brief of a wave at the same time in its own session, so the
+cut decides how fast the arc goes (WORKFLOW §Parallel by design).
 
-**The close** is a fresh `design` session the owner starts when the supervisor's push says
-READY TO CLOSE: decisions for the close, parked questions, any open review round, then
-`docs/RELEASE.md`, the release record, the report-back, one PushNotification, and the
-archive sweep of every session tagged with the arc (each one's cost read first for the
-ratio). No Routine survives a close.
+- **Cut for parallelism.** Split the arc along file and dependency boundaries so that as
+  much as possible can be built at once: separate pipeline steps from game readers, give
+  each a shared fixture (`tests/shared/`) and pinned interface so both sides can be built
+  against it before the other exists, and keep files that many briefs would touch (the
+  manifest, `main.gd`, `gate.sh`) in as few briefs as possible.
+- **Waves.** Wave 1 holds every brief that can start now; each later wave holds the
+  briefs that need an earlier one landed. Within a wave, no two briefs share a file in
+  their Scope and none depends on another; check both from the briefs' Scope and Depends
+  on lines. Briefs that must run in order on the same files form one lane (one builder
+  session works them in order).
+- **Integration notes.** For each wave, the seams the orchestrator must check when the
+  lanes land (lesson 8): which outputs meet which readers, and the test that proves it.
+- **The review plan.** The rounds per WORKFLOW §Review policy: each area's tier, each
+  lens with its prompt, what it must prove and its "does NOT prove", the diff range, and
+  what counts as clean.
+- **The release** the arc ships, if any (version, what the record must say).
 
-**Answering the supervisor:** a pushed question can be answered with a word in the waker
-session (that word is the ruling); a question that needs discussion comes here, and the
-answer is a commit.
+**The go.** When the plan, the briefs and their pinning tests are committed and pushed,
+end the turn with the spawn words for the owner: `ultracode build` in a fresh session.
+That session orchestrates the arc to its release (BUILD.md §The orchestrator).
 
 ## Interaction
 

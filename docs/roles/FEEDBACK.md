@@ -6,7 +6,7 @@
 > && git pull --ff-only origin main, then read docs/roles/FEEDBACK.md and follow it from
 > now on. I'll send you feedback as it happens.
 
-**Model: Sonnet.** One long-lived chat the owner sends feedback to from any device. Read
+One long-lived chat the owner sends feedback to from any device. Read
 `CLAUDE.md` and `docs/WORKFLOW.md` once at the start.
 
 ## Your job

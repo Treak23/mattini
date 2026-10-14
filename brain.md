@@ -215,8 +215,10 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   not an error.
 
 ## 8. PROCESS
-Three realms and a supervisor (`docs/WORKFLOW.md`, `docs/roles/`). Spawn words `design`,
-`ultracode build`, `supervise`, `feedback`. `main` is the only source branch (`dist` holds
+Three realms (`docs/WORKFLOW.md`, `docs/roles/`). Spawn words `design`, `ultracode build`,
+`feedback`. Design does everything before the build and plans each arc for parallel
+building; one `ultracode build` orchestrator spawns builder sessions per wave, integrates,
+runs the design's review plan and ships (owner, 2026-10-14). `main` is the only source branch (`dist` holds
 builds). M2 ran instead in one session with in-session workflow agents, by the owner's
 word for M2 (RULINGS 2026-09-25); the realms' sessions are the default again unless the
 owner says otherwise. State lives in the repo, never in chat. Pinning tests travel with their brief under `docs/briefs/pinning/`

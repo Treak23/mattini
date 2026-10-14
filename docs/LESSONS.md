@@ -2,7 +2,9 @@
 
 Seeded from start.md Part 5 (I1–I32, renumbered 1–32 in the same order); appended at every
 arc close with the date and the incident. Numbers are never reused or renumbered.
-Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; design all.
+Build reads `[build]` + `[all]`; design all. The `[build]` lessons were retagged
+`[build]` when the supervisor role was removed (owner, 2026-10-14): the orchestrating
+build session does that work now. Their wording keeps the history.
 
 1. `[all]` **Output that LOOKS done is the worst failure class.** Plausible placeholders, a
    comment claiming a protection nobody wired, a gate that cannot fail, a status line with
@@ -41,7 +43,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
    The property is the rule: if the commit can run when the gate did not pass, it is wrong
    however it is spelled.
 
-8. `[supervise]` **The seams BETWEEN briefs are where a green suite lies.** Each brief's
+8. `[build]` **The seams BETWEEN briefs are where a green suite lies.** Each brief's
    gates green; the worst defects lived in their interactions (one brief's new layer outran
    another's resting rules). Rounds probe brief PAIRS — who moved under whom.
 
@@ -61,7 +63,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     rule states who it binds and what harm it prevents; a reading that ends in refusing the
     owner is presumptively a misreading; deferrals are said aloud.
 
-12. `[supervise]` **Rulings need evidence.** A ruling on an unmeasured premise cost an
+12. `[build]` **Rulings need evidence.** A ruling on an unmeasured premise cost an
     executor session to disprove (the timing was pixel readback, not drawing). Locate the
     mechanism at file:line before ruling; and "is the owner exposed on the build they hold?"
     is answered only by a measurement at that build's commit — the inspection answer was
@@ -73,7 +75,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     a real blocker; questions are plain text; reports say what changed for the owner, not
     for the build.
 
-14. `[supervise]` **A rule that depends on remembering is not a guard.** The watchdog's
+14. `[build]` **A rule that depends on remembering is not a guard.** The watchdog's
     30-minute chain lapsed five times in one night, the fifth within hours of the reminder
     that was meant to fix it. What holds is structural: one hourly cron Routine armed at the
     arc's start and deleted at its end, nothing that has to be remembered per turn. (The
@@ -104,7 +106,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     ninety-eight failures that are nobody's. One mutation per run, full isolation, and read
     the failure TEXT before believing a count in either direction.
 
-20. `[supervise]` **Reviewers that run builds work in isolation.** Three lenses on a shared
+20. `[build]` **Reviewers that run builds work in isolation.** Three lenses on a shared
     tree plus a poisoned build cache produced phantom compile errors; five concurrent builds
     plus a gate ran the container out of memory. Own worktree, cache off, at most two builds
     at once, the release gate solo.
@@ -114,7 +116,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     the owner to throw away, and bugs were re-reported. One inbox on `main`; the release
     record is a file and the chat message is its copy.
 
-22. `[supervise]` **A dead app and a nice-to-have must not look identical.** "critical:
+22. `[build]` **A dead app and a nice-to-have must not look identical.** "critical:
     crashes on startup" sat for hours at equal weight with an export nicety, and the only
     clock in the process had disabled itself at the close. The `Impact:` field, the `!`
     commit prefix, the inbox read at step 0 of every tick. (A 24-hour post-release watch was
@@ -135,7 +137,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
 25. `[all]` **Measured beats plausible.** The blur "obviously too expensive" cost 0.35 ms;
     the grain "obviously fine" tanked the frame. Numbers or it did not happen.
 
-26. `[supervise]` **Supervision must cost less than the work.** One day, two projects: each
+26. `[build]` **Supervision must cost less than the work.** One day, two projects: each
     design session spent five to six times its builders, most of a weekly budget, almost all
     of it answering a single dot — two twenty-hour Fable sessions, each holding a very large
     context, each woken by an hourly cron AND a 30-minute chain, roughly fifty wakes apiece
@@ -143,7 +145,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     rounds) was cheap beside it. One tick per hour; a design session per phase; the arc run
     by an Opus supervisor, never the Fable chat; the ratio measured at every close.
 
-27. `[supervise]` **A rate-limited session is not dead, and a landing is a sha on GitHub.**
+27. `[build]` **A rate-limited session is not dead, and a landing is a sha on GitHub.**
     Two watchdog errors in one day: a builder stopped on its usage limit was read as dead
     and a duplicate spawned — the original resumed on its own after the reset; and a listing
     of three commits that no fetch, reflog or API ever carried was acted on as a landing.
@@ -162,7 +164,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     three reads afterwards: roughly 35, 30 and 140 KB — and nothing was lost, because the
     move was verbatim and byte-accounted.
 
-29. `[supervise]` **The supervisor decides what the record already decides.** Born the same
+29. `[build]` **The supervisor decides what the record already decides.** Born the same
     day, from the other half of the same bill: of the thirty-odd questions filed in ten
     days, about half had their answer already in a brief, the spec, a hard rule or an
     earlier ruling — and each one stopped a builder and cost the owner an expensive design
@@ -175,7 +177,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     it still may never do: write production code, change a brief's shape, touch the owner's
     data or schema, or rule from an unmeasured premise (lesson 12).
 
-30. `[supervise]` **Silence is not a status.** Four times in one arc a supervisor reported
+30. `[build]` **Silence is not a status.** Four times in one arc a supervisor reported
     the absence of a signal as a state: a builder dead on a permission prompt shown as
     *running*; a dead-builder diagnosis written from one status field, when the spawn had
     attached no repository at all (the owner saw it at a glance: the session sat under the
@@ -194,7 +196,7 @@ Builders read `[build]` + `[all]`; the supervisor `[supervise]` + `[all]`; desig
     Four of the five were caught by executors who measured, filed and built the right thing
     (lesson 6 working).
 
-32. `[supervise]` **A session's cost is its context times its calls.** One supervisor
+32. `[build]` **A session's cost is its context times its calls.** One supervisor
     session ran a forty-two-hour arc: its context grew to 700K tokens (a board it re-read
     every tick and largely wrote itself, a review file pasted verbatim), every model call
     re-read all of it, and it cost more than the twenty-three builder sessions it ran

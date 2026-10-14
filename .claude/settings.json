@@ -1,9 +1,6 @@
 {
   "effortLevel": "xhigh",
   "autoCompactWindow": "400k",
-  "env": {
-    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-opus-5-5"
-  },
   "hooks": {
     "SessionStart": [
       {

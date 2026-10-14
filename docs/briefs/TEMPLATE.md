@@ -26,8 +26,8 @@ necessities named in the commit message.>
 
 ## Depends on
 
-<Brief ids, or "none". The supervisor uses this and Scope to decide whether two builders
-may run at once.>
+<Brief ids, or "none". The arc plan uses this and Scope to put briefs that may be built at
+the same time, in separate sessions, into one wave.>
 
 ## Done when (gates)
 

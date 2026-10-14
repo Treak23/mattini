@@ -68,7 +68,6 @@ Walk it top to bottom before any version bump.
 - [ ] The board updated (shipped line, OPEN list, DEFERRED list); the close's narrative
       moved to `docs/history/`.
 - [ ] No Routine left running.
-- [ ] The supervision ratio (design spend vs builder spend) in the record.
 
 ## E. When the owner reports a broken build
 

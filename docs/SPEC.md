@@ -575,6 +575,7 @@ line stays on every visual gate.
 | 25 | Vector library | fiona confirmed (pyogrio cannot read the layer) | Design, delegated (CLAUDE.md §Stack) |
 | 26 | The buildings' file format | A raw mesh per 1 km chunk (`.bin`, float32 vertices then uint32 triangles), not glTF: Godot imports a `.glb` under `res://` and an export ships the imported copy, not the file (measured), while a `.bin` ships as it is, like the terrain's `.f32`, and the game checks its SHA-256 | Design (the architecture's "glTF" was a sketch; the owner may reverse) |
 | 27 | How M2 is run | In one session: design, build, review and close with in-session agents; no spawned waker, ticks or builders. The session pushes to `main` as usual | Owner (RULINGS 2026-09-25; "push to main") |
+| 28 | The process (2026-10-14) | No model named in the repo: the one the owner picks for the chat applies, spawns inherit it (replaces row 13's models). No supervisor. Design is everything before the build and plans each arc for parallel sessions; the `ultracode build` orchestrator spawns builders per wave, integrates, runs the design's review plan and ships. No limit of two builders | Owner (RULINGS 2026-10-14) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not

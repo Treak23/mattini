@@ -1,9 +1,9 @@
 # WORKFLOW.md — the three-realm process
 
-The expensive model goes where judgment matters, the cheaper model where tokens burn, and
-the repo, never chat history, carries state between sessions. This file is the shared
-skeleton; each realm's rules live in its role doc (`docs/roles/DESIGN.md`, `BUILD.md`,
-`SUPERVISE.md`, `FEEDBACK.md`). Rules cite lessons by number (`docs/LESSONS.md`); lessons
+Design decides everything before the build, the build runs it as wide in parallel as the
+plan allows, and the repo, never chat history, carries state between sessions. This file
+is the shared skeleton; each realm's rules live in its role doc (`docs/roles/DESIGN.md`,
+`BUILD.md`, `FEEDBACK.md`). Rules cite lessons by number (`docs/LESSONS.md`); lessons
 1–32 are the ones the process was born with (start.md Part 5, I1–I32), this project's own
 follow.
 
@@ -11,13 +11,13 @@ follow.
 
 Open a fresh Claude Code session on this repo and type one line:
 
-- **`design`** — ideas, feedback discussion, "this looks wrong", what's next, reviews,
-  releases.
-- **`ultracode build`** — a builder: works every OPEN brief to green, then stops.
+- **`design`** — everything before the build: ideas, feedback discussion, "this looks
+  wrong", what's next, the arc plan, briefs and their pinning tests, the review plan.
+- **`ultracode build`** — the arc's orchestrator: spawns parallel builder sessions per the
+  arc plan, integrates their work, runs the reviews the design wrote, fixes, and ships the
+  release.
 - **`feedback`** — the clerk: send bugs, ideas and screenshots as they happen; it answers
   only "Filed as FB-NNN".
-- **`supervise`** — normally started for you by the design chat at an arc's go; typed by
-  hand it runs one tick, which is how you nudge an arc that seems stuck.
 
 A reopened old chat is a time capsule (its checkout is from the day it was created):
 re-send the word; if it flounders, paste the fallback prompt from the role doc's header.
@@ -43,23 +43,15 @@ shares or trades to need your approval (§Permissions).
 
 ## Models
 
-- **Design = Fable or the newest Opus, the owner's pick, started ONLY by the owner.** No
-  agent, Routine or session ever spawns Fable.
-- **Build = the newest Opus (ultracode). Supervise = the newest Opus. Feedback = Sonnet.**
-- **Every spawn names the full id** (`claude-opus-5-5`, the current Opus id on 2026-09-24),
-  never an alias; when a newer model ships, the design realm bumps the id everywhere it is
-  written.
-- **Anything an agent spawns runs Opus or lower.** `.claude/settings.json` sets the default
-  subagent model to the same full id, so an in-session subagent spawned with no model
-  named never inherits Fable; a cheaper one is named `sonnet` or `haiku` on the call.
-- **Fable tokens are for judgment:** scouting, sweeps, draft passes and review lenses go to
-  Opus-or-lower agents.
+The model is the one the owner picks when starting the chat. No doc, setting or spawn in
+this repo names or pins one; a session or agent a session spawns passes no model and
+inherits its parent's.
 
-**Effort per role** (the defaults; the owner accepted them on 2026-09-24): design `max` (the effort dropdown;
-drop to `xhigh` only when the usage limit bites); build and supervise `xhigh` (spawned
-sessions take `effortLevel` from `.claude/settings.json`, which also sets in-session
-subagents); feedback `high`. Never set `CLAUDE_CODE_EFFORT_LEVEL` in the environment: it
-overrides everything.
+**Effort per role** (the defaults; the owner accepted them on 2026-09-24): design `max`
+(the effort dropdown; drop to `xhigh` only when the usage limit bites); build `xhigh`
+(spawned sessions take `effortLevel` from `.claude/settings.json`, which also sets
+in-session subagents); feedback `high`. Never set `CLAUDE_CODE_EFFORT_LEVEL` in the
+environment: it overrides everything.
 
 ## Permissions — unattended after the owner's go
 
@@ -126,34 +118,45 @@ Hard Rules 4 and 5 only (below).
   (`mattini-<version>/`, RELEASE.md §C; delivery (b), the owner's choice on 2026-09-24).
   0.1.0 is the first version, so before the second there is nothing to roll back to.
 
-## Supervision must cost less than the work
+## Parallel by design
 
-1. **The supervisor is a waker plus fresh ticks** (SUPERVISE.md): the waker holds one
-   hourly cron dead-man and, while builders run, one 30-minute one-shot; builders wake it
-   after a landing; each tick is a fresh session, so no context grows with the arc
-   (lesson 32).
-2. **A design session is per PHASE, not per day:** plan-and-brief in one, close in a fresh
-   one.
-3. **Nothing the design realm spawns runs higher than Opus**; the arc runs on the Opus
-   waker and ticks once the design chat's turn has ended.
-4. **The supervisor decides what the record already decides** (SUPERVISE.md §What the
-   supervisor decides); the owner's word in the waker session is a ruling.
-5. **At most two builders at once**, only on briefs that share no file and no dependency.
+Speed comes from the plan. Harm prevented: an arc built one brief at a time when most of
+it could have been built at once, and parallel work that collides in the same files.
 
-Measured at every close and written into the release record: design spend against
-builder spend. If supervision is the larger number, the arc was run wrong.
+1. **Design plans for parallelism** (DESIGN.md §The arc plan): it cuts the arc into briefs
+   along file and dependency boundaries so that as many as possible can be built at the
+   same time in separate sessions, and groups them into waves in `docs/briefs/<arc>-plan.md`.
+   Briefs in one wave share no file in their Scope and do not depend on each other; a
+   later wave starts when the one before it has landed and been integrated.
+2. **Build parallelises as far as the plan allows** (BUILD.md §The orchestrator): one
+   `ultracode build` session spawns a builder session per brief (or per lane of briefs the
+   plan groups), as many at once as the wave holds, then patches the landings together on
+   `main`: the full gate on the combined head, and the seams between briefs fixed
+   (lesson 8).
+3. **A design session is per PHASE, not per day:** plan-and-brief in one. The build
+   carries the arc from the go to the release.
+4. **A session's cost is its context times its calls** (lesson 32): the orchestrator stays
+   small (status lines, the board, reports by path), and hands off to a fresh
+   `ultracode build` session when its context grows large; the board carries the arc.
 
 ## The reading list per role
 
 Every role reads at startup only what its role doc names. The board
 (`docs/ROADMAP.md`) holds open items only; `BLOCKED.md` holds Open only; answered
 questions live in `docs/history/blocked/`, indexed one line each in
-`docs/history/RULINGS.md` (read BEFORE filing a question). Lessons are tagged: builders
-read `[build]` + `[all]`, the supervisor `[supervise]` + `[all]`, design all of them.
+`docs/history/RULINGS.md` (read BEFORE filing a question). Lessons are tagged: build
+reads `[build]` + `[all]`, design all of them.
 Histories (`docs/history/`, `docs/feedback/ARCHIVE.md`) are opened one section at a time
 when a decision needs them, never at startup (lesson 28).
 
 ## Review policy — two tiers
+
+**The design realm writes and designs the reviews; the build runs them.** Each arc plan
+carries its review plan (DESIGN.md §The arc plan): the rounds, the tier of each area, the
+lenses with their prompts, what each must prove, and the diff range. The orchestrating
+build session runs the lenses as the plan says, adjudicates the reports, fixes what the
+rules below call for, and ships. A review question the plan does not answer is a BLOCKED
+question for design.
 
 - **Tier 1 — `config/world.json` and the coordinate transforms** (pipeline, manifest and
   game sides). Adversarial rounds until clean, fixes mutation-proved in both directions,
@@ -191,5 +194,6 @@ briefs; the pinned copies stay as the record.
 
 ## Releases
 
-`docs/RELEASE.md` is walked top to bottom before any version bump. Release records live
+The build ships: the orchestrating `ultracode build` session walks `docs/RELEASE.md` top
+to bottom before any version bump. Release records live
 in `docs/releases/`; the chat report-back is a copy of the record.

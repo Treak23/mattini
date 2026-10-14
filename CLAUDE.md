@@ -116,13 +116,15 @@ These bind the agents. The owner's explicit word overrides any of them except ru
   reported (what they said, what was wrong, what changed, which version), kept separate
   from what the review found. Plain text.
 
-## Process: three realms and a supervisor (`docs/WORKFLOW.md`)
+## Process: three realms (`docs/WORKFLOW.md`)
 
-Design sessions write briefs + pinning tests into `docs/briefs/` and review arcs
-(`docs/roles/DESIGN.md`); executor sessions implement them under `docs/roles/BUILD.md` —
-no design authority, ambiguity goes to `docs/briefs/BLOCKED.md`, done = the brief's gates
-green; the supervisor (a waker plus a fresh tick per due wake) spawns and checks builders
-under `docs/roles/SUPERVISE.md`; the clerk files feedback under `docs/roles/FEEDBACK.md`.
+Design sessions do everything before the build (`docs/roles/DESIGN.md`): the arc plan,
+cut for speed into waves of briefs that can be built in parallel sessions, the briefs and
+their pinning tests in `docs/briefs/`, and the review plan. Build sessions run it under
+`docs/roles/BUILD.md`: one orchestrator spawns a builder session per lane, patches the
+landings together, runs the reviews the design wrote, fixes, and ships the release — no
+design authority, ambiguity goes to `docs/briefs/BLOCKED.md`, done = the brief's gates
+green. The clerk files feedback under `docs/roles/FEEDBACK.md`.
 If you have been pointed at a brief, you are an executor and BUILD.md binds you. A brief
 marked `Builder: owner` on the board is the owner's to implement; no agent takes it (the
 owner takes none today, 2026-09-24).
@@ -131,11 +133,8 @@ owner takes none today, 2026-09-24).
 first run `git fetch --unshallow origin main || git fetch origin main`, then
 `git checkout main && git pull --ff-only origin main` (brain.md H14), then read
 the role doc and follow it: `design` → `docs/roles/DESIGN.md` · `ultracode build` →
-`docs/roles/BUILD.md` · `supervise` → `docs/roles/SUPERVISE.md` · `feedback` →
-`docs/roles/FEEDBACK.md`. Default models (WORKFLOW §Models): design = Fable or the newest
-Opus, started only by the owner; build and supervise = the newest Opus; feedback =
-Sonnet. Every spawn names the full model id. Anything an AGENT spawns runs Opus or lower,
-never Fable.
+`docs/roles/BUILD.md` · `feedback` → `docs/roles/FEEDBACK.md`. The model is the one the
+owner picks when starting the chat; spawns name none and inherit it (WORKFLOW §Models).
 
 **Rules about rules** (`docs/WORKFLOW.md`): rules bind the agents, never the owner; the
 owner's explicit word overrides any process rule except no-secrets and no unrecoverable
