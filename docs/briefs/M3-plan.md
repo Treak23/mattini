@@ -1,6 +1,6 @@
 # M3 — Surfaces and trees: the arc plan
 
-Status: READY — waiting for the owner's GO (given in advance, RULINGS 2026-10-14; design's last check of the review's fixes runs, then design sets GO)
+Status: GO (2026-10-14, the owner)
 
 **Base:** the commit that set this status line (its message starts `docs: M3 GO`; `git log
 --grep '^docs: M3 GO' -1`). It is the base of integration note 1 and of the review's diff
@@ -54,7 +54,7 @@ lane reads it.
 
 | Lane | Briefs | Files |
 |---|---|---|
-| H · pipeline wiring | M3-13 the new steps on the command line and in the manifest | `pipeline/mattini/__main__.py`, `manifest.py`, `lock.py`, the `entries_sha256` calls in `roofs.py` and `trees.py`, the three M2 fixture manifests, their tests |
+| H · pipeline wiring | M3-13 the new steps on the command line and in the manifest | `pipeline/mattini/__main__.py`, `manifest.py`, `lock.py`, the fit checks in `photo.py`, `roofs.py`, `surfaces.py`, `trees.py` (onto `lock.fit_problem`) and the `entries_sha256` calls in `roofs.py` and `trees.py`, the three M2 fixture manifests, their tests |
 | I · the scene | M3-14 the main scene: the new data, the sun, the light, the credits | `game/scripts/main.gd`, `game/main.tscn`, `game/export_presets.cfg` (include filters), `tools/export.sh` (steps 2 and 6), `tools/gate_allowlist.txt` (six lines), `game/tests/test_main_scene*.gd`, `test_scene_placement.gd`, `complete_world.gd`, `test_release_settings.gd`, `pipeline/tests/fake_tools.py`, `test_export_startup_lines.py` |
 
 The one shared file of wave 1 is `tools/gate_allowlist.txt`, append-only. Briefs M3-08,
@@ -84,6 +84,9 @@ would have stopped a lane's gate):
   names a prefix, so no two lanes add the same file.
 - Every brief's Scope also covers its own brief file (its Status line and Findings) and its
   screenshots, `docs/briefs/shots/<brief id>-*.jpg`.
+- Wave 1's visual briefs (M3-09 to M3-12) may skip their screenshots: the main scene draws
+  their work only from M3-14 (M3-12's walls at once). M3-14 and the after-wave-2 step take
+  them (design's departure from WORKFLOW's screenshot rule and SPEC §12, 2026-10-14).
 - Never name another lane's test file in a comment or docstring: M3-01's census fails when
   the file has not landed yet. Name the brief instead.
 - Lanes C and D check the lock's fit in their own step modules in wave 1, importing only
@@ -133,7 +136,8 @@ game and tools lanes, then M3-14). The seams below are the ones they hit.
     BuildingRoofs); `TreeLoader.TREES_NOTE` and `BuildingLoader.WALLS_NOTE` hold their
     briefs' texts (pinned); lane A's modules still hold the names M3-01 decision 10 keeps;
     `RoofsError` is a ValueError; each step refuses a missing download naming its
-    `download` command before writing anything (M3-13's pinned CLI test).
+    `download` command before writing anything, a missing provenance before any progress
+    line (M3-13's pinned CLI test).
 
 **After wave 2:**
 

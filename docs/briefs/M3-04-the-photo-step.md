@@ -41,7 +41,8 @@ wave 2 (M3-13): this brief exposes the functions they will call, exactly as name
    - `check_photo_config(data, where="the photo config") -> None`, raising PhotoError, as
      `check_terrain_config` does;
    - `cell_key(cell_m) -> str`: "0.2", "0.5" or "1", the keys of `expected_pixels_sha256` and
-     `expected_sha256` (as `terrain.spacing_key`);
+     `expected_sha256`, written in `photo.py` as `terrain.spacing_key` is (`format(cell_m,
+     "g")`), not imported: M3-01 does not keep that name;
    - `photo_grid(mosaic, box, cell_m)` (pure);
    - `encode_jpeg(pixels)`; `jpeg_encoder() -> str`, "Pillow <version>, libjpeg-turbo
      <version>", the text the JPEG refusal names;
@@ -61,15 +62,16 @@ wave 2 (M3-13): this brief exposes the functions they will call, exactly as name
    - `computed_for`'s world first, then the lock's fit, then its inputs, the world and the
      inputs as design changes.
    - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
-     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
-     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock photo`. It imports
+     module, by the fit rule (SPEC §8, as §5 applies it to the downloads):
+     swissimage's collection, edition and `resolution_m` are the datasets config's, and it
+     pins exactly the area's tiles, naming `python -m mattini lock photo`. It imports
      no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
      changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
      moves the step onto it in wave 2.
-   - **A missing download** (no `provenance.json`, or a file it lists absent) is refused
-     before any `progress` call and before anything is created under `out_dir`, not even a
-     folder, naming `python -m mattini download photo`, as `terrain.py` does. M3-13's pinned CLI test runs the step this
-     way. Not pinned in this lane: write its test.
+   - **A missing download** is refused naming `python -m mattini download photo`, before anything is created under
+     `out_dir`, not even a folder: no `provenance.json` before any `progress` call, as
+     `terrain.py` does; a file it lists absent when it is read. M3-13's pinned CLI test runs the
+     step on an empty raw folder. Not pinned in this lane: write its test.
    - Then the pixels: "this machine or this code computes other pixels than design's …".
    - Then the JPEG: "the pixels are design's; this machine's JPEG encoder writes other bytes:
      Pillow <v>, libjpeg-turbo <v> …".
@@ -110,8 +112,8 @@ wave 2 (M3-13): this brief exposes the functions they will call, exactly as name
 `pipeline/mattini/photo.py` (new) · `pipeline/pyproject.toml` and `pipeline/uv.lock`
 (Pillow only) · `pipeline/tests/`: the three pinned copies (`test_photo_fixture.py`,
 `test_photo_build_tiles.py`, `test_photo_expected.py`) and your own new `test_photo_*.py`.
-Read-only: everything else, including `terrain.py` and `download.py` (import their public
-functions; change none).
+Read-only: everything else, including `terrain.py` and `download.py`: import only the names
+M3-01 keeps (its decision 10); change none.
 
 ## Depends on
 

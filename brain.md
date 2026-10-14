@@ -4,7 +4,7 @@ Orientation for any session. Current as of **2026-10-14 — version 0.2.0 shippe
 Buildings: the village terrain at 0.5 m in Terrain3D with its 1'486 buildings as a white
 model, a free-fly camera, a pause screen with the credits; builds on the `dist` branch).
 M3 (Surfaces and trees: the realistic look from data) is planned and has the owner's GO
-(`docs/briefs/M3-plan.md`); its build runs in parallel sessions after design's last review**
+(`docs/briefs/M3-plan.md`); its build runs in parallel sessions**
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 

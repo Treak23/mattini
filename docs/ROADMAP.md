@@ -6,7 +6,7 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**M3 Surfaces and trees — GO (2026-10-14, the owner); design's last review of the plan runs, then the build.** The plan is
+**M3 Surfaces and trees — GO (2026-10-14, the owner); the build runs.** The plan is
 `docs/briefs/M3-plan.md`: fourteen briefs in two waves (wave 1 seven sessions at once, wave 2
 two), the review plan and the release 0.3.0: the village in a realistic look made from
 swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
@@ -38,7 +38,7 @@ Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0,
 M1 and M2 are closed.
 
-1. M3 Surfaces and trees — ARC, GO (`docs/briefs/M3-plan.md`)
+1. M3 Surfaces and trees — ARC, building (`docs/briefs/M3-plan.md`)
 2. M4 Sun cycle — ARC
 3. M5 Scale up — ARC
 4. M6 Weather and walking — ARC

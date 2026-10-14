@@ -26,6 +26,7 @@ measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
 
 import hashlib
+import json
 import os
 import shutil
 import stat
@@ -37,13 +38,24 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 BASH = shutil.which("bash")
 GODOT_VERSION = "4.6.3.stable.official.7d41c59c4"
-# game/project.godot's version, as export.sh reads it: the export tree copies that file, so a
-# release's version bump changes the startup lines and these stand-ins with it.
-VERSION = next(
-    line.split("=", 1)[1].strip().strip('"')
-    for line in (REPO / "game" / "project.godot").read_text(encoding="utf-8").splitlines()
-    if line.startswith("config/version=")
-)
+
+
+def _project_version(path: Path) -> str:
+    """application/config/version from project.godot, the value export.sh's lines carry."""
+    section, version = "", None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1]
+        elif section == "application" and line.startswith("config/version="):
+            version = json.loads(line.split("=", 1)[1])
+    if version is None:
+        raise RuntimeError(f"{path} has no application/config/version")
+    return str(version)
+
+
+# The export tree copies game/project.godot, so a release's version bump changes the
+# startup lines and these stand-ins with it.
+VERSION = _project_version(REPO / "game" / "project.godot")
 
 FAKE_GODOT = r"""#!/usr/bin/env bash
 # A stand-in for Godot 4.6.3 (pipeline/tests/fake_tools.py).

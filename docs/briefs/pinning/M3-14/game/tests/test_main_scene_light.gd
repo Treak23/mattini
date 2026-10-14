@@ -4,17 +4,19 @@ extends GutTest
 ##
 ## Pinned decisions (m3-design.md §8; docs/SPEC.md §10, M3's game): the fixed sun ("Sun")
 ## shines from azimuth 183 degrees (clockwise from LV95 north) at an elevation of 52
-## degrees: the photo's sun, measured from its shadows and its flight time, 7 September 2023
-## at about 11:30 UTC. It replaces M2's 150 and 35 degrees (this test replaces
-## test_main_scene.gd's M2 sun test). Its direction is measured through WorldConfig, never
-## assumed: in a world whose axes are not the owner's the sun turns with them. It casts
-## shadows. The Environment keeps M2's sky (background and ambient light from the sky) and
-## the Filmic tonemapper, the mode the calibration was measured with; its exposure is 0.54
-## and the sky's share of the ambient light 0.25: design's calibration, under which flat
-## sunlit ground renders at 1.063 times the photo's linear luminance (Compatibility,
-## software rendering, 2026-10-14). 183 degrees is asymmetric on purpose: its east-west
-## mirror, 177 degrees, puts the sun 0.06 east of where it is (the test's tolerance is
-## 0.0001), and an azimuth counted from the south or counter-clockwise lands elsewhere too.
+## degrees: the photo's sun, measured from its shadows (its flight time, 7 September 2023 at
+## about 11:30 UTC, gives 181 and 50 degrees by the solar position formulas, within the
+## shadows' measuring error; the shadows' values are kept). It replaces M2's 150 and 35
+## degrees (this test replaces test_main_scene.gd's M2 sun test). Its direction is measured
+## through WorldConfig, never assumed: in a world whose axes are not the owner's the sun
+## turns with them. It casts shadows. The Environment keeps M2's sky (background and ambient
+## light from the sky) and the Filmic tonemapper, the mode the calibration was measured
+## with; its exposure is 0.54 and the sky's share of the ambient light 0.25: design's
+## calibration, under which flat sunlit ground renders at 1.063 times the photo's linear
+## luminance (Compatibility, software rendering, 2026-10-14). 183 degrees is asymmetric on
+## purpose: its east-west mirror, 177 degrees, puts the sun 0.06 east of where it is (the
+## test's tolerance is 0.0001), and an azimuth counted from the south or counter-clockwise
+## lands elsewhere too.
 ##
 ## Does NOT prove: that anything renders or looks right (no GPU); the calibration itself
 ## (measured in software, not on the owner's Forward+ GPU).

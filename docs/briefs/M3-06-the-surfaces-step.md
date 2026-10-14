@@ -78,11 +78,17 @@ command line and the manifest come in wave 2 (M3-13).
    - the read, after which (size, mtime_ns, inode) must be unchanged (a 2.88 GB file is read
      through its path, not from bytes in memory).
    - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
-     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
-     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock tlm`. It imports
+     module, by the fit rule (SPEC §8, as §5 applies it to the downloads):
+     swisstlm3d's collection and edition are the datasets config's (the entry pins one
+     national file, no tiles), naming `python -m mattini lock tlm`. It imports
      no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
      changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
      moves the step onto it in wave 2.
+   - **A missing download** is refused naming `python -m mattini download tlm`, before anything is created under
+     `out_dir`, not even a folder: no `provenance.json` before any `progress` call, as
+     `terrain.py` does; the zip it lists absent when it is read. M3-13's pinned CLI test runs the
+     step on an empty raw folder. The no-provenance case is pinned (`test_surfaces_step.py`); write the test of the
+     progress order.
 4. **The PNG** is 8-bit grey with no interlace, filter byte 0 on every row, one zlib stream
    at level 9 in IDAT chunks of at most 1 MiB, values 0–4.
    - Its content is pinned (`pixels_sha256`); its bytes depend on the zlib build, so they

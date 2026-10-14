@@ -63,15 +63,17 @@ the manifest come in wave 2 (M3-13).
      SHA-256 is that of the canonical `{"swissbuildings3d": …, "swissimage": …}` object;
      write a small helper for it (M3-13 moves it into `lock.py`).
    - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
-     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
-     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock buildings` or `lock photo`. It imports
+     module, by the fit rule (SPEC §8, as §5 applies it to the downloads):
+     swissbuildings3d's collection and edition are the config's and it pins exactly the
+     area's sheets (`download.area_sheets`); swissimage's collection, edition and
+     `resolution_m` are the config's and it pins exactly the area's tiles, naming `python -m mattini lock buildings` or `lock photo`. It imports
      no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
      changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
      moves the step onto it in wave 2.
-   - **A missing download** (no `provenance.json`, or a file it lists absent) is refused
-     before any `progress` call and before anything is created under `out_dir`, not even a
-     folder, naming `python -m mattini download buildings`, then `download photo` (the datasets in sorted order), as `terrain.py` does. M3-13's pinned CLI test runs the step this
-     way. Not pinned in this lane: write its test.
+   - **A missing download** is refused naming `python -m mattini download buildings` or `download photo`, the first missing in sorted dataset order, before anything is created under
+     `out_dir`, not even a folder: no `provenance.json` before any `progress` call, as
+     `terrain.py` does; a file it lists absent when it is read. M3-13's pinned CLI test runs the
+     step on an empty raw folder. Not pinned in this lane: write its test.
 5. **The file:** `roofs/<area>.json` (sorted keys, 2-space indent, UTF-8, LF, final newline,
    through a `.part` rename) = exactly {area, chunks: [{buildings: [{roof, roof_pixels,
    triangles, uuid, vertices}] in chunk order, tile}] by tile, format `roofs-v1`, lv95_box,

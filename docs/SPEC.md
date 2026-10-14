@@ -192,9 +192,10 @@ download stopped at 1.08 GB (Ctrl-C, and `kill -9`) resumed with one Range reque
 verified.
 
 *Measured entries (2026-10-14):* `entry_sha256` swissimage 415ed9bc…, swisssurface3d
-f73033b1…, swisstlm3d aa909f98… (every file's SHA-256 is in brief M3-03's decision 7 and
-its pinned `test_measured_photo_surface_tlm.py`, which compares the committed lock with
-them).
+f73033b1…, swisstlm3d aa909f98… (every file's SHA-256 is in brief M3-03's pinned `test_measured_photo_surface_tlm.py`,
+which compares the committed lock with them, and in design's notes
+`docs/briefs/sketches/m3-design.md` §1; the entries', the lock's and the provenance files'
+SHA-256s are in the brief's decision 7).
 
 *Decided at M3 planning with the measurements:* `resolution_m` is required for `swissimage` and
 `swisssurface3d`, as for `swissalti3d` (M3-01); the terrain's and the buildings' republish
@@ -345,9 +346,9 @@ places heights in the world (WORKFLOW §Review policy).
   then provenance and files (the step) or the block (`manifest`). The fit is one rule for
   download, step and `manifest`: the entry's collection, edition and resolution are the
   datasets config's, and it pins exactly the area's tiles or sheets; an unfitting lock is
-  refused naming `python -m mattini lock <x>` and no other command. A missing download (no
-  provenance, or a file it lists absent) is refused before any progress line and before
-  anything is written, naming `python -m mattini download <x>`. An area's keys are
+  refused naming `python -m mattini lock <x>` and no other command. A missing download is
+  refused naming `python -m mattini download <x>`, before anything is written: no
+  provenance before any progress line, a file it lists absent when that file is read. An area's keys are
   exactly `computed_for`, `expected_sha256` and `spacing_m`.
 - *The game:* `TerrainGrid` reads the block and the file, checks the file's size and
   SHA-256 and the block against its own manifest (not the box against the world config's
@@ -910,7 +911,8 @@ measured) beside each executable; the presets keep those folders and every `*.pa
 replacing a file already loaded, before the main scene, and prints one line per pack; step
 4c checks that every generated file ships once, unchanged, and that no generated file of
 10 MiB or more stays in `mattini.pck`. Measured on the village with a 0.2 m photo:
-`mattini.pck` 3.4 MB (21.3 MB from M3-14 with the textures), `mattini-terrain.pck`
+`mattini.pck` 3.4 MB before M3-10's textures (21'267'996 bytes with them and M3's other
+generated files, in design's M3-14 rehearsal), `mattini-terrain.pck`
 96'041'728 bytes (8.4 MiB under the limit), `mattini-photo.pck` about 50.2 MB (50'224'444
 bytes in design's last rehearsal, with the final photo description); the Linux build starts
 as fast and as large as without packs. Linux's and Windows' packs are the same bytes, and stay the same across

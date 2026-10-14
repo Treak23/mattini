@@ -81,15 +81,18 @@ base height, height and crown radius. The game (M3-11) stands a procedural conif
    file in this wave). Only the names M3-01 keeps are imported from lane A's modules (its
    decision 10).
    - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
-     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
-     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock terrain`, `lock buildings`, `lock surface` or `lock tlm`. It imports
+     module, by the fit rule (SPEC §8, as §5 applies it to the downloads):
+     swissalti3d's and swisssurface3d's collection, edition (for the surface, `editions`, each
+     tile's edition one of them) and `resolution_m` are the config's and they pin exactly
+     the area's tiles; swissbuildings3d's pins exactly the area's sheets; swisstlm3d's one
+     file, naming `python -m mattini lock terrain`, `lock buildings`, `lock surface` or `lock tlm`. It imports
      no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
      changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
      moves the step onto it in wave 2.
-   - **A missing download** (no `provenance.json`, or a file it lists absent) is refused
-     before any `progress` call and before anything is created under `out_dir`, not even a
-     folder, naming `python -m mattini download terrain`, `download buildings`, `download surface` or `download tlm`, the first missing in sorted dataset order, as `terrain.py` does. M3-13's pinned CLI test runs the step this
-     way. Not pinned in this lane: write its test.
+   - **A missing download** is refused naming `python -m mattini download terrain`, `download buildings`, `download surface` or `download tlm`, the first missing in sorted dataset order, before anything is created under
+     `out_dir`, not even a folder: no `provenance.json` before any `progress` call, as
+     `terrain.py` does; a file it lists absent when it is read. M3-13's pinned CLI test runs the
+     step on an empty raw folder. Not pinned in this lane: write its test.
 5. **The base height** comes from the 0.5 m terrain grid (`terrain.py`'s resampling of the
    DTM), whatever the terrain config's spacing.
 6. **The files:** `trees/<tile>.bin`, then `trees/<area>.json`, each through a `.part`

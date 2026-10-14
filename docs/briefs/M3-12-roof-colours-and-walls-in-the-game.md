@@ -118,7 +118,7 @@ lane C at the same time; they meet at the fixture).
 - [ ] Optional: a software screenshot of the fixture's buildings, or of the real village if
       you build it in scratch, committed under `docs/briefs/shots/M3-12-*.jpg` and named in
       Findings. It is evidence, not a gate. `tools/shot.sh` renders
-      the main scene, which uses this brief's code only from M3-14: render with a throwaway
+      the main scene, which draws the new walls at once but the roof colours only from M3-14: render with a throwaway
       scene kept in scratch (never committed), or skip the shots and say so in Findings.
       - does NOT prove: the Forward+ look on the owner's GPU.
 - [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
