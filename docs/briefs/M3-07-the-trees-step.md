@@ -54,11 +54,15 @@ base height, height and crown radius. The game (M3-11) stands a procedural conif
      progress=None)`;
    - `built_trees_block(out_dir, trees_config, terrain_config, world, world_sha256,
      datasets, lock)`, where the lock is a dict or a path (M3-03's lock lands at the same
-     time).
+     time). A lock that lacks one of the four entries is refused naming its lock command,
+     never a KeyError (measured in design's rehearsal: a traceback).
 3. **The TLM features** reach `build_tree_chunks` as `{uuid, objektart, polygons}`
    (MultiPolygon coordinates as read, rings closed, points (E, N[, H])), so the rule does not
-   depend on M3-06's record form. Read them with M3-06's `read_tlm` and adapt its records in
-   `trees.py`. fiona is imported inside the reading function, never at module level (M3-01's
+   depend on M3-06's record form. Read them with M3-06's `read_tlm`, whose records are
+   {uuid, attributes: {OBJEKTART, …}, geometry: {type, coordinates}} in integer millimetres,
+   and adapt them in `trees.py`: OBJEKTART, and the coordinates divided by 1000 (the rule
+   snaps them back to the same millimetres; design's wave-1 rehearsal wrote the six chunks
+   this way). fiona is imported inside the reading function, never at module level (M3-01's
    pinned `test_fiona_import.py` walks every module of the package).
 4. **Inputs** in M3-03's layout:
    - `<raw_root>/swisssurface3d/2021-2022/` (the six tiles and a provenance with `editions`

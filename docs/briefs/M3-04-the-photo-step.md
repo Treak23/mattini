@@ -69,9 +69,12 @@ wave 2 (M3-13): this brief exposes the functions they will call, exactly as name
    - a JPEG whose SHA-256 is not the block's and design's;
    - a `pixels_sha256` that is not design's;
    - **a missing or different `.import` file beside the JPEG** (not pinned: write its test).
-7. **Memory.** `build_photo` may run `photo_grid` on strips of whole texel rows (the rule
-   counts from the north-west corner, so the bytes are the same). Design's two ways peaked at
-   1.45–1.79 GB for the whole village.
+7. **Memory: under 2 GB on the village.** `build_photo` runs `photo_grid` on strips of whole
+   texel rows (100 m strips: the rule counts from the north-west corner, so the bytes are the
+   same), each strip reading only its windows of the verified tiles. Measured: a whole-area
+   mosaic peaks at 10.5 GB (design's wave-1 rehearsal), strips at 1.6 GB with the same JPEG;
+   design's two ways peaked at 1.45–1.79 GB. Seven lanes run at once on one machine, so the
+   limit is a gate.
 8. **Design's values** (config/photo.json, computed two independent ways, identical bytes):
    - 0.2 m: pixels `00533bc6…`, JPEG `cf83c705…` (50'222'573 bytes);
    - 0.5 m: pixels `1e105d47…`, JPEG `5035fe52…`;
@@ -108,7 +111,8 @@ tile reader: keep it a public function (`read_tiles` or as you name it, document
       until then fetch the six tiles yourself into `<scratch>/swissimage/2023/` and write the
       provenance in the terrain's format), `build_photo` at 0.2 m writes design's JPEG and
       pixels, and at 0.5 m and 1 m (config edited in scratch only) theirs. Record the times and
-      peak memory.
+      the peak memory, which must stay under 2 GB at 0.2 m (`/usr/bin/time -v`, its maximum
+      resident set size).
       - does NOT prove: that the owner's Windows machine decodes the tiles to the same pixels.
         If it does not, the step refuses with the pixels message, and design decides (a
         decoder without GDAL is the measured fallback).

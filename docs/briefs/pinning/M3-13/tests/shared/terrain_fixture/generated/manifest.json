@@ -1,0 +1,63 @@
+{
+  "buildings": null,
+  "photo": null,
+  "roofs": null,
+  "schema": 1,
+  "surfaces": null,
+  "terrain": {
+    "area": "fixture",
+    "columns": 41,
+    "file": "terrain/fixture.f32",
+    "format": "float32-le",
+    "lv95_box": {
+      "e_max": 2601035.0,
+      "e_min": 2601015.0,
+      "n_max": 1199989.5,
+      "n_min": 1199978.0
+    },
+    "rows": 24,
+    "sha256": "fd02c74441317dfb668f79011cb4bae7e76718648a992ec2f26417cca1f26ea2",
+    "source": {
+      "attribution": "© swisstopo",
+      "collection": "ch.swisstopo.swissalti3d",
+      "dataset": "swissalti3d",
+      "edition": "2024",
+      "resolution_m": 0.5,
+      "tiles": [
+        {
+          "sha256": "3ec8b031ffdd941fa130f5f1af5b82710bc105e8ffd903035e9e141f3d8648f9",
+          "tile": "2601-1199"
+        }
+      ]
+    },
+    "spacing_m": 0.5,
+    "world_sha256": "3cab21e5340ae9b87a7b64b5e215728c639362663e3170dd3392499b5e1e5e75"
+  },
+  "trees": null,
+  "world": {
+    "areas": {
+      "fixture": {
+        "e_max": 2601035.0,
+        "e_min": 2601015.0,
+        "n_max": 1199989.5,
+        "n_min": 1199978.0
+      }
+    },
+    "axes": {
+      "x": "+e",
+      "y": "+h",
+      "z": "-n"
+    },
+    "crs": {
+      "horizontal": "EPSG:2056",
+      "vertical": "EPSG:5728"
+    },
+    "height_offset_m": 1000.0,
+    "origin_lv95": {
+      "e": 2600000.0,
+      "n": 1200000.0
+    },
+    "schema": 1
+  },
+  "world_sha256": "3cab21e5340ae9b87a7b64b5e215728c639362663e3170dd3392499b5e1e5e75"
+}

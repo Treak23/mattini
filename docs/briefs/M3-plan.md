@@ -43,7 +43,7 @@ lane reads it.
 
 | Lane | Briefs | Files |
 |---|---|---|
-| H · pipeline wiring | M3-13 the new steps on the command line and in the manifest | `pipeline/mattini/__main__.py`, `manifest.py`, their tests |
+| H · pipeline wiring | M3-13 the new steps on the command line and in the manifest | `pipeline/mattini/__main__.py`, `manifest.py`, `lock.py`, the `entries_sha256` calls in `roofs.py` and `trees.py`, the three M2 fixture manifests, their tests |
 | I · the scene | M3-14 the main scene: the new data, the sun, the light, the credits | `game/scripts/main.gd`, `game/main.tscn`, `tools/export.sh` (step 6's lines), their tests |
 
 The one shared file of wave 1 is `tools/gate_allowlist.txt`, append-only. Briefs M3-08,

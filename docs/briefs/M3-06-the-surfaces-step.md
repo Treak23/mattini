@@ -65,7 +65,9 @@ command line and the manifest come in wave 2 (M3-13).
    - `build_surfaces(world, datasets, lock, surfaces_config, raw_root, out_dir, *,
      progress=None)`;
    - `built_surfaces_block(out_dir, surfaces_config, world, world_sha256, datasets, lock)`,
-     where the lock is a dict or a path (M3-03's lock lands at the same time).
+     where the lock is a dict or a path (M3-03's lock lands at the same time). A lock without
+     a `swisstlm3d` entry is refused naming `python -m mattini lock tlm`, never a KeyError
+     (measured in design's rehearsal: a traceback).
 3. **Inputs:** `<raw_root>/swisstlm3d/2026-02/swisstlm3d_2026-02_2056_5728.gdb.zip` and its
    flat provenance (M3-03's layout). The checks run in SPEC's order:
    - the world, then the lock entry, then the inputs `computed_for`;

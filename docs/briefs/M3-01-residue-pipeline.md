@@ -40,8 +40,11 @@ that let a wrong implementation pass:
 1. **The lock's fit (V1-P-01, V1-P-07, V1-P-02).** The fit is the steps' rule, exact for
    both datasets: the entry's collection, edition and resolution are the datasets config's,
    and it pins exactly the area's tiles (terrain) or sheets (buildings), no more and no
-   fewer. Recommended: one function per dataset in `lock.py`, called by download, the step
-   and `manifest`.
+   fewer. Its one home is a public function in `lock.py`, `fit_problem(lock, datasets, world,
+   area, dataset) -> str | None`: the refusal text, naming `python -m mattini lock <x>`, or
+   None when the entry fits. Download, the step and `manifest` call it (design's decision:
+   M3-03 extends it to the three new datasets, M3-13's manifest calls it for the new
+   blocks). Not pinned by name; name any difference in Findings.
    - The terrain step's own fit becomes exact. Measured: today it accepts an extra tile and
      then says "design recomputes".
    - `built_terrain_block` and `built_buildings_block` check in the step's order: the world,

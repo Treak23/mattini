@@ -69,9 +69,11 @@ live by design's agent on 2026-10-14. In short:
    - swisssurface3d: `editions` in place of `edition`, and each tile's `edition` added;
    - swisstlm3d: flat, exactly {attribution, collection, dataset, edition, file, item, schema,
      sha256, size_bytes, url}.
-5. **The downloads.** Each first checks that the lock's entry fits the config. It then
-   compares every published name and SHA-256 with the lock **before any request for a file
-   and before anything on disk changes**.
+5. **The downloads.** Each first checks that the lock's entry fits the config, through
+   M3-01's `lock.fit_problem`, extended here to `swissimage`, `swisssurface3d` (every tile's
+   edition one of `editions`) and `swisstlm3d` (M3-13's manifest calls it for the new
+   blocks). It then compares every published name and SHA-256 with the lock **before any
+   request for a file and before anything on disk changes**.
    - `download surface` reads only the edition the lock pins per tile; choosing an edition is
      the lock's job.
    - The republish refusal names the configs whose expected values depend on the entry:
@@ -94,8 +96,11 @@ live by design's agent on 2026-10-14. In short:
      per run.
    - Verified, the part takes the file's name. A wrong SHA-256 deletes it and fetches once
      more, then refuses.
-   - A run that cannot finish keeps its part and names `python -m mattini download tlm`. A
-     Ctrl-C is caught and says the same; no traceback.
+   - A run that cannot finish keeps its part and names `python -m mattini download tlm`.
+   - **Ctrl-C** is caught by one handler in `main()`, for every command (design's decision,
+     M3-13 relies on it): one line ``mattini: interrupted: `python -m mattini <command>` did
+     not finish; run it again``, exit 130, no traceback; for `download tlm` the line adds that
+     the part is kept and the next run resumes it.
    - Every TLM refusal starts `swisstlm3d 2026-02: `.
 7. **The measured values** (live, 2026-10-14):
    - `lock.entry_sha256`: swissimage `415ed9bcbee7b5d719f40f5b105204dc38ebc570cd2973ebc9de199d86f30fdd`,

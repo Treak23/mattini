@@ -73,7 +73,8 @@ the manifest come in wave 2 (M3-13).
      count and the sums of triangles and vertices.
 
    It refuses roof colours when no buildings are built. Refusals name
-   `python -m mattini roofs`.
+   `python -m mattini roofs`; a lock without one of the two entries is refused naming its
+   lock command, never a KeyError (measured in design's rehearsal: a traceback).
 7. **Design's value** (config/roofs.json, computed two independent ways, identical bytes):
    - SHA-256 `8d9664b643173eaee7d1980438600c7bcb7dd8d1921346466ec72b716c480db5` (290'006
      bytes);

@@ -1,0 +1,83 @@
+{
+  "buildings": {
+    "area": "fixture",
+    "chunks": [
+      {
+        "buildings": 4,
+        "file": "buildings/2650-1149.bin",
+        "sha256": "c92aa63562cbac79ea9609393d004db07717782f1c8765ae55aea8d44fadb830",
+        "tile": "2650-1149",
+        "triangles": 60,
+        "vertices": 38
+      },
+      {
+        "buildings": 2,
+        "file": "buildings/2650-1150.bin",
+        "sha256": "95234a09b82547ec3b88e77da397a9d91723c0280cd94750cc57d6487e6797eb",
+        "tile": "2650-1150",
+        "triangles": 24,
+        "vertices": 16
+      },
+      {
+        "buildings": 2,
+        "file": "buildings/2651-1150.bin",
+        "sha256": "6e9f02161f8ca0f9eaa19727bb563d41fad22899a0dd3103ee5e924d697ec110",
+        "tile": "2651-1150",
+        "triangles": 26,
+        "vertices": 17
+      }
+    ],
+    "format": "mesh-f32-u32-le",
+    "lv95_box": {
+      "e_max": 2651100.0,
+      "e_min": 2650900.0,
+      "n_max": 1150050.0,
+      "n_min": 1149950.0
+    },
+    "source": {
+      "attribution": "© swisstopo",
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "dataset": "swissbuildings3d",
+      "edition": "2020",
+      "sheets": [
+        {
+          "sha256": "d712603ac18639257e192337973d04457c84294f58bf165f0e96973c1476ba9b",
+          "sheet": "1249-42"
+        }
+      ]
+    },
+    "world_sha256": "e7cd091dc238bc1ba68839c6120d60af5849d0d7923b3798b226480468d5254a"
+  },
+  "photo": null,
+  "roofs": null,
+  "schema": 1,
+  "surfaces": null,
+  "terrain": null,
+  "trees": null,
+  "world": {
+    "areas": {
+      "fixture": {
+        "e_max": 2651100.0,
+        "e_min": 2650900.0,
+        "n_max": 1150050.0,
+        "n_min": 1149950.0
+      }
+    },
+    "axes": {
+      "x": "+e",
+      "y": "+h",
+      "z": "-n"
+    },
+    "crs": {
+      "horizontal": "EPSG:2056",
+      "vertical": "EPSG:5728"
+    },
+    "height_offset_m": 500.0,
+    "origin_lv95": {
+      "e": 2650000.0,
+      "n": 1150000.0
+    },
+    "schema": 1
+  },
+  "world_sha256": "e7cd091dc238bc1ba68839c6120d60af5849d0d7923b3798b226480468d5254a"
+}
