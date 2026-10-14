@@ -86,10 +86,10 @@ Items are addressed by id; assets carry `file:checksum` as a multihash (`1220` +
 | Dataset | STAC collection | What we measured (2026-09-24) | Used for |
 |---|---|---|---|
 | swissALTI3D | `ch.swisstopo.swissalti3d` | 1 km tiles, editions 2019 and 2024 for all six village tiles; COG GeoTIFF at 0.5 m (18.1 MB per tile) and 2 m (1.2 MB); EPSG:2056 + EPSG:5728 (LN02 heights) | Terrain (M1) |
-| swissSURFACE3D | `ch.swisstopo.swisssurface3d` / `…-raster` | LAZ point cloud 213 MB per tile (2021); 0.5 m surface-model COG per tile | Canopy height, steep rock (M3) |
+| swissSURFACE3D | `ch.swisstopo.swisssurface3d` / `…-raster` | LAZ point cloud 169–287 MB per tile; the 0.5 m surface-model COG per tile, 15.5–16.9 MB, one edition per tile (2623-1095 2022, the five others 2021; flown 2021–2022) | The trees (M3): the raster, not the LAZ |
 | swissBUILDINGS3D 3.0 | `ch.swisstopo.swissbuildings3d_3_0` | Current edition (2026) only as ONE national FileGDB of 14.1 GB; per-map-sheet items exist for 2015/2016 and 2020 (sheet 1348-11: 9.1 MB GDB zip; the village's six sheets 14.2 MB together, 14'210'379 bytes, measured 2026-09-25). 2.0 (`ch.swisstopo.swissbuildings3d_2`) has per-sheet DXF up to 2024-05, but 1'272 of its 2'376 village parts are open meshes (measured) | Buildings (M2): the 2020 edition per map sheet, the owner's choice (§8 *The buildings*; §13 row 22) |
-| SWISSIMAGE 10 cm | `ch.swisstopo.swissimage-dop10` | 1 km tiles, 2023 edition: 43.2 MB (0.1 m), 0.2 MB (2 m) | Surface classification (M3) |
-| swissTLM3D | `ch.swisstopo.swisstlm3d` | National only (2026-02): 2.9 GB GDB / 4.8 GB GPKG | Paths, roads, rivers, rail, lifts, land cover (M3) — access route **OPEN** |
+| SWISSIMAGE 10 cm | `ch.swisstopo.swissimage-dop10` | 1 km tiles, editions 2017, 2020, 2023; 2023 flown 6–7 Sep 2023 (~11:30 UTC), its real detail over Zermatt 25 cm published at 10 cm; 43–45 MB per tile (0.1 m, JPEG-in-COG), 0.2 MB (2 m) | The photo on the terrain and the roof colours (M3): edition 2023 at 0.1 m, the owner's choice (§13 rows 29, 30) |
+| swissTLM3D | `ch.swisstopo.swisstlm3d` | National only (2026-02): 2.88 GB FileGDB zip (per-table deflated members), 4.8 GB GeoPackage zip (one deflated 10.8 GB member, unreadable in part) | Roads, paths, water, rock on the terrain and the trees' cleaning (M3): the FileGDB, read from its zip (§13 row 33) |
 | swissNAMES3D | `ch.swisstopo.swissnames3d` | National (2026): CSV/GDB/GPKG/SHP | Place names |
 
 Pinned editions live in `config/datasets.json`; the pipeline never asks for "the latest"
@@ -118,6 +118,89 @@ and again by the M2 review (identical). Adopting a new edition or a republished 
 design change, not a command: after `lock`, design recomputes the expected values in
 `config/terrain.json` and `config/buildings.json` and their `computed_for` (§8), and until
 it does, the steps and `manifest` refuse, saying so (M2 R1 P-02, I-01).
+
+**The photo, the surface model and swissTLM3D (M3 planning, 2026-10-14; brief M3-03).**
+
+*Datasets.* `config/datasets.json` gains `swissimage` (`ch.swisstopo.swissimage-dop10`,
+edition `2023`, `resolution_m` 0.1), `swisssurface3d` (`ch.swisstopo.swisssurface3d-raster`,
+`editions` `["2021", "2022"]`, `resolution_m` 0.5) and `swisstlm3d` (`ch.swisstopo.swisstlm3d`,
+edition `2026-02`), each `© swisstopo`. A dataset names its collection, its attribution and
+exactly one of `edition` (a year `YYYY`, or `YYYY-MM` with the month 01 to 12, as the
+national products are named) or `editions` (a non-empty list of distinct years in ascending
+order: the editions a tile may be published in, exactly one per tile; swissSURFACE3D covers
+the village with two flights, 2623-1095 in 2022 and the five others in 2021, measured).
+Both or neither is refused as "exactly one of edition and editions", naming the file and
+the dataset. A command or step that needs one edition refuses a list, and the other way
+round, naming config/datasets.json (a refusal, not a traceback; M2 R1 I-05).
+
+*Items and assets.* Items are addressed by id: `swissimage-dop10_<edition>_<tile>`,
+`swisssurface3d-raster_<year>_<tile>`, `swisstlm3d_<edition>`; the asset is the one whose key
+ends `_<resolution>_2056.tif` (the photo; not the 2 m one), `_<resolution>_2056_5728.tif` (the
+surface; not the `.xyz.zip`) or `_2056_5728.gdb.zip` (the TLM; not the GeoPackage, Shapefile
+or INTERLIS zip). A surface item that answers HTTP 404 is absent; any other failure to read
+an item is "cannot read the STAC item", never an absence. `file:checksum` comes in
+upper-case hex (all 28 assets read); the lock stores lower-case.
+
+*The lock.* Three more entries, exact key sets: `swissimage` {collection, edition,
+resolution_m, tiles: {<tile>: {file, sha256}}}; `swisssurface3d` {collection, resolution_m,
+tiles: {<tile>: {edition, file, sha256}}}; `swisstlm3d` {collection, edition, file, sha256}.
+They are written only by `python -m mattini lock photo`, `lock surface` and `lock tlm`,
+from the STAC items only (no request to the file host, not even a HEAD), each replacing its
+own entry and keeping every other, sorted, 2-space indent, LF. `lock surface` reads, for
+every tile of the area, the item of every year in `editions`; exactly one must exist, else
+it refuses naming the tile and the years found (`found none`, `found ['2021', '2022']`) and
+writes nothing. A malformed lock is refused naming the file and the five lock commands.
+
+*The downloads.* `download photo`, `download surface` and `download tlm` (`--out`, default
+data/raw) write `swissimage/<edition>/`, `swisssurface3d/<editions joined by "-">/`
+(`2021-2022`) and `swisstlm3d/<edition>/` under the root, each holding the files under
+swisstopo's names and a provenance.json like the terrain's: swissimage with exactly the
+terrain's keys; swisssurface3d with `editions` (the config's list) for `edition` and each
+tile's `edition` added; swisstlm3d flat, exactly {attribution, collection, dataset,
+edition, file, item, schema, sha256, size_bytes, url}. The command prints the provenance
+path. Each first checks that the lock's entry is for the config (collection, edition or
+editions, resolution; exactly the area's tiles; every surface tile's edition one of
+`editions`), naming its lock command; then it compares every published file name and
+SHA-256 with the lock before any request for a file and before anything on disk changes,
+and refuses a difference naming the tile (`swisstlm3d <edition>` for the TLM), both
+checksums and "nothing was fetched", then "A republished tile (file) is adopted only on
+purpose: `python -m mattini lock <x>`, then commit the lock, then design recomputes the
+expected values in <configs> (docs/SPEC.md §8)", the configs being those whose expected
+values record the entry: photo config/photo.json and config/roofs.json, surface
+config/trees.json, tlm config/surfaces.json and config/trees.json. `download surface` reads,
+for each tile, only the item of the edition the lock pins: choosing the edition is the
+lock's, so an edition swisstopo publishes later stops no download of the pinned files (the
+next `lock surface` refuses it, and design decides). The photo's and the surface's files
+download as the terrain's: `.part`, verified, renamed, one retry, a verified file kept.
+
+*The TLM file* (2'882'823'552 bytes, national). A verified file already there is kept with
+no request to the file host. Otherwise the download asks the file host first (HEAD): its
+Content-Length is the size, and an `x-amz-meta-sha256` that is present and not the lock's
+is refused before any GET, naming the URL and both checksums ("nothing was fetched"; the
+file host and the STAC item disagree, try again later). The file downloads to
+`<file>.part`. Each GET asks `Range: bytes=<part size>-` once the part holds bytes; a 206
+must start there (else the part is deleted), a 200 is the whole file and rewrites the part.
+Python's urllib ends a cut body without an error (brain.md H9), so the part's size, not an
+exception, shows a cut: a short part is resumed, up to five GETs per run. A part that
+reaches the size is verified: equal to the lock's SHA-256 it takes the file's name;
+otherwise it is deleted and fetched again once, then refused. A run that cannot finish
+keeps its part and says so, naming `python -m mattini download tlm`, which resumes it; a
+Ctrl-C or a crash keeps it too. provenance.json is removed before the first change on disk
+and written at the end, as the terrain's. Measured: the host answers Range with 206 and
+Content-Range (its HEAD sends no Accept-Ranges) and a range at the end with 416; a real
+download stopped at 1.08 GB (Ctrl-C, and `kill -9`) resumed with one Range request and
+verified.
+
+*Measured entries (2026-10-14):* `entry_sha256` swissimage 415ed9bc…, swisssurface3d
+f73033b1…, swisstlm3d aa909f98… (the files in §1.1; `test_measured_photo_surface_tlm.py`
+compares the committed lock with them).
+
+*Decided at M3 planning with the measurements:* `resolution_m` is required for `swissimage` and
+`swisssurface3d`, as for `swissalti3d` (M3-01); the terrain's and the buildings' republish
+refusals name their new dependants too (swissalti3d: config/terrain.json and
+config/trees.json; swissbuildings3d: config/buildings.json, config/roofs.json and
+config/trees.json); a Ctrl-C in `download tlm` keeps the part and says how to resume, with no
+traceback.
 
 ## 6. Coordinates (confirmed by the owner on day one)
 
@@ -187,7 +270,9 @@ the game's only source of generated data. It carries at least: `schema` (1), `wo
 verbatim copy of `config/world.json`) and `world_sha256`; later the datasets used (each
 with its edition, inputs' checksums and attribution) and the chunk lists. The credits
 screen is generated from it. From M1 its top level is exactly `schema`, `terrain`,
-`world` and `world_sha256`; from M2 `buildings` joins them (null until built).
+`world` and `world_sha256`; from M2 `buildings` joins them (null until built); from M3 (brief
+M3-13) it is exactly `buildings`, `photo`, `roofs`, `schema`, `surfaces`, `terrain`, `trees`,
+`world` and `world_sha256`, each block null until built.
 
 **The terrain grid (M1; designed at M1 planning, 2026-09-25).** Tier 1 territory: it
 places heights in the world (WORKFLOW §Review policy).
@@ -408,6 +493,68 @@ policy).
   another tile than its bounding-box centre. Its expected output was computed two
   independent ways. The pipeline must reproduce it byte for byte, and the game must find
   its named vertices at `WorldConfig.to_local` of their LV95 points: the seam (lesson 3).
+
+**The photo (M3; designed at M3 planning, 2026-10-14; the owner's 0.2 m, §13 row 30).** Tier 1
+territory where it places the photo in the world (the rectangle), Tier 2 elsewhere.
+
+- *Inputs:* the area's SWISSIMAGE 2023 tiles at 0.1 m (§5), the tiles the area box meets,
+  read from `<raw>/swissimage/2023/` and its provenance; each file's SHA-256 equal to the
+  provenance's and the lock's, read from the very bytes hashed; refused unless EPSG:2056,
+  10'000 × 10'000 pixels, 3 uint8 bands and the transform exactly (0.1, 0, E0, 0, −0.1,
+  N0 + 1000) for its tile. Measured: three JPEG decoders give the tiles' pixels identically.
+- *The grid:* `cell_m` from `config/photo.json`, one of 0.2, 0.5, 1 (k = 2, 5, 10). Box
+  arithmetic in integer decimetres: an edge off the 0.1 m grid by more than 1e-6 m, or a side
+  not a whole number of cells, is refused. Texel (r, c), r from the north, c from the west, is
+  the k × k block of 0.1 m source pixels from the area's north-west corner (rows r·k … r·k +
+  k − 1, columns c·k … c·k + k − 1); per channel its value is round-half-to-even(S / k²) of
+  the exact integer sum S. The raw grid (rows north to south, columns west to east, RGB
+  interleaved, uint8) hashes to `pixels_sha256`. A step may compute it in strips of whole
+  texel rows; the bytes are the same.
+- *The JPEG:* Pillow, `Image.frombuffer("RGB", (columns, rows), raw, "raw", "RGB", 0, 1)
+  .save(f, "JPEG", quality=92, subsampling=2, optimize=False, progressive=False)`: baseline,
+  4:2:0, no EXIF or ICC. Measured byte-identical across Pillow 10.4.0, 11.0.0, 12.3.0 and with
+  libjpeg-turbo's SIMD off; Godot 4.6.3's decoder (libjpeg-turbo 3.1.0) gives the same pixels
+  as Pillow's for the village.
+- *The files:* `photo/<area>.jpg`, then `photo/<area>.jpg.import` holding exactly
+  `[remap]\n\nimporter="keep"\n` (brain.md H24), then `photo/<area>.json`, each through a
+  `.part` rename. The description is exactly {area, cell_m, columns, file
+  (`photo/<area>.jpg`), format (`jpeg`), jpeg: {quality: 92, subsampling: "4:2:0"}, lv95_box,
+  pixels_sha256, rows, sha256 (the JPEG's), source: {attribution, collection, dataset
+  (`swissimage`), edition, resolution_m (0.1), tiles: [{sha256, tile}] by tile},
+  world_sha256}; it does not list the `.import`.
+- *The expected output (lesson 38):* `config/photo.json`, `{"schema": 1, "areas": {<area>:
+  {"cell_m", "computed_for", "expected_pixels_sha256": {"0.2", "0.5", "1"},
+  "expected_sha256": {"0.2", "0.5", "1"}}}}`, computed two independent ways for the village
+  (identical bytes, and a third time by another agent): 0.2 m pixels `00533bc6…`, JPEG
+  `cf83c705…` (50'222'573 bytes); 0.5 m `1e105d47…`, `5035fe52…`; 1 m `b99f0710…`,
+  `db1d1b78…`. The step compares `computed_for` (world, then inputs once the lock fits), then
+  the pixels ("this machine or this code computes other pixels than design's"), then the
+  JPEG ("the pixels are design's; this machine's JPEG encoder writes other bytes: Pillow <v>,
+  libjpeg-turbo <v>"), before it writes anything; `manifest` refuses any other file, a
+  `.import` missing or different, or a description that does not fit the configs and the
+  lock, naming `python -m mattini photo`.
+- *The API (brief M3-04):* `pipeline/mattini/photo.py`: `photo_grid(mosaic, box, cell_m)`,
+  `encode_jpeg(pixels)`, `write_photo(...)`, `build_photo(world, datasets, lock,
+  photo_config, raw_root, out_dir, *, progress=None)`, `built_photo_block(out_dir,
+  photo_config, world, world_sha256, datasets, lock=LOCK_PATH)`.
+- *The game (brief M3-09):* `PhotoGrid.from_manifest(path, world)` reads the `photo` block
+  and checks its key set, its `world_sha256` against its manifest, that the WorldConfig is the
+  manifest's with the owner's axes (another mapping is refused, as the terrain's), the cell and
+  the box in integer decimetres, the file's path and SHA-256, and the decoded size (columns ×
+  rows, RGB8); it makes an `ImageTexture` with mipmaps (RGB8: about 0.8 GB of GPU memory as
+  RGBA8 on Vulkan; an exported build cannot compress at runtime, H21). The rectangle comes
+  from WorldConfig only: its north-west corner is `to_local(e_min, n_max, h)` (x0, z0); it
+  spans x0 … x0 + columns·cell, z0 … z0 + rows·cell; the shader's uv is (world.xz − (x0, z0))
+  / (columns·cell, rows·cell), texel (c, r) centred at ((c + 0.5)/columns, (r + 0.5)/rows).
+  Measured: decoding the village JPEG takes 1.3–1.6 s headless, mipmaps 0.3 s; a 16384-wide
+  texture draws, a 16385-wide one is black with no error (H21).
+- *Shared fixture:* `tests/shared/photo_fixture/` and `tests/shared/photo_vectors.json`: a
+  synthetic world (origin E 2'610'000 / N 1'170'000, height offset 250 m), a 16 m × 8 m area
+  whose north-west corner is off the 0.2 m lattice from the origin, a synthetic 0.1 m source
+  of grey 8 × 8-texel blocks (lossless through the JPEG) and one coloured 16 × 16 corner (a
+  channel swap shows), with designed rounding ties; the expected output at all three cells,
+  computed two ways; 13 named points that catch half a texel, flips, swapped axes and the
+  wrong corner. The pipeline reproduces it byte for byte; the game reads the named texels.
 
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same

@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "terms": "Terms of use for free geodata and geoservices (OGD) from swisstopo, version 1.3.2021",
+  "datasets": {
+    "swissalti3d": {
+      "collection": "ch.swisstopo.swissalti3d",
+      "edition": "2024",
+      "resolution_m": 0.5,
+      "attribution": "© swisstopo"
+    },
+    "swissbuildings3d": {
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "edition": "2020",
+      "attribution": "© swisstopo"
+    },
+    "swissimage": {
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "edition": "2023",
+      "resolution_m": 0.1,
+      "attribution": "© swisstopo"
+    },
+    "swisssurface3d": {
+      "collection": "ch.swisstopo.swisssurface3d-raster",
+      "editions": ["2021", "2022"],
+      "resolution_m": 0.5,
+      "attribution": "© swisstopo"
+    },
+    "swisstlm3d": {
+      "collection": "ch.swisstopo.swisstlm3d",
+      "edition": "2026-02",
+      "attribution": "© swisstopo"
+    }
+  }
+}

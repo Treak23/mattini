@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "areas": {
+    "village": {
+      "cell_m": 0.2,
+      "computed_for": {
+        "inputs_sha256": "415ed9bcbee7b5d719f40f5b105204dc38ebc570cd2973ebc9de199d86f30fdd",
+        "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b"
+      },
+      "expected_pixels_sha256": {
+        "0.2": "00533bc6d6c2326c7625e09cadd35707f50573b95d33c2072d0aaf80053d35c0",
+        "0.5": "1e105d47a15f9c1e43fe211b6d4c717b0f96a190c2e3fc918ce2fc34645fae92",
+        "1": "b99f0710ecef8db6af582ea54ad1224fcdd07a9068da6ff8874ddf92ac2d55a5"
+      },
+      "expected_sha256": {
+        "0.2": "cf83c705756c4560ee581de4911242eebca153729dc8ff5540991f9a6ba8ef5b",
+        "0.5": "5035fe526a240b225a0d5dcea1a45f7a94a3974e936a3deb8164a07fc3bbf42a",
+        "1": "db1d1b786c948aa768d3843fb685ab7daf42bc4401ad43f771320662da22e6a2"
+      }
+    }
+  }
+}

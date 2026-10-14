@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "areas": {
+    "fixture": {
+      "cell_m": 0.2,
+      "computed_for": {
+        "inputs_sha256": "82f606ddd1fd00cce9ffc749e1f89b9510780dc6909ec05c4b90cb06cdd53d44",
+        "world_sha256": "6256a22e416fdad8ab70dd032083497c5e13918774998d1e3ffec6b24b510d41"
+      },
+      "expected_pixels_sha256": {
+        "0.2": "a4b048b649d3d3834f457a1fcd8afb5a0ff337f4be8ff3fbb8d7a73e93c4bfce",
+        "0.5": "8d072cb80215335bdba1f4a119bfdc40a6b2581b93f77d3efac40460d4b888df",
+        "1": "07b89427c420a826f1fbbf7492a2f06d91f747409a87a516e3aef02fbfcbe2b6"
+      },
+      "expected_sha256": {
+        "0.2": "a0db1b5f1f923cac75d07cd8edf735c19798c6e22c192987264d17567f7e1ae1",
+        "0.5": "d710ee914952ce1f8c6348c889f897ea5023da1d633506b2ef58f2f7240fe408",
+        "1": "5cd2f906c3226e1e9312a90eb984dcf5d7852611d32c76136d4964d0fa294ae7"
+      }
+    }
+  }
+}

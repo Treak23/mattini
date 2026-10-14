@@ -1,0 +1,721 @@
+{
+  "about": "The shared photo fixture (m3-design §2; briefs M3-04 and M3-09). tests/shared/photo_fixture/ holds a synthetic world (world.json: origin E 2610000 / N 1170000, height_offset_m 250.0, the owner's axes) with the area 'fixture' (E 2610412.5-2610428.5, N 1170207-1170215: 16 m x 8 m, north-east of the origin, its north-west corner off the 0.2 m lattice from the origin), its datasets config, lock and photo config, a synthetic 0.1 m source (source.u8, source.json; not swisstopo data) and the expected pipeline output under generated/ (photo/fixture.jpg, photo/fixture.jpg.import, photo/fixture.json and manifest.json), computed by design two independent ways (numpy block sums with integer round-half-to-even, and a pure-Python byte loop with Fraction and round(); identical bytes at 0.2, 0.5 and 1 m; JPEG by Pillow 12.3.0, libjpeg-turbo 3.1.4.1, byte-identical with 11.0.0 and 10.4.0). generated/manifest.json is written by design in the manifest's final M3 shape (top level exactly buildings, photo, roofs, schema, surfaces, terrain, trees, world, world_sha256; the photo's description verbatim, the other blocks null; sorted keys, 2-space indent, LF): the brief that wires the new steps into `manifest` (M3-13) reproduces it byte for byte. The pipeline must reproduce photo/ byte for byte; the game must find the texel values below at the named world points through WorldConfig and the shader's uv rule.",
+  "fixture": "tests/shared/photo_fixture",
+  "grid": {
+    "area": "fixture",
+    "cell_m": 0.2,
+    "columns": 80,
+    "rows": 40,
+    "x0": 412.5,
+    "z0": -215.0,
+    "width_m": 16.0,
+    "depth_m": 8.0,
+    "rect": [
+      412.5,
+      -215.0,
+      16.0,
+      8.0
+    ],
+    "uv_rule": "uv = ((x - x0) / width_m, (z - z0) / depth_m); texel (column, row) = (floor(u * columns), floor(v * rows)); its centre is uv ((column + 0.5) / columns, (row + 0.5) / rows)"
+  },
+  "blocks": {
+    "texels": 8,
+    "about": "The 0.2 m grid is 10 x 5 blocks of 8 x 8 texels, aligned to the JPEG's 8 x 8 blocks: levels[by][bx] is the grey (R = G = B) of block (bx, by), bx from west, by from north; 46 distinct even levels, 4-neighbours at least 24 apart, diagonal neighbours at least 12. null marks the north-east 16 x 16-texel MCU (blocks (8..9, 0..1)), one colour, so that a channel swap shows; it is a whole MCU because 4:2:0 chroma is coded per 16 x 16 texels (an 8 x 8 coloured block made the chroma of its whole MCU ring, measured: errors up to 9 in nearby grey texels).",
+    "levels": [
+      [
+        40,
+        196,
+        108,
+        152,
+        208,
+        44,
+        176,
+        212,
+        null,
+        null
+      ],
+      [
+        124,
+        60,
+        32,
+        192,
+        112,
+        188,
+        136,
+        36,
+        null,
+        null
+      ],
+      [
+        88,
+        180,
+        148,
+        80,
+        144,
+        28,
+        96,
+        168,
+        56,
+        200
+      ],
+      [
+        52,
+        132,
+        68,
+        164,
+        204,
+        84,
+        120,
+        216,
+        24,
+        160
+      ],
+      [
+        104,
+        156,
+        100,
+        128,
+        64,
+        140,
+        184,
+        76,
+        172,
+        48
+      ]
+    ],
+    "colour_mcu": {
+      "blocks": [
+        [
+          8,
+          0
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ]
+      ],
+      "rgb": [
+        224,
+        112,
+        32
+      ]
+    }
+  },
+  "decoded": {
+    "decoder": "Godot 4.6.3 Image.load_jpg_from_buffer (its libjpeg-turbo 3.1.0), measured 2026-10-14; byte-identical to Pillow 12.3.0's decode",
+    "format": "RGB8",
+    "grey_texels_not_next_to_the_colour_mcu": "2911 texels, every channel exact (0 error), R = G = B",
+    "the_ring_around_the_colour_mcu": "column 63 and row 16 outside it, column 64 and row 15 inside it: up to 46 off (chroma upsampling); no named point lies there",
+    "colour_mcu_interior": "every texel decodes to (224, 111, 31)"
+  },
+  "tolerance": 2,
+  "tolerance_about": "per channel, in 0-255 steps, for the decoded values: a margin for another decoder; the named points' blocks differ from every block a wrong reading below lands in by more than it",
+  "points": [
+    {
+      "name": "north-west texel of the grid",
+      "lv95": [
+        2610412.625,
+        1170214.875
+      ],
+      "local_xz": [
+        412.625,
+        -214.875
+      ],
+      "uv": [
+        0.0078125,
+        0.015625
+      ],
+      "texel": [
+        0,
+        0
+      ],
+      "block": [
+        0,
+        0
+      ],
+      "rgb": [
+        40,
+        40,
+        40
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "name": "south-east texel of the grid",
+      "lv95": [
+        2610428.375,
+        1170207.125
+      ],
+      "local_xz": [
+        428.375,
+        -207.125
+      ],
+      "uv": [
+        0.9921875,
+        0.984375
+      ],
+      "texel": [
+        79,
+        39
+      ],
+      "block": [
+        9,
+        4
+      ],
+      "rgb": [
+        48,
+        48,
+        48
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        48,
+        48,
+        48
+      ]
+    },
+    {
+      "name": "east edge, mid depth",
+      "lv95": [
+        2610428.4375,
+        1170210.875
+      ],
+      "local_xz": [
+        428.4375,
+        -210.875
+      ],
+      "uv": [
+        0.99609375,
+        0.515625
+      ],
+      "texel": [
+        79,
+        20
+      ],
+      "block": [
+        9,
+        2
+      ],
+      "rgb": [
+        200,
+        200,
+        200
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        200,
+        200,
+        200
+      ]
+    },
+    {
+      "name": "south edge, mid width",
+      "lv95": [
+        2610420.625,
+        1170207.0625
+      ],
+      "local_xz": [
+        420.625,
+        -207.0625
+      ],
+      "uv": [
+        0.5078125,
+        0.9921875
+      ],
+      "texel": [
+        40,
+        39
+      ],
+      "block": [
+        5,
+        4
+      ],
+      "rgb": [
+        140,
+        140,
+        140
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        140,
+        140,
+        140
+      ]
+    },
+    {
+      "name": "west of the edge between blocks (0, 2) and (1, 2)",
+      "lv95": [
+        2610414.0625,
+        1170210.875
+      ],
+      "local_xz": [
+        414.0625,
+        -210.875
+      ],
+      "uv": [
+        0.09765625,
+        0.515625
+      ],
+      "texel": [
+        7,
+        20
+      ],
+      "block": [
+        0,
+        2
+      ],
+      "rgb": [
+        88,
+        88,
+        88
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        88,
+        88,
+        88
+      ]
+    },
+    {
+      "name": "east of the edge between blocks (0, 2) and (1, 2)",
+      "lv95": [
+        2610414.125,
+        1170210.875
+      ],
+      "local_xz": [
+        414.125,
+        -210.875
+      ],
+      "uv": [
+        0.1015625,
+        0.515625
+      ],
+      "texel": [
+        8,
+        20
+      ],
+      "block": [
+        1,
+        2
+      ],
+      "rgb": [
+        180,
+        180,
+        180
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        180,
+        180,
+        180
+      ]
+    },
+    {
+      "name": "north of the edge between blocks (5, 1) and (5, 2)",
+      "lv95": [
+        2610421.625,
+        1170211.875
+      ],
+      "local_xz": [
+        421.625,
+        -211.875
+      ],
+      "uv": [
+        0.5703125,
+        0.390625
+      ],
+      "texel": [
+        45,
+        15
+      ],
+      "block": [
+        5,
+        1
+      ],
+      "rgb": [
+        188,
+        188,
+        188
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        188,
+        188,
+        188
+      ]
+    },
+    {
+      "name": "south of the edge between blocks (5, 1) and (5, 2)",
+      "lv95": [
+        2610421.625,
+        1170211.75
+      ],
+      "local_xz": [
+        421.625,
+        -211.75
+      ],
+      "uv": [
+        0.5703125,
+        0.40625
+      ],
+      "texel": [
+        45,
+        16
+      ],
+      "block": [
+        5,
+        2
+      ],
+      "rgb": [
+        28,
+        28,
+        28
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        28,
+        28,
+        28
+      ]
+    },
+    {
+      "name": "four-block corner, north-west of it: block (3, 2)",
+      "lv95": [
+        2610418.875,
+        1170210.25
+      ],
+      "local_xz": [
+        418.875,
+        -210.25
+      ],
+      "uv": [
+        0.3984375,
+        0.59375
+      ],
+      "texel": [
+        31,
+        23
+      ],
+      "block": [
+        3,
+        2
+      ],
+      "rgb": [
+        80,
+        80,
+        80
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        80,
+        80,
+        80
+      ]
+    },
+    {
+      "name": "four-block corner, north-east of it: block (4, 2)",
+      "lv95": [
+        2610418.9375,
+        1170210.25
+      ],
+      "local_xz": [
+        418.9375,
+        -210.25
+      ],
+      "uv": [
+        0.40234375,
+        0.59375
+      ],
+      "texel": [
+        32,
+        23
+      ],
+      "block": [
+        4,
+        2
+      ],
+      "rgb": [
+        144,
+        144,
+        144
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        144,
+        144,
+        144
+      ]
+    },
+    {
+      "name": "four-block corner, south-west of it: block (3, 3)",
+      "lv95": [
+        2610418.875,
+        1170210.125
+      ],
+      "local_xz": [
+        418.875,
+        -210.125
+      ],
+      "uv": [
+        0.3984375,
+        0.609375
+      ],
+      "texel": [
+        31,
+        24
+      ],
+      "block": [
+        3,
+        3
+      ],
+      "rgb": [
+        164,
+        164,
+        164
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        164,
+        164,
+        164
+      ]
+    },
+    {
+      "name": "four-block corner, south-east of it: block (4, 3)",
+      "lv95": [
+        2610418.9375,
+        1170210.125
+      ],
+      "local_xz": [
+        418.9375,
+        -210.125
+      ],
+      "uv": [
+        0.40234375,
+        0.609375
+      ],
+      "texel": [
+        32,
+        24
+      ],
+      "block": [
+        4,
+        3
+      ],
+      "rgb": [
+        204,
+        204,
+        204
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        204,
+        204,
+        204
+      ]
+    },
+    {
+      "name": "the coloured 16 x 16 MCU (north-east), inside its ring",
+      "lv95": [
+        2610427.625,
+        1170213.6875
+      ],
+      "local_xz": [
+        427.625,
+        -213.6875
+      ],
+      "uv": [
+        0.9453125,
+        0.1640625
+      ],
+      "texel": [
+        75,
+        6
+      ],
+      "block": [
+        9,
+        0
+      ],
+      "rgb": [
+        224,
+        112,
+        32
+      ],
+      "decoded_rgb_godot_4_6_3": [
+        224,
+        111,
+        31
+      ]
+    }
+  ],
+  "wrong_readings_caught_by": {
+    "half a texel east": [
+      "east edge, mid depth",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, south-west of it: block (3, 3)"
+    ],
+    "half a texel west": [
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-east of it: block (4, 3)"
+    ],
+    "half a texel south": [
+      "south edge, mid width",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)"
+    ],
+    "half a texel north": [
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)"
+    ],
+    "one texel east": [
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, south-west of it: block (3, 3)"
+    ],
+    "one texel west": [
+      "north-west texel of the grid",
+      "south edge, mid width",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-east of it: block (4, 3)"
+    ],
+    "one texel south": [
+      "south-east texel of the grid",
+      "south edge, mid width",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)"
+    ],
+    "one texel north": [
+      "north-west texel of the grid",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)"
+    ],
+    "north-south flip (rows read bottom-up)": [
+      "north-west texel of the grid",
+      "south-east texel of the grid",
+      "south edge, mid width",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ],
+    "east-west flip": [
+      "north-west texel of the grid",
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "south edge, mid width",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ],
+    "turned 180 degrees": [
+      "north-west texel of the grid",
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "south edge, mid width",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ],
+    "axes swapped (column from z, row from x)": [
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "south edge, mid width",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ],
+    "z0 from n_min (the south edge)": [
+      "north-west texel of the grid",
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "south edge, mid width",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ],
+    "x0 from e_max (the east edge)": [
+      "north-west texel of the grid",
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "south edge, mid width",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ],
+    "z0 = n_max - origin_n (sign of z)": [
+      "north-west texel of the grid",
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "south edge, mid width",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ],
+    "texel centres at the corner lattice (uv - 0.5 texel)": [
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)"
+    ],
+    "0.1 m texels (160 x 80)": [
+      "south-east texel of the grid",
+      "east edge, mid depth",
+      "south edge, mid width",
+      "west of the edge between blocks (0, 2) and (1, 2)",
+      "east of the edge between blocks (0, 2) and (1, 2)",
+      "north of the edge between blocks (5, 1) and (5, 2)",
+      "south of the edge between blocks (5, 1) and (5, 2)",
+      "four-block corner, north-west of it: block (3, 2)",
+      "four-block corner, north-east of it: block (4, 2)",
+      "four-block corner, south-west of it: block (3, 3)",
+      "four-block corner, south-east of it: block (4, 3)",
+      "the coloured 16 x 16 MCU (north-east), inside its ring"
+    ]
+  }
+}

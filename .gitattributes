@@ -4,6 +4,7 @@
 
 # Binary formats, never converted even when their bytes look like text.
 *.f32 binary
+*.u8 binary
 *.jpg binary
 *.png binary
 *.webp binary

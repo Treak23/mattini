@@ -1,0 +1,15 @@
+{
+  "about": "The photo fixture's synthetic 0.1 m source (not swisstopo data): source.u8 holds uint8 R, G, B interleaved, row-major, rows north to south (row 0 at n_max), columns west to east (column 0 at e_min), no header; it covers lv95_box exactly and stands for the 1 km tile it lies in (tile), which datasets.lock.json pins with this file's SHA-256. Each texel of the 0.2 m grid is 2 x 2 source pixels; per channel their sum is 4L + d, d in -2..2, L the texel's designed value (tests/shared/photo_vectors.json).",
+  "columns": 160,
+  "format": "uint8-rgb, row-major, rows north to south",
+  "lv95_box": {
+    "e_min": 2610412.5,
+    "e_max": 2610428.5,
+    "n_min": 1170207.0,
+    "n_max": 1170215.0
+  },
+  "resolution_m": 0.1,
+  "rows": 80,
+  "sha256": "aeb258ac60f2c7c1ecd3686ba674807c51ac03c5e9aff0f5845634e802ef7652",
+  "tile": "2610-1170"
+}

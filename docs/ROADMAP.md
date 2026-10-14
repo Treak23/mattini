@@ -6,19 +6,21 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-No arc is running. Next: M3 Surfaces and trees, planned in a fresh `design` session. Its
-first briefs carry M2's residue: sixteen P3s of the verification pass and the builders'
-open follow-ups, none touching the build that shipped (`docs/history/ARCS.md` §M2,
-*Carried into M3*). M3 planning asks the access route for swissTLM3D.
+**M3 Surfaces and trees — being prepared in the design session (plan DRAFT).** The plan is
+`docs/briefs/M3-plan.md`: fourteen briefs in two waves (wave 1 seven sessions at once, wave 2
+two), the review plan and the release 0.3.0: the village in a realistic look made from
+swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
+colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §13 rows 29–36.
+M2's residue is M3-01 and M3-02.
 
-**Waiting on the owner:** the first look at 0.2.0 (`docs/releases/v0.2.0.md`, its checks).
+**Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
+all OK); the GO for M3 once its plan reads READY.
 
 **Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
 (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).
 
 Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
-`docs/history/ARCS.md` §M2. It ran in one session by the owner's word (RULINGS
-2026-09-25). Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0 (ARCS §M1).
+`docs/history/ARCS.md` §M2. Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0 (ARCS §M1).
 
 **Parked questions:** none.
 
@@ -28,38 +30,36 @@ Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 - Weather: simulated or real data — OPEN (M6).
 - Backdrop and larger-area extents and resolutions — OPEN (M5), with the buildings' missing
   sheets near Zermatt (M2 R1 I-07, SPEC §14).
-- Access route for swissTLM3D (national only) — OPEN (M3).
-- An export over 100 MB on `dist` — OPEN until M5 (the owner, 2026-09-25: "later"; D16).
-- Game type — OPEN (later).
+- Delivery when the data outgrows packs on `dist` — OPEN (M5; SPEC §13 rows 23, 32).
+- Game type — OPEN (later; the owner: "keep open, lets just build the map first", §13 row 34).
 
 ## Next, in order (confirmed by the owner, 2026-09-24)
 
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0,
 M1 and M2 are closed.
 
-1. M3 Surfaces and trees — ARC, next
+1. M3 Surfaces and trees — ARC, being prepared (`docs/briefs/M3-plan.md`)
 2. M4 Sun cycle — ARC
 3. M5 Scale up — ARC
 4. M6 Weather and walking — ARC
 
 ## DEFERRED, said out loud
 
-Nothing deferred: the inbox is empty.
+M3's list, with reasons and costs, is in `docs/briefs/M3-plan.md` §DEFERRED. The inbox's one
+Open entry, FB-001, goes to M3.
 
 ## Residues and hazards
 
 - Terrain3D 1.0.2's traps (brain.md H11) and its deprecation warning, printed once per
   process (H4). Collision over holes prints ERROR lines: M1 runs without collision, and
   walking (M6) needs an answer.
-- swissTLM3D comes only as a national multi-GB file (brain.md H7): M3 needs an access
-  route before any download. swissBUILDINGS3D's is the 2020 edition per map sheet (the
+- swissTLM3D comes only as a national 2.88 GB FileGDB: M3 reads it straight from its zip
+  (brain.md H20; SPEC §13 row 33). swissBUILDINGS3D's is the 2020 edition per map sheet (the
   owner, 2026-09-25).
 - The export's size: Godot's Windows template alone is 99.81 MiB, 198 KB under GitHub's
-  limit, and the `.pck` has 5.2 MiB of room at 0.2.0 (5'452'200 bytes; D16; brain.md H15).
-  M3's surfaces and trees go into it: an export over 100 MiB is open until M5 by the
-  owner's word, so M3 planning measures what M3 adds first.
-- M2's residue: sixteen P3s and the builders' follow-ups, carried into M3
-  (`docs/history/ARCS.md` §M2).
+  limit; from M3 the large data ships in packs (`mattini-terrain.pck` 96 MB, 8.4 MiB under,
+  `mattini-photo.pck` 50 MB; SPEC §11). M5's larger area needs more (SPEC §14).
+- M2's residue: sixteen P3s and the builders' follow-ups, M3-01 and M3-02.
 - Software screenshots use the Compatibility renderer; Forward+ crashes in software when
   Terrain3D draws (brain.md H12). They are evidence of what is drawn, not of the look.
 - A session's checkout is shallow, and its local `main` can be an old ref that `git pull`
@@ -78,11 +78,17 @@ Nothing deferred: the inbox is empty.
 - Game types discussed: co-op builder, walking game, shooter; also mountain guide, rescue
   helicopter, freeride, photography, historical Zermatt, glacier time-travel, mystery,
   trail race, lift or hotel management.
+- A collaborative "Zermatt builder" usable for a variety of projects (FB-002, 2026-10-14; the
+  owner: "keep open, lets just build the map first"). What it would need early: the same base
+  world on every machine (true already: Hard Rule 5, every file checked by SHA-256), each
+  building's id in the game (from M3-05 and M3-12), then saved edits as a layer over the
+  read-only world, and networking.
 
 ## Not planned (with the reason)
 
 - Browser and mobile builds — owner's decision, desktop only.
-- Photorealism — owner's decision, stylised diorama look.
+- Photorealism beyond what the data gives (hand-made or procedural detail everywhere) —
+  the owner chose the look made from the data, option (a), 2026-10-14 (SPEC §13 row 29).
 - Google Maps / 3D Tiles data — licence forbids shipping or deriving from it.
 
 ## Shipped
