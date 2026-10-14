@@ -1,4 +1,4 @@
-# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close, at M2 planning and at M2's review, 2026-09-25)
+# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close, at M2 planning and at M2's review, 2026-09-25, and at M3 planning, 2026-10-14)
 
 Written by the design realm with the owner from `docs/start.md` Part 1 / 1A and the
 owner's day-one answers. Only the design realm edits this file. `CLAUDE.md` holds the
@@ -8,24 +8,29 @@ never picked silently); **PROPOSED** = suggested, not yet confirmed by the owner
 ## 1. What and why
 
 A desktop game set in Zermatt (Mattertal, Valais), built on swisstopo's open geodata, in a
-stylised "diorama / architectural model" look, not photorealistic. It is the owner's
-learning project (game development, and what real open Swiss geodata makes possible),
-shared later with a few people who have powerful PCs. A commercial release is undecided
-and not ruled out, so everything stays licence-clean.
+realistic look made from that data: the aerial photo on the ground, roof colours from it,
+trees where the LiDAR found them (the owner, 2026-10-14, FB-001: "it's definitely too
+white"; until then the look was a stylised "diorama / architectural model", §13 row 29).
+What the data does not give (walls, tree species) is a labelled placeholder, never
+invented as if it were data. It is the owner's learning project (game development, and
+what real open Swiss geodata makes possible), shared later with a few people who have
+powerful PCs. A commercial release is undecided and not ruled out, so everything stays
+licence-clean.
 
 ## 2. v1 scope
 
 **In v1** (owner, start.md Part 1 and day one):
 
 - A sandbox of the real terrain and the real village buildings from swisstopo data, in the
-  stylised look, with a free-fly camera.
+  realistic look made from the data (§1; the owner, 2026-10-14), with a free-fly camera.
 - Walking.
 - The day/night cycle (real solar position for Zermatt, time control, sky, shadows).
 - Weather effects. The weather source is **OPEN** (§12).
 
-**Not in v1:** browser and mobile builds; photorealism; any game mode; Google Maps / Google
-3D Tiles data (its licence forbids shipping or deriving from it); hand-modelled façades
-for every building.
+**Not in v1:** browser and mobile builds; photorealism beyond what the data gives (hand-made
+or procedural detail everywhere: the owner chose the data-made look, option (a), not (c),
+2026-10-14); any game mode; Google Maps / Google 3D Tiles data (its licence forbids
+shipping or deriving from it); hand-modelled façades for every building.
 
 **Milestones** (order confirmed by the owner on day one): M0 Setup · M1 Terrain · M2
 Buildings · M3 Surfaces and trees · M4 Sun cycle · M5 Scale up · M6 Weather and walking.
@@ -576,6 +581,14 @@ line stays on every visual gate.
 | 26 | The buildings' file format | A raw mesh per 1 km chunk (`.bin`, float32 vertices then uint32 triangles), not glTF: Godot imports a `.glb` under `res://` and an export ships the imported copy, not the file (measured), while a `.bin` ships as it is, like the terrain's `.f32`, and the game checks its SHA-256 | Design (the architecture's "glTF" was a sketch; the owner may reverse) |
 | 27 | How M2 is run | In one session: design, build, review and close with in-session agents; no spawned waker, ticks or builders. The session pushes to `main` as usual | Owner (RULINGS 2026-09-25; "push to main") |
 | 28 | The process (2026-10-14) | No model named in the repo: the one the owner picks for the chat applies, spawns inherit it (replaces row 13's models). No supervisor. Design is everything before the build and plans each arc for parallel sessions; the `ultracode build` orchestrator spawns builders per wave, integrates, runs the design's review plan and ships. No limit of two builders | Owner (RULINGS 2026-10-14) |
+| 29 | The look (FB-001; M3 planning, 2026-10-14) | (a) the realistic look made from the data: the aerial photo (SWISSIMAGE) on the terrain, a colour per roof from it, 3D trees where the LiDAR found them, a rock texture on steep rock, procedural conifers, the fixed sun moved to the photo's sun, the lighting matched to the photo's brightness; it replaces the stylised diorama (§1, §10). Read back to the owner as (a) with the slope rock and the conifers; not corrected. Not taken: (b) textured materials for walls and close-range ground everywhere; (c) photorealism beyond what the data gives | Owner ("a", 2026-10-14) |
+| 30 | The photo's resolution | 0.2 m (the 2023 photo's real detail over Zermatt is 25 cm), a separate texture over the area (§8, the photo), not Terrain3D's 0.5 m colour map; about 0.6–0.8 GB of GPU memory. Not taken: 0.5 m | Owner ("0.2") |
+| 31 | Walls | One neutral plaster for every wall, a labelled placeholder (no open wall data exists). Not taken: a rule-based chalet look (stone base, larch wood above), which would be invented | Owner ("neutral") |
+| 32 | An export over 100 MiB (row 23, D16) | Data packs beside the executable, each file under 100 MiB (§11). Not taken: Git LFS on `dist` (its free quota counts every download, over it downloads give pointer files, its objects cannot be deleted short of the repository, and cloud pushes through the proxy are unmeasured), GitHub Releases, terrain and photo at 1 m. M5's larger area revisits delivery | Owner ("do packs", after design's list of LFS's costs) |
+| 33 | swissTLM3D's access route and use (§14) | The national FileGDB, edition 2026-02 (2.88 GB), pinned by SHA-256 in the lock, downloaded once per machine and read straight from its zip (§5); used in M3 for water, roads, paths and rock on the terrain (§8, the surfaces) and to clean the trees (rock, building footprints). Not taken: the REST API (no edition, 2-D, 0.1 m), the GeoPackage (one deflated 10.8 GB member, unreadable in part) | Owner ("bring into m3 now"); the route measured by design |
+| 34 | The game type (FB-002, a collaborative builder) | Stays OPEN: "keep open, lets just build the map first. i want it as detailed and beautiful as possible". The idea is on the board | Owner |
+| 35 | An image library for the pipeline | Pillow, for the photo's JPEG (the surfaces' PNG is written with Python's own zlib, so the lane that builds it needs no new dependency); its JPEG output measured byte-identical across Pillow 10.4.0, 11.0.0 and 12.3.0 and with libjpeg-turbo's SIMD off | Design, delegated (CLAUDE.md §Stack) |
+| 36 | M2's residue | M3's first two briefs (M3-01 pipeline, M3-02 game and tools), as D25 decided; V1-G-04 (the buildings' look test) moves to M3-12, which rewrites that test | Design |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not
@@ -596,11 +609,12 @@ Asked when the milestone that needs them is planned; each is also on the board.
   buildings have gaps near Zermatt (1348-22, -32, -34, -43 have no item), and `lock
   buildings` refuses a sheet without one as a failed read; M5 decides whether such a
   sheet means "no buildings" (M2 R1 I-07).
-- Access route for swissTLM3D (national only) — M3.
-- Export over 100 MB on `dist` — M5 (the owner, 2026-09-25: "later"; §13 row 23; D16).
-- Game type — later.
+- Delivery when the data outgrows packs on `dist` — M5 (§13 rows 23, 32).
+- Game type — later (§13 row 34).
 
 Answered at M1 planning (2026-09-25; §13 rows 14–19): the terrain resolution, where the
 version shows, the version scheme, whether the owner designs visuals, software rendering
 in containers. Answered in M2 (2026-09-25; §13 rows 22–24, 27): the access route for
-swissBUILDINGS3D, the committed real sample, where the session pushes.
+swissBUILDINGS3D, the committed real sample, where the session pushes. Answered at M3 planning
+(2026-10-14; §13 rows 29–34): the look, the photo's resolution, the walls, an export over
+100 MiB (data packs), swissTLM3D's access route and its use in M3.

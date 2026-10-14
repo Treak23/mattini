@@ -212,6 +212,44 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   (measured in M2, 2026-09-25).** An agent run with worktree isolation got a worktree of
   `main`, not of the session's branch: every M2 builder's first step was `git merge
   --ff-only <base>` and a check of the head.
+- **H20 — swisstopo's new datasets (measured at M3 planning, 2026-10-14).** SWISSIMAGE
+  2023 over Zermatt is 25 cm imagery published upsampled to 10 cm, flown 6–7 Sep 2023 at
+  about 11:25–11:55 UTC (the image strips' ids, `ch.swisstopo.lubis-bildstreifen`); its
+  tiles are JPEG-in-COG (quality 95, YCbCr 4:2:0), and three decoders (GDAL 3.12.4, 3.12.2,
+  libjpeg-turbo 3.2) give identical pixels. swissSURFACE3D's raster has one edition per
+  tile (2021 or 2022 here); the 2024 swissALTI3D comes from the same LiDAR (open ground
+  agrees to 3 mm). swissTLM3D is national only: its GeoPackage zip is one deflated 10.8 GB
+  member that GDAL cannot read in part (3.2 GB fetched in 300 s without listing the
+  layers); its FileGDB zip (2.88 GB) has one deflated member per table, with backslashes in
+  the member names, and is read straight from the zip in 24 s. data.geo.admin.ch answers
+  Range requests (206) though HEAD sends no `Accept-Ranges`; HEAD carries
+  `X-Amz-Meta-Sha256`, equal to STAC's checksum but in mixed case, and STAC writes some
+  checksums in upper case: compare case-insensitively, store lower case. One 528 MB
+  single-range transfer was cut off without an error: a big download resumes and checks its
+  SHA-256. Older editions' files have been replaced after publication (Last-Modified later
+  than the item, the STAC checksum updated): only the checksum notices.
+- **H21 — Godot's images and packs (measured at M3 planning, 2026-10-14).** In an exported
+  build `Image.compress()` returns ERR_UNAVAILABLE (4.6's compressors are editor-only); the
+  DDS, KTX, JPEG, PNG and WebP loaders are there. Under the Compatibility renderer an
+  ImageTexture wider or taller than 16384 px reads back all zeros with no ERROR line (16384
+  works). Terrain3D's colour map is RGBA8 per vertex and its alpha a roughness modifier
+  (0.5 neutral): an RGB image gets alpha 255, roughness +1; `get_color` returns the vertex
+  below and left of the point, alpha 1.0. Under Compat, MultiMesh custom data reaches the
+  shader converted from sRGB to linear (0.5 arrives as about 0.214). `PCKPacker` writes the
+  same bytes for the same files in the same order (the order changes them);
+  `ProjectSettings.load_resource_pack` takes a `.pck` or a `.zip` (a `.zip` renamed `.dat`
+  returns false with no ERROR line), and loads in under 1 ms; a 96 MB file is read from a
+  `.pck` in about 55 ms.
+- **H22 — A copied checkout writes into its original (measured 2026-10-14).** Copying the
+  repository with `pipeline/.venv` copies a `.pth` that points at the original checkout:
+  `python -m mattini` in the copy then writes into the original. Use `git clone` (the venv
+  is git-ignored, so a clone makes its own with `uv sync`), or delete the copied venv.
+- **H23 — Why 0.2.0 looked white (measured on a software render, 2026-10-14).** Besides
+  white materials, 0.2.0's exposure (0.85, filmic) renders flat sunlit ground about 3.06×
+  brighter than the photo, clipping everything above sRGB ~144 to white, and the procedural
+  sky supplies 59 % of the light on flat ground with a blue cast. Exposure 0.40 renders the
+  photo at its own brightness; with the sky's contribution at 0.25, exposure 0.54. Measured
+  under Compatibility only; the owner's Forward+ is the check.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

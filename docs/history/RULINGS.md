@@ -11,6 +11,12 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-10-14 · owner's word, in the M3 design session · M3 · the look (FB-001)? → "a": the realistic look made from the data (the photo on the terrain, roof colours from it, LiDAR trees, rock texture on steep rock, procedural conifers, the sun moved to the photo's, lighting matched to it), read back with the slope rock and conifers and not corrected; the stylised diorama is reversed (SPEC §1, §2, §13 row 29)
+2026-10-14 · owner's word, in the M3 design session · M3 · the photo's resolution? → "0.2": the 0.2 m grid of SWISSIMAGE 2023 as its own terrain texture (SPEC §13 row 30)
+2026-10-14 · owner's word, in the M3 design session · M3 · the walls? → "neutral": one plaster colour for every wall, a labelled placeholder (SPEC §13 row 31)
+2026-10-14 · owner's word, in the M3 design session · M3 · an export over 100 MiB (D16 "later")? → "do packs", after design listed LFS's costs: data packs beside the executable, each under 100 MiB; M5 revisits (SPEC §13 row 32, §11)
+2026-10-14 · owner's word, in the M3 design session · M3 · swissTLM3D's route (SPEC §14) and its use? → "bring into m3 now": the national FileGDB 2026-02 pinned by SHA-256, read from its zip; water, roads, paths and rock on the terrain, and cleaning the trees (SPEC §13 row 33)
+2026-10-14 · owner's word, in the M3 design session · M3 · FB-002, the game type? → "keep open, lets just build the map first. i want it as detailed and beautiful as possible": the game type stays OPEN, FB-002 is on the board's ideas (SPEC §13 row 34)
 2026-10-14 · owner's word, in the M2 session · M2 · 0.2.0's builds on `dist`? → "push dist": pushed as `5ce4888`
 2026-09-26 · design · M2-09's check (P2) · the pinned sample test sees only each building's first point, so a turned triangle passes → design's fault; the pinned copy corrected at the close (the SHA-256 of every building's triangles in order, derived through `read_sheet` and through fiona's `zip://` reading), and the README's "north of Zermatt" made "north-west of the village box"; both mutations fail it (docs/reviews/M2-V1.md)
 2026-09-26 · design · M2 V1 · the verification pass: every R1 finding fixed, 17 P3s → clean; V1-P-09 fixed at the close, the other sixteen carried into M3's first briefs (docs/reviews/M2-V1.md; ARCS §M2)
