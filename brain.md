@@ -1,10 +1,10 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-09-26 — version 0.2.0 at the close of
-arc M2 (Buildings): the village terrain at 0.5 m in Terrain3D with its 1'486 buildings
-from swissBUILDINGS3D (2020) as a white architectural model, a free-fly camera, a pause
-screen with the credits; builds on the `dist` branch. M2 ran in one session by the
-owner's word (RULINGS 2026-09-25). M3 (Surfaces and trees) is next**
+Orientation for any session. Current as of **2026-10-14 — version 0.2.0 shipped (M2,
+Buildings: the village terrain at 0.5 m in Terrain3D with its 1'486 buildings as a white
+model, a free-fly camera, a pause screen with the credits; builds on the `dist` branch).
+M3 (Surfaces and trees: the realistic look from data) is planned and has the owner's GO
+(`docs/briefs/M3-plan.md`); its build runs in parallel sessions after design's last review**
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -44,10 +44,11 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-M3 Surfaces and trees, planned in a fresh `design` session; its first briefs carry M2's
-residue (ARCS §M2, *Carried into M3*), and it asks the access route for swissTLM3D. The
-owner's first looks at 0.1.0 and 0.2.0 come back through `feedback`. The board is the live
-version.
+M3's build (`docs/briefs/M3-plan.md`, GO 2026-10-14): wave 1 seven lanes at once (M2's
+residue, the inputs, the photo, roof colours, surfaces, trees, data packs and their game
+readers), wave 2 two lanes (the command line and manifest, the main scene), then the
+review round R1 and the release 0.3.0. The owner's first looks at 0.2.0 (Windows) and 0.3.0
+come back through `feedback`. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
