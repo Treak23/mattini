@@ -11,13 +11,10 @@ first briefs carry M2's residue: sixteen P3s of the verification pass and the bu
 open follow-ups, none touching the build that shipped (`docs/history/ARCS.md` §M2,
 *Carried into M3*). M3 planning asks the access route for swissTLM3D.
 
-**Waiting on the owner:** whether 0.2.0's builds go on `dist`. They are prepared as the
-`dist` commit `5ce4888` (about 77 MB new: the `.pck`; everything else is 0.1.0's blobs);
-"push to main" named `main` only.
+**Waiting on the owner:** the first look at 0.2.0 (`docs/releases/v0.2.0.md`, its checks).
 
 **Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
-(`docs/releases/v0.2.0.md`; built from `main` `10f0060`; its builds reach `dist` with the
-push above).
+(`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).
 
 Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 `docs/history/ARCS.md` §M2. It ran in one session by the owner's word (RULINGS
