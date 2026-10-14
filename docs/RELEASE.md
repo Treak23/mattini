@@ -38,22 +38,32 @@ Walk it top to bottom before any version bump.
       at 0.5 m `b6334c1f…`, SPEC §8; the six chunks in `config/buildings.json`): `terrain`
       and `buildings` compare before they write, and `manifest` refuses any other file
       (M2-01, M2-04), so their exit 0 in the fresh checkout is the check.
-- [ ] Windows and Linux exports built with the pinned Godot version's export templates
-      (`tools/export.sh`).
-- [ ] No file over 100 MiB (104'857'600 bytes; GitHub rejects it). If an export is
-      larger, stop: the split is a design question (SPEC §Delivery).
+- [ ] Windows and Linux exports built with the pinned Godot version's export templates,
+      each with its data packs beside the executable (`tools/export.sh` steps 4–4b:
+      `mattini-terrain.pck`, `mattini-photo.pck`; from M3-08, SPEC §11).
+- [ ] Every generated file ships once, byte for byte: `tools/export.sh` step 4c reads the
+      directory of every pack in both folders and compares it with `game/assets/generated/`
+      (a file in two packs or in none, other bytes, a `.part` or `.import` shipped, a file of
+      10 MiB or more left in `mattini.pck` fail it).
+- [ ] No file over 100 MiB (104'857'600 bytes; GitHub rejects it), the data packs included.
+      If one is larger, stop: a further split is a design question (SPEC §11, §14).
 - [ ] The Linux export starts: `tools/export.sh`'s step 6 runs
-      `build/linux/mattini.x86_64 --headless --quit-after 300` and requires the terrain's
-      startup line (columns, rows, spacing) and the buildings' (their count), and no
-      `ERROR` line (M2-02, M2-05).
+      `build/linux/mattini.x86_64 --headless --quit-after 300` and requires one line per
+      data pack, then the terrain's startup line (columns, rows, spacing), the buildings'
+      (their count) and, from M3-14, the photo's, the surfaces', the trees' and the roofs'
+      lines, and no `ERROR` line (M2-02, M2-05, M3-08, M3-14).
 - [ ] The build written to `windows/` and `linux/` (fixed names: the current version)
       and to `mattini-<version>/windows/` and `…/linux/`; the previous version's named
       folder stays as the rollback; keep the last three named folders (older ones stay in
       the branch's history). Never rename files per version: an executable finds its
-      `.pck` by its own name, and Terrain3D's library has a fixed one (M1 close, D15).
+      `.pck` by its own name, its data packs by the pattern `mattini-*.pck` beside it, and
+      Terrain3D's library has a fixed one (M1 close, D15).
 - [ ] `README.md` names the current version and its source sha, says how to download,
-      start and roll back, and lists every file's SHA-256; `.gitattributes` holds
-      `* binary`, with the README as text.
+      start and roll back, lists every file's SHA-256 (the data packs included) and says to
+      keep the five files of a folder together: the game, `mattini.pck`, the data packs and
+      Terrain3D's library; without its terrain pack the game says "mattini cannot show the
+      terrain", and the fix is to download the folder again (from M3-08);
+      `.gitattributes` holds `* binary`, with the README as text.
 - [ ] The dist commit carries the version, the `main` sha it was built from, and the
       gate's exit line.
 - [ ] `git push origin HEAD:dist`, plain, never forced.

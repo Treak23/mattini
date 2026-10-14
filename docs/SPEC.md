@@ -515,6 +515,21 @@ design question (split the pack file, or LFS on `dist`) — **OPEN** until M5 (t
 own Windows template, 198 KB under the limit, and each `.pck` had 8.3 MiB of room (D16).
 At 0.2.0, with the buildings: each `.pck` is 99'405'400 bytes, 5.2 MiB of room.
 
+**Data packs (the owner, 2026-10-14, §13 row 32; brief M3-08).** `tools/export.sh` writes
+the generated folders `terrain/` and `photo/` (whole folders, but names starting with `.` or
+ending `.part` or `.import`) each into `mattini-<folder>.pck` with Godot's PCKPacker
+(`game/tools/pack.gd`; the files in code-point order, so the same files give the same bytes:
+measured) beside each executable; the presets keep those folders and every `*.part` out of
+`mattini.pck`; the autoload `DataPacks` (`res://scripts/data_packs.gd`) loads every
+`mattini-*.pck` beside the executable of an exported build, in name order and never
+replacing a file already loaded, before the main scene, and prints one line per pack; step
+4c checks that every generated file ships once, unchanged, and that no generated file of
+10 MiB or more stays in `mattini.pck`. Measured on the village with a 0.2 m photo:
+`mattini.pck` 3.4 MB, `mattini-terrain.pck` 96'041'728 bytes (8.4 MiB under the limit),
+`mattini-photo.pck` 50'223'260 bytes; the Linux build starts as fast and as large as
+without packs. Linux's and Windows' packs are the same bytes, and stay the same across
+releases while the data does not change, so `dist`'s history stores them once.
+
 **Version scheme (confirmed by the owner, 2026-09-25):** `0.<n>.<patch>` for releases
 before v1; `1.0.0` when the v1 scope (§2) is complete. The version lives in
 `game/project.godot` (`application/config/version`). **Where it shows:** only on the pause

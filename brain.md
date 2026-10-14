@@ -250,6 +250,15 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   sky supplies 59 % of the light on flat ground with a blue cast. Exposure 0.40 renders the
   photo at its own brightness; with the sky's contribution at 0.25, exposure 0.54. Measured
   under Compatibility only; the owner's Forward+ is the check.
+- **H24 — Godot imports a generated image (measured at M3 planning, 2026-10-14).** A `.jpg` or
+  `.png` under `res://` is imported as a texture on the first import of every fresh checkout
+  (the session-start warm-up, the gate's import step, the export's scan, the owner's editor):
+  for the village's 0.2 m photo 43.6 s, 5.2 GiB peak and a 170 MB `.ctex`. An export then
+  ships the imported texture and its `.import`, not the file, so a `FileAccess` read of the
+  image in the build finds nothing. A `<file>.import` holding exactly
+  `[remap]\n\nimporter="keep"\n` stops both: 5.8 s, the image left and shipped as it is. The
+  steps that write images write it beside them (M3-04, M3-06); `tools/export.sh` step 4c
+  checks that every generated file ships once, unchanged (M3-08).
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 
