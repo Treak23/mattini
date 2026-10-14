@@ -120,6 +120,8 @@ Every rule below was measured end to end by design's agent on the real village
    lines are for the source code, not a player; M3-14 changes them (it owns `main.gd`).
 8. **The gate:** one scoped allowlist entry, the only new ERROR line:
    `DataPacks: cannot load the data pack @ res://tests/test_data_packs.gd # its broken pack is refused on purpose (brief M3-08)`.
+   Wave 1's one shared file (the plan): append the line at the end; a rebase that brings
+   other lanes' lines keeps every line, re-runs the gate and records it.
 
 ## Scope — files you may touch
 

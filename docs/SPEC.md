@@ -556,6 +556,51 @@ territory where it places the photo in the world (the rectangle), Tier 2 elsewhe
   computed two ways; 13 named points that catch half a texel, flips, swapped axes and the
   wrong corner. The pipeline reproduces it byte for byte; the game reads the named texels.
 
+**Roof colours (M3; designed at M3 planning, 2026-10-14; brief M3-05, the game M3-12).** Each
+selected building's roof colour from the 2023 photo, and its id and counts in its chunk.
+
+- *Inputs:* the buildings' sheets and the photo's 0.1 m tiles (§5), each checked as their
+  own steps check them; `computed_for.inputs_sha256` is the SHA-256 of the canonical
+  `{"swissbuildings3d": <entry>, "swissimage": <entry>}` object (json.dumps with sorted keys,
+  separators "," and ":", UTF-8; the same for every step with several datasets).
+- *Buildings:* exactly the buildings step's selection, snapping, orientation, chunks and
+  order (above). In integer units of 0.1 mm (E_u = round(E' · 10000), likewise N and H; exact
+  on the snapped grids):
+  - a *roof triangle*, with a, b, c in triangle order (counter-clockwise from outside) and
+    n = (b − a) × (c − a): n_H > 0 and 4·n_H² ≥ n_E² + n_N² + n_H² (the unit normal's up
+    component at least 0.5, the game's rule; an exact 60° cannot occur with integer normals);
+  - its *roof pixels*: the photo's 0.1 m pixels whose centre (E0 + 0.05 + 0.1 i, likewise N
+    from the tile's top) lies inside or on the boundary of the plan projection of at least one
+    roof triangle, by exact integer orientation tests; pixels outside the photo are not
+    counted, never refused;
+  - its *colour*: per channel the lower median of its roof pixels (sorted ascending, the
+    element at floor((n − 1) / 2)); null when n = 0.
+- *The file* `roofs/<area>.json` (sorted keys, 2-space indent, UTF-8, LF, final newline): exactly
+  {area, chunks: [{buildings: [{roof: "rrggbb" (lower-case) or null, roof_pixels, triangles,
+  uuid, vertices}] in chunk order, tile}] by tile, format "roofs-v1", lv95_box, source:
+  {buildings, photo}, world_sha256}; `triangles` and `vertices` are the building's counts in
+  its chunk file, so each chunk's sums equal the chunk's. The manifest carries it verbatim as
+  its `roofs` block (the block is the data, as the buildings' block is their description);
+  `manifest` refuses it when no buildings are built or its chunks do not match theirs.
+- *The expected output:* `config/roofs.json`, `{"schema": 1, "areas": {<area>:
+  {"computed_for", "expected_sha256"}}}`; the village computed two independent ways:
+  `8d9664b6…` (290'006 bytes), every one of the 1'486 buildings coloured, 32'452 roof
+  triangles, 30'392'135 roof pixels. Measured: the 2020 outlines sit 1–2 m off the 2023
+  photo in places; the median tolerates most of it.
+- *The game:* `BuildingRoofs.from_manifest(path, world, chunks)` checks the block against
+  BuildingChunks (the chunks in order, per chunk the building count and the sums of
+  triangles and vertices, every building's triangles inside its own vertex range, UUIDs
+  ascending) and against the manifest's buildings source. `BuildingLoader.create(chunks,
+  parent, roofs)` gives each roof triangle (normal.y ≥ 0.5) of a coloured building its colour
+  as an sRGB vertex colour; a building without a colour keeps `building_roofs.tres`. Every
+  wall is one neutral plaster, albedo (0.78, 0.76, 0.72), roughness 0.9: a placeholder,
+  labelled in the loader and the credits (the owner's "neutral", §13 row 31).
+- *Shared fixture:* `tests/shared/roofs_fixture/` and `tests/shared/roofs_vectors.json`: the
+  buildings fixture's world and eleven buildings, plus six built to tell the slope rule, the
+  orientation, the pixel-centre and boundary rules and the median from their likeliest wrong
+  twins; a synthetic photo in four `.u8` windows; the expected `roofs/fixture.json`
+  computed two ways.
+
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same
 inputs gives identical bytes, and tests say so.

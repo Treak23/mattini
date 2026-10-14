@@ -1,0 +1,139 @@
+{
+  "about": "The roofs fixture's photo: synthetic 0.1 m source pixels (no swisstopo data) on the national 0.1 m grid, only the windows around the selected buildings' roofs, one file per 1 km tile the area touches (photo_<tile>.u8: the tile's windows' bytes one after the other, each window rows north to south, columns west to east, RGB interleaved, uint8). A window's west edge is E = west_dm / 10 m, its north edge N = north_dm / 10 m; its pixel (row j, column i) has its centre at E = west_dm / 10 + 0.05 + 0.1 i, N = north_dm / 10 - 0.05 - 0.1 j. Colours: R = 20 + i and G = 40 + j (counted inside each window), B = the building's number (12, 30, 48, ...: 12 + 18 x its place in chunk order) on the pixels whose centre lies in that building's roof by the rule, 0 elsewhere; on the roof of {8F14A0B6-0000-4000-8000-000000000016} R is 0 on 20 of its 40 pixel rows (the north and south rows among them) and 200 on the others, so its lower median is decided by one row. Windows: each selected building's footprint box grown by 2 pixels west, 5 east, 3 north, 7 south, clipped to the area box, merged where they overlap, cut at the 1 km tile edges.",
+  "resolution_m": 0.1,
+  "tiles": [
+    {
+      "file": "photo_2650-1149.u8",
+      "sha256": "7a2e6c10922c81f4f70b059db18c10f7db88060dd6e1dec082466664d474d05c",
+      "tile": "2650-1149",
+      "windows": [
+        {
+          "columns": 81,
+          "north_dm": 11499819,
+          "offset": 0,
+          "rows": 164,
+          "west_dm": 26509919
+        },
+        {
+          "columns": 163,
+          "north_dm": 11499815,
+          "offset": 39852,
+          "rows": 140,
+          "west_dm": 26509291
+        },
+        {
+          "columns": 51,
+          "north_dm": 11499670,
+          "offset": 108312,
+          "rows": 101,
+          "west_dm": 26509000
+        },
+        {
+          "columns": 125,
+          "north_dm": 11499562,
+          "offset": 123765,
+          "rows": 62,
+          "west_dm": 26509134
+        }
+      ]
+    },
+    {
+      "file": "photo_2650-1150.u8",
+      "sha256": "f804a2816522f2a8b3c4adcec7beb17381ab17731c741256a7ec67f6fa20b22f",
+      "tile": "2650-1150",
+      "windows": [
+        {
+          "columns": 207,
+          "north_dm": 11500209,
+          "offset": 0,
+          "rows": 94,
+          "west_dm": 26509316
+        }
+      ]
+    },
+    {
+      "file": "photo_2651-1149.u8",
+      "sha256": "9c8581ad56b1943134d5dc8866985983a6e58e7b63aa29a17687730f1d330e6f",
+      "tile": "2651-1149",
+      "windows": [
+        {
+          "columns": 92,
+          "north_dm": 11500000,
+          "offset": 0,
+          "rows": 54,
+          "west_dm": 26510403
+        },
+        {
+          "columns": 48,
+          "north_dm": 11499893,
+          "offset": 14904,
+          "rows": 50,
+          "west_dm": 26510148
+        },
+        {
+          "columns": 88,
+          "north_dm": 11499863,
+          "offset": 22104,
+          "rows": 70,
+          "west_dm": 26510248
+        },
+        {
+          "columns": 68,
+          "north_dm": 11499834,
+          "offset": 40584,
+          "rows": 71,
+          "west_dm": 26510668
+        },
+        {
+          "columns": 84,
+          "north_dm": 11499819,
+          "offset": 55068,
+          "rows": 164,
+          "west_dm": 26510000
+        },
+        {
+          "columns": 68,
+          "north_dm": 11499754,
+          "offset": 96396,
+          "rows": 50,
+          "west_dm": 26510498
+        },
+        {
+          "columns": 68,
+          "north_dm": 11499705,
+          "offset": 106596,
+          "rows": 12,
+          "west_dm": 26510298
+        },
+        {
+          "columns": 9,
+          "north_dm": 11499613,
+          "offset": 109044,
+          "rows": 70,
+          "west_dm": 26510198
+        }
+      ]
+    },
+    {
+      "file": "photo_2651-1150.u8",
+      "sha256": "1687b6ab12defdca572d669a17539d7b96460cfd1ef594ab605558f7723acadc",
+      "tile": "2651-1150",
+      "windows": [
+        {
+          "columns": 159,
+          "north_dm": 11500268,
+          "offset": 0,
+          "rows": 135,
+          "west_dm": 26510596
+        },
+        {
+          "columns": 92,
+          "north_dm": 11500050,
+          "offset": 64395,
+          "rows": 50,
+          "west_dm": 26510403
+        }
+      ]
+    }
+  ]
+}

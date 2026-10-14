@@ -1,0 +1,38 @@
+{
+  "datasets": {
+    "swissbuildings3d": {
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "edition": "2020",
+      "sheets": {
+        "1249-42": {
+          "file": "source.json",
+          "sha256": "e7c338e61e58701fda0705d8b036fa683f4650686a7fabeca26345f40a7ad5bc"
+        }
+      }
+    },
+    "swissimage": {
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "edition": "2023",
+      "resolution_m": 0.1,
+      "tiles": {
+        "2650-1149": {
+          "file": "photo_2650-1149.u8",
+          "sha256": "7a2e6c10922c81f4f70b059db18c10f7db88060dd6e1dec082466664d474d05c"
+        },
+        "2650-1150": {
+          "file": "photo_2650-1150.u8",
+          "sha256": "f804a2816522f2a8b3c4adcec7beb17381ab17731c741256a7ec67f6fa20b22f"
+        },
+        "2651-1149": {
+          "file": "photo_2651-1149.u8",
+          "sha256": "9c8581ad56b1943134d5dc8866985983a6e58e7b63aa29a17687730f1d330e6f"
+        },
+        "2651-1150": {
+          "file": "photo_2651-1150.u8",
+          "sha256": "1687b6ab12defdca572d669a17539d7b96460cfd1ef594ab605558f7723acadc"
+        }
+      }
+    }
+  },
+  "schema": 1
+}

@@ -46,6 +46,12 @@ lane reads it.
 | H · pipeline wiring | M3-13 the new steps on the command line and in the manifest | `pipeline/mattini/__main__.py`, `manifest.py`, their tests |
 | I · the scene | M3-14 the main scene: the new data, the sun, the light, the credits | `game/scripts/main.gd`, `game/main.tscn`, `tools/export.sh` (step 6's lines), their tests |
 
+The one shared file of wave 1 is `tools/gate_allowlist.txt`, append-only. Briefs M3-08,
+M3-09, M3-10, M3-11 and M3-12 each append their pinned line or lines, because their tests
+make readers log refusals on purpose. A builder whose rebase brings another lane's lines
+keeps every line, re-runs the gate and records it in Findings. Lane B owns the file's rules
+(M3-02), not its other lanes' lines.
+
 Dependency note: lane C adds the one new dependency, Pillow, for the photo's JPEG. Lane D
 lands in the same wave, so it adds none: the surfaces step writes its PNG with a small
 writer on Python's own zlib (SPEC §8, the surfaces).

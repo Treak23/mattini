@@ -1,0 +1,170 @@
+{
+  "area": "fixture",
+  "chunks": [
+    {
+      "buildings": [
+        {
+          "roof": "636c0c",
+          "roof_pixels": 14137,
+          "triangles": 16,
+          "uuid": "{1B7E52C0-0000-4000-8000-000000000001}",
+          "vertices": 10
+        },
+        {
+          "roof": "504b1e",
+          "roof_pixels": 5497,
+          "triangles": 12,
+          "uuid": "{3F09D6A1-0000-4000-8000-000000000010}",
+          "vertices": 8
+        },
+        {
+          "roof": "368430",
+          "roof_pixels": 20372,
+          "triangles": 20,
+          "uuid": "{41D8A3E6-0000-4000-8000-000000000003}",
+          "vertices": 12
+        },
+        {
+          "roof": "285842",
+          "roof_pixels": 3533,
+          "triangles": 12,
+          "uuid": "{5E2C07B9-0000-4000-8000-000000000004}",
+          "vertices": 8
+        }
+      ],
+      "tile": "2650-1149"
+    },
+    {
+      "buildings": [
+        {
+          "roof": "ae5454",
+          "roof_pixels": 7719,
+          "triangles": 12,
+          "uuid": "{10E4B7C3-0000-4000-8000-000000000009}",
+          "vertices": 8
+        },
+        {
+          "roof": "4a5466",
+          "roof_pixels": 8798,
+          "triangles": 12,
+          "uuid": "{9A62F0D1-0000-4000-8000-000000000008}",
+          "vertices": 8
+        }
+      ],
+      "tile": "2650-1150"
+    },
+    {
+      "buildings": [
+        {
+          "roof": "3d4878",
+          "roof_pixels": 4800,
+          "triangles": 16,
+          "uuid": "{2C7F4B19-0000-4000-8000-000000000013}",
+          "vertices": 10
+        },
+        {
+          "roof": null,
+          "roof_pixels": 0,
+          "triangles": 12,
+          "uuid": "{65E0F7D4-0000-4000-8000-000000000015}",
+          "vertices": 8
+        },
+        {
+          "roof": "003e9c",
+          "roof_pixels": 2400,
+          "triangles": 12,
+          "uuid": "{8F14A0B6-0000-4000-8000-000000000016}",
+          "vertices": 8
+        },
+        {
+          "roof": null,
+          "roof_pixels": 0,
+          "triangles": 14,
+          "uuid": "{B3D5E8A2-0000-4000-8000-000000000012}",
+          "vertices": 9
+        },
+        {
+          "roof": null,
+          "roof_pixels": 0,
+          "triangles": 12,
+          "uuid": "{D8A61C3E-0000-4000-8000-000000000014}",
+          "vertices": 8
+        },
+        {
+          "roof": "3449d2",
+          "roof_pixels": 1861,
+          "triangles": 12,
+          "uuid": "{E5B92D07-0000-4000-8000-000000000017}",
+          "vertices": 8
+        }
+      ],
+      "tile": "2651-1149"
+    },
+    {
+      "buildings": [
+        {
+          "roof": "6169e4",
+          "roof_pixels": 13827,
+          "triangles": 12,
+          "uuid": "{6D3A8F24-0000-4000-8000-000000000002}",
+          "vertices": 8
+        },
+        {
+          "roof": "3f40f6",
+          "roof_pixels": 7728,
+          "triangles": 14,
+          "uuid": "{C45B19E7-0000-4000-8000-000000000007}",
+          "vertices": 9
+        }
+      ],
+      "tile": "2651-1150"
+    }
+  ],
+  "format": "roofs-v1",
+  "lv95_box": {
+    "e_max": 2651100.0,
+    "e_min": 2650900.0,
+    "n_max": 1150050.0,
+    "n_min": 1149950.0
+  },
+  "source": {
+    "buildings": {
+      "attribution": "© swisstopo",
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "dataset": "swissbuildings3d",
+      "edition": "2020",
+      "sheets": [
+        {
+          "sha256": "e7c338e61e58701fda0705d8b036fa683f4650686a7fabeca26345f40a7ad5bc",
+          "sheet": "1249-42"
+        }
+      ]
+    },
+    "photo": {
+      "attribution": "© swisstopo",
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "dataset": "swissimage",
+      "edition": "2023",
+      "resolution_m": 0.1,
+      "tiles": [
+        {
+          "sha256": "7a2e6c10922c81f4f70b059db18c10f7db88060dd6e1dec082466664d474d05c",
+          "tile": "2650-1149"
+        },
+        {
+          "sha256": "f804a2816522f2a8b3c4adcec7beb17381ab17731c741256a7ec67f6fa20b22f",
+          "tile": "2650-1150"
+        },
+        {
+          "sha256": "9c8581ad56b1943134d5dc8866985983a6e58e7b63aa29a17687730f1d330e6f",
+          "tile": "2651-1149"
+        },
+        {
+          "sha256": "1687b6ab12defdca572d669a17539d7b96460cfd1ef594ab605558f7723acadc",
+          "tile": "2651-1150"
+        }
+      ]
+    }
+  },
+  "world_sha256": "e7cd091dc238bc1ba68839c6120d60af5849d0d7923b3798b226480468d5254a"
+}

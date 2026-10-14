@@ -1,0 +1,908 @@
+{
+  "about": "The shared roof-colour fixture (m3-design.md section 3; briefs M3-05 and M3-12), the seam between the pipeline's roofs step and the game's BuildingRoofs and BuildingLoader. World and area: the buildings fixture's (tests/shared/buildings_fixture/world.json, terrain.json: origin E 2650000 / N 1150000, height offset 500 m, area 'fixture' E 2650900-2651100, N 1149950-1150050). tests/shared/roofs_fixture/source.json is one sheet, 1249-42: the buildings fixture's eleven features unchanged (byte for byte, first) and six more, 12 to 17, all in the tile 2651-1149, which had no building: so the chunks 2650-1149, 2650-1150 and 2651-1150 are the buildings fixture's own bytes and 2651-1149 is new. The photo (photo.json, photo_<tile>.u8) is synthetic: 0.1 m source pixels on the national grid, only windows around the roofs, one file per 1 km tile; the colours are chosen so that every likely mistake listed under 'detectors' changes the named buildings (measured: each was run against this fixture). Everything under generated/ and the expected values were computed by design two independent ways (identical bytes): one with the repository's buildings functions, an exact Fraction scanline and Counter histograms, the other re-deriving the buildings in integers, numpy int64 edge functions and np.sort. generated/manifest.json is assembled by design in the manifest's final M3 shape (top level exactly buildings, photo, roofs, schema, surfaces, terrain, trees, world, world_sha256; this fixture's buildings and roofs blocks verbatim, every other block null; the text json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False) plus a newline): the wiring brief M3-13 must reproduce it byte for byte. roofs.json's computed_for: inputs_sha256 is the SHA-256 of json.dumps({'swissbuildings3d': <entry>, 'swissimage': <entry>}, sort_keys=True, separators=(',', ':'), ensure_ascii=False) over datasets.lock.json's two entries, world_sha256 the world.json's. 'buildings' lists every selected building in chunk order with its expected roof; 'triangles' names triangles by their index in their chunk's triangle list (the file's order a, b, c) with their LV95 points and the file's float32 local positions: the game must draw each 'roof' one with its building's colour as vertex colour, each 'wall' one with the plaster placeholder, each 'neutral_roof' one with the neutral roof material.",
+  "area": "fixture",
+  "buildings": [
+    {
+      "case": "a gable house wound negative, reversed; roof slopes 39.5 degrees",
+      "roof": "636c0c",
+      "roof_pixels": 14137,
+      "tile": "2650-1149",
+      "triangles": 16,
+      "uuid": "{1B7E52C0-0000-4000-8000-000000000001}",
+      "vertices": 10
+    },
+    {
+      "case": "centre exactly on the south edge N 1149950: half its roof lies south of the area, outside the photo",
+      "roof": "504b1e",
+      "roof_pixels": 5497,
+      "tile": "2650-1149",
+      "triangles": 12,
+      "uuid": "{3F09D6A1-0000-4000-8000-000000000010}",
+      "vertices": 8
+    },
+    {
+      "case": "an L-shaped block straddling E 2651000 (tile 2650 by its bounding-box centre): roof pixels from the tiles 2650-1149 and 2651-1149",
+      "roof": "368430",
+      "roof_pixels": 20372,
+      "tile": "2650-1149",
+      "triangles": 20,
+      "uuid": "{41D8A3E6-0000-4000-8000-000000000003}",
+      "vertices": 12
+    },
+    {
+      "case": "centre exactly on the west edge E 2650900: half its roof lies west of the area, outside the photo; only the photo's pixels count",
+      "roof": "285842",
+      "roof_pixels": 3533,
+      "tile": "2650-1149",
+      "triangles": 12,
+      "uuid": "{5E2C07B9-0000-4000-8000-000000000004}",
+      "vertices": 8
+    },
+    {
+      "case": "row house h2, sharing an edge with h1 (the edge lies between two pixel columns)",
+      "roof": "ae5454",
+      "roof_pixels": 7719,
+      "tile": "2650-1150",
+      "triangles": 12,
+      "uuid": "{10E4B7C3-0000-4000-8000-000000000009}",
+      "vertices": 8
+    },
+    {
+      "case": "row house h1: UUID order is the reverse of reading order in its chunk",
+      "roof": "4a5466",
+      "roof_pixels": 8798,
+      "tile": "2650-1150",
+      "triangles": 12,
+      "uuid": "{9A62F0D1-0000-4000-8000-000000000008}",
+      "vertices": 8
+    },
+    {
+      "case": "a gable house with 55 degree slopes: roof (up 0.574); a 45 degree rule (up >= 0.707) gives it none",
+      "roof": "3d4878",
+      "roof_pixels": 4800,
+      "tile": "2651-1149",
+      "triangles": 16,
+      "uuid": "{2C7F4B19-0000-4000-8000-000000000013}",
+      "vertices": 10
+    },
+    {
+      "case": "a strip 8 cm deep (N 1149970.06-1149970.14), between two pixel-centre rows: roof null; a corner rule in N finds 60 pixels",
+      "roof": null,
+      "roof_pixels": 0,
+      "tile": "2651-1149",
+      "triangles": 12,
+      "uuid": "{65E0F7D4-0000-4000-8000-000000000015}",
+      "vertices": 8
+    },
+    {
+      "case": "a flat box 60 x 40 pixels whose north, south and west edges run through pixel centres (the east edge between two columns); R is 0 on 20 of its 40 pixel rows (the north and south rows among them) and 200 on the others: the lower median is 00, an upper median, a mean or np.median, excluding the boundary or a top-left fill rule gives c8 or 64; its roof diagonal runs from its north-west corner, a pixel centre, so counting a pixel once per triangle gives 2401 pixels",
+      "roof": "003e9c",
+      "roof_pixels": 2400,
+      "tile": "2651-1149",
+      "triangles": 12,
+      "uuid": "{8F14A0B6-0000-4000-8000-000000000016}",
+      "vertices": 8
+    },
+    {
+      "case": "a tower whose pyramid faces slope 62 degrees: walls, so no roof triangle and roof null; a rule other than 60 degrees (n_H > 0 alone, 4 n_H^2 >= n_E^2 + n_N^2, |n_H|) or the unoriented triangles (its floor faces up) give it a colour",
+      "roof": null,
+      "roof_pixels": 0,
+      "tile": "2651-1149",
+      "triangles": 14,
+      "uuid": "{B3D5E8A2-0000-4000-8000-000000000012}",
+      "vertices": 9
+    },
+    {
+      "case": "a strip 8 cm wide (E 2651020.06-2651020.14), between two pixel-centre columns: roof triangles but no pixel centre, roof null; a pixel-corner rule (E0 + 0.1 i) finds 60 pixels",
+      "roof": null,
+      "roof_pixels": 0,
+      "tile": "2651-1149",
+      "triangles": 12,
+      "uuid": "{D8A61C3E-0000-4000-8000-000000000014}",
+      "vertices": 8
+    },
+    {
+      "case": "a flat roof turned 45 degrees with its corners on pixel centres: 120 centres lie on its edges; floating-point edge tests lose some of them (1836 or 1818 pixels instead of 1861)",
+      "roof": "3449d2",
+      "roof_pixels": 1861,
+      "tile": "2651-1149",
+      "triangles": 12,
+      "uuid": "{E5B92D07-0000-4000-8000-000000000017}",
+      "vertices": 8
+    },
+    {
+      "case": "a flat box wound positive, not reversed",
+      "roof": "6169e4",
+      "roof_pixels": 13827,
+      "tile": "2651-1150",
+      "triangles": 12,
+      "uuid": "{6D3A8F24-0000-4000-8000-000000000002}",
+      "vertices": 8
+    },
+    {
+      "case": "a chapel straddling N 1150000: roof pixels from the tiles 2651-1149 and 2651-1150",
+      "roof": "3f40f6",
+      "roof_pixels": 7728,
+      "tile": "2651-1150",
+      "triangles": 14,
+      "uuid": "{C45B19E7-0000-4000-8000-000000000007}",
+      "vertices": 9
+    }
+  ],
+  "detectors": [
+    {
+      "changes": [
+        "{B3D5E8A2-0000-4000-8000-000000000012}"
+      ],
+      "mistake": "roof when n_H > 0, no slope limit"
+    },
+    {
+      "changes": [
+        "{B3D5E8A2-0000-4000-8000-000000000012}"
+      ],
+      "mistake": "roof when 4 n_H^2 >= n_E^2 + n_N^2 (63.4 degrees)"
+    },
+    {
+      "changes": [
+        "{2C7F4B19-0000-4000-8000-000000000013}"
+      ],
+      "mistake": "roof when n_H^2 >= n_E^2 + n_N^2 (45 degrees)"
+    },
+    {
+      "changes": [
+        "{B3D5E8A2-0000-4000-8000-000000000012}"
+      ],
+      "mistake": "roof when |n_H| passes the test (floors too)"
+    },
+    {
+      "changes": [
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{B3D5E8A2-0000-4000-8000-000000000012}"
+      ],
+      "mistake": "the triangles as read, before the orientation rule"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{C45B19E7-0000-4000-8000-000000000007}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "pixel rows counted from the south"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{C45B19E7-0000-4000-8000-000000000007}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "pixel columns counted from the east"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{C45B19E7-0000-4000-8000-000000000007}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "pixels read as (column, row)"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{65E0F7D4-0000-4000-8000-000000000015}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{D8A61C3E-0000-4000-8000-000000000014}"
+      ],
+      "mistake": "colours written in reading order instead of UUID order"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{C45B19E7-0000-4000-8000-000000000007}",
+        "{D8A61C3E-0000-4000-8000-000000000014}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "pixel centre E at E0 + 0.1 i (the corner)"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{65E0F7D4-0000-4000-8000-000000000015}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{C45B19E7-0000-4000-8000-000000000007}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "pixel centre N at N_top - 0.1 j (the corner)"
+    },
+    {
+      "changes": [
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{65E0F7D4-0000-4000-8000-000000000015}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{C45B19E7-0000-4000-8000-000000000007}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "pixel centre N at N_top - 0.1 (j + 1)"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "the centre of row j + 1 for row j"
+    },
+    {
+      "changes": [
+        "{10E4B7C3-0000-4000-8000-000000000009}",
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{6D3A8F24-0000-4000-8000-000000000002}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{C45B19E7-0000-4000-8000-000000000007}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "the centre of column i + 1 for column i"
+    },
+    {
+      "changes": [
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "the boundary excluded"
+    },
+    {
+      "changes": [
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "a top-left fill rule (bottom and right edges excluded)"
+    },
+    {
+      "changes": [
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{9A62F0D1-0000-4000-8000-000000000008}",
+        "{C45B19E7-0000-4000-8000-000000000007}"
+      ],
+      "mistake": "the element at n // 2"
+    },
+    {
+      "changes": [
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{3F09D6A1-0000-4000-8000-000000000010}",
+        "{41D8A3E6-0000-4000-8000-000000000003}",
+        "{5E2C07B9-0000-4000-8000-000000000004}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{C45B19E7-0000-4000-8000-000000000007}"
+      ],
+      "mistake": "the rounded mean"
+    },
+    {
+      "changes": [
+        "{2C7F4B19-0000-4000-8000-000000000013}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{C45B19E7-0000-4000-8000-000000000007}"
+      ],
+      "mistake": "numpy's median (the mean of the two middle elements), rounded"
+    },
+    {
+      "changes": [
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "a pixel counted once per roof triangle that holds it"
+    },
+    {
+      "changes": [
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "edge tests in 64-bit floating point, metres, absolute coordinates"
+    },
+    {
+      "changes": [
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "edge tests in 64-bit floating point, metres, differences first"
+    },
+    {
+      "changes": [
+        "{1B7E52C0-0000-4000-8000-000000000001}",
+        "{8F14A0B6-0000-4000-8000-000000000016}",
+        "{E5B92D07-0000-4000-8000-000000000017}"
+      ],
+      "mistake": "edge tests in 32-bit floating point, local metres"
+    }
+  ],
+  "fixture": "tests/shared/roofs_fixture",
+  "triangles": [
+    {
+      "kind": "roof",
+      "local": [
+        [
+          943.77099609375,
+          1031.8741455078125,
+          23.900999069213867
+        ],
+        [
+          930.406005859375,
+          1031.8741455078125,
+          26.7189998626709
+        ],
+        [
+          931.4739990234375,
+          1027.6092529296875,
+          31.783000946044922
+        ]
+      ],
+      "lv95": [
+        [
+          2650943.771,
+          1149976.099,
+          1531.8742
+        ],
+        [
+          2650930.406,
+          1149973.281,
+          1531.8742
+        ],
+        [
+          2650931.474,
+          1149968.217,
+          1527.6093
+        ]
+      ],
+      "name": "{1B7E52C0-0000-4000-8000-000000000001} (Gebaeude Einzelhaus) triangle 1",
+      "roof": "636c0c",
+      "tile": "2650-1149",
+      "triangle": 1,
+      "up": 0.7717,
+      "uuid": "{1B7E52C0-0000-4000-8000-000000000001}",
+      "why": "a gable house the pipeline reversed (V < 0): its roof slope at 39.5 degrees"
+    },
+    {
+      "kind": "wall",
+      "local": [
+        [
+          931.4739990234375,
+          1027.6092529296875,
+          31.783000946044922
+        ],
+        [
+          930.406005859375,
+          1031.8741455078125,
+          26.7189998626709
+        ],
+        [
+          929.3369750976562,
+          1021.481689453125,
+          21.6560001373291
+        ]
+      ],
+      "lv95": [
+        [
+          2650931.474,
+          1149968.217,
+          1527.6093
+        ],
+        [
+          2650930.406,
+          1149973.281,
+          1531.8742
+        ],
+        [
+          2650929.337,
+          1149978.344,
+          1521.4817
+        ]
+      ],
+      "name": "{1B7E52C0-0000-4000-8000-000000000001} (Gebaeude Einzelhaus) triangle 2",
+      "roof": null,
+      "tile": "2650-1149",
+      "triangle": 2,
+      "up": 0.0001,
+      "uuid": "{1B7E52C0-0000-4000-8000-000000000001}",
+      "why": "a vertical wall of the same house: the plaster placeholder, never a roof colour"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          1074.9119873046875,
+          1046.09375,
+          -16.38800048828125
+        ],
+        [
+          1059.8060302734375,
+          1046.09375,
+          -24.1299991607666
+        ],
+        [
+          1061.5269775390625,
+          1046.09375,
+          -14.093000411987305
+        ]
+      ],
+      "lv95": [
+        [
+          2651074.912,
+          1150016.388,
+          1546.0937
+        ],
+        [
+          2651059.806,
+          1150024.13,
+          1546.0937
+        ],
+        [
+          2651061.527,
+          1150014.093,
+          1546.0937
+        ]
+      ],
+      "name": "{6D3A8F24-0000-4000-8000-000000000002} (Gebaeude Einzelhaus) triangle 3",
+      "roof": "6169e4",
+      "tile": "2651-1150",
+      "triangle": 3,
+      "up": 1.0,
+      "uuid": "{6D3A8F24-0000-4000-8000-000000000002}",
+      "why": "a flat roof of the one building written counter-clockwise (not reversed)"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          1007.8759765625,
+          1041.762451171875,
+          33.792999267578125
+        ],
+        [
+          1003.5189819335938,
+          1041.762451171875,
+          27.36199951171875
+        ],
+        [
+          992.1229858398438,
+          1041.762451171875,
+          33.792999267578125
+        ]
+      ],
+      "lv95": [
+        [
+          2651007.876,
+          1149966.207,
+          1541.7625
+        ],
+        [
+          2651003.519,
+          1149972.638,
+          1541.7625
+        ],
+        [
+          2650992.123,
+          1149966.207,
+          1541.7625
+        ]
+      ],
+      "name": "{41D8A3E6-0000-4000-8000-000000000003} (Gebaeude Einzelhaus) triangle 2",
+      "roof": "368430",
+      "tile": "2650-1149",
+      "triangle": 30,
+      "up": 1.0,
+      "uuid": "{41D8A3E6-0000-4000-8000-000000000003}",
+      "why": "the L-shaped block straddling E 2651000: its roof pixels come from two tiles"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          1048.9139404296875,
+          1033.9169921875,
+          4.618000030517578
+        ],
+        [
+          1044.720947265625,
+          1037.2685546875,
+          0.0020000000949949026
+        ],
+        [
+          1040.5269775390625,
+          1033.9169921875,
+          4.618000030517578
+        ]
+      ],
+      "lv95": [
+        [
+          2651048.914,
+          1149995.382,
+          1533.917
+        ],
+        [
+          2651044.721,
+          1149999.998,
+          1537.2685
+        ],
+        [
+          2651040.527,
+          1149995.382,
+          1533.917
+        ]
+      ],
+      "name": "{C45B19E7-0000-4000-8000-000000000007} (Kapelle) triangle 2",
+      "roof": "3f40f6",
+      "tile": "2651-1150",
+      "triangle": 14,
+      "up": 0.8092,
+      "uuid": "{C45B19E7-0000-4000-8000-000000000007}",
+      "why": "the chapel straddling N 1150000: its roof pixels come from two tiles"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          942.3909912109375,
+          1026.8531494140625,
+          -20.573999404907227
+        ],
+        [
+          931.8460083007812,
+          1026.8531494140625,
+          -12.262999534606934
+        ],
+        [
+          942.3909912109375,
+          1026.8531494140625,
+          -12.262999534606934
+        ]
+      ],
+      "lv95": [
+        [
+          2650942.391,
+          1150020.574,
+          1526.8531
+        ],
+        [
+          2650931.846,
+          1150012.263,
+          1526.8531
+        ],
+        [
+          2650942.391,
+          1150012.263,
+          1526.8531
+        ]
+      ],
+      "name": "{9A62F0D1-0000-4000-8000-000000000008} (Gebaeude Einzelhaus) triangle 4",
+      "roof": "4a5466",
+      "tile": "2650-1150",
+      "triangle": 16,
+      "up": 1.0,
+      "uuid": "{9A62F0D1-0000-4000-8000-000000000008}",
+      "why": "row house h1: UUID order puts it after h2 in its chunk, the reverse of reading order"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          951.72802734375,
+          1025.2197265625,
+          -20.573999404907227
+        ],
+        [
+          942.3909912109375,
+          1025.2197265625,
+          -12.262999534606934
+        ],
+        [
+          951.72802734375,
+          1025.2197265625,
+          -12.262999534606934
+        ]
+      ],
+      "lv95": [
+        [
+          2650951.728,
+          1150020.574,
+          1525.2197
+        ],
+        [
+          2650942.391,
+          1150012.263,
+          1525.2197
+        ],
+        [
+          2650951.728,
+          1150012.263,
+          1525.2197
+        ]
+      ],
+      "name": "{10E4B7C3-0000-4000-8000-000000000009} (Gebaeude Einzelhaus) triangle 3",
+      "roof": "ae5454",
+      "tile": "2650-1150",
+      "triangle": 3,
+      "up": 1.0,
+      "uuid": "{10E4B7C3-0000-4000-8000-000000000009}",
+      "why": "row house h2, sharing an edge with h1: its own colour"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          1025.0,
+          1036.0,
+          20.0
+        ],
+        [
+          1033.0,
+          1036.0,
+          20.0
+        ],
+        [
+          1033.0,
+          1040.284423828125,
+          17.0
+        ]
+      ],
+      "lv95": [
+        [
+          2651025.0,
+          1149980.0,
+          1536.0
+        ],
+        [
+          2651033.0,
+          1149980.0,
+          1536.0
+        ],
+        [
+          2651033.0,
+          1149983.0,
+          1540.2844
+        ]
+      ],
+      "name": "{2C7F4B19-0000-4000-8000-000000000013} (Gebaeude Einzelhaus) triangle 12",
+      "roof": "3d4878",
+      "tile": "2651-1149",
+      "triangle": 12,
+      "up": 0.5736,
+      "uuid": "{2C7F4B19-0000-4000-8000-000000000013}",
+      "why": "a 55 degree roof: roof by the rule (up 0.574), and by the game's normal.y >= 0.5"
+    },
+    {
+      "kind": "wall",
+      "local": [
+        [
+          1015.0,
+          1038.0,
+          15.0
+        ],
+        [
+          1019.0,
+          1038.0,
+          15.0
+        ],
+        [
+          1017.0,
+          1041.761474609375,
+          13.0
+        ]
+      ],
+      "lv95": [
+        [
+          2651015.0,
+          1149985.0,
+          1538.0
+        ],
+        [
+          2651019.0,
+          1149985.0,
+          1538.0
+        ],
+        [
+          2651017.0,
+          1149987.0,
+          1541.7615
+        ]
+      ],
+      "name": "{B3D5E8A2-0000-4000-8000-000000000012} (Turm) triangle 10",
+      "roof": null,
+      "tile": "2651-1149",
+      "triangle": 50,
+      "up": 0.4695,
+      "uuid": "{B3D5E8A2-0000-4000-8000-000000000012}",
+      "why": "a 62 degree pyramid face of the tower: a wall by the rule and the game (up 0.469)"
+    },
+    {
+      "kind": "neutral_roof",
+      "local": [
+        [
+          1020.0599975585938,
+          1027.5,
+          45.0
+        ],
+        [
+          1020.1400146484375,
+          1027.5,
+          45.0
+        ],
+        [
+          1020.1400146484375,
+          1027.5,
+          39.0
+        ]
+      ],
+      "lv95": [
+        [
+          2651020.06,
+          1149955.0,
+          1527.5
+        ],
+        [
+          2651020.14,
+          1149955.0,
+          1527.5
+        ],
+        [
+          2651020.14,
+          1149961.0,
+          1527.5
+        ]
+      ],
+      "name": "{D8A61C3E-0000-4000-8000-000000000014} (Gebaeude Einzelhaus) triangle 2",
+      "roof": null,
+      "tile": "2651-1149",
+      "triangle": 56,
+      "up": 1.0,
+      "uuid": "{D8A61C3E-0000-4000-8000-000000000014}",
+      "why": "the 8 cm strip's flat top: roof triangles, but no pixel centre: roof null, the neutral roof material"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          1050.050048828125,
+          1031.300048828125,
+          24.950000762939453
+        ],
+        [
+          1050.050048828125,
+          1031.300048828125,
+          28.850000381469727
+        ],
+        [
+          1056.02001953125,
+          1031.300048828125,
+          28.850000381469727
+        ]
+      ],
+      "lv95": [
+        [
+          2651050.05,
+          1149975.05,
+          1531.3
+        ],
+        [
+          2651050.05,
+          1149971.15,
+          1531.3
+        ],
+        [
+          2651056.02,
+          1149971.15,
+          1531.3
+        ]
+      ],
+      "name": "{8F14A0B6-0000-4000-8000-000000000016} (Gebaeude Einzelhaus) triangle 2",
+      "roof": "003e9c",
+      "tile": "2651-1149",
+      "triangle": 30,
+      "up": 1.0,
+      "uuid": "{8F14A0B6-0000-4000-8000-000000000016}",
+      "why": "the probe: R is 0 on half its pixel rows, so its lower median is 00"
+    },
+    {
+      "kind": "roof",
+      "local": [
+        [
+          1070.050048828125,
+          1033.4000244140625,
+          22.950000762939453
+        ],
+        [
+          1073.050048828125,
+          1033.4000244140625,
+          19.950000762939453
+        ],
+        [
+          1070.050048828125,
+          1033.4000244140625,
+          16.950000762939453
+        ]
+      ],
+      "lv95": [
+        [
+          2651070.05,
+          1149977.05,
+          1533.4
+        ],
+        [
+          2651073.05,
+          1149980.05,
+          1533.4
+        ],
+        [
+          2651070.05,
+          1149983.05,
+          1533.4
+        ]
+      ],
+      "name": "{E5B92D07-0000-4000-8000-000000000017} (Gebaeude Einzelhaus) triangle 2",
+      "roof": "3449d2",
+      "tile": "2651-1149",
+      "triangle": 68,
+      "up": 1.0,
+      "uuid": "{E5B92D07-0000-4000-8000-000000000017}",
+      "why": "the 45 degree diamond: its edges run through pixel centres"
+    }
+  ],
+  "world": "tests/shared/buildings_fixture/world.json"
+}
