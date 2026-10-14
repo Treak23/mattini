@@ -13,6 +13,8 @@ swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D
 colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §13 rows 29–34 (rows 35–36 are design's).
 M2's residue is M3-01 and M3-02.
 
+Orchestrator: session_014zvmfwGgSKjxfe3feiiL91 · M3 · since 2026-10-14T19:45Z
+
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
 
