@@ -108,6 +108,12 @@ live by design's agent on 2026-10-14. In short:
      swisssurface3d `088f8bd2750994a3d29030e06140eb4ce7c895c5cf6ae448bd610676ca75ef91`,
      swisstlm3d `7034bea820642a42ce9fc558e62a2f2749b53d18459570f082eecd7c93ed52e9`.
    - Surface editions: 2623-1095 in 2022 only, the five other tiles in 2021 only.
+8. **The new steps' expected values fit this lock.** The four step configs design committed
+   with the plan (`config/photo.json`, `surfaces.json`, `roofs.json`, `trees.json`) record
+   `computed_for` over these entries. The pinned `test_expected_inputs_m3.py` checks each one
+   against the committed lock and world. The steps' own tests (lanes C and D) read no
+   committed lock, because it gains these entries only here, in the same wave; this test is
+   the seam.
 
 ## Scope — files you may touch
 
@@ -120,8 +126,8 @@ live by design's agent on 2026-10-14. In short:
 - `pipeline/tests/`:
   - the pinned copies (`local_swisstopo.py`, `test_datasets_editions.py`,
     `test_lock_photo_surface_tlm.py`, `test_download_photo_surface_tlm.py`,
-    `test_measured_photo_surface_tlm.py`, and `test_buildings_download.py`, design's update of
-    M2-03's pinned file);
+    `test_measured_photo_surface_tlm.py`, `test_expected_inputs_m3.py`, and
+    `test_buildings_download.py`, design's update of M2-03's pinned file);
   - `test_download_datasets_config.py` (the neither-nor case);
   - `test_download_network.py` (five entries now; compare the three new ones with what
     swisstopo publishes, and the TLM's HEAD);
@@ -145,7 +151,7 @@ M3-01 (the same lane; it edits `datasets.py` and `download.py` too). Start from 
 - [ ] `lock photo`, `lock surface`, `lock tlm` against the live API write the lock file
       `c071385c…` (73 added lines), unless swisstopo republished meanwhile. If it did, that is
       a BLOCKED question; design's expected values depend on these entries.
-      `test_measured_photo_surface_tlm.py` passes.
+      `test_measured_photo_surface_tlm.py` and `test_expected_inputs_m3.py` pass.
       - does NOT prove: that swisstopo will not republish later (the download refuses that).
 - [ ] `download photo` and `download surface` into a scratch root: six files each, provenance
       `f28eed29…` and `088f8bd2…`; a second run fetches nothing.

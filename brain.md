@@ -234,12 +234,18 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   ImageTexture wider or taller than 16384 px reads back all zeros with no ERROR line (16384
   works). Terrain3D's colour map is RGBA8 per vertex and its alpha a roughness modifier
   (0.5 neutral): an RGB image gets alpha 255, roughness +1; `get_color` returns the vertex
-  below and left of the point, alpha 1.0. Under Compat, MultiMesh custom data reaches the
-  shader converted from sRGB to linear (0.5 arrives as about 0.214). `PCKPacker` writes the
-  same bytes for the same files in the same order (the order changes them);
-  `ProjectSettings.load_resource_pack` takes a `.pck` or a `.zip` (a `.zip` renamed `.dat`
-  returns false with no ERROR line), and loads in under 1 ms; a 96 MB file is read from a
-  `.pck` in about 55 ms.
+  below and left of the point, alpha 1.0. Colour under Compat (this container): no
+  conversion shows on any path (a literal ALBEDO, uniforms with and without `source_color`, a
+  `source_color` texel, INSTANCE_CUSTOM, instance COLOR, EMISSION: 0.5 or texel 128 all
+  display as 128). An earlier reading of "custom data arrives converted to linear" was
+  wrong. Forward+ linearises `source_color` samples and encodes its output, so a colour
+  passed raw (instance data, vertex COLOR without `vertex_color_is_srgb`) looks right in a
+  Compat shot and too light on the owner's PC. Colours enter only through `source_color`
+  samplers or uniforms, or vertex colours with `vertex_color_is_srgb`; a Compat screenshot
+  cannot check colour encoding. `PCKPacker` writes the same bytes for the same files in the
+  same order (the order changes them); `ProjectSettings.load_resource_pack` takes a `.pck` or
+  a `.zip` (a `.zip` renamed `.dat` returns false with no ERROR line), and loads in under
+  1 ms; a 96 MB file is read from a `.pck` in about 55 ms.
 - **H22 — A copied checkout writes into its original (measured 2026-10-14).** Copying the
   repository with `pipeline/.venv` copies a `.pth` that points at the original checkout:
   `python -m mattini` in the copy then writes into the original. Use `git clone` (the venv
@@ -266,8 +272,11 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   dropped) and does not check their types; a shader's declarations read through
   `Shader.get_shader_uniform_list()`. A texture imported without settings is lossless and has
   no mipmaps (`compress/mode=0`, `mipmaps/generate=false`; "detect 3D" reimports only in the
-  editor): a committed texture that needs mipmaps carries its `.import` file. A SceneTree
-  script that fails in `_initialize` can hang without quitting: wrap such runs in `timeout`.
+  editor): a committed texture that needs mipmaps carries its `.import` file. Headless, a
+  MultiMesh drops `set_instance_transform` (`get_instance_transform` returns the identity)
+  but keeps an assigned `buffer`: fill `buffer`. A SceneTree script that fails in
+  `_initialize`, or names a class whose script fails to parse, can hang with no output and
+  no exit: run `--check-only` first and wrap such runs in `timeout`.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

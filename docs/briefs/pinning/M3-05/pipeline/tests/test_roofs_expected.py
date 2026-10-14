@@ -10,7 +10,9 @@ config/datasets.lock.json; `world_sha256` is the SHA-256 of config/world.json's 
 village's roofs/village.json was computed by design two independent ways (identical bytes,
 290'006 bytes): 1'486 buildings, every one with a roof colour, 30'392'135 roof pixels. The
 step compares the SHA-256 of the bytes it would write with `expected_sha256` before writing
-anything, after comparing `computed_for` with the world config and the lock.
+anything, after comparing `computed_for` with the world config and the lock. The fit of
+`computed_for` with the committed lock is pinned by brief M3-03, which writes the lock's
+swissimage entry in the same wave; this file reads no committed lock.
 
 Does NOT prove: that this machine computes those bytes (the step's own comparison does, at
 the close's real run); that the colours look right (the owner's eyes).
@@ -52,30 +54,13 @@ def test_the_committed_config_expects_design_s_village():
     assert list(config["areas"]) == list(terrain["areas"]), "the one area is the terrain's"
 
 
-def test_computed_for_is_the_world_and_both_lock_entries():
-    lock = json.loads((REPO / "config" / "datasets.lock.json").read_text(encoding="utf-8"))
-    entries = {name: lock["datasets"][name] for name in ("swissbuildings3d", "swissimage")}
-    canonical = json.dumps(entries, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    assert VILLAGE_COMPUTED_FOR == {
-        "inputs_sha256": _sha(canonical.encode("utf-8")),
-        "world_sha256": _sha((REPO / "config" / "world.json").read_bytes()),
-    }
-    # the photo's entry is the 2023 0.1 m tiles design measured (m3-design.md §1)
-    photo = lock["datasets"]["swissimage"]
-    assert set(photo) == {"collection", "edition", "resolution_m", "tiles"}
-    assert (photo["collection"], photo["edition"], photo["resolution_m"]) == (
-        "ch.swisstopo.swissimage-dop10",
-        "2023",
-        0.1,
+def test_computed_for_is_this_world():
+    assert VILLAGE_COMPUTED_FOR["world_sha256"] == _sha(
+        (REPO / "config" / "world.json").read_bytes()
     )
-    assert sorted(photo["tiles"]) == [
-        "2623-1095",
-        "2623-1096",
-        "2623-1097",
-        "2624-1095",
-        "2624-1096",
-        "2624-1097",
-    ]
+    # The inputs: config/datasets.lock.json gains its swissimage entry in this wave (brief
+    # M3-03, lane A), so its fit with VILLAGE_COMPUTED_FOR is pinned there
+    # (test_expected_inputs_m3.py), not here.
 
 
 AREA = {"computed_for": VILLAGE_COMPUTED_FOR, "expected_sha256": VILLAGE_ROOFS}
