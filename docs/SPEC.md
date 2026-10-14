@@ -539,8 +539,8 @@ territory where it places the photo in the world (the rectangle), Tier 2 elsewhe
   photo_config, world, world_sha256, datasets, lock=LOCK_PATH)`.
 - *The game (brief M3-09):* `PhotoGrid.from_manifest(path, world)` reads the `photo` block
   and checks its key set, its `world_sha256` against its manifest, that the WorldConfig is the
-  manifest's with the owner's axes (another mapping is refused, as the terrain's), the cell and
-  the box in integer decimetres, the file's path and SHA-256, and the decoded size (columns ×
+  manifest's with the owner's axes (another mapping is refused, as the terrain's), the cell,
+  columns × cell and rows × cell against the box within 1 mm, the file's path and SHA-256, and the decoded size (columns ×
   rows, RGB8); it makes an `ImageTexture` with mipmaps (RGB8: about 0.8 GB of GPU memory as
   RGBA8 on Vulkan; an exported build cannot compress at runtime, H21). The rectangle comes
   from WorldConfig only: its north-west corner is `to_local(e_min, n_max, h)` (x0, z0); it
@@ -600,6 +600,61 @@ selected building's roof colour from the 2023 photo, and its id and counts in it
   orientation, the pixel-centre and boundary rules and the median from their likeliest wrong
   twins; a synthetic photo in four `.u8` windows; the expected `roofs/fixture.json`
   computed two ways.
+
+**The surfaces (M3; designed at M3 planning, 2026-10-14; the owner's "bring into m3 now", §13 row
+33; brief M3-06, the game M3-10).** Roads, paths, water and rock from swissTLM3D as a class grid
+on the photo's grid. Tier 1 where it places the grid (the rectangle), Tier 2 elsewhere.
+
+- *Input:* the swisstlm3d FileGDB zip (§5), read with fiona straight from the zip (GDAL
+  3.9.2 reads its backslash member names; measured), never unzipped; its size against the
+  provenance's `size_bytes`, then its SHA-256 against the lock's, then the read, after which
+  its (size, mtime_ns, inode) must be unchanged. Layers TLM_STRASSE, TLM_BODENBEDECKUNG,
+  TLM_FLIESSGEWAESSER. A feature is read when its 2-D geometry meets the area box grown by
+  10 m (GDAL's box filter, grown by 1 m, only pre-filters; the decision is exact).
+  Coordinates are integer millimetres (the file's own grid; measured within 1.86e-9 m); one
+  more than 1e-6 m off is refused. The codes are read from the FileGDB's own subtypes and
+  domains.
+- *The grid:* `cell_m` from `config/surfaces.json` (0.2, 0.5 or 1); texel centres exact in
+  integer mm. Classes, highest wins: **4 road** > **3 path** > **2 water** > **1 rock** > 0:
+  - road and path: TLM_STRASSE with BELAGSART 100 (Hart) → road, 200 (Natur) → path, whose
+    OBJEKTART has a width (8 → 10 m, 9 → 6, 10 → 4, 11 → 3, 15 → 2, 16 → 1, 17 → 1, 18 → 2,
+    20 → 8), drawn where a texel's centre lies within width/2 of a segment (exact rational
+    test); not drawn: KUNSTBAUTE 300, 400 (roofed bridges), 700 (gallery), 1000 (tunnel),
+    1100, 1200 (underpasses), 1400 (in or on a building);
+  - water: TLM_BODENBEDECKUNG OBJEKTART 5 (Fliessgewaesser) or 10 (Stehende Gewaesser), the
+    centre inside; and TLM_FLIESSGEWAESSER OBJEKTART 4 with VERLAUF 100 (above ground) or 500
+    (waterfall), within 1.0 m of the line: an **assumed** width of 2 m (TLM gives none), a
+    labelled placeholder; not water: Bisse/Suone (0), a stream on a bridge (VERLAUF 400);
+  - rock: TLM_BODENBEDECKUNG OBJEKTART 1–4 (Fels, Fels locker, Felsbloecke, Felsbloecke
+    locker), the centre inside.
+
+  Point in polygon: per feature, even-odd over its rings by the half-open crossing rule (an
+  edge counts when (y1 > yc) ≠ (y2 > yc) and xc lies left of the crossing, compared
+  exactly); OR-ed across features.
+- *The PNG:* written without Pillow, by the standard library: 8-bit grey, no interlace,
+  filter 0 on every row, one zlib stream at level 9 in IDAT chunks of at most 1 MiB, values
+  0–4. Its content is pinned (`pixels_sha256`); its bytes depend on the zlib build and are
+  checked for integrity only. Files: `surfaces/<area>.png.import` (the keep file, H24), then
+  `surfaces/<area>.png`, then `surfaces/<area>.json`, each through a `.part` rename; the
+  description is exactly {area, cell_m, classes: {"0": "none", "1": "rock", "2": "water",
+  "3": "path", "4": "road"}, columns, file, format "png-l8", lv95_box, pixels_sha256, rows,
+  sha256 (the PNG's), source: {attribution, collection, dataset, edition, file, sha256},
+  world_sha256}.
+- *The expected output:* `config/surfaces.json`, `{"schema": 1, "areas": {<area>: {"cell_m",
+  "computed_for", "expected_pixels_sha256": {"0.2", "0.5", "1"}}}}`, the village computed
+  two independent ways: 0.2 m `93d78ba6…`, 0.5 m `adda417b…`, 1 m `4ea3d1e6…`; at 0.2 m
+  road 74'744 m², path 47'654 m², water 40'737 m², rock 408'266 m². `manifest` decodes the
+  PNG (standard library), checks its content and refuses anything else, naming `python -m
+  mattini surfaces`.
+- *The game (M3-10):* `SurfaceGrid.from_manifest(path, world)`: the photo's checks (the
+  rectangle within 1 mm, the owner's axes), the file's SHA-256 before decoding,
+  `Image.load_png_from_buffer` to L8 (the village's 1.15 MB PNG decodes in 277 ms), the
+  decoded bytes' SHA-256 against `pixels_sha256`; `class_at(x, z)` gives the class, −1
+  outside the half-open rectangle. The texture is sampled with nearest filtering.
+- *Shared fixture:* `tests/shared/surfaces_fixture/` and `tests/shared/surfaces_vectors.json`:
+  40 synthetic features in the reader's form covering every class and priority, the not-drawn
+  cases, holes, overlaps, a two-part line, features outside reaching in and deliberate ties;
+  the expected PNG at all three cells, computed two ways; 53 named points.
 
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same

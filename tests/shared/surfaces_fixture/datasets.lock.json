@@ -1,0 +1,11 @@
+{
+  "datasets": {
+    "swisstlm3d": {
+      "collection": "ch.swisstopo.swisstlm3d",
+      "edition": "2026-02",
+      "file": "source.json",
+      "sha256": "9a6abbf71b79c80c0aeb6d2ab2936e7040ebb35950e9e7e75e536c6e07dafb63"
+    }
+  },
+  "schema": 1
+}

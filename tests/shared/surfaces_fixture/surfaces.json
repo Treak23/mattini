@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "areas": {
+    "fixture": {
+      "cell_m": 0.2,
+      "computed_for": {
+        "inputs_sha256": "319a40ed2308141b815ab3750ee71d02b23e0cacd99f56e62db1d6dedfdd8fea",
+        "world_sha256": "8c509e115b47833170401f7395fff298f769a18deddb6ad51009ba26ca70e801"
+      },
+      "expected_pixels_sha256": {
+        "0.2": "c11c39dea9d53be85a330c48a9ff3b2912929bf2b9cbc28a4b4e6617e2ccb851",
+        "0.5": "b0777839a350835521af7d802a30c2f05393957418f727d870f17ec475578094",
+        "1": "65b68e365895d5dd7cfc133070c97e5f53c221da301aa96a8f559909940740ba"
+      }
+    }
+  }
+}
