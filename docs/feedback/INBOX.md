@@ -6,6 +6,17 @@ sequential across both files. Pull --rebase before every commit.
 
 ## Open
 
+### FB-002 · 2026-10-14 · idea · Game type / collaborative "Zermatt builder"
+Machine: not stated
+Build: 0.2.0 (same test session as FB-001)
+Impact: wish
+Owner's words: a collaborative "Zermatt builder" that could be used for a variety of projects (relayed in the tester's summary, not a verbatim owner quote).
+What happened: Not a defect. An idea for the game type, which is still an open decision. The tester asks that it be raised at M3 planning, because "collaborative" implies networking and saved edits, which affect the architecture early.
+Expected: not stated
+Repro / where exactly: not applicable
+Screenshots: none
+Possibly same as: —
+
 ### FB-001 · 2026-10-14 · design · Look / terrain and building colour (visual direction)
 Machine: linux (EndeavourOS, kernel 7.1.9, KDE Plasma on Wayland, RTX 4090, NVIDIA driver 610.57.04, Vulkan 1.4.341)
 Build: 0.2.0 (dist 5ce4888, all three files' SHA-256 equal to the README; pause screen shows 0.2.0)
