@@ -1,0 +1,70 @@
+{
+  "datasets": {
+    "swissalti3d": {
+      "collection": "ch.swisstopo.swissalti3d",
+      "edition": "2024",
+      "resolution_m": 0.5,
+      "tiles": {
+        "2650-1149": {
+          "file": "dtm.f32",
+          "sha256": "5a02c7394ad3ff10533c94fae370521bf93cd0c22743c57e6cef001b1ebd26ac"
+        },
+        "2650-1150": {
+          "file": "dtm.f32",
+          "sha256": "5a02c7394ad3ff10533c94fae370521bf93cd0c22743c57e6cef001b1ebd26ac"
+        },
+        "2651-1149": {
+          "file": "dtm.f32",
+          "sha256": "5a02c7394ad3ff10533c94fae370521bf93cd0c22743c57e6cef001b1ebd26ac"
+        },
+        "2651-1150": {
+          "file": "dtm.f32",
+          "sha256": "5a02c7394ad3ff10533c94fae370521bf93cd0c22743c57e6cef001b1ebd26ac"
+        }
+      }
+    },
+    "swissbuildings3d": {
+      "collection": "ch.swisstopo.swissbuildings3d_3_0",
+      "edition": "2020",
+      "sheets": {
+        "1249-42": {
+          "file": "buildings.json",
+          "sha256": "200a7c4a941b52220ded9cadeef6792185e1b052131d0c5c56bf97fbf6a19633"
+        }
+      }
+    },
+    "swisssurface3d": {
+      "collection": "ch.swisstopo.swisssurface3d-raster",
+      "resolution_m": 0.5,
+      "tiles": {
+        "2650-1149": {
+          "edition": "2022",
+          "file": "dsm.f32",
+          "sha256": "3d62a0d2830c8b1131338517f7418dc727349df450a054519df8cef444754ccc"
+        },
+        "2650-1150": {
+          "edition": "2021",
+          "file": "dsm.f32",
+          "sha256": "3d62a0d2830c8b1131338517f7418dc727349df450a054519df8cef444754ccc"
+        },
+        "2651-1149": {
+          "edition": "2021",
+          "file": "dsm.f32",
+          "sha256": "3d62a0d2830c8b1131338517f7418dc727349df450a054519df8cef444754ccc"
+        },
+        "2651-1150": {
+          "edition": "2021",
+          "file": "dsm.f32",
+          "sha256": "3d62a0d2830c8b1131338517f7418dc727349df450a054519df8cef444754ccc"
+        }
+      }
+    },
+    "swisstlm3d": {
+      "collection": "ch.swisstopo.swisstlm3d",
+      "edition": "2026-02",
+      "file": "tlm.json",
+      "sha256": "7b0629990e262ffc923dc6d4c2e68903a9d4568553f801e871ec4b16f9df1207"
+    }
+  },
+  "schema": 1
+}

@@ -661,6 +661,86 @@ on the photo's grid. Tier 1 where it places the grid (the rectangle), Tier 2 els
   cases, holes, overlaps, a two-part line, features outside reaching in and deliberate ties;
   the expected PNG at all three cells, computed two ways; 53 named points.
 
+**The trees (M3; designed at M3 planning, 2026-10-14; the owner's look (a), §13 row 29; brief
+M3-07, the game M3-11).** Where the LiDAR surface model shows a tree, its position, base
+height, height and crown radius. Tier 1 where it places a tree (position and base height),
+Tier 2 elsewhere.
+
+- *Inputs:* swisssurface3d (the DSM), swissalti3d (the DTM: the terrain's tiles),
+  swissbuildings3d (the sheets) and swisstlm3d (TLM_GEBAEUDE_FOOTPRINT and
+  TLM_BODENBEDECKUNG), each checked as its own step checks it; `computed_for.inputs_sha256`
+  over the four entries (the several-datasets rule, as roof colours). DSM and DTM tiles are
+  2000 × 2000 float32 at 0.5 m, the transform exactly (0.5, 0, E0, 0, −0.5, N0 + 1000), no
+  nodata pixel. TLM features reach the rule as {uuid, objektart, polygons} (MultiPolygon
+  coordinates as read, rings closed), through the surfaces step's reader; E and N snapped to
+  1 mm, one more than 1e-6 m off is refused. Only the owner's axes: the base height is the
+  terrain grid's, defined for them only.
+- *The rule,* on the area's 0.5 m pixels, (i, j) from the north-west, centre E = e_min +
+  0.25 + 0.5 j, N = n_max − 0.25 − 0.5 i; exact integer arithmetic throughout:
+  1. chm = DSM − DTM per pixel, in 64-bit (exact for float32 inputs).
+  2. Masks by pixel centres, exact in integer mm. F: inside or on the boundary of the plan
+     projection of a non-degenerate triangle of any building of the area's sheets whose
+     bounding box meets the area (selected or not), or inside a TLM_GEBAEUDE_FOOTPRINT polygon
+     of any OBJEKTART but 16 (underground buildings have no roof above ground). B: within
+     2.0 m of a pixel of F, centre to centre (di² + dj² ≤ 16), over the area's pixels only.
+     R: inside a TLM_BODENBEDECKUNG polygon of OBJEKTART 1–4 (rock). Inside: even-odd by the
+     half-open crossing rule, OR-ed across features (as the surfaces').
+  3. v = chm where chm > 0 and the pixel is not in B, else 0. Each v must be a whole multiple
+     of 2⁻¹³ m (true for float32 heights in [1024, 4096) m; measured on every village value);
+     otherwise refused, naming the pixel's LV95 centre and both heights. V = v · 2¹³.
+  4. S = K ⊛ V, K = outer([1, 4, 6, 4, 1], [1, 4, 6, 4, 1]) (weights sum 256), pixels outside
+     the area counted 0: integers in units of 2⁻²¹ m.
+  5. A top: a pixel p not on the area's outermost ring, not in B, not in R, with S(p) ≥ 3 m,
+     such that within the disc of radius ρ = 3 + floor(S(p) / 10 m) pixels (di² + dj² ≤ ρ²,
+     inside the area) every other q has S(q) < S(p), or S(q) = S(p) and q after p in raster
+     order (rows from the north, then columns from the west).
+  6. Dropped: a top whose chm is above 40 m (a cliff: the DSM takes a face's top, the DTM
+     its foot) or below 3 m (a gap in a crown), or where the DTM's slope is 60° or more (gx =
+     DTM(i, j+1) − DTM(i, j−1), gy = DTM(i+1, j) − DTM(i−1, j), dropped when gx² + gy² ≥ 3).
+  7. A tree: E, N the top's centre; x, z = `to_local(E, N)` in 64-bit, then float32; y = the
+     mean of the four vertices of the 0.5 m terrain grid around the centre (heights minus
+     `height_offset_m`), in 64-bit, rounded once to float32, whatever the terrain config's
+     spacing; height = chm at the top; crown radius = clamp(min(d / 2, height / 4), 1.0,
+     6.0) m, d the 2-D distance to the nearest other tree kept in the area (+∞ when none),
+     in 64-bit with a correctly rounded square root, then float32.
+  8. Chunks: the 1 km tile of (E, N); within a chunk, the top pixels' raster order. A tile
+     without a tree has no chunk.
+- *The files:* `trees/<tile>.bin`, per tree x, y, z, height_m, crown_radius_m as
+  little-endian float32 (20 bytes), no header; then `trees/<area>.json`, exactly {area,
+  chunks: [{file, sha256, tile, trees}] by tile, format "trees-f32x5-le", lv95_box,
+  parameters: {building_margin_m 2.0, crown_radius "min(d / 2, height / 4), clamped to 1.0-6.0 m; d to the nearest other tree, infinite when none", max_height_m 40.0,
+  max_slope_deg 60.0, min_height_m 3.0, smoothing "binomial-5x5", window "3 + floor(h / 10
+  m) pixels"}, source: {swissalti3d, swissbuildings3d, swisssurface3d, swisstlm3d},
+  world_sha256}, each through a `.part` rename; a stale chunk is removed. The sources are
+  each dataset's own block's (the terrain's, the buildings', the surfaces'); swisssurface3d's
+  is {attribution, collection, dataset, editions, resolution_m 0.5, tiles: [{edition,
+  sha256, tile}] by tile}.
+- *The expected output:* `config/trees.json`, `{"schema": 1, "areas": {<area>:
+  {"computed_for", "expected_sha256": {<tile>: …}}}}`; the village computed two independent
+  ways (identical bytes): 34'412 trees in six chunks, 688'240 bytes; the height / 4 cap decides 6'781 crowns (19.7 %), the median radius 2.69 m. Measured on the village:
+  every DSM and DTM value on the 2⁻¹³ m grid; the building masks remove 4'539 trees, rock
+  1'465, the TLM footprints 1'690 beyond swissBUILDINGS3D's; 987 tops dropped (27 above
+  40 m, 952 too steep, 12 below 3 m, some for two reasons). Known residue, kept as data (Hard
+  Rule 2): a few false trees where neither building dataset has a structure (vehicles and
+  train cars in the 2021 surface, a canopy newer than both); the margin stops at the area's
+  edge (it matters when areas tile, M5).
+- *The game (M3-11):* `TreeChunks.from_manifest(path, world)` checks the block's key sets,
+  format, `world_sha256` against its manifest, that the WorldConfig is the manifest's with
+  the owner's axes, each file's path, its size (20 × trees) and SHA-256; it never converts a
+  coordinate. Its `edition` is the first and last of the tiles' editions ("2021-2022").
+  `TreeLoader.create(chunks, parent, photo, photo_rect)`: node "Trees", one
+  MultiMeshInstance3D per 250 m cell "<cx>_<cz>" (floor(x / 250), floor(z / 250)), each
+  instance Basis(up, yaw).scaled(r, h, r) at (x, y, z), the yaw a hash of the position, the
+  MultiMesh filled through one `buffer` assignment (brain.md H25); one procedural conifer of
+  at most 256 triangles, three variants picked in the shader by a hash of the instance's
+  origin; the crown colour from the photo at the tree's position, at the mip level of its
+  crown; without a photo, a labelled placeholder green; shadows on.
+- *Shared fixture:* `tests/shared/trees_fixture/` and `tests/shared/trees_vectors.json`: a
+  synthetic world, 96 × 96-pixel DSM and DTM, buildings and TLM features; 35 named cases
+  giving 19 trees in three chunks, a tile with crowns but no tree (so no chunk), and an
+  area across both tile and 250 m cell boundaries; computed two ways; 53 of 54 likely
+  wrong implementations change its bytes (the one left cannot differ by construction).
+
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same
 inputs gives identical bytes, and tests say so.

@@ -1,0 +1,918 @@
+{
+ "about": "The shared trees fixture (m3-design §5; briefs M3-07 and M3-11), the seam between the pipeline's trees step and the game's tree reader. tests/shared/trees_fixture/ holds a synthetic world (world.json: origin E 2650012 / N 1149988, height_offset_m 1250.0, the owner's axes; area 'fixture' E 2650976-2651024, N 1149976-1150024, 96 x 96 pixels of 0.5 m across the four tiles 2650-1149, 2650-1150, 2651-1149, 2651-1150 and, in the game's local frame (x 964.25-1011.75, z -35.75-11.75), the four 250 m cells 3_-1, 4_-1, 3_0, 4_0, whose boundaries (x 1000, z 0) are not the tiles' (E 2651000 = x 988, N 1150000 = z -12)). dtm.f32 and dsm.f32 are the area's terrain and surface models (little-endian float32, 96 rows north to south x 96 columns west to east, invented values, no swisstopo data): the DTM a plane near 1500 m (1500 + 0.0625 j - 0.09375 i, plus a +-0.03125 m checkerboard so a tree's base, the mean of four terrain-grid vertices, differs from the DTM at its pixel), with two local ramps for the slope cases; the DSM the DTM plus crafted canopy, every value a multiple of 2^-13 m, exact in float32, so chm = DSM - DTM is exactly the canopy designed. buildings.json holds three synthetic buildings as the buildings step's reader hands them over (closed boxes, sheet 1249-42); tlm.json the TLM polygons as trees.py takes them ({uuid, objektart, polygons}: MultiPolygon coordinates, points (E, N, H), rings closed): three TLM_GEBAEUDE_FOOTPRINT (a courtyard building with a hole, OBJEKTART 0; a building only TLM holds, OBJEKTART 10 Im Bau; an underground building, OBJEKTART 16, which is not in F) and three TLM_BODENBEDECKUNG (OBJEKTART 1 Fels, a rectangle whose edges pass exactly through four crowns' tops; 7 Lockergestein; 4 Felsbloecke locker). The fixture's datasets.lock.json pins its sources as the swisstopo files they stand for (each of the four tiles' DTM and DSM entries names the one mosaic file; the swisssurface3d tiles carry editions 2021 and 2022, the datasets config's list adds 2019, so the game's edition text, from the tiles, is '2021-2022'): labelled placeholders for files that are not tiles. terrain.json names the area and pins the true terrain grid of dtm.f32 at 0.5 m (computed two ways); trees.json the expected chunks and what they were computed for. generated/ holds the expected output: trees/<tile>.bin (20 bytes per tree: x, y, z, height, crown radius, little-endian float32), trees/fixture.json and manifest.json (the manifest's final M3 shape: exactly buildings, photo, roofs, schema, surfaces, terrain, trees, world, world_sha256; its trees block is fixture.json verbatim, every other block null since nothing else is built here; written by design, and brief M3-13, which wires the trees block, must reproduce it byte for byte). Design computed the chunks two independent ways (numpy int64 and a separate implementation with exact rationals, scipy's distance transform, correlate and maximum filter, Decimal square roots and struct packing): identical bytes. 'cases' names every crafted case, the pixel it is about and the outcome the rule gives (tree, none, dropped: a top removed by chm > 40 m, chm < 3 m or the slope; footprint: the pixel is in F); 54 likely wrong implementations were run on this fixture and 53 change its bytes (the 54th, which drops the margin from the tops' conditions while still counting the margin's canopy 0, cannot differ: S has no maximum in the margin). 'trees' names every tree in the files: its chunk and index, its pixel, LV95 (E, N, H of its base = local y + 1250.0), the local values as the file holds them (float32), height and crown radius, what decides the radius (crown radius = min(d / 2, height / 4) clamped to 1.0-6.0 m, d to the nearest other kept tree, infinite when none: 'd/2' or 'h/4', and whether the clamp took it), and the 250 m cell the game puts it in. The tile 2651-1149 has crowns but no kept tree, so it has no chunk.",
+ "world": "tests/shared/trees_fixture/world.json",
+ "manifest": "tests/shared/trees_fixture/generated/manifest.json",
+ "area": "fixture",
+ "pixels": {
+  "rows": 96,
+  "columns": 96,
+  "resolution_m": 0.5,
+  "centre": "E = 2650976.25 + 0.5 j, N = 1150023.75 - 0.5 i"
+ },
+ "chunks": {
+  "2650-1149": 6,
+  "2650-1150": 7,
+  "2651-1150": 6
+ },
+ "cells": {
+  "3_-1": 13,
+  "3_0": 3,
+  "4_-1": 3
+ },
+ "cases": [
+  {
+   "case": "plateau",
+   "pixel": [
+    2,
+    5
+   ],
+   "lv95": [
+    2650978.75,
+    1150022.75
+   ],
+   "outcome": "tree",
+   "why": "a flat 3.0 m canopy block at rows 0-6, columns 3-11, touching the area's north edge: S is exactly 3 m on its interior (rows 2-4, columns 5-9), so the threshold S >= 3 m holds with equality; the tie on the plateau goes to the first pixel in raster order; with pixels outside the area counted 0, rows 0 and 1 stay lower (edge replication would make the plateau reach row 0, the outer ring, and leave no tree); its chm at the top is exactly 3.0 m, kept (only chm < 3 m is dropped); crown radius: height / 4 = 0.75 m, clamped up to 1.0 m"
+  },
+  {
+   "case": "diagonal tie",
+   "pixel": [
+    17,
+    7
+   ],
+   "lv95": [
+    2650979.75,
+    1150015.25
+   ],
+   "outcome": "tree",
+   "why": "two crowns of equal height at (17, 7) and (18, 6), mirror images across the diagonal, so S is equal at both: the tree is the first in raster order (rows from north), (17, 7); column order would pick (18, 6)"
+  },
+  {
+   "case": "diagonal tie, second",
+   "pixel": [
+    18,
+    6
+   ],
+   "lv95": [
+    2650979.25,
+    1150014.75
+   ],
+   "outcome": "none",
+   "why": "the later pixel of the tie"
+  },
+  {
+   "case": "outer ring",
+   "pixel": [
+    30,
+    0
+   ],
+   "lv95": [
+    2650976.25,
+    1150008.75
+   ],
+   "outcome": "none",
+   "why": "a crown centred just west of the area: its S maximum inside the area is on column 0, the outermost ring, which cannot be a top; every pixel inside is lower and has it in its disc. The DTM at (30, 95) is set 0.125 m below (30, 1), so an implementation that forgets the ring and reads column -1 as the last column (numpy's wrap-around) sees a gentle slope and keeps a tree here"
+  },
+  {
+   "case": "next to the ring",
+   "pixel": [
+    42,
+    1
+   ],
+   "lv95": [
+    2650976.75,
+    1150002.75
+   ],
+   "outcome": "tree",
+   "why": "column 1 is not on the outer ring"
+  },
+  {
+   "case": "top in the margin",
+   "pixel": [
+    26,
+    30
+   ],
+   "lv95": [
+    2650991.25,
+    1150010.75
+   ],
+   "outcome": "none",
+   "why": "a slender crown whose top is exactly 2.0 m (4 pixels east) from the one footprint pixel of a tiny building: in the margin (di^2 + dj^2 = 16 <= 16), so its canopy counts 0 there and what is left of it stays below S = 3 m (with di^2 + dj^2 < 16 it would be a tree)"
+  },
+  {
+   "case": "next to the cut crown",
+   "pixel": [
+    24,
+    32
+   ],
+   "lv95": [
+    2650992.25,
+    1150011.75
+   ],
+   "outcome": "tree",
+   "why": "a smaller crown 2 pixels north and 2 east of that top: a tree because the taller top beside it lies in the margin and counts 0; were the canopy kept under the margin, that top (S above this one's, inside its disc) would suppress it"
+  },
+  {
+   "case": "beside the margin",
+   "pixel": [
+    23,
+    23
+   ],
+   "lv95": [
+    2650987.75,
+    1150012.25
+   ],
+   "outcome": "tree",
+   "why": "a slender crown whose top is 3 pixels north and 3 west of the same footprint pixel: di^2 + dj^2 = 18 > 16, outside the margin (a square margin would take it); its south-east shoulder is in the margin and counts 0, its top stays the maximum"
+  },
+  {
+   "case": "tiny building corner",
+   "pixel": [
+    26,
+    26
+   ],
+   "lv95": [
+    2650989.25,
+    1150010.75
+   ],
+   "outcome": "footprint",
+   "why": "the tiny building's plan is a 0.3 m square whose south-west corner is exactly this pixel's centre: in F only because a triangle's boundary counts"
+  },
+  {
+   "case": "roof of an unselected building",
+   "pixel": [
+    2,
+    40
+   ],
+   "lv95": [
+    2650996.25,
+    1150022.75
+   ],
+   "outcome": "none",
+   "why": "a flat 9 m roof over rows 0-15, columns 38-49, of a building whose bounding-box centre lies north of the area (the buildings step does not select it): its footprint still masks it; without it the roof would give a tree at (2, 40)"
+  },
+  {
+   "case": "beside a pit",
+   "pixel": [
+    10,
+    25
+   ],
+   "lv95": [
+    2650988.75,
+    1150018.75
+   ],
+   "outcome": "tree",
+   "why": "a small crown whose east and south neighbours lie 6 m BELOW the terrain (DSM < DTM, as under overhangs and in gaps of the surface model): v counts them 0, so S stays >= 3 m; counted as negative heights they would pull S below 3 m"
+  },
+  {
+   "case": "plain tree",
+   "pixel": [
+    42,
+    30
+   ],
+   "lv95": [
+    2650991.25,
+    1150002.75
+   ],
+   "outcome": "tree",
+   "why": "an 18 m crown with nothing near it"
+  },
+  {
+   "case": "rock edge west",
+   "pixel": [
+    28,
+    58
+   ],
+   "lv95": [
+    2651005.25,
+    1150009.75
+   ],
+   "outcome": "none",
+   "why": "top exactly on the rock rectangle's west edge: inside (xc < x of the east edge only) (the half-open crossing rule of m3-design §4, OBJEKTART 1 Fels)"
+  },
+  {
+   "case": "rock edge east",
+   "pixel": [
+    28,
+    70
+   ],
+   "lv95": [
+    2651011.25,
+    1150009.75
+   ],
+   "outcome": "tree",
+   "why": "top exactly on the east edge: outside (no edge strictly east of it) (the half-open crossing rule of m3-design §4, OBJEKTART 1 Fels)"
+  },
+  {
+   "case": "rock edge north",
+   "pixel": [
+    22,
+    64
+   ],
+   "lv95": [
+    2651008.25,
+    1150012.75
+   ],
+   "outcome": "tree",
+   "why": "top exactly on the north edge: outside (the vertical edges span [south, north)) (the half-open crossing rule of m3-design §4, OBJEKTART 1 Fels)"
+  },
+  {
+   "case": "rock edge south",
+   "pixel": [
+    34,
+    64
+   ],
+   "lv95": [
+    2651008.25,
+    1150006.75
+   ],
+   "outcome": "none",
+   "why": "top exactly on the south edge: inside (the half-open crossing rule of m3-design §4, OBJEKTART 1 Fels)"
+  },
+  {
+   "case": "window boundary",
+   "pixel": [
+    6,
+    66
+   ],
+   "lv95": [
+    2651009.25,
+    1150020.75
+   ],
+   "outcome": "none",
+   "why": "the centre of a flat 5 x 5 block of 20 m: S is exactly 20 m, so rho = 3 + floor(20 / 10) = 5; the pixel (6, 71) at di^2 + dj^2 = 25 <= 25 is the edge of a 30 m block with S = 20.625 m, higher, so (6, 66) is no top (with rho = 4, or with di^2 + dj^2 < rho^2, it would be one)"
+  },
+  {
+   "case": "taller block",
+   "pixel": [
+    6,
+    73
+   ],
+   "lv95": [
+    2651012.75,
+    1150020.75
+   ],
+   "outcome": "tree",
+   "why": "the 30 m block's centre, S exactly 30 m"
+  },
+  {
+   "case": "scree",
+   "pixel": [
+    42,
+    54
+   ],
+   "lv95": [
+    2651003.25,
+    1150002.75
+   ],
+   "outcome": "tree",
+   "why": "inside a TLM_BODENBEDECKUNG polygon of OBJEKTART 7 (Lockergestein): not rock"
+  },
+  {
+   "case": "steep but kept",
+   "pixel": [
+    42,
+    78
+   ],
+   "lv95": [
+    2651015.25,
+    1150002.75
+   ],
+   "outcome": "tree",
+   "why": "DTM central differences gx = 1.6875, gy = 0.25: gx^2 + gy^2 = 2.91 < 3 (59.6 degrees)"
+  },
+  {
+   "case": "40 m exactly",
+   "pixel": [
+    42,
+    90
+   ],
+   "lv95": [
+    2651021.25,
+    1150002.75
+   ],
+   "outcome": "tree",
+   "why": "chm at the top exactly 40.0 m: kept (only chm > 40 m is dropped)"
+  },
+  {
+   "case": "gap in the crown",
+   "pixel": [
+    20,
+    86
+   ],
+   "lv95": [
+    2651019.25,
+    1150013.75
+   ],
+   "outcome": "dropped",
+   "why": "a crown with a gap at its centre: chm 2.0 m at the centre, 6 m around it; S is highest at the centre (4.33 m >= 3 m), so the top is there, and its chm, 2.0 m, is below 3 m: dropped (12 tops of the real village are dropped so)"
+  },
+  {
+   "case": "pole",
+   "pixel": [
+    12,
+    92
+   ],
+   "lv95": [
+    2651022.25,
+    1150017.75
+   ],
+   "outcome": "none",
+   "why": "one pixel 9 m above the terrain (a post or a lamp): S = 36 x 9 / 256 = 1.27 m < 3 m, no top; the threshold is on S, a threshold on chm would make it a tree"
+  },
+  {
+   "case": "courtyard",
+   "pixel": [
+    60,
+    13
+   ],
+   "lv95": [
+    2650982.75,
+    1149993.75
+   ],
+   "outcome": "tree",
+   "why": "in the hole of a TLM_GEBAEUDE_FOOTPRINT polygon (even-odd over all rings): no footprint within 2 m of it; with the exterior ring alone it would be masked"
+  },
+  {
+   "case": "close pair, west",
+   "pixel": [
+    80,
+    30
+   ],
+   "lv95": [
+    2650991.25,
+    1149983.75
+   ],
+   "outcome": "tree",
+   "why": "two small tops 1.58 m apart (di^2 + dj^2 = 10): min(d / 2 = 0.79 m, height / 4 = 2.5 m) is clamped up to 1.0 m"
+  },
+  {
+   "case": "close pair, east",
+   "pixel": [
+    81,
+    33
+   ],
+   "lv95": [
+    2650992.75,
+    1149983.25
+   ],
+   "outcome": "tree",
+   "why": "the other of the pair"
+  },
+  {
+   "case": "isolated",
+   "pixel": [
+    90,
+    4
+   ],
+   "lv95": [
+    2650978.25,
+    1149978.75
+   ],
+   "outcome": "tree",
+   "why": "a 26 m tree with no other kept tree within 12 m (the slope-dropped top 6 m east is not a kept tree): min(d / 2 > 6 m, height / 4 = 6.5 m) is clamped down to 6.0 m"
+  },
+  {
+   "case": "too steep",
+   "pixel": [
+    90,
+    16
+   ],
+   "lv95": [
+    2650984.25,
+    1149978.75
+   ],
+   "outcome": "dropped",
+   "why": "gx = 1.6875, gy = 0.5: gx^2 + gy^2 = 3.10 >= 3 (60.4 degrees)"
+  },
+  {
+   "case": "cliff spike",
+   "pixel": [
+    56,
+    36
+   ],
+   "lv95": [
+    2650994.25,
+    1149995.75
+   ],
+   "outcome": "dropped",
+   "why": "a one-pixel 150 m spike (a cliff face's top over the terrain's foot): S = 36 x 150 / 256 = 21.09 m, rho = 5; a top, dropped as chm > 40 m"
+  },
+  {
+   "case": "small beside tall",
+   "pixel": [
+    56,
+    41
+   ],
+   "lv95": [
+    2650996.75,
+    1149995.75
+   ],
+   "outcome": "tree",
+   "why": "a small crown 5 pixels east of the spike (di^2 + dj^2 = 25): its own window (S < 10 m, rho = 3) does not reach the spike, so it is a top, although it lies inside the spike's window (rho = 5) and the spike's S is higher; the window is the candidate's own"
+  },
+  {
+   "case": "over an underground building",
+   "pixel": [
+    68,
+    40
+   ],
+   "lv95": [
+    2650996.25,
+    1149989.75
+   ],
+   "outcome": "tree",
+   "why": "inside a TLM_GEBAEUDE_FOOTPRINT polygon of OBJEKTART 16 (Unterirdisches Gebaeude): it has no roof above ground, so it is not in F and the crown above it stays a tree"
+  },
+  {
+   "case": "over 40 m",
+   "pixel": [
+    60,
+    60
+   ],
+   "lv95": [
+    2651006.25,
+    1149993.75
+   ],
+   "outcome": "dropped",
+   "why": "chm at the top 40.0001220703125 m (40 m + 2^-13 m) > 40 m"
+  },
+  {
+   "case": "rock blocks",
+   "pixel": [
+    84,
+    60
+   ],
+   "lv95": [
+    2651006.25,
+    1149981.75
+   ],
+   "outcome": "none",
+   "why": "inside a TLM_BODENBEDECKUNG polygon of OBJEKTART 4 (Felsbloecke locker): rock"
+  },
+  {
+   "case": "roof of a TLM-only building",
+   "pixel": [
+    56,
+    74
+   ],
+   "lv95": [
+    2651013.25,
+    1149995.75
+   ],
+   "outcome": "none",
+   "why": "a flat 7 m roof under a TLM_GEBAEUDE_FOOTPRINT polygon (OBJEKTART 10, Im Bau) that swissBUILDINGS3D does not hold: masked; without the TLM footprints it would give a tree at (56, 74)"
+  },
+  {
+   "case": "roof",
+   "pixel": [
+    78,
+    78
+   ],
+   "lv95": [
+    2651015.25,
+    1149984.75
+   ],
+   "outcome": "none",
+   "why": "the flat 8 m roof of a selected building (rows 76-91, columns 76-91): masked; without the building it would give a tree at (78, 78)"
+  }
+ ],
+ "trees": [
+  {
+   "name": "plateau",
+   "pixel": [
+    2,
+    5
+   ],
+   "tile": "2650-1150",
+   "index": 0,
+   "lv95": [
+    2650978.75,
+    1150022.75,
+    1500.125
+   ],
+   "local": [
+    966.75,
+    250.125,
+    -34.75
+   ],
+   "height_m": 3.0,
+   "crown_radius_m": 1.0,
+   "radius_from": "h/4, clamped to 1.0",
+   "cell": "3_-1"
+  },
+  {
+   "name": "taller block",
+   "pixel": [
+    6,
+    73
+   ],
+   "tile": "2651-1150",
+   "index": 0,
+   "lv95": [
+    2651012.75,
+    1150020.75,
+    1504.0
+   ],
+   "local": [
+    1000.75,
+    254.0,
+    -32.75
+   ],
+   "height_m": 30.0,
+   "crown_radius_m": 4.589389801025391,
+   "radius_from": "d/2",
+   "cell": "4_-1"
+  },
+  {
+   "name": "beside a pit",
+   "pixel": [
+    10,
+    25
+   ],
+   "tile": "2650-1150",
+   "index": 1,
+   "lv95": [
+    2650988.75,
+    1150018.75,
+    1500.625
+   ],
+   "local": [
+    976.75,
+    250.625,
+    -30.75
+   ],
+   "height_m": 7.0,
+   "crown_radius_m": 1.75,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "diagonal tie",
+   "pixel": [
+    17,
+    7
+   ],
+   "tile": "2650-1150",
+   "index": 2,
+   "lv95": [
+    2650979.75,
+    1150015.25,
+    1498.84375
+   ],
+   "local": [
+    967.75,
+    248.84375,
+    -27.25
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 3.0,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "rock edge north",
+   "pixel": [
+    22,
+    64
+   ],
+   "tile": "2651-1150",
+   "index": 1,
+   "lv95": [
+    2651008.25,
+    1150012.75,
+    1501.9375
+   ],
+   "local": [
+    996.25,
+    251.9375,
+    -24.75
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 2.1213202476501465,
+   "radius_from": "d/2",
+   "cell": "3_-1"
+  },
+  {
+   "name": "beside the margin",
+   "pixel": [
+    23,
+    23
+   ],
+   "tile": "2650-1150",
+   "index": 3,
+   "lv95": [
+    2650987.75,
+    1150012.25,
+    1499.28125
+   ],
+   "local": [
+    975.75,
+    249.28125,
+    -24.25
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 2.2638463973999023,
+   "radius_from": "d/2",
+   "cell": "3_-1"
+  },
+  {
+   "name": "next to the cut crown",
+   "pixel": [
+    24,
+    32
+   ],
+   "tile": "2650-1150",
+   "index": 4,
+   "lv95": [
+    2650992.25,
+    1150011.75,
+    1499.75
+   ],
+   "local": [
+    980.25,
+    249.75,
+    -23.75
+   ],
+   "height_m": 8.0,
+   "crown_radius_m": 2.0,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "rock edge east",
+   "pixel": [
+    28,
+    70
+   ],
+   "tile": "2651-1150",
+   "index": 2,
+   "lv95": [
+    2651011.25,
+    1150009.75,
+    1501.75
+   ],
+   "local": [
+    999.25,
+    251.75,
+    -21.75
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 2.1213202476501465,
+   "radius_from": "d/2",
+   "cell": "3_-1"
+  },
+  {
+   "name": "next to the ring",
+   "pixel": [
+    42,
+    1
+   ],
+   "tile": "2650-1150",
+   "index": 5,
+   "lv95": [
+    2650976.75,
+    1150002.75,
+    1496.125
+   ],
+   "local": [
+    964.75,
+    246.125,
+    -14.75
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 3.0,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "plain tree",
+   "pixel": [
+    42,
+    30
+   ],
+   "tile": "2650-1150",
+   "index": 6,
+   "lv95": [
+    2650991.25,
+    1150002.75,
+    1497.9375
+   ],
+   "local": [
+    979.25,
+    247.9375,
+    -14.75
+   ],
+   "height_m": 18.0,
+   "crown_radius_m": 4.451123237609863,
+   "radius_from": "d/2",
+   "cell": "3_-1"
+  },
+  {
+   "name": "scree",
+   "pixel": [
+    42,
+    54
+   ],
+   "tile": "2651-1150",
+   "index": 3,
+   "lv95": [
+    2651003.25,
+    1150002.75,
+    1499.4375
+   ],
+   "local": [
+    991.25,
+    249.4375,
+    -14.75
+   ],
+   "height_m": 10.0,
+   "crown_radius_m": 2.5,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "steep but kept",
+   "pixel": [
+    42,
+    78
+   ],
+   "tile": "2651-1150",
+   "index": 4,
+   "lv95": [
+    2651015.25,
+    1150002.75,
+    1500.9375
+   ],
+   "local": [
+    1003.25,
+    250.9375,
+    -14.75
+   ],
+   "height_m": 14.0,
+   "crown_radius_m": 3.0,
+   "radius_from": "d/2",
+   "cell": "4_-1"
+  },
+  {
+   "name": "40 m exactly",
+   "pixel": [
+    42,
+    90
+   ],
+   "tile": "2651-1150",
+   "index": 5,
+   "lv95": [
+    2651021.25,
+    1150002.75,
+    1501.6875
+   ],
+   "local": [
+    1009.25,
+    251.6875,
+    -14.75
+   ],
+   "height_m": 40.0,
+   "crown_radius_m": 3.0,
+   "radius_from": "d/2",
+   "cell": "4_-1"
+  },
+  {
+   "name": "small beside tall",
+   "pixel": [
+    56,
+    41
+   ],
+   "tile": "2650-1149",
+   "index": 0,
+   "lv95": [
+    2650996.75,
+    1149995.75,
+    1497.3125
+   ],
+   "local": [
+    984.75,
+    247.3125,
+    -7.75
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 3.0,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "courtyard",
+   "pixel": [
+    60,
+    13
+   ],
+   "tile": "2650-1149",
+   "index": 1,
+   "lv95": [
+    2650982.75,
+    1149993.75,
+    1495.1875
+   ],
+   "local": [
+    970.75,
+    245.1875,
+    -5.75
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 3.0,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "over an underground building",
+   "pixel": [
+    68,
+    40
+   ],
+   "tile": "2650-1149",
+   "index": 2,
+   "lv95": [
+    2650996.25,
+    1149989.75,
+    1496.125
+   ],
+   "local": [
+    984.25,
+    246.125,
+    -1.75
+   ],
+   "height_m": 12.0,
+   "crown_radius_m": 3.0,
+   "radius_from": "h/4",
+   "cell": "3_-1"
+  },
+  {
+   "name": "close pair, west",
+   "pixel": [
+    80,
+    30
+   ],
+   "tile": "2650-1149",
+   "index": 3,
+   "lv95": [
+    2650991.25,
+    1149983.75,
+    1494.375
+   ],
+   "local": [
+    979.25,
+    244.375,
+    4.25
+   ],
+   "height_m": 10.0,
+   "crown_radius_m": 1.0,
+   "radius_from": "d/2, clamped to 1.0",
+   "cell": "3_0"
+  },
+  {
+   "name": "close pair, east",
+   "pixel": [
+    81,
+    33
+   ],
+   "tile": "2650-1149",
+   "index": 4,
+   "lv95": [
+    2650992.75,
+    1149983.25,
+    1494.46875
+   ],
+   "local": [
+    980.75,
+    244.46875,
+    4.75
+   ],
+   "height_m": 10.0,
+   "crown_radius_m": 1.0,
+   "radius_from": "d/2, clamped to 1.0",
+   "cell": "3_0"
+  },
+  {
+   "name": "isolated",
+   "pixel": [
+    90,
+    4
+   ],
+   "tile": "2650-1149",
+   "index": 5,
+   "lv95": [
+    2650978.25,
+    1149978.75,
+    1491.8125
+   ],
+   "local": [
+    966.25,
+    241.8125,
+    9.25
+   ],
+   "height_m": 26.0,
+   "crown_radius_m": 6.0,
+   "radius_from": "h/4, clamped to 6.0",
+   "cell": "3_0"
+  }
+ ]
+}

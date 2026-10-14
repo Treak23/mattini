@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "areas": {
+    "village": {
+      "computed_for": {
+        "inputs_sha256": "1eb7b79e450774e7aec8f15ebed4b8600c864de1f61d2813c49e967ad079164a",
+        "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b"
+      },
+      "expected_sha256": {
+        "2623-1095": "69fc652cd1cb957d0aa0583c370278ae572d56b93b792328e73339cc2eae24fa",
+        "2623-1096": "e4e0474920523973ffeb7b5805640df823ccd9a0f1dd4cc1d0c08951ee66846e",
+        "2623-1097": "2ebf5a8147d238b6cbac77bf23b2dce0b62bb9a2058cc1798610a66c7fe4e1f6",
+        "2624-1095": "89442014113296c26970640bc1ae09770a398c4b7e438fcd25e10c3ea7e2bc8e",
+        "2624-1096": "d42745218831146a076fc8e77067d897cf5e1fd83fade8b1f271c08f5d0d95b6",
+        "2624-1097": "765aac8e8f5b2bd365bc302f81510f9d483ec6af4ee16fafb171e761782a4271"
+      }
+    }
+  }
+}

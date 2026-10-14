@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "areas": {
+    "fixture": {
+      "computed_for": {
+        "inputs_sha256": "a2ea016e47846c70f0de7d41558e005737457d190fe7ef1887267b7b81523aad",
+        "world_sha256": "c66b555ed011411ec4c20eb8be3225c3f819009a52a72e21a39d1057b1ad8d85"
+      },
+      "expected_sha256": {
+        "2650-1149": "5555595d18fc8e23b9e0f82150651c8470cfed129e44bc9d2e139c36ee6378b2",
+        "2650-1150": "7e07c0984f00ed0f2b2bb0ecec3cb67be15b6e66fd04636f90c61c1d75e30957",
+        "2651-1150": "e095fea45d91dd00e744cec5f6d49023e1ab7ca166ed98ee4f7cae7835894d2a"
+      }
+    }
+  }
+}

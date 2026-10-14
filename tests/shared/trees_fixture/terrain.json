@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "areas": {
+    "fixture": {
+      "computed_for": {
+        "inputs_sha256": "66e7ccd32914465bc2c819fcb370d1c3a5624a02a11216747907f03ab8e1a5dc",
+        "world_sha256": "c66b555ed011411ec4c20eb8be3225c3f819009a52a72e21a39d1057b1ad8d85"
+      },
+      "expected_sha256": {
+        "0.5": "72cf4acfccd6bda1a54946015edddce01ce42c9ea529a65c3f7c71e7ecc3e4af"
+      },
+      "spacing_m": 0.5
+    }
+  }
+}

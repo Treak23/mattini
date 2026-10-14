@@ -12,8 +12,8 @@ reason, FB-002 is on the board's ideas.
 Version **0.3.0**: the village in a realistic look made from swisstopo data (SPEC §1, §8,
 §10). The 2023 aerial photo lies on the terrain at 0.2 m. Roads, paths, water and rock come
 from swissTLM3D and are drawn on the ground with free CC0 detail textures, and the water
-moves. Each roof has its own colour, measured from the photo. The roughly 38'000 trees the
-LiDAR surface model shows stand where they grow, as procedural conifers. The sun stands where
+moves. Each roof has its own colour, measured from the photo. The 34'412 trees the LiDAR
+surface model shows stand where they grow, as procedural conifers. The sun stands where
 it stood in the photo, and the lighting renders the photo at its own brightness. The walls are
 one neutral plaster, a labelled placeholder. The build ships in data packs, each file under
 GitHub's 100 MiB limit. First come M2's sixteen residue fixes.
@@ -32,11 +32,11 @@ lane reads it.
 | Lane | Briefs, in order | Files (summary; each brief's Scope is the rule) |
 |---|---|---|
 | A · pipeline inputs | M3-01 residue, pipeline → M3-03 inputs: photo, surface model, swissTLM3D | `download.py`, `lock.py`, `datasets.py`, `manifest.py`, `terrain.py`, `buildings.py`, `__main__.py`, `config/datasets.json`, `config/datasets.lock.json`, their tests |
-| B · tools and packs | M3-02 residue, game and tools → M3-08 data packs | `tools/gate.sh`, `tools/gate_allowlist.txt`, `tools/export.sh`, `game/export_presets.cfg`, `game/project.godot`, `game/scripts/data_packs.gd`, `game/tools/pack.gd`, `game/scripts/terrain/terrain_grid.gd`, named game tests |
+| B · tools and packs | M3-02 residue, game and tools → M3-08 data packs | `tools/gate.sh`, `tools/gate_allowlist.txt`, `tools/export.sh`, `game/export_presets.cfg`, `game/project.godot`, `game/scripts/data_packs.gd`, `game/tools/pack.gd`, `game/scripts/terrain/terrain_grid.gd`, named game tests, the tools tests under `pipeline/tests/` (`fake_tools.py`, `test_gate_gut_run.py`, `test_export_checks.py`) |
 | C · photo and roofs (pipeline) | M3-04 the photo step → M3-05 roof colours | `pipeline/mattini/photo.py`, `roofs.py`, their tests, `pipeline/pyproject.toml` and `uv.lock` (Pillow) |
 | D · surfaces and trees (pipeline) | M3-06 the surfaces step → M3-07 the trees step | `pipeline/mattini/surfaces.py`, `trees.py`, their tests |
 | E · the terrain's look (game) | M3-09 the photo on the terrain → M3-10 roads, paths, water and rock on the terrain | `game/scripts/terrain/photo_grid.gd`, `surface_grid.gd`, `terrain_loader.gd`, `game/shaders/terrain_photo.gdshader`, `game/textures/`, their tests |
-| F · trees (game) | M3-11 trees in the game | `game/scripts/trees/`, `game/shaders/tree.gdshader`, their tests |
+| F · trees (game) | M3-11 trees in the game | `game/scripts/trees/`, `game/shaders/tree_conifer.gdshader`, their tests |
 | G · buildings (game) | M3-12 roof colours and walls in the game | `game/scripts/buildings/building_roofs.gd`, `building_loader.gd`, `game/materials/`, named tests |
 
 **Wave 2: two sessions at once, after wave 1 has landed and been integrated.**
