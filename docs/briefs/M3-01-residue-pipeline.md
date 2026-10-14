@@ -44,7 +44,7 @@ that let a wrong implementation pass:
    area, dataset) -> str | None`: the refusal text, naming `python -m mattini lock <x>`, or
    None when the entry fits. Download, the step and `manifest` call it (design's decision:
    M3-03 extends it to the three new datasets, M3-13's manifest calls it for the new
-   blocks). Not pinned by name; name any difference in Findings.
+   blocks). Not pinned, but named exactly so: M3-03 and M3-13 call it by this name.
    - The terrain step's own fit becomes exact. Measured: today it accepts an extra tile and
      then says "design recomputes".
    - `built_terrain_block` and `built_buildings_block` check in the step's order: the world,
@@ -94,6 +94,21 @@ that let a wrong implementation pass:
    `download.STAC_ITEM`, `lock.LOCK_PATH`, `lock.load_lock`, `lock.entry_sha256`,
    `load_datasets(path)`, `DatasetsConfigError`, and the refusal forms
    `"tile <t> of area '<a>': "` and `"cannot read the STAC item"`. Do not rename them.
+10. **Kept for lanes C and D** (M3-04 to M3-07 import these while this lane changes their
+    modules in the same wave): their names and signatures stay as they are; their insides may
+    change.
+    - `terrain.py`: `world_refusal`, `inputs_refusal`, `check_computed_for`,
+      `configured_area`, `check_terrain_config`, `load_terrain_config`, `resample`,
+      `OWNER_AXES`, `AREA_NAME`;
+    - `buildings.py`: `build_chunks`, `read_sheet`, `BuildingsError`, and the rule helpers
+      `_snapped`, `_weld`, `_check_solid`, `_signed_volume` (roofs.py repeats the
+      selection with them);
+    - `download.py`: `area_tiles`, `area_sheets`, `dataset_of`, `PROVENANCE`;
+    - `lock.py`: `load_lock`, `validate_lock`, `LOCK_PATH`, `entry_sha256`.
+
+    Not kept: `_lock_problem`, `_locked_tiles`, `_locked_sheets` and the private provenance
+    readers. Their rule moves to `lock.fit_problem`, and lanes C and D write their own checks
+    until M3-13.
 
 ## Scope — files you may touch
 
@@ -110,7 +125,7 @@ that let a wrong implementation pass:
     others: `test_buildings_manifest.py`, `test_terrain_manifest.py`,
     `test_terrain_manifest_source.py`, `test_terrain_refusals.py`, `test_buildings_step.py`.
     Each then expects `lock <x>` or the removed `.part`;
-  - your own new tests, under names M3-02 does not use.
+  - your own new tests, named `test_m3_01_*.py` (no other lane uses the prefix).
 
 Not `__main__.py` (the pinned driver patches its `load_datasets` and `write_manifest`
 names), `sheets.py`, `world.py`, `config/`, `tests/shared/`, `game/`, `tools/`.

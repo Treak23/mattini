@@ -9,11 +9,15 @@ extends GutTest
 ## the neutral roof colour stays the owner's to tune, so only its order is pinned. M2 V1-G-04:
 ## the materials are read with get_active_material(s), what the node draws, and no
 ## MeshInstance3D carries a material_override or a surface override material (an unshaded
-## override passed M2-08's version, which read the meshes' surface materials).
+## override passed M2-08's version, which read the meshes' surface materials). The label:
+## BuildingLoader.WALLS_NOTE, exactly as brief M3-12 writes it (M3-14's credits show it).
 ##
 ## Does NOT prove: that anything renders or looks right (no GPU); the Forward+ look.
 
 const PLASTER := Color(0.78, 0.76, 0.72, 1.0)
+const WALLS_NOTE := (
+	"Walls: one neutral plaster colour, a placeholder:" + " no open data shows the façades."
+)
 
 var _chunks: BuildingChunks
 var _buildings: Node3D
@@ -109,3 +113,12 @@ func test_the_roofs_are_darker_than_the_walls() -> void:
 	var roofs := (materials["roofs"][0] as StandardMaterial3D).albedo_color
 	assert_lt(_luminance(roofs), _luminance(walls), "roofs darker than walls")
 	assert_gt(_luminance(roofs), 0.3, "not near black")
+
+
+func test_the_walls_are_labelled_a_placeholder() -> void:
+	# Read from the script's constants, so a loader without the label fails here by name.
+	var loader: Script = load("res://scripts/buildings/building_loader.gd")
+	assert_not_null(loader, "the loader's script loads")
+	if loader != null:
+		var note: Variant = loader.get_script_constant_map().get("WALLS_NOTE")
+		assert_eq(note, WALLS_NOTE, "BuildingLoader.WALLS_NOTE, as the brief writes it")

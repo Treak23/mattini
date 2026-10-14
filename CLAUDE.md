@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 mattini is a desktop game (Windows, Linux) set in Zermatt, built on swisstopo open
-geodata, in a stylised diorama look. The first deliverable is a walkable / flyable sandbox
+geodata, in a realistic look made from the data (from M3; M1 and M2 showed a stylised
+model). The first deliverable is a walkable / flyable sandbox
 of the real terrain and village; game modes come later. It is the owner's learning
 project, later shared with a few people; a commercial release is undecided, so everything
 stays licence-clean. Full design in **docs/SPEC.md**: read it before any structural

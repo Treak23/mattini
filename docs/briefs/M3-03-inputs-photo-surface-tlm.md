@@ -123,8 +123,8 @@ live by design's agent on 2026-10-14. In short:
 ## Scope — files you may touch
 
 - `config/datasets.json`: design's pinned copy, put in place by the copy step, never edited.
-  It lands in the same commit as the `datasets.py` change: copied alone it breaks 132 existing
-  tests.
+  It lands in the same commit as the `datasets.py` change: copied alone it breaks 185 or
+  more existing tests (measured).
 - `config/datasets.lock.json`: written only by `lock photo`, `lock surface` and `lock tlm`
   against the live STAC.
 - `pipeline/mattini/datasets.py`, `lock.py`, `download.py`, `__main__.py`.
@@ -160,6 +160,8 @@ M3-01 (the same lane; it edits `datasets.py` and `download.py` too). Start from 
       - does NOT prove: that swisstopo will not republish later (the download refuses that).
 - [ ] `download photo` and `download surface` into a scratch root: six files each, provenance
       `f28eed29…` and `088f8bd2…`; a second run fetches nothing.
+      - does NOT prove: that the steps read the files right (M3-04 to M3-07), or a republish
+        after today.
 - [ ] `download tlm`:
       - stopped by Ctrl-C after at least 1 GB, then run again: one GET with
         `Range: bytes=<n>-`, the file `185ffca8…`, provenance `7034bea8…`;

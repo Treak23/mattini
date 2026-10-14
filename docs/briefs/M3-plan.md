@@ -1,11 +1,22 @@
 # M3 — Surfaces and trees: the arc plan
 
-Status: DRAFT — being prepared by design (2026-10-14)
+Status: READY — waiting for the owner's GO (given in advance, RULINGS 2026-10-14; design's last check of the review's fixes runs, then design sets GO)
+
+**Base:** the commit that set this status line (its message starts `docs: M3 GO`; `git log
+--grep '^docs: M3 GO' -1`). It is the base of integration note 1 and of the review's diff
+range.
+
+**The build's model** (the owner's word at the GO, `docs/history/RULINGS.md` 2026-10-14):
+every session this arc spawns, the orchestrator's builders, reviewers and any successor
+included, passes the model the orchestrator's own spawn prompt names. BUILD.md's "no
+model" does not apply to M3; a hand-off prompt carries the model on.
 
 Written by the design realm (`docs/roles/DESIGN.md` §The arc plan); run by one `ultracode
 build` orchestrator (`docs/roles/BUILD.md` §The orchestrator). The owner's answers of
 2026-10-14 are SPEC §13 rows 29–34 and `docs/history/RULINGS.md`; FB-001 is the arc's
-reason, FB-002 is on the board's ideas.
+reason, FB-002 is on the board's ideas. Design's working notes, which the pinned tests cite
+as "m3-design §N", are `docs/briefs/sketches/m3-design.md` (SPEC and the briefs outrank
+them).
 
 ## What M3 delivers
 
@@ -69,6 +80,14 @@ would have stopped a lane's gate):
   re-read the ones your change touches.
 - The real village's steps run on one machine shared by seven sessions: keep a step's peak
   memory near design's (M3-04's is a gate: under 2 GB).
+- Your own new test files are named `test_m3_<nn>_*` (your brief's number) unless your brief
+  names a prefix, so no two lanes add the same file.
+- Every brief's Scope also covers its own brief file (its Status line and Findings) and its
+  screenshots, `docs/briefs/shots/<brief id>-*.jpg`.
+- Never name another lane's test file in a comment or docstring: M3-01's census fails when
+  the file has not landed yet. Name the brief instead.
+- Lanes C and D check the lock's fit in their own step modules in wave 1, importing only
+  the names M3-01 keeps (its decision 10); M3-13 moves them onto `lock.fit_problem`.
 
 ## Integration notes (the seams the orchestrator checks; lesson 8)
 
@@ -78,7 +97,7 @@ game and tools lanes, then M3-14). The seams below are the ones they hit.
 
 **After wave 1** (every lane landed; pull `main`; the full gate on the combined head, to a log):
 
-1. **The shared fixtures are untouched.** `git diff <plan commit>..HEAD -- tests/shared/
+1. **The shared fixtures are untouched.** `git diff <base>..HEAD -- tests/shared/
    config/photo.json config/roofs.json config/surfaces.json config/trees.json` is empty: no
    lane rewrote design's data.
 2. **Each pipeline step meets its game reader at its fixture.** Each pair passes its own pinned
@@ -109,6 +128,12 @@ game and tools lanes, then M3-14). The seams below are the ones they hit.
    adapter (integer millimetres to metres); the trees' chunks must still be design's.
 9. **The allowlist:** every lane's appended line is present once (M3-08, M3-09, M3-10,
    M3-11, M3-12), and no entry holds `Ignoring script` or `Failed to load script` (M3-02).
+10. **What wave 2 relies on from wave 1:** each new reader refuses with one
+    `push_error("<Reader>: <path>: <problem>")` (PhotoGrid, SurfaceGrid, TreeChunks,
+    BuildingRoofs); `TreeLoader.TREES_NOTE` and `BuildingLoader.WALLS_NOTE` hold their
+    briefs' texts (pinned); lane A's modules still hold the names M3-01 decision 10 keeps;
+    `RoofsError` is a ValueError; each step refuses a missing download naming its
+    `download` command before writing anything (M3-13's pinned CLI test).
 
 **After wave 2:**
 
@@ -130,7 +155,7 @@ game and tools lanes, then M3-14). The seams below are the ones they hit.
 ## The review plan (WORKFLOW §Review policy)
 
 Run by the orchestrator once every brief is DONE and integrated (BUILD.md §The orchestrator
-6). Diff range: from this plan's commit to the integrated head. Every lens is its own
+6). Diff range: from the base (above) to the integrated head. Every lens is its own
 session or isolated agent, in its own worktree with fresh caches; it builds the real village
 from the pinned inputs, works by *prove it or downgrade it*, and commits one report,
 `docs/reviews/M3-R1-<lens>.md`. Grades: P0 crash or wrong world, P1 a wrong result the owner
@@ -169,10 +194,11 @@ would see or a Hard Rule broken, P2 a weakness a realistic change trips, P3 the 
    line; every file under 100 MiB; the credits name every dataset and CC0 texture. *Does
    NOT prove:* that it renders or looks right; the Windows build starts.
 
-**Adjudication:** `docs/reviews/M3-round1.md`. P0 and P1 get fix briefs (BUILD.md §The
-orchestrator 6); P2 and P3 go to the board's residue list. **Verification pass V1** over
-the fixes (one round, Tier 2). **Tier 1 rounds until clean:** a placement finding of P2 or
-above re-runs lens 1 over the fix. A truncated round leaves the arc open.
+**Adjudication:** `docs/reviews/M3-round1.md`. P0, P1 and every placement (Tier 1) P2 get
+fix briefs (BUILD.md §The orchestrator 6); the other P2s and the P3s go to the board's
+residue list. **Verification pass V1** over the fixes (one round, Tier 2). **Tier 1 rounds
+until clean:** a placement round is clean when it reports no P2 or above; until then lens 1
+re-runs over each fix. A truncated round leaves the arc open.
 
 ## The release
 
@@ -207,3 +233,4 @@ the owner's first look.
 | Buildings newer than 2020 (the ghost roofs) | no newer per-sheet building data (the 2026 edition is one national 14 GB file) | some roofs lie flat on the ground in the photo with no building |
 | The area beyond the 2 × 3 km box | M5 | sky beyond the box's edge, as in 0.2.0 |
 | Delivery beyond packs on `dist` | M5's size decides (SPEC §14) | none in M3 |
+| A public per-building derivation in `buildings.py` | two lanes of wave 1 would share the file; `roofs.py` repeats the selection with the buildings step's own helpers | two copies of the selection loop, held equal by the roofs fixture |

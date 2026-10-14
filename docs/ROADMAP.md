@@ -10,7 +10,7 @@ Open items only. Shipped and answered items live in `docs/history/` and
 `docs/briefs/M3-plan.md`: fourteen briefs in two waves (wave 1 seven sessions at once, wave 2
 two), the review plan and the release 0.3.0: the village in a realistic look made from
 swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
-colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §13 rows 29–36.
+colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §13 rows 29–34 (rows 35–36 are design's).
 M2's residue is M3-01 and M3-02.
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux

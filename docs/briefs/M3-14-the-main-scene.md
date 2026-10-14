@@ -81,8 +81,10 @@ its packs and prints all eight lines in order, with no ERROR line.
    `BuildingLoader.WALLS_NOTE`, `TreeLoader.TREES_NOTE` and main.gd's `STREAMS_NOTE`
    ("Streams: drawn 2 m wide, an assumed width: swissTLM3D gives none."), always listed (they
    describe the build); then the software licences as M2's.
-5. **The light:** the sun at azimuth 183°, elevation 52°, through WorldConfig as today;
-   `main.tscn`'s Environment `tonemap_exposure = 0.54`, `ambient_light_sky_contribution =
+5. **The light:** the sun at azimuth 183°, elevation 52°, through WorldConfig as today. They
+   were measured from the photo's shadows; the flight time (7 September 2023, about 11:30
+   UTC) gives 181° and 50° by the solar position formulas, within the shadows' measuring
+   error, and the shadows' values are kept. `main.tscn`'s Environment: `tonemap_exposure = 0.54`, `ambient_light_sky_contribution =
    0.25`, everything else M2's (Filmic, `tonemap_mode = 2`, the mode the calibration used).
 6. **`tools/export.sh`:**
    - step 2 refuses, before anything is exported, a manifest without any of the six blocks,
@@ -98,9 +100,11 @@ its packs and prints all eight lines in order, with no ERROR line.
    res://textures/LICENSE.txt (File not found)`.
 8. **Pinned replacements of other briefs' files,** each needed by a failure design measured
    with M3-14's `main.gd`, each changing only what it must (the allowlist scopes naming them
-   stay valid): `game/tests/complete_world.gd` (the test world with all nine blocks),
+   stay valid): `game/tests/complete_world.gd` (the test world: a nine-key manifest with all six data
+   blocks),
    `test_main_scene_buildings.gd` (M2-05's), `test_scene_placement.gd` (M3-02's),
-   `test_release_settings.gd` (M3-08's), `pipeline/tests/fake_tools.py` (M3-02's). The test
+   `test_release_settings.gd` (M3-08's), `pipeline/tests/fake_tools.py` (M3-02's; it reads
+   the version from `game/project.godot`, so the release's bump keeps it green). The test
    world's trees are the trees fixture's chunks under another world's hash: they stand beside
    and below its terrain, labelled test data.
 9. **Your own edits to `game/tests/test_main_scene.gd`:** delete
@@ -137,7 +141,7 @@ its packs and prints all eight lines in order, with no ERROR line.
 - Your own new tests, under new names.
 
 Not the readers, loaders or shaders (wave 1), the pipeline modules (lane H), `tests/shared/`,
-`project.godot` (the version is the release's), the docs.
+`project.godot` (the version is the release's), the docs beyond this brief and its shots.
 
 ## Depends on
 

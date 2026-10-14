@@ -34,7 +34,8 @@ Every rule below was measured end to end by design's agent on the real village
 (2026-10-14):
 - `mattini.pck` shrank from 99'405'400 to 3'365'376 bytes;
 - `mattini-terrain.pck` is 96'041'728 bytes, 8.41 MiB under the limit;
-- `mattini-photo.pck` is 50'223'260 bytes;
+- `mattini-photo.pck` is about 50.2 MB (50'223'260 bytes here; 50'224'444 in design's later
+  rehearsal with the final photo description);
 - two exports gave byte-identical files;
 - the Linux build started with its packs in 4.6 s at 875 MiB, the same as without.
 

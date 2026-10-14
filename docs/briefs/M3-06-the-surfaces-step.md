@@ -54,8 +54,8 @@ command line and the manifest come in wave 2 (M3-13).
    - **Priority:** 4 > 3 > 2 > 1 > 0.
    - **Point in polygon:** even-odd per feature by the half-open crossing rule, then OR-ed
      across features.
-2. **The API** (signatures in SPEC §8 *The surfaces*):
-   - `SurfacesError`;
+2. **The API** (the signatures here are the API; SPEC §8 *The surfaces* holds the rule):
+   - `SurfacesError(ValueError)`;
    - `read_tlm(path, layers, box)`, public, also for M3-07: features as plain dicts sorted
      by UUID, integer-mm coordinates;
    - `class_grid(features, box, cell_m)`;
@@ -77,6 +77,12 @@ command line and the manifest come in wave 2 (M3-13).
    - the file's SHA-256 against the lock's;
    - the read, after which (size, mtime_ns, inode) must be unchanged (a 2.88 GB file is read
      through its path, not from bytes in memory).
+   - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
+     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
+     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock tlm`. It imports
+     no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
+     changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
+     moves the step onto it in wave 2.
 4. **The PNG** is 8-bit grey with no interlace, filter byte 0 on every row, one zlib stream
    at level 9 in IDAT chunks of at most 1 MiB, values 0–4.
    - Its content is pinned (`pixels_sha256`); its bytes depend on the zlib build, so they

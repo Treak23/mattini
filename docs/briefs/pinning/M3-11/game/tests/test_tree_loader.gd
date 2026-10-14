@@ -17,12 +17,17 @@ extends GutTest
 ## keeps a buffer as set but drops set_instance_transform (get_instance_transform reads the
 ## identity), so the buffer is how a headless test sees the instances; and no colour or data
 ## rides on the instances (the renderers treat instance colour differently: m3-design §5 has
-## the shader sample the photo instead).
+## the shader sample the photo instead). TreeLoader.TREES_NOTE is the credits' note, exactly
+## as brief M3-11 writes it (M3-14 shows it under "Placeholders").
 ##
 ## Does NOT prove: that the trees render or look right (no GPU; the owner's PC is the visual
 ## test); the crown colour from the photo (test_tree_loader_photo.gd).
 
 const MAX_TRIANGLES := 256
+const TREES_NOTE := (
+	"Trees: one generic conifer shape, placed and sized from swissSURFACE3D;"
+	+ " the data gives no species."
+)
 
 var _chunks: TreeChunks
 var _trees: Node3D
@@ -166,3 +171,12 @@ func test_the_conifer_is_the_unit_tree() -> void:
 	assert_almost_eq(widest, 1.0, 1e-5, "crown radius 1")
 	assert_lt(foot, 0.0, "the trunk's foot reaches below the base")
 	assert_between(triangles, 1, MAX_TRIANGLES, "at most %d triangles" % MAX_TRIANGLES)
+
+
+func test_the_credits_note_says_the_conifer_is_generic() -> void:
+	# Read from the script's constants, so a loader without the note fails here by name.
+	var loader: Script = load("res://scripts/trees/tree_loader.gd")
+	assert_not_null(loader, "the loader's script loads")
+	if loader != null:
+		var note: Variant = loader.get_script_constant_map().get("TREES_NOTE")
+		assert_eq(note, TREES_NOTE, "TreeLoader.TREES_NOTE, as the brief writes it")

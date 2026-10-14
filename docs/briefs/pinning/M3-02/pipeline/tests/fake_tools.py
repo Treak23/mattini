@@ -37,7 +37,13 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 BASH = shutil.which("bash")
 GODOT_VERSION = "4.6.3.stable.official.7d41c59c4"
-VERSION = "0.2.0"  # game/project.godot's at M2's close; the export tree copies that file
+# game/project.godot's version, as export.sh reads it: the export tree copies that file, so a
+# release's version bump changes the startup lines and these stand-ins with it.
+VERSION = next(
+    line.split("=", 1)[1].strip().strip('"')
+    for line in (REPO / "game" / "project.godot").read_text(encoding="utf-8").splitlines()
+    if line.startswith("config/version=")
+)
 
 FAKE_GODOT = r"""#!/usr/bin/env bash
 # A stand-in for Godot 4.6.3 (pipeline/tests/fake_tools.py).

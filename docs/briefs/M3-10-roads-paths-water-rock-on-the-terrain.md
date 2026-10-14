@@ -25,7 +25,8 @@ How the classes reach the shader:
 3. `game/scripts/terrain/photo_grid.gd`, `terrain_loader.gd`,
    `game/shaders/terrain_photo.gdshader` (M3-09, landed in this lane just before).
 4. `tests/shared/surfaces_fixture/`, `tests/shared/surfaces_vectors.json`, and the photo and
-   terrain fixtures (design data).
+   terrain fixtures (design data). Note: `surfaces_vectors.json` stores a `texel` as [row,
+   column] (rows from the north edge), the reverse of `photo_vectors.json`'s [column, row].
 5. `docs/briefs/sketches/terrain_photo.gdshader.sketch`, its NEW (M3-10) sections.
 6. The pinned files: `docs/briefs/pinning/M3-10/` (two tests, the licence note and the seven
    texture `.import` files).
@@ -35,7 +36,8 @@ How the classes reach the shader:
 1. **`SurfaceGrid`** (`game/scripts/terrain/surface_grid.gd`, `class_name SurfaceGrid`,
    `extends RefCounted`).
    - **Constructor:** `static func from_manifest(path, world) -> SurfaceGrid`, null after its
-     refusals.
+     refusals, each one `push_error("SurfaceGrid: <path>: <problem>")` as PhotoGrid's (M3-14's
+     allowlist line and refusal tests depend on that form).
    - **Properties:** as PhotoGrid's (`texture` holds the L8 class image), plus `class_at(x: float,
      z: float) -> int`: floor((x − x0)/cell_m), floor((z − z0)/cell_m), and −1 outside the
      half-open rectangle.
@@ -101,7 +103,7 @@ How the classes reach the shader:
    - the classes sit on the photo's roads, river and cliffs;
    - flat ground at 1.063× the photo's luminance with M3-14's light;
    - the scene builds in about 6 s, against 2.9 s for the clay;
-   - peak memory 2.4 GiB; texture memory 1.17 GiB.
+   - peak memory 2.4 GiB; texture memory 1'171 MiB.
 
 ## Scope — files you may touch
 
@@ -130,10 +132,12 @@ lane D, meets it at the fixture).
       - mipmaps off.
       - does NOT prove: the class decode, the rock blend, the fade or the look (not testable
         headless).
-- [ ] Software screenshots (Compatibility) under `docs/briefs/shots/M3-10-*.jpg`, named in
+- [ ] Optional: software screenshots (Compatibility) under `docs/briefs/shots/M3-10-*.jpg`, named in
       Findings: a street at 30 m, the river at 30 m and 10 m, a rock face and a path at 6 m.
       Use the real village in scratch: the class grid by M3-06's function once lane D has
-      landed, or by SPEC §8's rule in a throwaway. They are evidence, not a gate.
+      landed, or by SPEC §8's rule in a throwaway. They are evidence, not a gate. `tools/shot.sh` renders
+      the main scene, which uses this brief's code only from M3-14: render with a throwaway
+      scene kept in scratch (never committed), or skip the shots and say so in Findings.
       - does NOT prove: the Forward+ look on the owner's GPU.
 - [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that it renders or looks right.

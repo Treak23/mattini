@@ -78,7 +78,7 @@ anyway.
   `.uid` files (Godot writes them at the first import; `test_repo_tracked.py` requires them
   staged).
 - `pipeline/tests/`: `fake_tools.py`, `test_gate_gut_run.py`, `test_export_checks.py`
-  (pinned, new), and your own tests under names M3-01 does not use.
+  (pinned, new), and your own tests, named `test_m3_02_*` (no other lane uses the prefix).
 
 Not `tools/gate_allowlist.txt`: no entry is needed, and other lanes append there. Not
 `main.gd`, `building_chunks.gd`, or the pipeline's modules.

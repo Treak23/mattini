@@ -63,8 +63,12 @@ The main scene uses it from M3-14 on.
      `material_override`. With a photo, its uniforms `photo` and `photo_rect` are set; without
      one, neither is bound.
    - Shadows on; `visibility_range_end` 3000 m (a tuning value, not pinned).
-   - `const TREES_NOTE` for the credits (M3-14), for example "Trees: one generic conifer
-     shape, placed and sized from swissSURFACE3D; the data gives no species."
+   - `const TREES_NOTE` for the credits (M3-14), exactly "Trees: one generic conifer shape,
+     placed and sized from swissSURFACE3D; the data gives no species." (pinned in
+     `test_tree_loader.gd`). One line is over gdlint's 100 characters; measured clean: two
+     joined strings in brackets, `const TREES_NOTE := (`, then `"Trees: one generic conifer
+     shape, placed and sized from swissSURFACE3D;"`, then `+ " the data gives no species."`,
+     then `)`.
 3. **The conifer:** procedural, built once in code.
    - Six drooping tiers with jittered rims (a fixed seed per variant) and a hexagonal trunk:
      138 vertices, 192 triangles; at most 256 (pinned).
@@ -117,10 +121,12 @@ meets it at the fixture).
       - `set_instance_transform` instead of `buffer`;
       - `photo_rect`'s width and depth swapped.
       - does NOT prove: the look, the colour encoding (H21) or GPU time.
-- [ ] Software screenshots (`tools/shot.sh`, Compatibility) of the fixture's trees and, with
+- [ ] Optional: software screenshots (Compatibility) of the fixture's trees and, with
       the real village built in scratch, an isolated tree and a forest edge at 30 m and the
       village from 120 m, under `docs/briefs/shots/M3-11-*.jpg`, named in Findings. They are
-      evidence, not a gate.
+      evidence, not a gate. `tools/shot.sh` renders
+      the main scene, which uses this brief's code only from M3-14: render with a throwaway
+      scene kept in scratch (never committed), or skip the shots and say so in Findings.
       - does NOT prove: the Forward+ look on the owner's GPU.
 - [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that it renders or looks right.

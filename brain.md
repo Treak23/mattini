@@ -9,8 +9,8 @@ M3 (Surfaces and trees: the realistic look from data) is planned and has the own
 `docs/SPEC.md` (design) outrank this file.
 
 ## 1. WHAT
-A desktop game (Windows, Linux) set in Zermatt on swisstopo open geodata; stylised diorama
-look; real day/night and weather; sandbox first, game modes later. The owner's learning
+A desktop game (Windows, Linux) set in Zermatt on swisstopo open geodata; a realistic look
+made from the data (from M3; M1–M2 a stylised model); real day/night and weather; sandbox first, game modes later. The owner's learning
 project, shared later with a few people; commercial release undecided. v1 = the sandbox
 with free-fly camera, walking, day/night cycle and weather (SPEC §2).
 

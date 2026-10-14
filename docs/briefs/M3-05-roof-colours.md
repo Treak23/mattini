@@ -36,8 +36,9 @@ the manifest come in wave 2 (M3-13).
    - **Colour:** the lower median per channel (index floor((n − 1)/2)), null when there is no
      pixel. Roof parts outside the photo have no pixels and are not refused (one village
      building has 22 such pixel centres).
-2. **The API** the pinned tests import (signatures in SPEC §8 *Roof colours*):
-   - `RoofsError`, `load_roofs_config`, `check_roofs_config`;
+2. **The API** (the signatures here are the API; SPEC §8 *Roof colours* holds the rule):
+   - `RoofsError(ValueError)`, as BuildingsError (M3-13's pinned manifest test catches a
+     ValueError), `load_roofs_config`, `check_roofs_config`;
    - `build_roof_chunks(features, world, area, photo)`, where `photo` is an iterable of
      non-overlapping rasters `(west_dm, north_dm, pixels)` consumed once, so that one tile is
      decoded at a time;
@@ -46,18 +47,31 @@ the manifest come in wave 2 (M3-13).
      progress=None)` (specified, not pinned: no committed fixture can hold 1 km tiles);
    - `built_roofs_block(out_dir, roofs_config, terrain_config, world, world_sha256, datasets,
      lock, buildings_block)`.
-3. **The selection** is the buildings step's own: reuse `buildings.py`'s derivation
-   (selection, snapping, welding, solid check, orientation, UUID order). You may expose it
-   from `buildings.py` as a public function without changing its behaviour; the buildings
-   fixture test guards those bytes. The photo tiles come through `photo.py`'s checked tile
-   reader.
+3. **The selection** is the buildings step's own (selection, snapping, welding, solid check,
+   orientation, UUID order), and `buildings.py` stays read-only in this lane: lane A changes
+   it in this wave (M3-01). `roofs.py` repeats the selection loop and imports only names
+   M3-01 keeps (its decision 10): `build_chunks`, `read_sheet`, `BuildingsError` and the rule
+   helpers `_snapped`, `_weld`, `_check_solid`, `_signed_volume`. The pinned roofs fixture
+   guards that the selection is the buildings step's (the chunks' counts and the UUID order).
+   A public per-building derivation in `buildings.py` is left for later (the plan's
+   DEFERRED). The photo tiles come through `photo.py`'s checked tile reader.
 4. **Inputs:**
    - `<raw_root>/swissbuildings3d/2020/` and `<raw_root>/swissimage/2023/` with their
      provenance (SPEC §5);
    - every file checked against provenance and lock, and read from the very bytes hashed;
-   - `computed_for`: the world first, then (once both lock entries fit) the inputs, whose
+   - `computed_for`: the world first, then both lock entries' fit, then the inputs, whose
      SHA-256 is that of the canonical `{"swissbuildings3d": …, "swissimage": …}` object;
-     write a small helper for it (M3-13 may move it into `lock.py`).
+     write a small helper for it (M3-13 moves it into `lock.py`).
+   - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
+     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
+     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock buildings` or `lock photo`. It imports
+     no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
+     changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
+     moves the step onto it in wave 2.
+   - **A missing download** (no `provenance.json`, or a file it lists absent) is refused
+     before any `progress` call and before anything is created under `out_dir`, not even a
+     folder, naming `python -m mattini download buildings`, then `download photo` (the datasets in sorted order), as `terrain.py` does. M3-13's pinned CLI test runs the step this
+     way. Not pinned in this lane: write its test.
 5. **The file:** `roofs/<area>.json` (sorted keys, 2-space indent, UTF-8, LF, final newline,
    through a `.part` rename) = exactly {area, chunks: [{buildings: [{roof, roof_pixels,
    triangles, uuid, vertices}] in chunk order, tile}] by tile, format `roofs-v1`, lv95_box,
@@ -72,9 +86,10 @@ the manifest come in wave 2 (M3-13).
    - its chunks against `buildings_block`: the same tiles in order, and per chunk the building
      count and the sums of triangles and vertices.
 
-   It refuses roof colours when no buildings are built. Refusals name
-   `python -m mattini roofs`; a lock without one of the two entries is refused naming its
-   lock command, never a KeyError (measured in design's rehearsal: a traceback).
+   It refuses roof colours when no buildings are built, naming `python -m mattini
+   buildings` (M3-13's manifest checks this first); its other refusals name `python -m
+   mattini roofs`. A lock without one of the two entries is refused naming its lock command,
+   never a KeyError (measured in design's rehearsal: a traceback).
 7. **Design's value** (config/roofs.json, computed two independent ways, identical bytes):
    - SHA-256 `8d9664b643173eaee7d1980438600c7bcb7dd8d1921346466ec72b716c480db5` (290'006
      bytes);
@@ -85,16 +100,15 @@ the manifest come in wave 2 (M3-13).
 
 ## Scope — files you may touch
 
-`pipeline/mattini/roofs.py` (new) · `pipeline/mattini/buildings.py` (only to expose the
-per-building derivation as a public function, behaviour unchanged) ·
-`pipeline/mattini/photo.py` (only to expose its tile reader, if M3-04 left it private) ·
-`pipeline/tests/`: the two pinned copies (`test_roofs_fixture.py`, `test_roofs_expected.py`)
-and your own new `test_roofs_*.py`. The pinned `config/roofs.json` copy is identical to the
-committed one.
+`pipeline/mattini/roofs.py` (new) · `pipeline/mattini/photo.py` (only to expose its tile
+reader, if M3-04 left it private) · `pipeline/tests/`: the two pinned copies
+(`test_roofs_fixture.py`, `test_roofs_expected.py`) and your own new `test_roofs_*.py`.
+Read-only: everything else, `buildings.py` included.
 
 ## Depends on
 
-M3-04 (the same lane: `photo.py`'s tile reader). Nothing in the other lanes. In wave 1,
+M3-04 (the same lane: `photo.py`'s tile reader). Nothing in the other lanes; the names it
+imports from lane A's modules are the ones M3-01 keeps. In wave 1,
 M3-03's lock does not hold a `swissimage` entry yet: tests use the fixture's own lock, and
 `built_roofs_block` takes the lock as a dict.
 

@@ -36,7 +36,9 @@ from M3-14 on.
 1. **`PhotoGrid`** (`game/scripts/terrain/photo_grid.gd`, `class_name PhotoGrid`, `extends
    RefCounted`).
    - **Constructor:** `static func from_manifest(path: String, world: WorldConfig) ->
-     PhotoGrid`, which returns null after its refusals (push_error, as TerrainGrid does).
+     PhotoGrid`, which returns null after its refusals, each one `push_error("PhotoGrid:
+     <path>: <problem>")` as TerrainGrid does. M3-14's allowlist line and refusal tests
+     depend on that form, the colon after the path included.
    - **Properties:** `texture` (ImageTexture, RGB8, columns × rows, with mipmaps; row 0 the
      north edge), `x0`, `z0` (the north-west corner, `world.to_local(e_min, n_max, h)`),
      `width_m`, `depth_m`, `columns`, `rows`, `cell_m`, `area`, `dataset`, `edition`,
@@ -112,12 +114,14 @@ meets it at the fixture). M3-10 follows in this lane.
       - z0 from n_min;
       - the image flipped north-south.
       - does NOT prove: what a GPU draws.
-- [ ] Software screenshots (`tools/shot.sh`, Compatibility) of the fixture and, with a scratch
+- [ ] Optional: software screenshots (Compatibility) of the fixture and, with a scratch
       build of the real village (terrain from `download terrain` and `terrain`; a 0.2 m
       photo built with M3-04's function once lane C has landed, or by the rule in
       `docs/briefs/M3-04-the-photo-step.md` with Pillow in a throwaway environment): the
       start view and 60 m over the centre, under `docs/briefs/shots/M3-09-*.jpg`, named in
-      Findings. They are evidence, not a gate.
+      Findings. They are evidence, not a gate. `tools/shot.sh` renders
+      the main scene, which uses this brief's code only from M3-14: render with a throwaway
+      scene kept in scratch (never committed), or skip the shots and say so in Findings.
       - does NOT prove: the Forward+ look on the owner's GPU.
 - [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that it renders or looks right.

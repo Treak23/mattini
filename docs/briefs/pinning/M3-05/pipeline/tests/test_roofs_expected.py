@@ -59,8 +59,7 @@ def test_computed_for_is_this_world():
         (REPO / "config" / "world.json").read_bytes()
     )
     # The inputs: config/datasets.lock.json gains its swissimage entry in this wave (brief
-    # M3-03, lane A), so its fit with VILLAGE_COMPUTED_FOR is pinned there
-    # (test_expected_inputs_m3.py), not here.
+    # M3-03, lane A), so its fit with VILLAGE_COMPUTED_FOR is pinned by that brief, not here.
 
 
 AREA = {"computed_for": VILLAGE_COMPUTED_FOR, "expected_sha256": VILLAGE_ROOFS}

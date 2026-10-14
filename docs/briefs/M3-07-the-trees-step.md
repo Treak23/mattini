@@ -45,8 +45,9 @@ base height, height and crown radius. The game (M3-11) stands a procedural conif
      has no other;
    - the 2⁻¹³ m refusal names the pixel's LV95 centre and both heights;
    - only the owner's axes; another mapping is refused.
-2. **The API** (signatures in SPEC §8 *The trees*):
-   - `TreesError`, `TREES_CONFIG_PATH`, `load_trees_config`, `check_trees_config`;
+2. **The API** (the signatures here are the API; SPEC §8 *The trees* holds the rule):
+   - `TreesError(ValueError)`, `TREES_CONFIG_PATH`, `load_trees_config`,
+     `check_trees_config`;
    - `build_tree_chunks(dsm, dtm, buildings, footprints, land_cover, world, area)`: the
      rule, pinned by the fixture;
    - `write_trees(out_dir, area, chunks, box, world_sha256, source, *, progress=None)`;
@@ -75,7 +76,20 @@ base height, height and crown radius. The game (M3-11) stands a procedural conif
    (the owner's axes, `computed_for.world_sha256`); each lock entry's fit; the inputs
    `computed_for` over the four entries; the provenance; every file's SHA-256 against the
    lock, each read from the bytes hashed (the 2.88 GB zip through its path, unchanged after
-   the read, as M3-06 does); the DSM and DTM tiles with the terrain's tile checks.
+   the read, as M3-06 does); the DSM and DTM tiles with the terrain's tile checks, written
+   in `trees.py` after `terrain.py`'s (its tile helpers are private, and lane A changes that
+   file in this wave). Only the names M3-01 keeps are imported from lane A's modules (its
+   decision 10).
+   - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
+     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
+     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock terrain`, `lock buildings`, `lock surface` or `lock tlm`. It imports
+     no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
+     changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
+     moves the step onto it in wave 2.
+   - **A missing download** (no `provenance.json`, or a file it lists absent) is refused
+     before any `progress` call and before anything is created under `out_dir`, not even a
+     folder, naming `python -m mattini download terrain`, `download buildings`, `download surface` or `download tlm`, the first missing in sorted dataset order, as `terrain.py` does. M3-13's pinned CLI test runs the step this
+     way. Not pinned in this lane: write its test.
 5. **The base height** comes from the 0.5 m terrain grid (`terrain.py`'s resampling of the
    DTM), whatever the terrain config's spacing.
 6. **The files:** `trees/<tile>.bin`, then `trees/<area>.json`, each through a `.part`

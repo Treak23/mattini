@@ -192,8 +192,9 @@ download stopped at 1.08 GB (Ctrl-C, and `kill -9`) resumed with one Range reque
 verified.
 
 *Measured entries (2026-10-14):* `entry_sha256` swissimage 415ed9bc…, swisssurface3d
-f73033b1…, swisstlm3d aa909f98… (the files in §1.1; `test_measured_photo_surface_tlm.py`
-compares the committed lock with them).
+f73033b1…, swisstlm3d aa909f98… (every file's SHA-256 is in brief M3-03's decision 7 and
+its pinned `test_measured_photo_surface_tlm.py`, which compares the committed lock with
+them).
 
 *Decided at M3 planning with the measurements:* `resolution_m` is required for `swissimage` and
 `swisssurface3d`, as for `swissalti3d` (M3-01); the terrain's and the buildings' republish
@@ -258,7 +259,7 @@ swisstopo STAC API
        → tree points (surface model − terrain) → vectors (paths, rivers, rail, lifts)
        → manifest
   → game/assets/generated/   chunks + manifest.json
-  → game/  Godot: chunk loading, Terrain3D terrain, buildings, stylised materials,
+  → game/  Godot: chunk loading, Terrain3D terrain, buildings, materials from the data,
            sun/moon cycle, sky, weather, free-fly camera, walking
 ```
 
@@ -344,7 +345,9 @@ places heights in the world (WORKFLOW §Review policy).
   then provenance and files (the step) or the block (`manifest`). The fit is one rule for
   download, step and `manifest`: the entry's collection, edition and resolution are the
   datasets config's, and it pins exactly the area's tiles or sheets; an unfitting lock is
-  refused naming `python -m mattini lock <x>` and no other command. An area's keys are
+  refused naming `python -m mattini lock <x>` and no other command. A missing download (no
+  provenance, or a file it lists absent) is refused before any progress line and before
+  anything is written, naming `python -m mattini download <x>`. An area's keys are
   exactly `computed_for`, `expected_sha256` and `spacing_m`.
 - *The game:* `TerrainGrid` reads the block and the file, checks the file's size and
   SHA-256 and the block against its own manifest (not the box against the world config's
@@ -766,6 +769,10 @@ inputs gives identical bytes, and tests say so.
 - **Generated buildings:** `game/assets/generated/buildings/` (git-ignored), written by
   `python -m mattini buildings` (§8): about 3.1 MiB for the village, which the export's
   `.pck` holds beside the heights.
+- **Detail textures (committed, from M3-10):** `game/textures/`, seven CC0 JPGs from Poly
+  Haven (15.05 MiB, each under 10 MB), unchanged, pinned by SHA-256, with `LICENSE.txt`
+  naming every file, its author and asset page; their `.import` files are committed too
+  (mipmaps).
 - **Screenshots:** software-rendered evidence from builders of visual briefs (§12) in
   `docs/briefs/shots/<brief>-<view>.jpg`, JPEG, 1280 × 720, a few per brief.
 - **Test data:** synthetic data generated inside the tests, and the small shared files in
@@ -780,7 +787,8 @@ inputs gives identical bytes, and tests say so.
 Free-fly camera (M1); walking with collision against terrain and buildings (M6);
 Terrain3D terrain with triplanar or separate rock for near-vertical faces (the Matterhorn
 faces cannot be a heightmap overhang); buildings from swissBUILDINGS3D (plain shapes, the
-diorama style reads that as intentional); stylised materials; real sun position for
+model look of M1–M2 read that as intentional; from M3 the look is realistic, made from the
+data); real sun position for
 Zermatt with time control (M4); weather (M6); a credits screen from the manifest (before
 the first shared build); the version on the pause screen.
 
@@ -846,9 +854,10 @@ M3-12, M3-14):**
     the data gives no species.
   - Colours enter only through `source_color` samplers and uniforms, or vertex colours
     marked sRGB, never as raw instance data (brain.md H21).
-- *Light:* the sun at azimuth 183°, elevation 52°, where it stood when the photo was taken
-  (from its shadows and the flight time, 7 September 2023 about 11:30 UTC), so the
-  photo's baked shadows agree with the game's. Tonemap exposure 0.54 and sky ambient
+- *Light:* the sun at azimuth 183°, elevation 52°, measured from the photo's shadows, so the
+  photo's baked shadows agree with the game's. The flight time (7 September 2023, about
+  11:30 UTC) gives 181° and 50° by the solar position formulas, within the shadows'
+  measuring error; the shadows' values are kept. Tonemap exposure 0.54 and sky ambient
   contribution 0.25 (Filmic, as M2's): calibrated under the Compatibility renderer so that
   flat sunlit ground renders at the photo's brightness (measured 1.06×). Forward+ on the
   owner's GPU is the real check.
@@ -866,7 +875,7 @@ M3-12, M3-14):**
   placeholder notes (the walls, the trees, the streams' assumed width), then the software
   licences.
 - *Cost, measured in software:* the village scene builds in about 6 s (2.9 s in M2) and
-  peaks at about 2.4 GiB, with 1.2 GiB of texture memory; the trees are about 34'000
+  peaks at about 2.4 GiB, with 1'171 MiB of texture memory; the trees are about 34'000
   instances of 192 triangles in 250 m cells, each cell drawn to 3 km. GPU time is the
   owner's PC's to measure.
 - *Not in M3:* close-range detail for meadows, scree and forest floor (option b), façades,
@@ -901,9 +910,10 @@ measured) beside each executable; the presets keep those folders and every `*.pa
 replacing a file already loaded, before the main scene, and prints one line per pack; step
 4c checks that every generated file ships once, unchanged, and that no generated file of
 10 MiB or more stays in `mattini.pck`. Measured on the village with a 0.2 m photo:
-`mattini.pck` 3.4 MB, `mattini-terrain.pck` 96'041'728 bytes (8.4 MiB under the limit),
-`mattini-photo.pck` 50'223'260 bytes; the Linux build starts as fast and as large as
-without packs. Linux's and Windows' packs are the same bytes, and stay the same across
+`mattini.pck` 3.4 MB (21.3 MB from M3-14 with the textures), `mattini-terrain.pck`
+96'041'728 bytes (8.4 MiB under the limit), `mattini-photo.pck` about 50.2 MB (50'224'444
+bytes in design's last rehearsal, with the final photo description); the Linux build starts
+as fast and as large as without packs. Linux's and Windows' packs are the same bytes, and stay the same across
 releases while the data does not change, so `dist`'s history stores them once.
 
 **Version scheme (confirmed by the owner, 2026-09-25):** `0.<n>.<patch>` for releases

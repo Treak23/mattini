@@ -71,9 +71,9 @@ parameter.
    read (M3-14), with this text: "Walls: one neutral plaster colour, a placeholder: no open
    data shows the façades." On one line it is 104 characters, over gdlint's 100, and gdformat
    joins a bracketed single string back onto one line. Measured clean with both: two joined
-   strings in brackets,
-   `const WALLS_NOTE := (` / `"Walls: one neutral plaster colour, a placeholder:"` /
-   `+ " no open data shows the façades."` / `)`, on three lines.
+   strings in brackets, on three lines: `const WALLS_NOTE := (`, then
+   `"Walls: one neutral plaster colour, a placeholder:" + " no open data shows the façades."`
+   (indented), then `)`. The pinned `test_building_materials.gd` checks the text.
 4. **The surfaces** may be named as you choose (the pinned tests find triangles by their
    vertices). For example "walls", "roofs" and "roofs_photo" with a new
    `res://materials/building_roofs_photo.tres`.
@@ -115,9 +115,11 @@ lane C at the same time; they meet at the fixture).
       - an unshaded `material_override`;
       - the reader without the vertex-range check.
       - does NOT prove: that the colours look right.
-- [ ] A software screenshot (`tools/shot.sh`) of the fixture's buildings, or of the real
-      village if you build it in scratch, committed under `docs/briefs/shots/M3-12-*.jpg` and
-      named in Findings. It is evidence, not a gate.
+- [ ] Optional: a software screenshot of the fixture's buildings, or of the real village if
+      you build it in scratch, committed under `docs/briefs/shots/M3-12-*.jpg` and named in
+      Findings. It is evidence, not a gate. `tools/shot.sh` renders
+      the main scene, which uses this brief's code only from M3-14: render with a throwaway
+      scene kept in scratch (never committed), or skip the shots and say so in Findings.
       - does NOT prove: the Forward+ look on the owner's GPU.
 - [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that it renders or looks right.

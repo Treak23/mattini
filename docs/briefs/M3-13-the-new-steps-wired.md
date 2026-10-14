@@ -18,7 +18,8 @@ manifest.
 - The several-datasets rule for `computed_for` gets one home, `lock.entries_sha256`.
 
 Measured with design's throwaway on the real village: every step from the command line
-writes design's values, and the manifest is 324'359 bytes, SHA-256 `3ca0445c…`.
+writes design's values, and the manifest is 324'359 bytes, SHA-256
+`3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065`.
 
 ## Read first, in order
 
@@ -27,7 +28,8 @@ writes design's values, and the manifest is 324'359 bytes, SHA-256 `3ca0445c…`
    *The photo*, *Roof colours*, *The surfaces*, *The trees*).
 3. `pipeline/mattini/__main__.py`, `manifest.py`, `lock.py`, and the wave-1 modules
    `photo.py`, `roofs.py`, `surfaces.py`, `trees.py` (their `build_*` and `built_*_block`
-   functions); the briefs M3-03 to M3-07 and their Findings.
+   functions); the briefs M3-01 and M3-03 to M3-07 and their Findings (a name M3-01 or M3-03
+   chose differently is recorded there).
 4. The pinned tests and fixture manifests: `docs/briefs/pinning/M3-13/`.
 
 ## Decisions already made
@@ -86,7 +88,10 @@ writes design's values, and the manifest is 324'359 bytes, SHA-256 `3ca0445c…`
 - `pipeline/mattini/__main__.py`, `manifest.py`, `lock.py` (`entries_sha256`; the fit
   function's use).
 - `pipeline/mattini/roofs.py` and `trees.py`: their `inputs_sha256` call
-  `lock.entries_sha256`, that change only.
+  `lock.entries_sha256`.
+- `pipeline/mattini/photo.py`, `roofs.py`, `surfaces.py`, `trees.py`: their own wave-1 fit
+  checks replaced by `lock.fit_problem` (the rule's one home, SPEC §8), the refusal texts
+  then fit_problem's. No other change to the four steps.
 - The pinned copies (`cp -r docs/briefs/pinning/M3-13/. .`): `pipeline/tests/`
   `test_manifest_m3.py`, `test_manifest_lock_fit_m3.py`, `test_lock_entries.py`,
   `test_refusals_m3.py`; the three M2 fixture manifests.
@@ -100,8 +105,8 @@ writes design's values, and the manifest is 324'359 bytes, SHA-256 `3ca0445c…`
   - `test_buildings_fixture.py`: the key set.
 - Your own new tests.
 
-Not `photo.py`, `surfaces.py`, `download.py`, `terrain.py`, `buildings.py`, the configs,
-the other fixtures, `game/`, `tools/`.
+Not `download.py`, `terrain.py`, `buildings.py`, the configs, the other fixtures, `game/`,
+`tools/`; the four steps beyond the two changes above.
 
 ## Depends on
 
@@ -125,6 +130,8 @@ M3-04 to M3-07 (the four steps). Lane I (M3-14) runs at the same time and shares
       - roofs not refused without buildings;
       - no fit check in `manifest`, or the fit after the inputs;
       - `entries_sha256` hashing the entries one by one;
+      - a step keeping its own fit check beside `lock.fit_problem` (your test: each step's
+        unfitting lock is refused with fit_problem's text);
       - Ctrl-C not caught.
       - does NOT prove: a real republish.
 - [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`

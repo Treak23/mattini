@@ -34,10 +34,17 @@ wave 2 (M3-13): this brief exposes the functions they will call, exactly as name
    - Box arithmetic is in integer decimetres: an edge off the 0.1 m grid by more than 1e-6 m
      is refused, and the sides must be whole cells.
    - The tiles are those the area box meets (`download.area_tiles`).
-2. **The API**, as the pinned tests import it (signatures in SPEC §8 *The photo*):
-   - `PhotoError`, `load_photo_config`, `check_photo_config`, `cell_key`;
+2. **The API.** The pinned tests import `PhotoError`, `load_photo_config`, `photo_grid`,
+   `encode_jpeg`, `write_photo`, `build_photo` and `built_photo_block`; the other three are
+   named for your own tests and follow `terrain.py`'s pattern:
+   - `PhotoError(ValueError)`, `load_photo_config`;
+   - `check_photo_config(data, where="the photo config") -> None`, raising PhotoError, as
+     `check_terrain_config` does;
+   - `cell_key(cell_m) -> str`: "0.2", "0.5" or "1", the keys of `expected_pixels_sha256` and
+     `expected_sha256` (as `terrain.spacing_key`);
    - `photo_grid(mosaic, box, cell_m)` (pure);
-   - `encode_jpeg(pixels)`, `jpeg_encoder()`;
+   - `encode_jpeg(pixels)`; `jpeg_encoder() -> str`, "Pillow <version>, libjpeg-turbo
+     <version>", the text the JPEG refusal names;
    - `write_photo(out_dir, area, pixels, box, cell_m, world_sha256, source)`;
    - `build_photo(world, datasets, lock, photo_config, raw_root, out_dir, *, progress=None)`;
    - `built_photo_block(out_dir, photo_config, world, world_sha256, datasets,
@@ -51,8 +58,18 @@ wave 2 (M3-13): this brief exposes the functions they will call, exactly as name
    - Refused unless EPSG:2056, 10'000 × 10'000 pixels, 3 uint8 bands, and the transform
      exactly (0.1, 0, E0, 0, −0.1, N0 + 1000).
 4. **The order of refusals.**
-   - `computed_for`'s world first, then (once the lock fits) its inputs, both as design
-     changes.
+   - `computed_for`'s world first, then the lock's fit, then its inputs, the world and the
+     inputs as design changes.
+   - **The lock's fit, in wave 1:** the step checks its entries' fit itself, in its own
+     module, by SPEC §8's rule (collection, edition or editions, resolution; exactly the
+     area's tiles; each surface tile's edition one of `editions`), naming `python -m mattini lock photo`. It imports
+     no fit or provenance helper of `terrain.py`, `buildings.py` or `download.py` (M3-01
+     changes them in lane A): `lock.fit_problem` arrives in lane A in this wave, and M3-13
+     moves the step onto it in wave 2.
+   - **A missing download** (no `provenance.json`, or a file it lists absent) is refused
+     before any `progress` call and before anything is created under `out_dir`, not even a
+     folder, naming `python -m mattini download photo`, as `terrain.py` does. M3-13's pinned CLI test runs the step this
+     way. Not pinned in this lane: write its test.
    - Then the pixels: "this machine or this code computes other pixels than design's …".
    - Then the JPEG: "the pixels are design's; this machine's JPEG encoder writes other bytes:
      Pillow <v>, libjpeg-turbo <v> …".
@@ -111,8 +128,9 @@ tile reader: keep it a public function (`read_tiles` or as you name it, document
       until then fetch the six tiles yourself into `<scratch>/swissimage/2023/` and write the
       provenance in the terrain's format), `build_photo` at 0.2 m writes design's JPEG and
       pixels, and at 0.5 m and 1 m (config edited in scratch only) theirs. Record the times and
-      the peak memory, which must stay under 2 GB at 0.2 m (`/usr/bin/time -v`, its maximum
-      resident set size).
+      the peak memory, which must stay under 2 GB at 0.2 m (the process's `VmHWM` in
+      `/proc/<pid>/status`, or `resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss` after
+      running it as a child; the container has no `/usr/bin/time`).
       - does NOT prove: that the owner's Windows machine decodes the tiles to the same pixels.
         If it does not, the step refuses with the pixels message, and design decides (a
         decoder without GDAL is the measured fallback).
