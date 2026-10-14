@@ -44,7 +44,7 @@ lane reads it.
 | Lane | Briefs | Files |
 |---|---|---|
 | H · pipeline wiring | M3-13 the new steps on the command line and in the manifest | `pipeline/mattini/__main__.py`, `manifest.py`, `lock.py`, the `entries_sha256` calls in `roofs.py` and `trees.py`, the three M2 fixture manifests, their tests |
-| I · the scene | M3-14 the main scene: the new data, the sun, the light, the credits | `game/scripts/main.gd`, `game/main.tscn`, `tools/export.sh` (step 6's lines), their tests |
+| I · the scene | M3-14 the main scene: the new data, the sun, the light, the credits | `game/scripts/main.gd`, `game/main.tscn`, `game/export_presets.cfg` (include filters), `tools/export.sh` (steps 2 and 6), `tools/gate_allowlist.txt` (six lines), `game/tests/test_main_scene*.gd`, `test_scene_placement.gd`, `complete_world.gd`, `test_release_settings.gd`, `pipeline/tests/fake_tools.py`, `test_export_startup_lines.py` |
 
 The one shared file of wave 1 is `tools/gate_allowlist.txt`, append-only. Briefs M3-08,
 M3-09, M3-10, M3-11 and M3-12 each append their pinned line or lines, because their tests
@@ -113,12 +113,19 @@ game and tools lanes, then M3-14). The seams below are the ones they hit.
 **After wave 2:**
 
 1. **The real village end to end.** In a scratch checkout, run every step from the command
-   line (lane H), then `manifest`, then `tools/export.sh` with the packs (lane B). The
-   exported Linux build must start headless with its packs and print every startup line
-   (lane I's), with no ERROR line. Every file must be under 100 MiB.
+   line (lane H), then `manifest` (`3ca0445c…`, 324'359 bytes, design's rehearsal), then
+   `tools/export.sh` with the packs (lane B). The exported Linux build must start headless
+   with its packs and print all eight startup lines in order (lane I's), with no ERROR line.
+   Every file must be under 100 MiB. Lane I runs this itself only if lane H had landed when
+   its pins passed; otherwise this step is its gate (M3-14's Findings say which).
+   Design's rehearsal measured `mattini.pck` 21.3 MB (the textures), `mattini-terrain.pck`
+   96.0 MB, `mattini-photo.pck` 50.2 MB, and `mattini.exe` 198 KB under the limit.
 2. **Software screenshots** (`tools/shot.sh`) of the start view, 60 m over the centre, a street
    at 30 m, the river and a rock face go into `docs/briefs/shots/M3-*`. They are evidence,
    not a gate.
+3. **Lanes H and I meet at the manifest:** M3-13's three M2 fixture manifests and M3-14's
+   `complete_world.gd` leave every game test green on the combined head (measured in
+   design's rehearsal); the gate's GUT count rises with M3-14's three new scripts.
 
 ## The review plan (WORKFLOW §Review policy)
 

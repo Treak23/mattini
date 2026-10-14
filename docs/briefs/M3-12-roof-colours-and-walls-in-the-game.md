@@ -68,8 +68,12 @@ parameter.
    - No `material_override` and no surface override material on any node (P, V1-G-04).
 3. **The placeholder label.** Godot drops a comment from a `.tres` when the editor re-saves
    it. So the label lives in BuildingLoader's doc comment and in a constant the credits will
-   read (M3-14): `const WALLS_NOTE := "Walls: one neutral plaster colour, a placeholder: no
-   open data shows the façades."`.
+   read (M3-14), with this text: "Walls: one neutral plaster colour, a placeholder: no open
+   data shows the façades." On one line it is 104 characters, over gdlint's 100, and gdformat
+   joins a bracketed single string back onto one line. Measured clean with both: two joined
+   strings in brackets,
+   `const WALLS_NOTE := (` / `"Walls: one neutral plaster colour, a placeholder:"` /
+   `+ " no open data shows the façades."` / `)`, on three lines.
 4. **The surfaces** may be named as you choose (the pinned tests find triangles by their
    vertices). For example "walls", "roofs" and "roofs_photo" with a new
    `res://materials/building_roofs_photo.tres`.
