@@ -252,3 +252,8 @@ Lane builder of lane C, wave 1, 2026-10-15, on `main` from `2aba135`.
    without a third gate run before it, because the incoming commit touched one brief file the
    gate does not read; the gate was run on the pushed head together with this status
    commit (chained, below). The implementation commit is `3c1b8d5`.
+9. **The lane-A seam** (measured by this lane's M3-05 run, once M3-03 had landed, on the pushed
+   tree): with the committed lock, `load_datasets()` and the provenance that `python -m
+   mattini download photo` wrote over the six tiles (verified, 0 fetches), `build_photo` wrote
+   design's pixels and JPEG at 0.2 m, and `built_photo_block` with its default lock path
+   accepted the result. Details in M3-05's Findings, item 8.

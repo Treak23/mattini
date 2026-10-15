@@ -1,5 +1,5 @@
 # Brief: M3-05 — Roof colours from the photo
-Status: OPEN
+Status: DONE (5d6042f)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane C of wave 1, after M3-04 (`docs/briefs/M3-plan.md`).
@@ -233,3 +233,19 @@ Lane builder of lane C, wave 1, 2026-10-15, on `main` after M3-04 (`3c1b8d5`).
      `area_tiles`, `PROVENANCE`, `load_lock`, and from `terrain.py` `AREA_NAME`,
      `check_computed_for`, `check_terrain_config`, `configured_area`, `world_refusal`;
      `BUILDINGS` is defined in `roofs.py` (it is not on that list).
+7. **Standard gate and push.** `tools/gate.sh > gate.log && git commit` on the tree merged
+   with `main` at `f33d676` (exit 0, the gate's pytest including both pinned roofs files and my
+   136); the rebase then brought M3-03 (`820c880`) in, the gate ran again on the rebased
+   tree (exit 0), and the push went out at once: `5d6042f`.
+8. **The lane-A seam, measured once M3-03 had landed** (the integration note 3 of the plan
+   asks the orchestrator for it; made here on the pushed tree, in the scratch folder):
+   `python -m mattini download photo --out <scratch>` verified the six tiles already there
+   ("6 tiles verified, 0 fetches") and wrote provenance.json in its own format, which
+   replaced the one this lane's scratch script had written. With the committed
+   `config/datasets.lock.json` (all five entries), `load_datasets()` of the committed config
+   and that provenance, in one process: `build_photo` wrote design's pixels `00533bc6…` and
+   JPEG `cf83c705…`, `built_photo_block` (the default lock path) accepted it; `build_roofs`
+   wrote `8d9664b6…`, `built_roofs_block` accepted it against `python -m mattini
+   buildings`'s own description. 86 s for both, one process, peak 1'281 MB. So M3-03's lock,
+   datasets config and provenance fit what the two readers take, and the committed
+   `computed_for` values of config/photo.json and config/roofs.json fit the committed lock.
