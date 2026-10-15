@@ -84,7 +84,7 @@ static func _check_built(manifest: Dictionary) -> String:
 		return "roofs must be an object or null, found %s" % [block]
 	if (
 		typeof(block.get("world_sha256")) != TYPE_STRING
-		or block["world_sha256"] != manifest.get("world_sha256")
+		or ManifestValue.differs(block["world_sha256"], manifest.get("world_sha256"))
 	):
 		return (
 			(
@@ -115,9 +115,9 @@ func _read_block(block: Dictionary, buildings_block: Variant, buildings: Buildin
 
 ## The block's format, area, box and chunk list.
 static func _check_header(block: Dictionary, buildings: BuildingChunks) -> String:
-	if block["format"] != FORMAT:
+	if ManifestValue.differs(block["format"], FORMAT):
 		return "roofs.format must be %s, found %s" % [FORMAT, block["format"]]
-	if block["area"] != buildings.area:
+	if ManifestValue.differs(block["area"], buildings.area):
 		return (
 			"roofs.area %s is not the buildings' area %s: run %s"
 			% [block["area"], buildings.area, ROOFS_COMMAND]
@@ -145,7 +145,7 @@ static func _check_source(source: Variant, buildings_block: Variant) -> String:
 		if not _is_text(photo.get(key)):
 			return "roofs.source.photo.%s must be text, found %s" % [key, photo.get(key)]
 	# The buildings block was read by BuildingChunks, so it is an object with its source.
-	if source["buildings"] != buildings_block.get("source"):
+	if ManifestValue.differs(source["buildings"], buildings_block.get("source")):
 		return (
 			"roofs.source.buildings is not the manifest's buildings.source (the roof colours"
 			+ " were measured on other buildings): run %s" % ROOFS_COMMAND
@@ -212,7 +212,7 @@ static func _check_entry(entry: Variant, i: int, chunk: Dictionary) -> String:
 	var problem := _check_keys(entry, CHUNK_KEYS, where)
 	if not problem.is_empty():
 		return problem
-	if entry["tile"] != chunk["tile"]:
+	if ManifestValue.differs(entry["tile"], chunk["tile"]):
 		return (
 			"%s is the tile %s, the buildings' chunk %d is %s: run %s"
 			% [where, entry["tile"], i, chunk["tile"], ROOFS_COMMAND]

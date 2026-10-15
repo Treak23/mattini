@@ -130,7 +130,7 @@ static func _check_built(manifest: Dictionary) -> String:
 		return "surfaces must be an object or null, found %s" % [surfaces]
 	if (
 		typeof(surfaces.get("world_sha256")) != TYPE_STRING
-		or surfaces["world_sha256"] != manifest.get("world_sha256")
+		or ManifestValue.differs(surfaces["world_sha256"], manifest.get("world_sha256"))
 	):
 		return (
 			(
@@ -150,9 +150,9 @@ func _check_world(world: WorldConfig, block: Variant) -> String:
 		return "the manifest has no world block with an origin"
 	var origin: Dictionary = block["origin_lv95"]
 	if (
-		origin.get("e") != world.origin_e
-		or origin.get("n") != world.origin_n
-		or block.get("height_offset_m") != world.height_offset
+		ManifestValue.differs(origin.get("e"), world.origin_e)
+		or ManifestValue.differs(origin.get("n"), world.origin_n)
+		or ManifestValue.differs(block.get("height_offset_m"), world.height_offset)
 	):
 		return "the WorldConfig given was not read from this manifest (its origin differs)"
 	var e := world.origin_e
@@ -196,9 +196,9 @@ static func _check_labels(surfaces: Dictionary) -> String:
 		return "surfaces must hold exactly the keys %s, found %s" % [KEYS, _sorted_keys(surfaces)]
 	if typeof(surfaces["area"]) != TYPE_STRING or surfaces["area"].is_empty():
 		return "surfaces.area must be a name, found %s" % [surfaces["area"]]
-	if surfaces["format"] != FORMAT:
+	if ManifestValue.differs(surfaces["format"], FORMAT):
 		return "surfaces.format must be %s, found %s" % [FORMAT, surfaces["format"]]
-	if surfaces["classes"] != CLASSES:
+	if ManifestValue.differs(surfaces["classes"], CLASSES):
 		return "surfaces.classes must be %s, found %s" % [CLASSES, surfaces["classes"]]
 	return ""
 
@@ -232,7 +232,7 @@ static func _check_nested(surfaces: Dictionary) -> String:
 	for key in ["attribution", "collection", "edition", "file"]:
 		if typeof(source[key]) != TYPE_STRING or source[key].is_empty():
 			return "surfaces.source.%s must be text, found %s" % [key, source[key]]
-	if source["dataset"] != DATASET:
+	if ManifestValue.differs(source["dataset"], DATASET):
 		return "surfaces.source.dataset must be %s, found %s" % [DATASET, source["dataset"]]
 	var box: Variant = surfaces["lv95_box"]
 	if typeof(box) != TYPE_DICTIONARY or not _has_exactly(box, BOX_KEYS):

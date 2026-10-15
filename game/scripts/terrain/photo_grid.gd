@@ -118,7 +118,7 @@ static func _check_built(manifest: Dictionary) -> String:
 		return "photo must be an object or null, found %s" % [photo]
 	if (
 		typeof(photo.get("world_sha256")) != TYPE_STRING
-		or photo["world_sha256"] != manifest.get("world_sha256")
+		or ManifestValue.differs(photo["world_sha256"], manifest.get("world_sha256"))
 	):
 		return (
 			(
@@ -138,9 +138,9 @@ func _check_world(world: WorldConfig, block: Variant) -> String:
 		return "the manifest has no world block with an origin"
 	var origin: Dictionary = block["origin_lv95"]
 	if (
-		origin.get("e") != world.origin_e
-		or origin.get("n") != world.origin_n
-		or block.get("height_offset_m") != world.height_offset
+		ManifestValue.differs(origin.get("e"), world.origin_e)
+		or ManifestValue.differs(origin.get("n"), world.origin_n)
+		or ManifestValue.differs(block.get("height_offset_m"), world.height_offset)
 	):
 		return "the WorldConfig given was not read from this manifest (its origin differs)"
 	var e := world.origin_e
@@ -165,7 +165,7 @@ func _read_block(photo: Dictionary) -> String:
 		return "photo must hold exactly the keys %s, found %s" % [KEYS, _sorted_keys(photo)]
 	if typeof(photo["area"]) != TYPE_STRING or photo["area"].is_empty():
 		return "photo.area must be a name, found %s" % [photo["area"]]
-	if photo["format"] != FORMAT:
+	if ManifestValue.differs(photo["format"], FORMAT):
 		return "photo.format must be %s, found %s" % [FORMAT, photo["format"]]
 	var cell: Variant = photo["cell_m"]
 	if not _is_number(cell) or float(cell) not in CELLS:
@@ -206,7 +206,7 @@ static func _check_nested(photo: Dictionary) -> String:
 	for key in ["attribution", "collection", "edition"]:
 		if typeof(source[key]) != TYPE_STRING or source[key].is_empty():
 			return "photo.source.%s must be text, found %s" % [key, source[key]]
-	if source["dataset"] != DATASET:
+	if ManifestValue.differs(source["dataset"], DATASET):
 		return "photo.source.dataset must be %s, found %s" % [DATASET, source["dataset"]]
 	var box: Variant = photo["lv95_box"]
 	if typeof(box) != TYPE_DICTIONARY or not _has_exactly(box, BOX_KEYS):

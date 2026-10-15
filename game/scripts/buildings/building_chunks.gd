@@ -76,7 +76,7 @@ static func _check_built(manifest: Dictionary) -> String:
 		return "buildings must be an object or null, found %s" % [block]
 	if (
 		typeof(block.get("world_sha256")) != TYPE_STRING
-		or block["world_sha256"] != manifest.get("world_sha256")
+		or ManifestValue.differs(block["world_sha256"], manifest.get("world_sha256"))
 	):
 		return (
 			(
@@ -99,9 +99,9 @@ static func _check_world(world: WorldConfig, path: String, block: Variant) -> St
 		return "the manifest has no world block with an origin"
 	var origin: Dictionary = block["origin_lv95"]
 	if (
-		origin.get("e") != world.origin_e
-		or origin.get("n") != world.origin_n
-		or block.get("height_offset_m") != world.height_offset
+		ManifestValue.differs(origin.get("e"), world.origin_e)
+		or ManifestValue.differs(origin.get("n"), world.origin_n)
+		or ManifestValue.differs(block.get("height_offset_m"), world.height_offset)
 	):
 		return (
 			"the WorldConfig given was not read from this manifest"
@@ -123,7 +123,7 @@ static func _check_world(world: WorldConfig, path: String, block: Variant) -> St
 
 ## Checks the block's own fields and fills area, dataset, edition and attribution.
 func _read_block(block: Dictionary) -> String:
-	if block.get("format") != FORMAT:
+	if ManifestValue.differs(block.get("format"), FORMAT):
 		return "buildings.format must be %s, found %s" % [FORMAT, block.get("format")]
 	if not _is_text(block.get("area")):
 		return "buildings.area must be a name, found %s" % [block.get("area")]

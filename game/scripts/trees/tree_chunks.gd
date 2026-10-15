@@ -93,7 +93,7 @@ static func _check_built(manifest: Dictionary) -> String:
 		return "trees must be an object or null, found %s" % [block]
 	if (
 		typeof(block.get("world_sha256")) != TYPE_STRING
-		or block["world_sha256"] != manifest.get("world_sha256")
+		or ManifestValue.differs(block["world_sha256"], manifest.get("world_sha256"))
 	):
 		return (
 			(
@@ -134,7 +134,7 @@ func _read_block(block: Dictionary) -> String:
 	keys.sort()
 	if keys != BLOCK_KEYS:
 		return "trees must have exactly the keys %s, found %s" % [BLOCK_KEYS, keys]
-	if block["format"] != FORMAT:
+	if ManifestValue.differs(block["format"], FORMAT):
 		return "trees.format must be %s, found %s" % [FORMAT, block["format"]]
 	if not _is_text(block["area"]):
 		return "trees.area must be a name, found %s" % [block["area"]]
@@ -184,7 +184,10 @@ static func _check_source(source: Variant) -> String:
 	if not problem.is_empty():
 		return problem
 	for name: String in SOURCE_KEYS:
-		if typeof(source[name]) != TYPE_DICTIONARY or source[name].get("dataset") != name:
+		if (
+			typeof(source[name]) != TYPE_DICTIONARY
+			or ManifestValue.differs(source[name].get("dataset"), name)
+		):
 			return "trees.source.%s must be the %s block, found %s" % [name, name, source[name]]
 	var surface: Dictionary = source[DATASET]
 	problem = _check_keys(surface, SURFACE_KEYS, "trees.source.%s" % DATASET)

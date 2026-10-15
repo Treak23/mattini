@@ -90,7 +90,7 @@ static func _check_built(manifest: Dictionary) -> String:
 		return "terrain must be an object or null, found %s" % [terrain]
 	if (
 		typeof(terrain.get("world_sha256")) != TYPE_STRING
-		or terrain["world_sha256"] != manifest.get("world_sha256")
+		or ManifestValue.differs(terrain["world_sha256"], manifest.get("world_sha256"))
 	):
 		return (
 			(
@@ -110,9 +110,9 @@ func _check_world(world: WorldConfig, block: Variant) -> String:
 		return "the manifest has no world block with an origin"
 	var origin: Dictionary = block["origin_lv95"]
 	if (
-		origin.get("e") != world.origin_e
-		or origin.get("n") != world.origin_n
-		or block.get("height_offset_m") != world.height_offset
+		ManifestValue.differs(origin.get("e"), world.origin_e)
+		or ManifestValue.differs(origin.get("n"), world.origin_n)
+		or ManifestValue.differs(block.get("height_offset_m"), world.height_offset)
 	):
 		return (
 			"the WorldConfig given was not read from this manifest"
@@ -137,7 +137,7 @@ func _check_world(world: WorldConfig, block: Variant) -> String:
 func _read_block(terrain: Dictionary) -> String:
 	if typeof(terrain.get("area")) != TYPE_STRING or terrain["area"].is_empty():
 		return "terrain.area must be a name, found %s" % [terrain.get("area")]
-	if terrain.get("format") != FORMAT:
+	if ManifestValue.differs(terrain.get("format"), FORMAT):
 		return "terrain.format must be %s, found %s" % [FORMAT, terrain.get("format")]
 	var spacing: Variant = terrain.get("spacing_m")
 	if not _is_number(spacing) or float(spacing) not in SPACINGS:
