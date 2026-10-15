@@ -1,5 +1,5 @@
 # Brief: M3-12 — Roof colours and walls in the game
-Status: OPEN
+Status: DONE (fb30619)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane G of wave 1 (`docs/briefs/M3-plan.md`).
@@ -158,3 +158,4 @@ lane C at the same time; they meet at the fixture).
 7. **Not measured.** The container holds no village data, so BuildingRoofs' and the loader's times on the real 1'486 buildings (design: 0.07 s and 0.10 s) are not re-measured here; the vertex-range check reads each building's indices through a native sort, and the loader makes one colour list per chunk. The fixture runs in milliseconds. No software screenshot: the main scene draws roof colours only from M3-14 (plan hint), and a throwaway scene was not built.
 8. **Whole-directory GUT runs without the generated manifest.** A run of `-gdir=res://tests` before `python -m mattini manifest` has written `game/assets/generated/manifest.json` fails twelve `test_world_config*` tests in every run, mutated or not; the gate writes the manifest first. Not a finding about this brief; named so nobody reads those twelve lines in the mutation logs as caused by a mutation.
 9. **Staging.** `pipeline/tests/test_repo_tracked.py` fails the gate while new files are untracked: stage them (`git add`) before the gate.
+10. **The gate** (`tools/gate.sh`, exit 0 on the tree of the landing commit; origin/main had not moved, so the rebase brought nothing in and no second run was needed): GUT 27 scripts, 139 tests, 4463 asserts, all passed; pytest 742 passed, 4 deselected (a first run failed only `test_repo_tracked` until the new files were staged). Does NOT prove: that anything renders or looks right; the owner's PC is the check.
