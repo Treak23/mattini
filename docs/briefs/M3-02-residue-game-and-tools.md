@@ -1,5 +1,5 @@
 # Brief: M3-02 — M2's residue, the game and the tools
-Status: OPEN
+Status: DONE (d67e17e)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane B of wave 1, first; M3-08 follows in this lane
@@ -204,3 +204,9 @@ unchanged (no entry was needed).
    read GUT's text, so they prove what GUT printed, not that every script ran: a test that
    prints both a fake summary and a `Scripts <n>` line equal to the count, then quits, still
    passes (not measured, not closed). The CR handling was tested on simulated CR LF output only.
+8. **Rebase and the combined head.** `main` moved twice while this brief ran: lane G's
+   M3-12 (`fb30619`, which appended one line to `tools/gate_allowlist.txt`, left in place,
+   this brief adds none) and its docs commit. The standard gate was re-run on the tree with
+   `fb30619` under this brief's changes before the commit: exit 0, pytest 766 passed, GUT
+   **29 scripts** (25 + M3-12's four) equal to the 29 `test_*.gd` files, `GUT version:  9.6.1`.
+   The implementation commit is `d67e17e` on `origin/main`.
