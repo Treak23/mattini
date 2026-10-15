@@ -48,8 +48,12 @@
     },
     "world_sha256": "e7cd091dc238bc1ba68839c6120d60af5849d0d7923b3798b226480468d5254a"
   },
+  "photo": null,
+  "roofs": null,
   "schema": 1,
+  "surfaces": null,
   "terrain": null,
+  "trees": null,
   "world": {
     "areas": {
       "fixture": {

@@ -1,7 +1,8 @@
 """The manifest's `buildings` block (brief M2-04; docs/SPEC.md §8).
 
 Pinned decisions (brief M2-04, *The manifest*): the top level is exactly `buildings`,
-`schema`, `terrain`, `world`, `world_sha256`; `buildings` is null when the folder holds no
+`schema`, `terrain`, `world`, `world_sha256` (since M3-13 also `photo`, `roofs`, `surfaces`
+and `trees`, null here: none is built); `buildings` is null when the folder holds no
 `buildings/<area>.json` for the terrain config's area, whatever the buildings config says,
 and otherwise that description copied verbatim. `manifest` refuses a built block, naming
 `python -m mattini buildings`, and writes nothing, when its key sets are not exact, its
@@ -93,7 +94,17 @@ def test_a_built_block_is_copied_verbatim(tmp_path):
     path = _write(_out(tmp_path))
     assert path.read_bytes() == (GENERATED / "manifest.json").read_bytes()
     manifest = json.loads(path.read_bytes())
-    assert set(manifest) == {"buildings", "schema", "terrain", "world", "world_sha256"}
+    assert set(manifest) == {
+        "buildings",
+        "photo",
+        "roofs",
+        "schema",
+        "surfaces",
+        "terrain",
+        "trees",
+        "world",
+        "world_sha256",
+    }
     block = json.loads((GENERATED / "buildings" / "fixture.json").read_bytes())
     assert manifest["buildings"] == block
 
@@ -113,7 +124,17 @@ def test_without_a_description_the_block_is_null_whatever_the_buildings_config_s
 
 def test_the_real_config_without_buildings_gives_a_null_block(tmp_path):
     manifest = json.loads(write_manifest(tmp_path).read_bytes())
-    assert set(manifest) == {"buildings", "schema", "terrain", "world", "world_sha256"}
+    assert set(manifest) == {
+        "buildings",
+        "photo",
+        "roofs",
+        "schema",
+        "surfaces",
+        "terrain",
+        "trees",
+        "world",
+        "world_sha256",
+    }
     assert manifest["buildings"] is None
 
 

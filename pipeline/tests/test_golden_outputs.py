@@ -21,10 +21,11 @@ from mattini.world import load_world
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE_WORLD = REPO / "tests" / "shared" / "terrain_fixture" / "world.json"
-# M1-03 added the terrain block, M2-04 the buildings block (both null here: nothing is
-# built): each a new key set and golden. M2-04's golden is M1-03's bytes with the one line
-# `  "buildings": null,` added (a04c269d… without it, measured).
-MANIFEST_SHA256 = "ba8383ffd4e67eeafc456fb24a00a6c57cad9d5c03bf4214049969642dd9aabd"
+# M1-03 added the terrain block, M2-04 the buildings block, M3-13 the photo, roofs, surfaces
+# and trees blocks (all null here: nothing is built): each a new key set and golden. M3-13's
+# golden is M2-04's bytes (ba8383ff…) with the four lines `  "photo": null,`, `  "roofs":
+# null,`, `  "surfaces": null,` and `  "trees": null,` added, computed two ways (design).
+MANIFEST_SHA256 = "cf4b939c6e4a89bf202081c365f22b338180c7d7141d34189af69cf709e20081"
 PROVENANCE_SHA256 = "2efd91929da1aa4aa7a987c39a1b66ad25af330ba51eabcde84da3809b77b73a"
 PROVENANCE_KEYS = {
     "attribution",
@@ -41,7 +42,17 @@ TILE_KEYS = {"file", "item", "sha256", "size_bytes", "tile", "url"}
 def test_manifest_bytes_for_a_fixed_world_config(tmp_path):
     raw = write_manifest(tmp_path, FIXTURE_WORLD).read_bytes()
     manifest = json.loads(raw)
-    assert set(manifest) == {"buildings", "schema", "terrain", "world", "world_sha256"}
+    assert set(manifest) == {
+        "buildings",
+        "photo",
+        "roofs",
+        "schema",
+        "surfaces",
+        "terrain",
+        "trees",
+        "world",
+        "world_sha256",
+    }
     assert manifest["terrain"] is None
     assert manifest["buildings"] is None
     assert manifest["world"] == json.loads(FIXTURE_WORLD.read_text(encoding="utf-8"))

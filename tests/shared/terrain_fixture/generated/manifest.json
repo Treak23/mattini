@@ -1,6 +1,9 @@
 {
   "buildings": null,
+  "photo": null,
+  "roofs": null,
   "schema": 1,
+  "surfaces": null,
   "terrain": {
     "area": "fixture",
     "columns": 41,
@@ -30,6 +33,7 @@
     "spacing_m": 0.5,
     "world_sha256": "3cab21e5340ae9b87a7b64b5e215728c639362663e3170dd3392499b5e1e5e75"
   },
+  "trees": null,
   "world": {
     "areas": {
       "fixture": {

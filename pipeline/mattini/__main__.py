@@ -6,6 +6,11 @@ M3-03; M1 R1 T-06): the area has one home. swissTLM3D (`tlm`) is national and ha
 `lock <dataset>` writes that dataset's entry of config/datasets.lock.json and keeps every
 other entry (brief M2-03).
 
+`photo`, `roofs`, `surfaces` and `trees` build the M3 steps' outputs as `terrain` and
+`buildings` build theirs (brief M3-13); each then writes the manifest. They read the
+datasets that `download` fetched, and a step without its download ends in one
+`mattini: error:` line naming the `download` command.
+
 A Ctrl-C ends any command with one line, `mattini: interrupted: ...` naming the command to
 run again, and exit status 130, never a traceback (brief M3-03). `download tlm` keeps the
 part of its file, and the next run resumes it.
@@ -17,7 +22,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from mattini import buildings, download, lock, terrain
+from mattini import buildings, download, lock, photo, roofs, surfaces, terrain, trees
 from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.manifest import DEFAULT_OUT, write_manifest
 from mattini.world import WorldConfigError, load_world
@@ -31,6 +36,13 @@ DATASETS = {
     "terrain": (download.DATASET, "tiles"),
     "tlm": (download.TLM, "file"),
 }
+# the M3 steps, in pipeline order: what each builds from the downloads
+STEPS = {
+    "photo": "build the aerial photo of the area from the downloaded tiles",
+    "roofs": "measure each building's roof colour from the photo",
+    "surfaces": "classify roads, paths, water and rock from swissTLM3D",
+    "trees": "find the trees in the surface model",
+}
 DATASETS_HELP = (
     "terrain: swissALTI3D; buildings: swissBUILDINGS3D 3.0, its map sheets; photo: "
     "SWISSIMAGE 10 cm; surface: the swissSURFACE3D raster; all for the area "
@@ -41,10 +53,6 @@ DATASETS_HELP = (
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m mattini")
     commands = parser.add_subparsers(dest="command", required=True)
-    manifest = commands.add_parser("manifest", help="write the generated manifest.json")
-    manifest.add_argument(
-        "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
-    )
     pin = commands.add_parser(
         "lock", help="pin the published SHA-256 of the inputs in config/datasets.lock.json"
     )
@@ -73,6 +81,18 @@ def main(argv: list[str] | None = None) -> int:
     solids.add_argument(
         "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
     )
+    for name, summary in STEPS.items():
+        step = commands.add_parser(name, help=f"{summary}, then the manifest")
+        step.add_argument(
+            "--raw", default=download.DEFAULT_OUT, help="download root (default: data/raw)"
+        )
+        step.add_argument(
+            "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
+        )
+    manifest = commands.add_parser("manifest", help="write the generated manifest.json")
+    manifest.add_argument(
+        "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -86,6 +106,8 @@ def main(argv: list[str] | None = None) -> int:
             print(_build_terrain(Path(args.raw), Path(args.out)))
         elif args.command == "buildings":
             print(_build_buildings(Path(args.raw), Path(args.out)))
+        elif args.command in STEPS:
+            print(_build_step(args.command, Path(args.raw), Path(args.out)))
     except KeyboardInterrupt:
         command = f"python -m mattini {args.command}"
         if args.command in ("lock", "download"):
@@ -107,6 +129,10 @@ def main(argv: list[str] | None = None) -> int:
         download.DownloadError,
         terrain.TerrainError,
         buildings.BuildingsError,
+        photo.PhotoError,
+        roofs.RoofsError,
+        surfaces.SurfacesError,
+        trees.TreesError,
     ) as exc:
         print(f"mattini: error: {exc}", file=sys.stderr)
         return 1
@@ -234,6 +260,57 @@ def _build_buildings(raw_root: Path, out_dir: Path) -> Path:
         out_dir,
         progress=progress,
     )
+    return write_manifest(out_dir)
+
+
+def _build_step(step: str, raw_root: Path, out_dir: Path) -> Path:
+    """Build one of the M3 steps (`STEPS`) for the configured area, then the manifest.
+
+    Each loads config/world.json, datasets.json, datasets.lock.json and its own config, the
+    roofs and the trees config/terrain.json too, and calls its module's `build_<step>`
+    through the module, so a step is replaced in one place only. Progress on stderr.
+    """
+
+    def progress(message: str) -> None:
+        print(message, file=sys.stderr, flush=True)
+
+    world, datasets, pinned = load_world(), load_datasets(), lock.load_lock(lock.LOCK_PATH)
+    if step == "photo":
+        photo.build_photo(
+            world, datasets, pinned, photo.load_photo_config(), raw_root, out_dir, progress=progress
+        )
+    elif step == "roofs":
+        roofs.build_roofs(
+            world,
+            datasets,
+            pinned,
+            roofs.load_roofs_config(),
+            terrain.load_terrain_config(),
+            raw_root,
+            out_dir,
+            progress=progress,
+        )
+    elif step == "surfaces":
+        surfaces.build_surfaces(
+            world,
+            datasets,
+            pinned,
+            surfaces.load_surfaces_config(),
+            raw_root,
+            out_dir,
+            progress=progress,
+        )
+    else:
+        trees.build_trees(
+            world,
+            datasets,
+            pinned,
+            trees.load_trees_config(),
+            terrain.load_terrain_config(),
+            raw_root,
+            out_dir,
+            progress=progress,
+        )
     return write_manifest(out_dir)
 
 

@@ -1,8 +1,8 @@
 """Pinning tests for brief M1-03: the manifest's `terrain` block (docs/SPEC.md §8).
 
 Pinned decisions: the manifest's top level is exactly schema, terrain, world and
-world_sha256 (since M2-04 also buildings, null here: no buildings are built); `terrain` is
-null until a terrain has been built, and otherwise the
+world_sha256 (since M2-04 also buildings, since M3-13 also photo, roofs, surfaces and trees,
+all null here: none is built); `terrain` is null until a terrain has been built, and otherwise the
 description the terrain step wrote next to the heights file, copied verbatim. `manifest`
 refuses a built terrain that no longer matches: another world config (its heights are
 H - height_offset_m, so a changed offset would shift the world vertically, Hard Rule 4),
@@ -30,8 +30,10 @@ FIXTURE = REPO / "tests" / "shared" / "terrain_fixture"
 GENERATED = FIXTURE / "generated"
 TERRAIN_COMMAND = "python -m mattini terrain"
 LOCK_COMMAND = "python -m mattini lock terrain"
-# M2-04: the M1-03 bytes with `  "buildings": null,` added
-MANIFEST_WITHOUT_TERRAIN_SHA256 = "ba8383ffd4e67eeafc456fb24a00a6c57cad9d5c03bf4214049969642dd9aabd"
+# M3-13: the M2-04 bytes (ba8383ff…) with `  "photo": null,`, `  "roofs": null,`,
+# `  "surfaces": null,` and `  "trees": null,` added (M2-04: the M1-03 bytes with
+# `  "buildings": null,` added)
+MANIFEST_WITHOUT_TERRAIN_SHA256 = "cf4b939c6e4a89bf202081c365f22b338180c7d7141d34189af69cf709e20081"
 
 
 def _fixture_out(tmp_path) -> Path:
@@ -61,14 +63,34 @@ def _copy_with(tmp_path, name, change):
 def test_without_a_built_terrain_the_block_is_null(tmp_path):
     raw = _write(tmp_path / "empty").read_bytes()
     manifest = json.loads(raw)
-    assert set(manifest) == {"buildings", "schema", "terrain", "world", "world_sha256"}
+    assert set(manifest) == {
+        "buildings",
+        "photo",
+        "roofs",
+        "schema",
+        "surfaces",
+        "terrain",
+        "trees",
+        "world",
+        "world_sha256",
+    }
     assert manifest["terrain"] is None
     assert hashlib.sha256(raw).hexdigest() == MANIFEST_WITHOUT_TERRAIN_SHA256
 
 
 def test_the_real_config_without_terrain_gives_a_null_block(tmp_path):
     manifest = json.loads(write_manifest(tmp_path).read_bytes())
-    assert set(manifest) == {"buildings", "schema", "terrain", "world", "world_sha256"}
+    assert set(manifest) == {
+        "buildings",
+        "photo",
+        "roofs",
+        "schema",
+        "surfaces",
+        "terrain",
+        "trees",
+        "world",
+        "world_sha256",
+    }
     assert manifest["terrain"] is None
 
 

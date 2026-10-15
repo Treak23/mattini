@@ -77,6 +77,7 @@ from rasterio.io import MemoryFile
 
 from mattini.buildings import read_sheet
 from mattini.download import PROVENANCE, area_sheets, area_tiles
+from mattini.lock import entries_sha256, fit_problem, shape_problem
 from mattini.surfaces import (
     BIG,
     LIMIT_MM,
@@ -109,12 +110,6 @@ SCHEMA = 1
 FORMAT = "trees-f32x5-le"
 TREES_COMMAND = "python -m mattini trees"
 DATASETS = ("swissalti3d", "swissbuildings3d", "swisssurface3d", "swisstlm3d")  # sorted
-LOCK_COMMANDS = {
-    "swissalti3d": "python -m mattini lock terrain",
-    "swissbuildings3d": "python -m mattini lock buildings",
-    "swisssurface3d": "python -m mattini lock surface",
-    "swisstlm3d": "python -m mattini lock tlm",
-}
 DOWNLOAD_COMMANDS = {
     "swissalti3d": "python -m mattini download terrain",
     "swissbuildings3d": "python -m mattini download buildings",
@@ -228,16 +223,10 @@ def check_trees_config(data: object, where: Path | str = "the trees config") -> 
 def _inputs_sha256(entries: dict) -> str:
     """The SHA-256 of the four lock entries rendered canonically: what `computed_for` records.
 
-    `json.dumps({dataset: entry}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`
-    in UTF-8, over swissalti3d, swissbuildings3d, swisssurface3d and swisstlm3d.
+    `lock.entries_sha256` over swissalti3d, swissbuildings3d, swisssurface3d and swisstlm3d,
+    the one home of the rule (brief M3-13); `entries` is the lock's `datasets` object.
     """
-    text = json.dumps(
-        {name: entries[name] for name in DATASETS},
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    )
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return entries_sha256({"datasets": entries}, DATASETS)
 
 
 def _inputs_refusal(computed_for: dict, entries: dict) -> str | None:
@@ -781,7 +770,7 @@ def build_trees(
         raise TreesError(f"area {area!r}: {problem}")
 
     configs = _configs(datasets)
-    entries = _locked_entries(lock, configs, world, area)
+    entries = _locked_entries(lock, datasets, world, area)
     problem = _inputs_refusal(settings["computed_for"], entries)
     if problem:
         raise TreesError(f"area {area!r}: {problem}")
@@ -894,7 +883,7 @@ def built_trees_block(
     if area not in world.areas:
         raise fail(f"the world config has no area {area!r}")
     configs = _configs(datasets)
-    entries = _locked_entries(_lock_dict(lock), configs, world, area)
+    entries = _locked_entries(_lock_dict(lock), datasets, world, area)
     problem = _inputs_refusal(settings["computed_for"], entries)
     if problem:
         raise TreesError(f"area {area!r}: {problem}")
@@ -1001,92 +990,22 @@ def _configs(datasets: dict) -> dict:
     return configs
 
 
-def _locked_entries(lock: object, configs: dict, world: World, area: str) -> dict:
+def _locked_entries(lock: object, datasets: dict, world: World, area: str) -> dict:
     """The lock's four entries, each shown to fit the datasets config and the area.
 
-    A lock that does not fit is refused naming the lock command of the first dataset (in
-    sorted order) it does not fit, never a KeyError.
+    `lock.fit_problem` asks the question of each dataset in sorted order, and a lock that
+    does not fit is refused naming the lock command of the first dataset it does not fit,
+    never a KeyError (SPEC §8); then `lock.shape_problem` refuses a lock that is not
+    well-formed.
     """
-    entries = {}
     for name in DATASETS:
-        problem = _lock_problem(lock, configs, world, area, name)
+        problem = fit_problem(lock, datasets, world, area, name)
         if problem:
-            raise TreesError(
-                f"the lock {problem} (area {area!r}); `{LOCK_COMMANDS[name]}` writes the "
-                f"lock's {name} entry for the config"
-            )
-        entries[name] = lock["datasets"][name]
-    return entries
-
-
-def _lock_problem(lock: object, configs: dict, world: World, area: str, name: str) -> str | None:
-    """Why the lock's `name` entry does not fit the config and the area, or None (SPEC §8)."""
-    datasets = lock.get("datasets") if isinstance(lock, dict) else None
-    entry = datasets.get(name) if isinstance(datasets, dict) else None
-    if not isinstance(entry, dict):
-        return f"has no {name!r} entry"
-    config = configs[name]
-    if name == "swisstlm3d":
-        keys, parts_key, needed, parts_keys = (
-            {"collection", "edition", "file", "sha256"},
-            None,
-            [],
-            set(),
-        )
-    elif name == "swissbuildings3d":
-        keys, parts_key, needed = (
-            {"collection", "edition", "sheets"},
-            "sheets",
-            area_sheets(world, area),
-        )
-        parts_keys = {"file", "sha256"}
-    elif name == "swissalti3d":
-        keys, parts_key, needed = (
-            {"collection", "edition", "resolution_m", "tiles"},
-            "tiles",
-            area_tiles(world, area),
-        )
-        parts_keys = {"file", "sha256"}
-    else:
-        keys, parts_key, needed = (
-            {"collection", "resolution_m", "tiles"},
-            "tiles",
-            area_tiles(world, area),
-        )
-        parts_keys = {"edition", "file", "sha256"}
-    if set(entry) != keys:
-        return f"entry {name!r} must have exactly the keys {sorted(keys)}"
-    for key in ("collection", "edition", "resolution_m"):
-        if key in keys and entry[key] != config[key]:
-            return f"is for {name} {key} {entry[key]!r}, the config pins {config[key]!r}"
-    if parts_key is None:
-        return _file_problem(entry, name)
-    pinned = entry[parts_key]
-    if not isinstance(pinned, dict):
-        return f"has no {parts_key} for {name}"
-    missing = [part for part in needed if part not in pinned]
-    if missing:
-        return f"pins no checksum for the {name} {parts_key} {missing} of the area"
-    if set(pinned) != set(needed):
-        return f"pins the {name} {parts_key} {sorted(pinned)}, the area needs exactly {needed}"
-    for part in needed:
-        item = pinned[part]
-        if not isinstance(item, dict) or set(item) != parts_keys:
-            return f"pins {name} {part} with other keys than {sorted(parts_keys)}"
-        problem = _file_problem(item, f"{name} {part}")
-        if problem:
-            return problem
-        if name == "swisssurface3d" and item["edition"] not in config["editions"]:
-            return f"pins swisssurface3d {part} in the edition {item['edition']!r}, not one of {config['editions']}"
-    return None
-
-
-def _file_problem(item: dict, what: str) -> str | None:
-    if not isinstance(item["file"], str) or not SAFE_NAME.fullmatch(item["file"]):
-        return f"names the file {item['file']!r} for {what}, which is not a plain file name"
-    if not isinstance(item["sha256"], str) or not SHA256_HEX.fullmatch(item["sha256"]):
-        return f"pins the SHA-256 {item['sha256']!r} for {what}, not 64 lower-case hex digits"
-    return None
+            raise TreesError(problem)
+    problem = shape_problem(lock)
+    if problem:
+        raise TreesError(problem)
+    return {name: lock["datasets"][name] for name in DATASETS}
 
 
 def _lock_dict(lock: dict | Path | str) -> dict:

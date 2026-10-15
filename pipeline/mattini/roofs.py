@@ -64,7 +64,7 @@ from mattini.buildings import (
     read_sheet,
 )
 from mattini.download import PROVENANCE, area_sheets, area_tiles
-from mattini.lock import load_lock
+from mattini.lock import entries_sha256, fit_problem, load_lock, shape_problem
 from mattini.terrain import (
     AREA_NAME,
     check_computed_for,
@@ -83,7 +83,6 @@ PHOTO = photo_step.DATASET
 ROOFS_COMMAND = "python -m mattini roofs"
 BUILDINGS_COMMAND = "python -m mattini buildings"
 DOWNLOAD_BUILDINGS_COMMAND = "python -m mattini download buildings"
-LOCK_BUILDINGS_COMMAND = "python -m mattini lock buildings"
 TILE_M = 1000  # a chunk is the 1 km tile `<floor(E / 1000)>-<floor(N / 1000)>`
 UNITS_PER_M = 10000  # integer units of 0.1 mm
 PIXEL_UNITS = 1000  # one 0.1 m pixel
@@ -161,13 +160,10 @@ def check_roofs_config(data: object, where: Path | str = "the roofs config") -> 
 
 
 def inputs_sha256(lock: dict) -> str:
-    """The SHA-256 `computed_for.inputs_sha256` records for the two lock entries: of
-    `json.dumps({"swissbuildings3d": <entry>, "swissimage": <entry>}, sort_keys=True,
-    separators=(",", ":"), ensure_ascii=False)` in UTF-8 (SPEC §8; the brief M3-13 moves
-    this into the lock module for every step with several datasets)."""
-    entries = {name: lock["datasets"][name] for name in (BUILDINGS, PHOTO)}
-    text = json.dumps(entries, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    """The SHA-256 `computed_for.inputs_sha256` records for the two lock entries, swissbuildings3d
+    and swissimage: `lock.entries_sha256`, the one home of the several-datasets rule (SPEC §8;
+    brief M3-13)."""
+    return entries_sha256(lock, (BUILDINGS, PHOTO))
 
 
 def build_roof_chunks(
@@ -267,7 +263,7 @@ def build_roofs(
     buildings = _dataset(datasets, BUILDINGS)
     swissimage = _swissimage(datasets)
     sheets, tiles = area_sheets(world, area), area_tiles(world, area)
-    _require_fit(lock, buildings, swissimage, sheets, tiles)
+    _require_fit(lock, datasets, world, area)
     problem = _inputs_refusal(computed_for, lock)
     if problem:
         raise RoofsError(f"area {area!r}: {problem}")
@@ -398,7 +394,7 @@ def built_roofs_block(
         lock = load_lock(lock)
     buildings, swissimage = _dataset(datasets, BUILDINGS), _swissimage(datasets)
     sheets, tiles = area_sheets(world, area), area_tiles(world, area)
-    _require_fit(lock, buildings, swissimage, sheets, tiles)
+    _require_fit(lock, datasets, world, area)
     problem = _inputs_refusal(settings["computed_for"], lock)
     if problem:
         raise RoofsError(f"area {area!r}: {problem}")
@@ -682,47 +678,18 @@ def _dataset(datasets: dict, name: str) -> dict:
     return datasets[name]
 
 
-def _require_fit(
-    lock: object, buildings: dict, swissimage: dict, sheets: list, tiles: list
-) -> None:
+def _require_fit(lock: object, datasets: dict, world: World, area: str) -> None:
     """Refuse a lock whose swissbuildings3d or swissimage entry does not fit the datasets
-    config and the area, naming that entry's lock command (a missing entry too)."""
-    problem = _sheets_problem(lock, buildings, sheets)
+    config and the area (`lock.fit_problem`, in sorted order of the names), a missing entry
+    too, naming that entry's lock command; then a lock that is not well-formed
+    (`lock.shape_problem`)."""
+    for name in sorted((BUILDINGS, PHOTO)):
+        problem = fit_problem(lock, datasets, world, area, name)
+        if problem:
+            raise RoofsError(problem)
+    problem = shape_problem(lock)
     if problem:
-        raise RoofsError(
-            f"the lock {problem}; `{LOCK_BUILDINGS_COMMAND}` writes its buildings entry"
-        )
-    problem = photo_step.photo_lock_problem(lock, swissimage, tiles)
-    if problem:
-        raise RoofsError(f"the tile lock {problem}; `{photo_step.LOCK_COMMAND}` writes the lock")
-
-
-def _sheets_problem(lock: object, buildings: dict, sheets: list[str]) -> str | None:
-    """Why the lock's swissbuildings3d entry does not fit the config and the area's sheets."""
-    entry = lock.get("datasets", {}).get(BUILDINGS) if isinstance(lock, dict) else None
-    if not isinstance(entry, dict):
-        return f"has no {BUILDINGS!r} entry"
-    if set(entry) != {"collection", "edition", "sheets"}:
-        return f"has a {BUILDINGS!r} entry without exactly the keys ['collection', 'edition', 'sheets']"
-    for key in ("collection", "edition"):
-        if entry[key] != buildings.get(key):
-            return f"is for {key} {entry[key]!r}, the config pins {buildings.get(key)!r}"
-    pinned = entry["sheets"]
-    names = sorted(pinned) if isinstance(pinned, dict) else []
-    if names != sheets:
-        return f"pins the sheets {names}, the area needs {sheets}"
-    for sheet in sheets:
-        item = pinned[sheet]
-        if not (
-            isinstance(item, dict)
-            and set(item) == {"file", "sha256"}
-            and isinstance(item["file"], str)
-            and SAFE_NAME.fullmatch(item["file"])
-            and isinstance(item["sha256"], str)
-            and SHA256_HEX.fullmatch(item["sha256"])
-        ):
-            return f"pins the sheet {sheet} as something other than a file name and a SHA-256"
-    return None
+        raise RoofsError(problem)
 
 
 def _inputs_refusal(computed_for: dict, lock: dict) -> str | None:

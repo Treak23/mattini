@@ -66,7 +66,7 @@ from rasterio.io import MemoryFile
 from rasterio.windows import Window
 
 from mattini.download import PROVENANCE, area_tiles
-from mattini.lock import LOCK_PATH, load_lock
+from mattini.lock import LOCK_PATH, fit_problem, load_lock, shape_problem
 from mattini.terrain import (
     AREA_NAME,
     check_computed_for,
@@ -99,7 +99,6 @@ JPEG_SUBSAMPLING = 2  # Pillow's code for 4:2:0
 KEEP_IMPORT = b'[remap]\n\nimporter="keep"\n'  # Godot keeps the JPEG as it is (brain.md H24)
 PHOTO_COMMAND = "python -m mattini photo"
 DOWNLOAD_COMMAND = "python -m mattini download photo"
-LOCK_COMMAND = "python -m mattini lock photo"
 BLOCK_KEYS = {
     "area",
     "cell_m",
@@ -116,7 +115,6 @@ BLOCK_KEYS = {
 }
 SOURCE_KEYS = {"attribution", "collection", "dataset", "edition", "resolution_m", "tiles"}
 SOURCE_TILE_KEYS = {"sha256", "tile"}
-LOCK_KEYS = {"collection", "edition", "resolution_m", "tiles"}
 
 Box = tuple[float, float, float, float]  # e_min, e_max, n_min, n_max
 Progress = Callable[[str], None]
@@ -271,59 +269,29 @@ def write_photo(
     return block
 
 
-def photo_lock_problem(lock: object, swissimage: dict, tiles: list[str]) -> str | None:
-    """Why the lock does not fit the datasets config's swissimage and the area's tiles, or None.
+def photo_lock_problem(lock: object, datasets: dict, world: World, area: str) -> str | None:
+    """Why the lock's `swissimage` entry does not fit the datasets config and the area, or None.
 
-    The lock's `swissimage` entry must have the config's collection, edition and
-    resolution and pin exactly the area's tiles, each as {file, sha256} (SPEC §8, the fit
-    rule; the photo step's own check until the manifest wiring of brief M3-13).
+    This is `lock.fit_problem` for SWISSIMAGE, the rule's one home (SPEC §8; brief M3-13),
+    then `lock.shape_problem` for the lock's structure: the whole refusal text for a
+    PhotoError, naming `python -m mattini lock photo`. The datasets config must hold a usable
+    SWISSIMAGE entry first (`swissimage_dataset`).
     """
-    entry = lock.get("datasets", {}).get(DATASET) if isinstance(lock, dict) else None
-    if not isinstance(entry, dict):
-        return f"has no {DATASET!r} entry"
-    if set(entry) != LOCK_KEYS:
-        return f"has a {DATASET!r} entry without exactly the keys {sorted(LOCK_KEYS)}"
-    for key in ("collection", "edition", "resolution_m"):
-        if entry[key] != swissimage.get(key):
-            return f"is for {key} {entry[key]!r}, the config pins {swissimage.get(key)!r}"
-    locked = entry["tiles"]
-    if not isinstance(locked, dict):
-        return "pins its tiles as something other than an object"
-    missing = [tile for tile in tiles if tile not in locked]
-    if missing:
-        return f"pins no checksum for the tiles {missing}"
-    extra = sorted(set(locked) - set(tiles))
-    if extra:
-        return f"pins the tiles {extra}, which the area does not need"
-    for tile in tiles:
-        pinned = locked[tile]
-        if not (
-            isinstance(pinned, dict)
-            and set(pinned) == {"file", "sha256"}
-            and isinstance(pinned["file"], str)
-            and SAFE_NAME.fullmatch(pinned["file"])
-            and isinstance(pinned["sha256"], str)
-            and SHA256_HEX.fullmatch(pinned["sha256"])
-        ):
-            return f"pins the tile {tile} as something other than a file name and a SHA-256"
-    return None
+    return fit_problem(lock, datasets, world, area, DATASET) or shape_problem(lock)
 
 
 def photo_tiles(
     raw_root: Path | str, swissimage: dict, lock: dict, tiles: list[str]
 ) -> list[PhotoTile]:
-    """The area's tiles as downloaded, once vouched for: the lock fits, provenance.json
-    lists exactly `tiles` for the config's edition and resolution, and the file name and
-    SHA-256 it gives for each are the lock's (D9, D7). Nothing is read but provenance.json.
+    """The area's tiles as downloaded, once vouched for: provenance.json lists exactly
+    `tiles` for the config's edition and resolution, and the file name and SHA-256 it gives
+    for each are the lock's (D9, D7). Nothing is read but provenance.json.
 
-    A tile download that has not completed is a PhotoError naming
-    `python -m mattini download photo`; a lock that does not fit one naming
-    `python -m mattini lock photo`. The files themselves are read, and their bytes hashed,
-    by `read_tiles` and `build_photo`.
+    The lock must already fit the datasets config and the area (`photo_lock_problem`): the
+    callers, `build_photo` and the roofs step, ask it before they call this. A tile download
+    that has not completed is a PhotoError naming `python -m mattini download photo`. The
+    files themselves are read, and their bytes hashed, by `read_tiles` and `build_photo`.
     """
-    problem = photo_lock_problem(lock, swissimage, tiles)
-    if problem:
-        raise PhotoError(f"the tile lock {problem}; `{LOCK_COMMAND}` writes the lock")
     locked = lock["datasets"][DATASET]["tiles"]
     raw_dir = Path(raw_root) / DATASET / swissimage["edition"]
     listed = _provenance_tiles(raw_dir / PROVENANCE, swissimage, tiles)
@@ -408,9 +376,9 @@ def build_photo(
 
     swissimage = swissimage_dataset(datasets)
     tiles = area_tiles(world, area)
-    problem = photo_lock_problem(lock, swissimage, tiles)
+    problem = photo_lock_problem(lock, datasets, world, area)
     if problem:
-        raise PhotoError(f"the tile lock {problem}; `{LOCK_COMMAND}` writes the lock")
+        raise PhotoError(problem)
     problem = inputs_refusal(PHOTO_CONFIG_NAME, computed_for, DATASET, lock["datasets"][DATASET])
     if problem:
         raise PhotoError(f"area {area!r}: {problem}")
@@ -510,9 +478,9 @@ def built_photo_block(
     if not isinstance(lock, dict):
         lock = load_lock(lock)
     tiles = area_tiles(world, area)
-    problem = photo_lock_problem(lock, swissimage, tiles)
+    problem = photo_lock_problem(lock, datasets, world, area)
     if problem:
-        raise PhotoError(f"the tile lock {problem}; `{LOCK_COMMAND}` writes the lock")
+        raise PhotoError(problem)
     entry = lock["datasets"][DATASET]
     problem = inputs_refusal(PHOTO_CONFIG_NAME, settings["computed_for"], DATASET, entry)
     if problem:

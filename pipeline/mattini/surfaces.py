@@ -70,6 +70,7 @@ from pathlib import Path
 import numpy as np
 
 from mattini.download import PROVENANCE
+from mattini.lock import fit_problem, shape_problem
 from mattini.terrain import (
     AREA_NAME,
     OWNER_AXES,
@@ -744,7 +745,7 @@ def build_surfaces(
         raise SurfacesError(f"area {area!r}: {problem}")
 
     tlm = _dataset(datasets)
-    entry = _locked_entry(lock, tlm)
+    entry = _locked_entry(lock, datasets, world, area)
     problem = inputs_refusal(SURFACES_CONFIG_NAME, settings["computed_for"], DATASET, entry)
     if problem:
         raise SurfacesError(f"area {area!r}: {problem}")
@@ -845,7 +846,7 @@ def built_surfaces_block(
     if problem:
         raise SurfacesError(f"area {area!r}: {problem}")
     tlm = _dataset(datasets)
-    entry = _locked_entry(_lock_dict(lock), tlm)
+    entry = _locked_entry(_lock_dict(lock), datasets, world, area)
     problem = inputs_refusal(SURFACES_CONFIG_NAME, settings["computed_for"], DATASET, entry)
     if problem:
         raise SurfacesError(f"area {area!r}: {problem}")
@@ -942,34 +943,18 @@ def _dataset(datasets: dict) -> dict:
     return tlm
 
 
-def _locked_entry(lock: object, tlm: dict) -> dict:
-    """The lock's swisstlm3d entry, once it is shown to fit the datasets config.
+def _locked_entry(lock: object, datasets: dict, world: World, area: str) -> dict:
+    """The lock's swisstlm3d entry, once `lock.fit_problem` shows it fits the datasets config
+    and `lock.shape_problem` that the lock is well-formed.
 
-    The entry pins one national file (no tiles): exactly {collection, edition, file, sha256}
-    for the config's collection and edition, the file a plain name, the SHA-256 in 64
-    lower-case hex digits. A lock that does not fit is refused naming `lock tlm`.
+    The entry pins one national file (no tiles): for the config's collection and edition,
+    so `world` and `area` are not read by the rule. A lock that does not fit is refused
+    naming `lock tlm`.
     """
-    problem = _lock_problem(lock, tlm)
+    problem = fit_problem(lock, datasets, world, area, DATASET) or shape_problem(lock)
     if problem:
-        raise SurfacesError(f"the lock {problem}; `{LOCK_COMMAND}` writes the lock")
+        raise SurfacesError(problem)
     return lock["datasets"][DATASET]
-
-
-def _lock_problem(lock: object, tlm: dict) -> str | None:
-    datasets = lock.get("datasets") if isinstance(lock, dict) else None
-    entry = datasets.get(DATASET) if isinstance(datasets, dict) else None
-    if not isinstance(entry, dict):
-        return f"has no {DATASET!r} entry"
-    if set(entry) != {"collection", "edition", "file", "sha256"}:
-        return f"entry {DATASET!r} must have exactly the keys collection, edition, file, sha256"
-    for key in ("collection", "edition"):
-        if entry[key] != tlm[key]:
-            return f"is for {key} {entry[key]!r}, the config pins {tlm[key]!r}"
-    if not isinstance(entry["file"], str) or not SAFE_NAME.fullmatch(entry["file"]):
-        return f"names the file {entry['file']!r}, which is not a plain file name"
-    if not isinstance(entry["sha256"], str) or not SHA256_HEX.fullmatch(entry["sha256"]):
-        return f"pins the SHA-256 {entry['sha256']!r}, not 64 lower-case hex digits"
-    return None
 
 
 def _lock_dict(lock: dict | Path | str) -> dict:

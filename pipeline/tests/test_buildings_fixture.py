@@ -101,6 +101,16 @@ def test_write_buildings_and_manifest_write_the_fixture_files(tmp_path):
     )
     assert path.read_bytes() == (GENERATED / "manifest.json").read_bytes()
     manifest = json.loads(path.read_bytes())
-    assert set(manifest) == {"buildings", "schema", "terrain", "world", "world_sha256"}
+    assert set(manifest) == {
+        "buildings",
+        "photo",
+        "roofs",
+        "schema",
+        "surfaces",
+        "terrain",
+        "trees",
+        "world",
+        "world_sha256",
+    }
     assert manifest["terrain"] is None
     assert manifest["buildings"] == block

@@ -25,7 +25,9 @@ hex and stored in lower case.
 The expected values of the steps' configs (config/terrain.json, buildings.json, photo.json,
 roofs.json, surfaces.json, trees.json) record the inputs they were computed from as
 `entry_sha256` of the dataset's entry (briefs M2-07, M3-03, SPEC §8): the entry rendered
-canonically, so the lock file's own formatting does not count.
+canonically, so the lock file's own formatting does not count. A step that reads several
+datasets (the roofs, the trees) records `entries_sha256` over the named entries (brief
+M3-13): the one home of that rule.
 
 Whether a lock *fits* the configs has one home, `fit_problem` (brief M3-01, M2 V1-P-01):
 the entry is for the datasets config's collection, edition (swissSURFACE3D: every tile's
@@ -43,7 +45,7 @@ import json
 import math
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -262,15 +264,58 @@ def fit_problem(
     return None
 
 
+def shape_problem(lock: object) -> str | None:
+    """Why `lock` is not a well-formed lock (`validate_lock`), as the whole refusal text, or None.
+
+    For the steps, which are given a lock in memory and refuse it in their own error class
+    (brief M3-13): `fit_problem` asks whether the entries fit the configs and the area, this
+    asks whether the lock is the lock's exact structure, every entry's key set, file name and
+    SHA-256 included. It names `the lock` and all five lock commands, as `validate_lock` does.
+    """
+    try:
+        validate_lock(lock, "the lock")
+    except LockError as exc:
+        return str(exc)
+    return None
+
+
 def entry_sha256(entry: dict) -> str:
     """The SHA-256 of a dataset's lock entry rendered canonically (brief M2-07, SPEC §8).
 
     `json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` in
     UTF-8: what `computed_for.inputs_sha256` in the steps' configs records for the entry
-    design computed the expected values from (a step with several datasets records the
-    same form over {dataset: entry}).
+    design computed the expected values from. A step with several datasets records the
+    same form over {dataset: entry}: `entries_sha256`.
     """
-    text = json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return _canonical_sha256(entry)
+
+
+def entries_sha256(lock: dict, names: Iterable[str]) -> str:
+    """The SHA-256 of the lock's entries for `names`, rendered canonically (brief M3-13, SPEC §8).
+
+    `json.dumps({name: entry for name in names}, sort_keys=True, separators=(",", ":"),
+    ensure_ascii=False)` in UTF-8, over exactly the named datasets, in no order of their own:
+    what `computed_for.inputs_sha256` records for a step that reads several datasets (the
+    roofs: swissbuildings3d and swissimage; the trees: swissalti3d, swissbuildings3d,
+    swisssurface3d and swisstlm3d). This is the one home of the rule; a step with one
+    dataset uses `entry_sha256`. A name the lock has no entry for is a LockError naming the
+    command that writes it, never a KeyError.
+    """
+    entries = lock.get("datasets") if isinstance(lock, dict) else None
+    result = {}
+    for name in names:
+        entry = entries.get(name) if isinstance(entries, dict) else None
+        if entry is None:
+            command = download.LOCK_COMMAND_OF.get(name)
+            hint = f"`{command}` writes it" if command else f"the lock knows {sorted(DATASET_KEYS)}"
+            raise LockError(f"the lock has no {name!r} entry; {hint}")
+        result[name] = entry
+    return _canonical_sha256(result)
+
+
+def _canonical_sha256(value: object) -> str:
+    """The SHA-256 of `value` as canonical JSON: sorted keys, no spaces, UTF-8, not ASCII-escaped."""
+    text = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
