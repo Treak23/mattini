@@ -152,3 +152,90 @@ None in this wave. M3-07 follows in this lane and imports `read_tlm`.
 - Command-line or manifest wiring (M3-13).
 
 ## Findings (executor writes)
+
+1. **The real village gives design's classes.** The national zip (2'882'823'552 bytes, SHA-256
+   `185ffca8…`, equal to the lock's and to the file host's `x-amz-meta-sha256`) was fetched
+   once with curl in about 50 s into a scratch root in M3-03's layout, with a provenance.json
+   written by hand in M3-03's flat form (M3-03 had not landed), and the lock entry made in the
+   driver script with `entry_sha256` `aa909f98…` (= `computed_for.inputs_sha256` in
+   config/surfaces.json). `build_surfaces` with the committed config wrote
+   `pixels_sha256` **`93d78ba6d89eea27d0ec897d9f5fca244633336ff29378cd2b2fc9def77e5093`** at
+   0.2 m, the step's own comparison passing. **31.4 s end to end, peak 395 MB resident**
+   (SHA-256 of the file 9.3 s, `read_tlm` 8.1 s, classes 6.5 s, PNG and files 7.5 s). It read
+   230 TLM_BODENBEDECKUNG, 73 TLM_FLIESSGEWAESSER and 843 TLM_STRASSE features, the counts
+   design's notes give. The same features at 0.5 m and 1 m hash to `adda417b…` and
+   `4ea3d1e6…`, and the 0.2 m areas are road 74'744 m², path 47'654 m², water 40'737 m²,
+   rock 408'266 m², all design's. The built output went through `built_surfaces_block`
+   (1.2 s) with the committed configs, and `read_png_l8` of the 1'148'917-byte PNG gave
+   the grid back. *does NOT prove:* that the classes sit on the photo's roads (design's
+   preview showed about 1 m; the owner's eyes), or a run on another machine.
+2. **The five required mutations, each caught by a named pinned test.** Each was applied to
+   a copy of `surfaces.py` and run against the three pinned test files; the first (and
+   every other) failure included `tests/test_surfaces_fixture.py::test_the_class_grid_is_the_designed_one`,
+   plus `test_other_cells_give_the_designed_classes` at 0.5 and 1 m,
+   `test_write_surfaces_writes_the_designed_files`,
+   `test_surfaces_step.py::test_the_step_writes_the_designed_classes` and
+   `test_other_classes_are_refused_before_anything_is_written`; the module was restored
+   byte-identical (`cmp`) after each. The owner-visible harm each reproduces:
+   - a strict distance test (`isqrt(r²·len² − 1)` for the band, `r² − 1` for the discs):
+     every road and path edge one texel too narrow, the 507 texels design's twins list;
+   - polygon edge centres counted inside (`floor(...) + 1` for `ceil(...)`): rock and water
+     one texel too big on their east and north edges (136 texels);
+   - water above path (painting order rock, path, water, road): a path across a stream or
+     pond shows as water;
+   - the stream width 2 m on each side (radius 2000 mm, not 1000): every stream twice as wide;
+   - Klettersteig drawn (every BELAGSART but 100 painted as a path): the via ferrata and
+     the unknown surfaces (999997, 999998) appear as paths on rock.
+3. **Own mutations against my own tests** (the full `-k surfaces` run, first failure
+   shown): `_meets` touching not read (`<=` for `<`) → `test_the_reader_hands_over_the_features_that_meet_the_box`;
+   the 1 mm snapping check off → `test_a_coordinate_off_the_1_mm_grid_is_refused`; the size
+   not compared → `test_a_size_that_differs_is_refused_before_the_file_is_hashed`; the SHA-256
+   check after the read → `test_the_progress_lines_come_in_order_and_the_hash_comes_before_the_read`;
+   no `.png.import` → `test_the_files_are_written_in_order_each_through_a_part_rename`;
+   joined line parts, a zero-length guard dropped, the half-open row rule at the other
+   end, the 10 m margin 0, the pre-filter shrunk, a land-cover kind added or dropped → each a
+   named test; the band limit one too wide (`T + 1`) and the disc one square millimetre too
+   wide survived the first set of tests, since the 50 mm lattice of the random cases
+   cannot reach them, and are now killed by
+   `test_a_centre_a_thousandth_of_a_millimetre_beyond_a_band_is_not_on_the_line` and
+   `test_a_centre_beyond_a_disc_by_one_square_millimetre_is_not_on_the_line`. Two mutants are
+   **equivalent** (the band's foot bound moved by one unit of `t`, on either axis): the end
+   discs cover exactly those texels, so no test can tell them apart. *does NOT prove:* the
+   game's reading (M3-10).
+4. **Decisions inside the brief's scope** (the first of each is the one taken):
+   - `class_grid` takes exactly the three layers (a missing or extra one is refused naming
+     it), so that a typo cannot drop a layer silently; a TLM_STRASSE whose BELAGSART is not
+     100 or 200 is not drawn (the Klettersteig and unknown surfaces).
+   - `provenance.json` is checked for what the step uses (dataset, collection, edition, file,
+     SHA-256 case-insensitively, `size_bytes` a positive integer), not for its exact key set:
+     the alternative (exactly M3-03's ten keys) would couple the step to a form lane A is
+     still writing.
+   - `built_surfaces_block` also requires `<area>.png.import` to hold exactly the keep text
+     (H24), as the export would ship a texture otherwise.
+   - The lock given as a path is read here as plain JSON and checked by the step's own fit
+     rule: `lock.validate_lock` does not know `swisstlm3d` until M3-03 lands. M3-13 moves
+     the fit onto `lock.fit_problem`, and can then use `load_lock` for the path.
+   - After a successful write, `*.part` files left in `surfaces/` are removed (M3-01
+     decision 5 for the other steps); a refusal removes nothing.
+   - `read_tlm` also accepts a single LineString or Polygon and hands over its Multi form;
+     any other geometry type, a null geometry, a null attribute and a UUID twice in a
+     layer are refused naming the layer. A vertex more than 537 km (2²⁹ mm) from the box
+     is refused, which keeps every product in 64-bit.
+   - Imports from `terrain.py` are the names M3-01 decision 10 keeps (`world_refusal`,
+     `inputs_refusal`, `check_computed_for`, `configured_area`, `OWNER_AXES`, `AREA_NAME`)
+     and `download.PROVENANCE`; no fit or provenance helper of `terrain.py`, `buildings.py`
+     or `download.py`.
+5. **Seams for the orchestrator and wave 2.** `load_datasets` still demands a four-digit
+   edition until M3-01 and M3-03 land: the driver passed the datasets as a dict, as the
+   pinned tests do. `build_surfaces` takes the lock as a dict; M3-13 passes what
+   `load_lock` returns. The reader returns coordinates as lists of `[E, N]` integer
+   millimetres, in the order GDAL gives them, the form M3-07 imports. fiona is imported
+   inside `read_tlm` only (a subprocess test checks a fresh interpreter).
+6. **Not claimed.** The step was run on one machine; the PNG's bytes depend on the zlib
+   build and were checked for integrity only; "renders / looks right" is the owner's PC.
+7. **Gates.** The pinned copies are byte-identical to `docs/briefs/pinning/M3-06/` (`cmp`);
+   own tests: `test_surfaces_reference.py` (122: the vectorised grid against the rule
+   written out texel by texel with fractions, on random features with ties),
+   `test_surfaces_rules.py` (85), `test_surfaces_checks.py` (54), `test_surfaces_config.py`
+   (36), `test_surfaces_png.py` (33), `test_surfaces_reader.py` (29): 382 surfaces tests
+   with the pinned 23. The standard gate: see the line below.
