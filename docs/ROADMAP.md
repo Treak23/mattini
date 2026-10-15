@@ -25,6 +25,9 @@ Builder: M3-12 · session_01Ubbo3bDjuhbt781vs1t54f · since 2026-10-14T19:47Z
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
 
+**Decisions for design to audit** (BUILD.md §The orchestrator 5):
+- M3-01: the steps check `computed_for.inputs_sha256` before reading `provenance.json` (the brief fixes only "the lock's fit before provenance"); the alternative, inputs after provenance, is four lines to move per step; pinned by `test_m3_01_step_order.py` (its Findings).
+
 **Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
 (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).
 
