@@ -1,5 +1,5 @@
 # Brief: M3-07 — The trees step: where the LiDAR shows a tree
-Status: OPEN
+Status: DONE (c6113a8)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane D of wave 1, after M3-06 (`docs/briefs/M3-plan.md`).
@@ -255,5 +255,10 @@ own lock; M3-03 (lane A) writes the lock's new entries, and its pinned
    `test_trees_checks.py` (105: the step on a synthetic world with real GeoTIFF tiles, the
    checks in order, a missing download per dataset, every lock and provenance refusal, the
    tile checks, the TLM zip's size, hash and stability, the comparison before writing, stale
-   files, the built block); 237 trees tests with the pinned 66. The standard gate: see the
-   line below.
+   files, the built block); 237 trees tests with the pinned 66.
+7. **The standard gate** (`tools/gate.sh > gate.log && git commit`, rule 3c) was green on the
+   commit before the rebase (1665 pytest tests, GUT's 39 scripts) and again on the rebased head
+   with lanes A (M3-03), B, C (M3-05), E, F and G landed: 1954 pytest tests, 41 GUT scripts.
+   M3-03's changes to `download.py`, `lock.py` and `datasets.py` (rebased onto while this
+   brief was in the gate) leave every name `trees.py` imports in place.
+   *does NOT prove:* that it renders or looks right.
