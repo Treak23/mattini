@@ -1,5 +1,5 @@
 # Brief: M3-R1-fix-1 — Gates for where the trees, the photo and the classes are placed
-Status: OPEN
+Status: DONE (0385a7f)
 
 Written by the build orchestrator from review findings M3-R1-P-02 and, as its interim half,
 M3-R1-P-03 (P2, Tier 1; `docs/reviews/M3-R1-placement.md`), executed by one fresh builder
@@ -175,7 +175,12 @@ model's name or id anywhere in the repository.
      lens measured 0 of 34'412 more than 5 cm off, at the 0.5 m terrain; at 1 m or 2 m they do
      not, M3 R1 P-01, which is design's).
 4. **Not done, by the brief:** no render step in the gate (BLOCKED.md §Open, P-03); P-01's fix (a
-   config change to 1 m or 2 m) untouched. Test-count effect: five new tests (two in
-   `test_scene_placement`, one each in `test_surface_grid`, `test_m3_11_tree_conifer`, two in
-   `test_m3_09_photo_shader`), no new test script, so GUT's script count is unchanged.
+   config change to 1 m or 2 m) untouched.
+5. **The gate** at the commit (`tools/gate.sh > log && git commit`, exit 0, `== gate: all steps
+   passed`): pytest `2169 passed, 5 deselected`; GUT `Scripts 44, Tests 243, Passing Tests 243,
+   Asserts 8773`, `GUT version:  9.6.1`, `---- All tests passed! ----` (six new tests: two in
+   `test_scene_placement`, two in `test_m3_09_photo_shader`, one each in `test_surface_grid` and
+   `test_m3_11_tree_conifer`; the seventh is M3-R1-fix-4's; no new test script, so the script count
+   is the review's 44); 133 `ERROR` lines in the GUT run, the same count the review's gate had,
+   all excepted by the allowlist, which is unchanged; gdlint and gdformat clean (60 files).
 
