@@ -193,6 +193,8 @@ deselected), GUT 32 scripts, 161 tests, 4678 asserts, `GUT version:  9.6.1`.
    gate (the diff against `origin/main` is that one added line). The head was rebased twice
    more (lane G's DONE line, then lane B's M3-02, which tightened the gate) and re-gated each
    time; the last gate ran under M3-02's rules.
+   The docs commit (`26519f5`) was rebased once more over a commit that changed only M3-04's
+   brief file; I ran pytest on it (935 passed) instead of a third full gate, then pushed.
 8. **For the next builders of this wave:** `pipeline/tests/test_repo_tracked.py` fails the gate's
    pytest step when a new file the game depends on is not in git's index, so `git add` the new
    files, and the `.uid` files a Godot import writes, before the first gate run (a bare

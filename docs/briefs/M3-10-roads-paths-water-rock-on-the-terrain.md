@@ -1,5 +1,5 @@
 # Brief: M3-10 — Roads, paths, water and rock on the terrain
-Status: OPEN
+Status: DONE (d5875c6)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane E of wave 1, after M3-09 (`docs/briefs/M3-plan.md`).
@@ -148,3 +148,75 @@ Other textures, other licences, or textures changed after download; changing Ter
 vertex or normal code; touching the main scene; editing a pinned file or a fixture.
 
 ## Findings (executor writes)
+
+Landed as `d5875c6` on `main`. Standard gate on the head it was rebased onto before the last
+(docs-only) rebase: exit 0, pytest 1041 passed (4 deselected), GUT 39 scripts, 215 tests,
+8533 asserts, `GUT version:  9.6.1`.
+
+1. **The pinned files** (`test_surface_grid.gd`, `test_terrain_loader_surfaces.gd`,
+   `LICENSE.txt` and the seven `.import` files) are in place and `cmp`-identical to
+   `docs/briefs/pinning/M3-10/`, checked again after Godot's import (it did not rewrite any
+   `.import` file). As in M3-09 the classifier refused the bulk `cp -r`, so they were copied
+   one by one with `cp --update=none`.
+2. **The textures.** The seven files came from `dl.polyhaven.org/file/ph-assets/Textures/jpg/
+   <res>/<asset>/<file>` into a scratch folder; their byte counts and SHA-256s were compared
+   with the brief's table before anything entered the repository, then copied unchanged: 7
+   files, 15'781'844 bytes (15.05 MiB), the largest 4'473'242. `LICENSE.txt` is the pinned
+   one. The headless import of the new textures took about 8 s and printed no ERROR line.
+3. **Mutations** (applied to staged files, run against the two pinned M3-10 scripts, the two
+   pinned M3-09 scripts and my census; each reverted by `git apply -R` of its saved diff, the
+   tree equal to the index afterwards). Failing tests are GUT's Run Summary list; each count
+   equals GUT's "N failing tests".
+
+   | # | Mutation | Failing test(s) | Owner-visible harm reproduced |
+   |---|---|---|---|
+   | 1 | `surfaces_rect` set to the photo's | `test_terrain_loader_surfaces::test_the_classes_and_their_rectangle_reach_the_shader` | roads, water and rock drawn off their place in the photo |
+   | 2 | surfaces without a photo switching to the photo shader | `test_terrain_loader_surfaces::test_the_classes_without_a_photo_keep_the_clay_look` | classes with no photo: a shader with no photo to draw on |
+   | 3 | one texture left unset (`path_normal`) | `::test_every_texture_the_photo_shader_samples_is_set`, `::test_the_textures_are_the_pinned_cc0_files_or_generated` | paths drawn with Godot's default texture, silently |
+   | 4 | a water map loaded from a file | `::test_the_textures_are_the_pinned_cc0_files_or_generated` | water ripples from an unpinned, unlicensed file |
+   | 5 | mipmaps off (`mipmaps/generate=false` in a pinned `.import`, then a re-import) | `::test_the_textures_have_mipmaps` | no fade or mean colour: a lossless, mipless texture |
+   | 6 | (mine) SurfaceGrid's z0 from n_min | `test_surface_grid::test_the_fixture_grid_is_read_as_designed`, `::test_every_named_point_has_its_class`, `::test_the_rectangle_is_half_open_and_outside_is_minus_one`, `test_terrain_loader_surfaces::test_the_classes_and_their_rectangle_reach_the_shader` | the classes shifted a whole depth south of the photo |
+   | 7 | (mine) the decoded bytes not checked against `pixels_sha256` | `test_surface_grid::test_a_png_of_other_classes_is_refused` | a wrong class grid accepted as the real one |
+   | 8 | (mine) `class_at` counting rows from the south | `test_surface_grid::test_every_named_point_has_its_class`, `::test_the_rectangle_is_half_open_and_outside_is_minus_one` | every class lookup mirrored north to south |
+
+   Mutation 5 restores by re-importing after the revert; the baseline passes again after it.
+4. **Software render** (evidence, not a gate): `docs/briefs/shots/M3-10-fixture.jpg`, the
+   terrain, photo and surfaces fixtures together (three different worlds: a scratch probe,
+   never committed, moves the photo's and the classes' rectangles over the terrain fixture and
+   picks the placement whose window holds all five classes), Compatibility on llvmpipe under
+   Xvfb. It shows that the extended `terrain_photo.gdshader` compiles (no shader ERROR line;
+   the only ERROR line is ALSA's audio device) and that the CC0 grain draws over the photo's
+   colour where the fixture has classes. It does not show the water moving (a still), the fade
+   with distance, the slope blend of the rock, or that anything lines up with the real roads and
+   river: the real village was not rendered (it needs `download terrain`, `terrain`, `download
+   tlm` and the surfaces step, M3-06, which had not landed), and the plan lets this brief skip
+   it. Does NOT prove the Forward+ look.
+5. **The shader** is design's sketch with its comments rewritten to say what the code does. Its
+   uniforms and helper functions sit before `// Varyings & Types`, so Terrain3D's varyings,
+   `vertex()` and normals stay one contiguous block, identical to the clay shader's (my
+   M3-09 census, whose end marker is now `// The photo look.`, still proves it). The decode of
+   the classes, the rock blend, the fade and the water are the sketch's logic; no test
+   reaches them headless (the brief says so), and a software render of a synthetic fixture is
+   the only look they have had.
+6. **What SurfaceGrid checks beyond the brief's list** (inside "key set" and "SHA-256"): the
+   class table is exactly the SPEC's, the nested `source` and `lv95_box` key sets, the digests
+   being 64 hex digits, `source.dataset` being `swisstlm3d`. `class_at` is `floori((x − x0) /
+   cell_m)` on the local point, so a point on a texel border belongs to the east or south
+   texel; the vectors' edge cases agree. The class texture has no mipmaps and is read only by
+   `texelFetch`.
+7. **The loader.** `create(grid, parent, photo, surfaces)` sets the classes only together with
+   a photo; the seven textures are loaded by name from `res://textures/` on every call. A
+   missing texture file prints Godot's own ERROR and leaves its sampler unset (mutation 3
+   shows the unset-sampler case failing two pinned tests); the loader adds no second message.
+8. **The allowlist:** one line appended (`SurfaceGrid: user://test_ @
+   res://tests/test_surface_grid.gd`). The file at the push holds each lane's line once
+   (BuildingRoofs, PhotoGrid, TreeChunks, SurfaceGrid; M3-08's had not landed) and no entry for
+   `Ignoring script` or `Failed to load script`. The gate log holds 118 `ERROR` lines, the
+   refusal tests' `push_error`s, each excepted by its scoped entry.
+9. **The last rebase** brought one commit that changed only `docs/ROADMAP.md`; no test, script
+   or tool names that file, and I pushed without a second full gate. The full gate before it ran
+   on the head with M3-01, M3-02, M3-04, M3-11 and M3-12 in.
+10. **Does NOT prove:** that it renders or looks right on the owner's RTX 4090; the class decode,
+    the rock blend, the fade or the water's motion (not testable headless); that the village's
+    real classes sit on its real roads and river (M3-06 and the main scene, M3-14); the
+    memory cost (design measured 1'171 MiB of texture memory and a 2.4 GiB peak in software).
