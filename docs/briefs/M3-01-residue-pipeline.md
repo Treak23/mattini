@@ -1,5 +1,5 @@
 # Brief: M3-01 — M2's residue, the pipeline
-Status: OPEN
+Status: DONE (bd22bfd)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane A of wave 1, first; M3-03 follows in this lane
@@ -275,3 +275,11 @@ pinned file; the export presets (M3-08); `game/` and `tools/` (M3-02).
 9. **What is not proven.** That the committed lock is swisstopo's (the network tests); that
    `manifest` is right for a real run (`3ca0445c…` is wave 2's); anything about the
    export's `.part` filter (M3-08).
+
+10. **The landing.** The push was rejected three times, each time because another lane landed
+    during the roughly two-minute gate; each rebase brought commits in, so the gate ran again
+    on every tree (M3-02, M3-12, M3-09, M3-11, M3-04 and their DONE lines came in). The tree
+    that landed, `bd22bfd`, passed the gate: exit 0, pytest 1041 passed and 4 deselected,
+    GUT 37 scripts, 192 tests, 8265 asserts (item 7's figures are from the tree before the
+    first rebase). The DONE line is a docs-only commit: no test or tool reads `docs/briefs/`
+    (grepped, lesson 18), so it was pushed without a gate of its own.
