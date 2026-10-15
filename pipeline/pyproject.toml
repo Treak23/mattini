@@ -6,6 +6,7 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "fiona>=1.10.1",
     "numpy>=2.5.3",
+    "pillow>=12.3.0",
     "rasterio>=1.5.1",
 ]
 

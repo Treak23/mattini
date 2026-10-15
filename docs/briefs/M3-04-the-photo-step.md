@@ -153,3 +153,94 @@ tile reader: keep it a public function (`read_tiles` or as you name it, document
 - A dependency other than Pillow.
 
 ## Findings (executor writes)
+
+Lane builder of lane C, wave 1, 2026-10-15, on `main` from `2aba135`.
+
+1. **Start state and pinned copies.** `main` was `2aba135`; the baseline was 743 pytest tests
+   passing. `cp -r docs/briefs/pinning/M3-04/. .` placed `test_photo_fixture.py`,
+   `test_photo_build_tiles.py` and `test_photo_expected.py`; all three pass against the first
+   version of `photo.py` (30 tests) and stay byte-identical (`cmp` against the pinned files
+   before the commit). Pillow came with `uv add --project pipeline "pillow>=12.3.0"`:
+   12.3.0, libjpeg-turbo 3.1.4.1 (design's versions), `uv lock --check` passes. No other
+   dependency.
+2. **The real inputs.** `download photo` does not exist yet (M3-03), so the six tiles were
+   fetched with `curl` from `data.geo.admin.ch` into a scratch folder and each file's
+   SHA-256 compared with the six that design measured (`test_measured_photo_surface_tlm.py`
+   of M3-03): all six equal. provenance.json in the terrain's format and a lock dict whose
+   entry hashes to design's `415ed9bc…` were written by a scratch script (not in the
+   repository). Container: 4 cores shared with the other lanes, 15 GB.
+3. **Gate 2, the village.** `build_photo` over the six tiles wrote design's values at all
+   three cells, each compared by the step itself before it wrote (so a difference would have
+   been refused), and `built_photo_block` accepted each output. The child's peak resident
+   memory is `resource.getrusage(RUSAGE_CHILDREN).ru_maxrss`:
+
+   | cell | time | peak memory | pixels | JPEG |
+   |---|---|---|---|---|
+   | 0.2 m | 66.5 s | 1'225 MB | `00533bc6…` | `cf83c705…`, 50'222'573 bytes |
+   | 0.5 m | 25.8 s | 542 MB | `1e105d47…` | `5035fe52…` |
+   | 1 m | 21.1 s | 472 MB | `b99f0710…` | `db1d1b78…` |
+
+   The 0.2 m peak is under the 2 GB gate. It holds the 450 MB grid, the six tiles' bytes
+   (270 MB) and GDAL's block cache, which the step caps at 256 MB (`GDAL_CACHEMAX`; the
+   default is a twentieth of the machine's memory, which on this 15 GB container is
+   750 MB). The 0.5 m and 1 m configs were edited in scratch only. The `.import` beside
+   the JPEG is 25 bytes. Does NOT prove: that the owner's Windows machine decodes the
+   tiles to the same pixels; if it does not, the step refuses with the pixels message and
+   design decides.
+4. **Mutations**, each in `photo.py` alone, the photo tests run, the file restored from a
+   saved copy (`cmp` identical after each batch). "Harm" is the owner-visible harm the
+   mutation reproduces (lesson 4):
+
+   | mutation | failing pinned tests (examples) | harm |
+   |---|---|---|
+   | round-half-up | `test_the_grid_has_design_s_pixels_at_every_cell[0.2]`, `[1.0]`, `test_the_0_2_m_grid_is_the_designed_blocks`, `test_four_tiles_build_to_design_s_bytes` (31 fail) | a photo a shade brighter than design's on tied texels; the step refuses on the owner's machine |
+   | floor in place of round | the same and `[0.5]` (36 fail) | a photo darker by up to a level |
+   | the JPEG compared before the pixels | `test_other_pixels_are_refused_first_naming_both_values` | a wrong-pixels run is blamed on the JPEG encoder, so the owner is sent to the wrong cause |
+   | no transform check | `test_a_tile_that_is_not_where_its_id_says_is_refused_naming_it[shifted-0.1-m]`, `[0.2-m-rows]` | a tile 10 cm off or at another scale is placed without a word: the photo shifted on the ground |
+   | BGR into the JPEG | `test_the_jpeg_is_design_s_bytes_at_every_cell[0.2]`, `[0.5]`, `[1.0]`, `test_write_photo_writes_the_fixture_files` (22 fail) | red roofs blue, green meadows magenta |
+   | no `.import` file | `test_write_photo_writes_the_fixture_files`, `test_four_tiles_build_to_design_s_bytes[0.2]`, `[1.0]` | a 43.6 s, 5.2 GiB first import, and an export shipping a 170 MB texture in place of the JPEG (brain.md H24) |
+
+   More mutations, to show my own tests bite (all fail named tests): quality 91, `optimize`
+   and `progressive` on, 4:4:4 (each 22 fail, the JPEG bytes); a window one row or one column
+   off, strips one pixel low (each 19 fail, in the pinned build test and
+   `test_every_strip_height_gives_design_s_bytes`); a host name added to the description
+   (`test_write_photo_writes_the_fixture_files`, `test_four_tiles_build_to_design_s_bytes`:
+   lesson 33's check); the extra-tile check removed
+   (`test_a_lock_that_does_not_fit_is_named_before_the_inputs[extra_tile]`); the lock's fit
+   checked after the inputs (8 fail); the tiles read before the world and inputs checks
+   (`test_no_tile_is_read_before_the_world_and_inputs_checks_pass` and two more); the
+   `.import` never read by `built_photo_block`, or read and not compared (5 and 4 fail);
+   the pixels never compared (the pinned refusal test).
+5. **My tests**, 139 added in four files (the brief's `test_photo_*` prefix): refusals
+   (the order world → lock fit → inputs → download → bytes and shape; nothing created, no
+   progress call before the download is vouched for; no tile opened before the world and
+   inputs checks, with a positive control), strips (every strip height from one texel row
+   to the whole area gives design's bytes, at 0.2 and 1 m; the tile reader), the
+   description (`built_photo_block`: 29 changed descriptions, the `.import` missing and
+   different, a missing JPEG, the lock as a path) and the grid rule (the ties, the extremes,
+   every refusal of a box or mosaic; the config's refusals).
+6. **Decisions inside the brief.**
+   - The tile reader M3-05 imports is public in `photo.py`: `photo_tiles(raw_root,
+     swissimage, lock, tiles)` returns `PhotoTile(tile, path, sha256)` once the lock fits and
+     provenance.json lists exactly those tiles with the lock's names and checksums (reading
+     nothing else); `read_tiles(tiles, progress=None)` yields `(west_dm, north_dm, pixels)`
+     with `pixels` of shape (10000, 10000, 3), one tile at a time, each read once, hashed and
+     checked before it is decoded from those bytes. Also public: `photo_lock_problem` (the
+     lock's fit, by the fit rule, naming `lock photo`), `swissimage_dataset(datasets)`,
+     `PhotoError`, `STRIP_M`.
+   - Order of refusals: the brief's list, with the missing download after the inputs
+     (`terrain.py` reads provenance before the lock; the brief's order puts design's
+     refusals first, which `built_photo_block` shares).
+   - `photo.py` does not read the world config's axis mapping: the grid is in LV95 and the
+     photo's bytes do not depend on the mapping; the game's reader refuses any but the
+     owner's axes (SPEC §8). `terrain.py` refuses them in the pipeline because its rows and
+     columns are placed by them. Say if the pipeline should refuse as well.
+   - `photo.py` imports from lane A's modules only the names M3-01 keeps: `AREA_NAME`,
+     `check_computed_for`, `configured_area`, `inputs_refusal`, `world_refusal`,
+     `area_tiles`, `PROVENANCE`, `LOCK_PATH`, `load_lock`.
+   - The step does not remove an earlier run's `*.part` from `photo/` (M3-01's decision 5
+     names the terrain and the buildings only; the export leaves `*.part` out, M3-08).
+7. **Seen, not mine.** `load_datasets` on the current `main` refuses design's M3-03 config
+   (`swisssurface3d` has `editions`, not `edition`): lane A's M3-03 changes it. The step is
+   tested with the fixture's datasets file and, in the scratch run, with the `swissimage`
+   entry of design's config.
