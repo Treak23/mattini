@@ -139,6 +139,33 @@ game and tools lanes, then M3-14). The seams below are the ones they hit.
     `download` command before writing anything, a missing provenance before any progress
     line (M3-13's pinned CLI test).
 
+**Wave 1 integration record** (the orchestrator, 2026-10-15, head `37a628a`; every brief DONE;
+no seam needed a fix):
+
+- Item 1: `git diff 9a9612e..HEAD` over the shared fixtures and the four expected-value files is
+  empty. Item 5: `pillow>=12.3.0` is in `pyproject.toml` and `uv.lock`; `uv lock --check` passes.
+  Item 9: the allowlist holds 13 lines, `BuildingRoofs`, `PhotoGrid`, `TreeChunks`, `SurfaceGrid`
+  and `DataPacks` once each, no `Ignoring script` or `Failed to load script` entry.
+- The full gate on the combined head, to a log, exit 0: pytest 1954 passed (5 network tests
+  deselected), GUT 41 scripts = 41 `test_*.gd` files, 224 tests, 8618 asserts, `GUT version:  9.6.1`.
+- Item 3, the real village, in a scratch `git clone` (H22): `download` terrain, buildings, photo,
+  surface and tlm fetched and verified; then each step's `build_*` function, one process each,
+  matched `config/*.json` before writing: terrain `b6334c1f…` (5.8 s, 1'044 MB), buildings
+  1'486 in six chunks (5.8 s, 346 MB), photo pixels `00533bc6…` and JPEG `cf83c705…` (65.2 s,
+  1'214 MB), roofs `8d9664b6…` with 1'486 of 1'486 coloured (29.0 s, 1'266 MB), surfaces
+  `93d78ba6…` (22.5 s, 399 MB), trees 34'412 in six chunks (29.4 s, 1'303 MB). One detail: the
+  first `download photo` ended `mattini: error:` on a SHA-256 mismatch of tile 2624-1097 after its
+  one refetch (tile 2624-1096 had needed its refetch too); the second run fetched that tile once
+  and verified all six. A transfer cut or corrupted on the way, caught as designed; not a
+  republish (the lock's checksums are unchanged and now match).
+- Items 2, 4, 6, 7, 8 and 10 are carried by the pinned tests in that gate (each pair at its
+  fixture); the pipeline-to-reader pairs on the real village are the after-wave-2 end-to-end run.
+- Carried to the review round (the board's residue list when it closes): `BuildingLoader.
+  roofs_problem`'s refusing branch has no gate test (M3-12 Findings 2); `PhotoGrid` does not
+  refuse a photo wider than 16384 texels (M3-09 Findings 5); export checks 4b and 4c have no
+  committed stand-in pytest (M3-08 Findings); `trees.py` imports private grid helpers from
+  `surfaces.py`, so a rename there must move `trees.py` (M3-07 Findings).
+
 **After wave 2:**
 
 1. **The real village end to end.** In a scratch checkout, run every step from the command
