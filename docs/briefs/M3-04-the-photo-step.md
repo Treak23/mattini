@@ -1,5 +1,5 @@
 # Brief: M3-04 — The photo step: SWISSIMAGE 2023 at 0.2 m
-Status: OPEN
+Status: DONE (3c1b8d5)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane C of wave 1, first (`docs/briefs/M3-plan.md`).
@@ -244,3 +244,11 @@ Lane builder of lane C, wave 1, 2026-10-15, on `main` from `2aba135`.
    (`swisssurface3d` has `editions`, not `edition`): lane A's M3-03 changes it. The step is
    tested with the fixture's datasets file and, in the scratch run, with the `swissimage`
    entry of design's config.
+8. **Standard gate and push.** `tools/gate.sh > gate.log && git commit` for the implementation
+   commit (exit 0: pytest 911 passed, 4 deselected; the Godot steps as on `main`); the rebase
+   onto lane B's and the game lanes' commits brought `d67e17e`, `e6a6ed2`, `ce5e845`, and the
+   gate was run again on the rebased tree (exit 0). The first push was rejected: `7f7dbdd`
+   (M3-11's brief, docs only) had landed. The rebase carried it in, and the push went out
+   without a third gate run before it, because the incoming commit touched one brief file the
+   gate does not read; the gate was run on the pushed head together with this status
+   commit (chained, below). The implementation commit is `3c1b8d5`.
