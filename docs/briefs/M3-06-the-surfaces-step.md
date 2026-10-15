@@ -1,5 +1,5 @@
 # Brief: M3-06 — The surfaces step: roads, paths, water and rock from swissTLM3D
-Status: OPEN
+Status: DONE (c887243)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane D of wave 1, first (`docs/briefs/M3-plan.md`).
@@ -238,4 +238,14 @@ None in this wave. M3-07 follows in this lane and imports `read_tlm`.
    written out texel by texel with fractions, on random features with ties),
    `test_surfaces_rules.py` (85), `test_surfaces_checks.py` (54), `test_surfaces_config.py`
    (36), `test_surfaces_png.py` (33), `test_surfaces_reader.py` (29): 382 surfaces tests
-   with the pinned 23. The standard gate: see the line below.
+   with the pinned 23.
+8. **The standard gate** (`tools/gate.sh > gate.log && git commit`, rule 3c) was green on the
+   commit before every rebase: 1125 pytest tests and GUT's 23 scripts; then on the head with
+   lanes B, C, E, F and G's landings (1317 pytest tests, 37 GUT scripts) and again with lane
+   A's M3-01 (1423 pytest tests, 37 scripts), whose census tests (`test_fiona_import.py`,
+   `test_docstring_claims.py`, `test_checks_before_reading.py`, `test_part_leftovers.py`)
+   cover `surfaces.py` and pass. Two pushes were rejected by landings that arrived during
+   the 2 m 37 s gate runs (M3-10's code, then its two brief-status lines): the last rebase
+   brought in only `docs/briefs/M3-09-*.md` and `M3-10-*.md`, which no test reads, and was
+   pushed without a fourth gate run; the gate then ran on the pushed head (below).
+   *does NOT prove:* that it renders or looks right.
