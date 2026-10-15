@@ -18,9 +18,14 @@ extends GutTest
 ## never a plausible grid (Hard Rule 2); the refusals the owner fixes by re-running the
 ## pipeline name `python -m mattini surfaces`.
 ##
+## Since brief M3-R1-fix-1 (M3 review R1, P-03): the texture's bytes are compared with the class
+## bytes, row by row (a texture made after a flip drew every class mirrored with these tests
+## green).
+##
 ## Does NOT prove: that the terrain shader samples the texture on the right texel (no GPU;
-## the owner's PC does); that the real village's PNG reads the same way (the main scene's
-## headless run does, as for the terrain).
+## the owner's PC does: test_m3_09_photo_shader.gd pins the shader's expressions as text only);
+## that the real village's PNG reads the same way (the main scene's headless run does, as for
+## the terrain).
 
 const SCRATCH_DIR := "user://test_surface_grid"
 const SURFACES_COMMAND := "python -m mattini surfaces"
@@ -103,6 +108,34 @@ func test_the_fixture_grid_is_read_as_designed() -> void:
 	if grid.texture != null:
 		assert_eq(grid.texture.get_size(), Vector2(200, 150))
 		assert_eq(grid.texture.get_format(), Image.FORMAT_L8)
+
+
+func test_the_texture_holds_the_class_bytes_row_by_row() -> void:
+	# The shader reads the texture; class_at and the reader's tests read the decoded bytes. Two
+	# copies of the classes that nothing compared: a texture made from the image after a flip
+	# (M3 review R1, P-03, GM-surf-texture-flip) draws every class mirrored on the terrain
+	# while class_at, the PNG's hash and the size and format checks all stay right.
+	var block: Dictionary = _parse(_manifest_path())["surfaces"]
+	var grid := _read_fixture()
+	assert_not_null(grid, "the fixture's surfaces are read")
+	if grid == null or grid.texture == null:
+		return
+	var image := grid.texture.get_image()
+	assert_eq(image.get_format(), Image.FORMAT_L8, "the texture holds L8 bytes")
+	var bytes := image.get_data()
+	assert_eq(bytes.size(), grid.columns * grid.rows, "one byte per texel")
+	assert_eq(_sha256(bytes), block["pixels_sha256"], "the texture's bytes are the decoded bytes")
+	var first_wrong := -1
+	for r in grid.rows:
+		for c in grid.columns:
+			var at := grid.class_at(
+				grid.x0 + (c + 0.5) * grid.cell_m, grid.z0 + (r + 0.5) * grid.cell_m
+			)
+			if bytes[r * grid.columns + c] != at and first_wrong < 0:
+				first_wrong = r
+	assert_eq(
+		first_wrong, -1, "every texel's byte is class_at's class at its centre (first wrong row)"
+	)
 
 
 func test_every_named_point_has_its_class() -> void:

@@ -13,13 +13,17 @@ extends RefCounted
 ##   this world's.
 ## - The surfaces: the shared surfaces fixture's block and PNG (200 x 150 cells at 0.2 m), its
 ##   box moved to SURFACES_BOX (local SURFACES_RECT), its world_sha256 this world's.
-## - The trees: the shared trees fixture's block and chunk files, its world_sha256 and box
-##   this world's. Their local positions are the trees fixture's, written for that fixture's
-##   world: here they stand beside and below this terrain, not on it.
+## - The trees: the shared trees fixture's block (its source and parameters), its world_sha256
+##   and box this world's, and ONE chunk written here, in the box's tile: the TREES below, each
+##   standing on this world's own terrain (brief M3-R1-fix-1, M2 R1 P-01's lesson for the
+##   trees): x and z the centre of one pixel of the 0.5 m terrain grid, y the mean of that
+##   pixel's four vertices, which is the pipeline's rule for a tree's base height (SPEC §8, the
+##   trees, item 7) written again here as test data, and the same as Terrain3D's height there
+##   (tree_records(); the shared fixture's chunks are for another world and are not used).
 ## - The roofs: a block written here for the box, its colour ROOF.
 ## The three rectangles differ on purpose: the photo's is not the terrain grid's, and the
-## surfaces' is neither. The moved boxes, the box, its roof colour and the trees' place are
-## test data, invented here, not swisstopo's (Hard Rule 2).
+## surfaces' is neither. The moved boxes, the box, its roof colour and the trees' places and
+## sizes are test data, invented here, not swisstopo's (Hard Rule 2).
 
 const TERRAIN_FIXTURE := "tests/shared/terrain_fixture/generated/manifest.json"
 const PHOTO_FIXTURE := "tests/shared/photo_fixture/generated/manifest.json"
@@ -42,6 +46,20 @@ const PHOTO_BOX := {"e_max": 2601033.0, "e_min": 2601017.0, "n_max": 1199988.5, 
 const SURFACES_BOX := {
 	"e_max": 2601053.0, "e_min": 2601013.0, "n_max": 1199991.0, "n_min": 1199961.0
 }
+## The trees, test data: [column, row, height_m, crown_radius_m] of the terrain grid's pixel
+## (the cell between vertices column and column + 1, row and row + 1) each one stands on. No
+## tree's foot is within 2 m of the box; no two share a row or a column, and the terrain under
+## them differs by more than 0.4 m from tree to tree, and by about 0.09 m between a pixel's mean
+## and its north-west vertex, so a tree set from the wrong pixel or the wrong vertex stands off
+## the ground by far more than the 1 mm the tests allow.
+const TREES := [
+	[6, 3, 8.0, 1.8],
+	[12, 12, 14.0, 3.0],
+	[31, 5, 20.0, 3.5],
+	[25, 17, 6.0, 1.5],
+	[35, 9, 11.0, 2.4]
+]
+const TREES_FILE := "trees/2601-1199.bin"
 ## The box's roof colour, sRGB, as the roofs block writes it.
 const ROOF := "b4532a"
 const ROOF_UUID := "{0F1E2D3C-4B5A-4978-8796-A5B4C3D2E1F0}"
@@ -57,8 +75,8 @@ static func terrain_fixture_path() -> String:
 
 ## Writes the complete world into [param dir] (created if missing): manifest.json, the
 ## terrain's heights (the fixture's, or [param heights] when given), the box's chunk, the
-## photo, the surfaces and the trees' chunks, with [param change] (a Callable taking the
-## manifest Dictionary) applied last. Returns the manifest's path.
+## photo, the surfaces and the trees' chunk (standing on those heights), with [param change]
+## (a Callable taking the manifest Dictionary) applied last. Returns the manifest's path.
 static func write(dir: String, change := Callable(), heights := PackedByteArray()) -> String:
 	for folder in ["terrain", "buildings", "photo", "surfaces", "trees"]:
 		DirAccess.make_dir_recursive_absolute(dir.path_join(folder))
@@ -100,7 +118,7 @@ static func write(dir: String, change := Callable(), heights := PackedByteArray(
 	}
 	manifest["photo"] = _moved(PHOTO_FIXTURE, "photo", dir, PHOTO_BOX, world_sha256)
 	manifest["surfaces"] = _moved(SURFACES_FIXTURE, "surfaces", dir, SURFACES_BOX, world_sha256)
-	manifest["trees"] = _trees(dir, box, world_sha256)
+	manifest["trees"] = _trees(dir, manifest, WorldConfig.from_manifest(source), heights)
 	manifest["roofs"] = {
 		"area": "fixture",
 		"chunks":
@@ -151,17 +169,54 @@ static func _moved(
 	return block
 
 
-## The shared trees fixture's block, its chunk files copied into [param dir].
-static func _trees(dir: String, box: Dictionary, world_sha256: String) -> Dictionary:
-	var source := repo_file(TREES_FIXTURE)
-	var block: Dictionary = _parse(source)["trees"]
-	for entry: Dictionary in block["chunks"]:
-		var file: String = entry["file"]
-		var data := FileAccess.get_file_as_bytes(source.get_base_dir().path_join(file))
-		_store(dir.path_join(file), data)
-	block["lv95_box"] = box.duplicate()
-	block["world_sha256"] = world_sha256
+## The shared trees fixture's block with the one chunk of TREES written into [param dir], its
+## box [param manifest]'s terrain box and its world_sha256 the manifest's.
+static func _trees(
+	dir: String, manifest: Dictionary, world: WorldConfig, heights: PackedByteArray
+) -> Dictionary:
+	var block: Dictionary = _parse(repo_file(TREES_FIXTURE))["trees"]
+	var data := tree_records(manifest["terrain"], world, heights).to_byte_array()
+	_store(dir.path_join(TREES_FILE), data)
+	block["chunks"] = [
+		{"file": TREES_FILE, "sha256": sha256(data), "tile": TILE, "trees": TREES.size()}
+	]
+	block["lv95_box"] = manifest["terrain"]["lv95_box"].duplicate()
+	block["world_sha256"] = manifest["world_sha256"]
 	return block
+
+
+## The trees' records, five float32 per tree as the chunk file holds them: x, y, z, height_m and
+## crown_radius_m. [param terrain] is the manifest's terrain block, [param world] its WorldConfig,
+## [param heights] the terrain's heights file (float32, row-major, rows from the north). Each
+## tree stands at the centre of its pixel of the grid, placed through the WorldConfig as the
+## grid is (to_local of the box's north-west corner), and its y is the mean of the pixel's four
+## vertices: the pipeline's rule for a base height, the bilinear height at the centre.
+static func tree_records(
+	terrain: Dictionary, world: WorldConfig, heights: PackedByteArray
+) -> PackedFloat32Array:
+	var box: Dictionary = terrain["lv95_box"]
+	var north_west := world.to_local(box["e_min"], box["n_max"], world.height_offset)
+	var spacing: float = terrain["spacing_m"]
+	var columns := int(terrain["columns"])
+	var vertices := heights.to_float32_array()
+	var records := PackedFloat32Array()
+	for tree: Array in TREES:
+		var at: int = int(tree[1]) * columns + int(tree[0])
+		var base := (
+			(
+				float(vertices[at])
+				+ vertices[at + 1]
+				+ vertices[at + columns]
+				+ vertices[at + columns + 1]
+			)
+			/ 4.0
+		)
+		records.append(north_west.x + spacing * (int(tree[0]) + 0.5))
+		records.append(base)
+		records.append(north_west.z + spacing * (int(tree[1]) + 0.5))
+		records.append(tree[2])
+		records.append(tree[3])
+	return records
 
 
 ## One closed box, 2 m wide and BOX_HEIGHT tall, its floor's corner at BOX_FLOOR,
@@ -223,6 +278,11 @@ static func remove_tree(dir: String) -> void:
 	for file in DirAccess.get_files_at(dir):
 		DirAccess.remove_absolute(dir.path_join(file))
 	DirAccess.remove_absolute(dir)
+
+
+## The manifest at [param path] as a Dictionary.
+static func read_manifest(path: String) -> Dictionary:
+	return _parse(path)
 
 
 static func _parse(path: String) -> Dictionary:

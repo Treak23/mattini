@@ -16,12 +16,29 @@ extends GutTest
 ## the headless renderer parses the shader's declarations, nothing more); the colour
 ## encoding (brain.md H21: the one text check below only proves the photo's declaration
 ## says source_color); the lighting (the normal's test below is a census of one line's text).
+##
+## Since brief M3-R1-fix-1 (M3 review R1, P-03): where a crown takes its colour from is pinned
+## as text too, the lines of the shader that read the photo at the tree's origin, so that a
+## uv from another place (origin.zx, a flipped row, a shifted rectangle) fails. A census: it
+## proves the text of those lines, and a render would prove that the crown is coloured from the
+## photo under the tree (design's question, docs/briefs/BLOCKED.md, M3 R1 P-03).
 
 const CROWN_TRIANGLES := 180
 const TRIANGLES := 192
 const VERTICES := 138
 ## The trunk's rings are the last twelve vertices.
 const TRUNK_VERTICES := 12
+## Every code line (comments cut, blanks dropped) of the tree shader that names the photo's
+## rectangle, the crown's uv, the photo lookup or the instance's origin.
+const PHOTO_LOOKUP_PATTERN := "\\buv\\b|photo_rect|textureLod\\(photo|vec3 origin ="
+const PHOTO_LOOKUP_LINES := [
+	"uniform vec4 photo_rect = vec4(0.0);",
+	"vec3 origin = MODEL_MATRIX[3].xyz;",
+	"if (photo_rect.z > 0.0 && photo_rect.w > 0.0) {",
+	"float texel = photo_rect.z / float(textureSize(photo, 0).x);",
+	"vec2 uv = (origin.xz - photo_rect.xy) / photo_rect.zw;",
+	"crown_color = min(textureLod(photo, uv, lod).rgb * crown_boost, vec3(1.0));",
+]
 
 var _arrays: Array
 
@@ -203,6 +220,24 @@ func test_the_flat_normal_is_built_as_cross_dfdy_dfdx() -> void:
 		statements,
 		["NORMAL = normalize(cross(dFdy(VERTEX), dFdx(VERTEX)));"],
 		"one NORMAL statement, with dFdy first: dFdx first points into the tree"
+	)
+
+
+func test_the_crown_colour_is_read_from_the_photo_at_the_origin_by_the_pinned_lines() -> void:
+	# A census of text (lesson 5): the lines that say where on the photo a crown is read. The
+	# lens's mutation read origin.zx (the colour from another place, with every test green);
+	# a flipped row or a shifted rectangle adds or changes a line here as well. It proves the
+	# text, not that a crown is lit by the photo under it.
+	var regex := RegEx.create_from_string(PHOTO_LOOKUP_PATTERN)
+	var found := PackedStringArray()
+	for raw in FileAccess.get_file_as_string(TreeLoader.SHADER).split("\n"):
+		var code := raw.get_slice("//", 0).strip_edges()
+		if not code.is_empty() and regex.search(code) != null:
+			found.append(code)
+	assert_eq(
+		found,
+		PackedStringArray(PHOTO_LOOKUP_LINES),
+		"the lines that read the photo at the instance's origin are the pinned ones"
 	)
 
 

@@ -22,8 +22,19 @@ extends GutTest
 ## blocks, and the shared buildings fixture has none of them, so their readers' refusals of
 ## it are absorbed as the terrain's are; complete_world.gd now holds every block.
 ##
+## Since brief M3-R1-fix-1 (M3 review R1, P-02): the same for the trees. The Trees node and
+## every cell's MultiMeshInstance3D sit at the scene's origin, unturned and unscaled, which the
+## tree shader depends on (it reads each instance's origin in world space against the photo's
+## rectangle), and in the complete world each tree stands where CompleteWorld.tree_records puts
+## it, its base on Terrain3D's ground (main._ground_height) within 1 mm. The instances are read
+## from the MultiMesh buffers (brain.md H25: headless, set_instance_transform is dropped but an
+## assigned buffer is kept), the very bytes the renderer is given.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); that the real village's
-## buildings meet its terrain (measured at M2 planning and by the review, SPEC §8).
+## buildings meet its terrain (measured at M2 planning and by the review, SPEC §8); that the real
+## village's 34'412 trees stand on its ground (the placement lens measured 0 of them more than
+## 5 cm off, one clone, at the 0.5 m terrain; at the 1 m or 2 m terrain they do not, M3 R1 P-01,
+## which is design's); that the tree shader draws a tree where its buffer row says.
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
 const Main := preload("res://scripts/main.gd")
@@ -108,6 +119,67 @@ func test_the_buildings_sit_at_the_scene_origin() -> void:
 	assert_gt(buildings.get_child_count(), 0, "at least one chunk")
 	for mesh in buildings.get_children():
 		assert_eq(mesh.global_transform, Transform3D.IDENTITY, "chunk %s" % mesh.name)
+
+
+## The tree instances of [param trees]: the origin of every buffer row of every cell, in scene
+## coordinates (the cell's global transform applied: a moved node shows).
+func _tree_origins(trees: Node3D) -> PackedVector3Array:
+	var origins := PackedVector3Array()
+	for cell in trees.get_children():
+		var buffer: PackedFloat32Array = (cell as MultiMeshInstance3D).multimesh.buffer
+		# Twelve floats per instance: the transform's three rows of four, the origin last.
+		for i in buffer.size() / 12:
+			origins.append(
+				(
+					(cell as Node3D).global_transform
+					* Vector3(buffer[12 * i + 3], buffer[12 * i + 7], buffer[12 * i + 11])
+				)
+			)
+	return origins
+
+
+func test_the_trees_sit_at_the_scene_origin() -> void:
+	var main := _main_with(_complete_world())
+	var trees: Node3D = main.get_node_or_null("Trees")
+	assert_not_null(trees, "the trees are built")
+	if trees == null:
+		return
+	assert_eq(trees.global_transform, Transform3D.IDENTITY, "the Trees node")
+	assert_gt(trees.get_child_count(), 0, "at least one cell")
+	for cell in trees.get_children():
+		assert_eq((cell as Node3D).global_transform, Transform3D.IDENTITY, "cell %s" % cell.name)
+
+
+func test_every_tree_stands_on_the_terrain_where_the_fixture_put_it() -> void:
+	var path := _complete_world()
+	var main := _main_with(path)
+	var trees: Node3D = main.get_node_or_null("Trees")
+	assert_not_null(trees, "the trees are built")
+	if trees == null:
+		return
+	var manifest := CompleteWorld.read_manifest(path)
+	var heights := FileAccess.get_file_as_bytes(
+		CompleteWorld.terrain_fixture_path().get_base_dir().path_join("terrain/fixture.f32")
+	)
+	var records := CompleteWorld.tree_records(
+		manifest["terrain"], WorldConfig.from_manifest(path), heights
+	)
+	var origins := _tree_origins(trees)
+	assert_eq(origins.size(), CompleteWorld.TREES.size(), "one instance per tree of the fixture")
+	assert_eq(records.size(), 5 * CompleteWorld.TREES.size(), "five floats per tree")
+	for k in records.size() / 5:
+		var x := records[5 * k]
+		var z := records[5 * k + 2]
+		var ground: float = main._ground_height(x, z)
+		assert_false(is_nan(ground), "tree %d: the terrain is under it" % k)
+		# The fixture's own rule (the mean of the pixel's four vertices) is Terrain3D's height.
+		assert_almost_eq(records[5 * k + 1], ground, 0.001, "tree %d: the fixture stands on it" % k)
+		var nearest := INF
+		for origin in origins:
+			nearest = minf(nearest, origin.distance_to(Vector3(x, ground, z)))
+		assert_lt(
+			nearest, 0.001, "tree %d: an instance's base is at (%f, %f, %f)" % [k, x, ground, z]
+		)
 
 
 func test_every_named_vertex_lies_in_the_scene_where_the_world_config_puts_it() -> void:
