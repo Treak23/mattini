@@ -1,5 +1,5 @@
 # Brief: M3-09 — The photo on the terrain
-Status: OPEN
+Status: DONE (e6a6ed2)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane E of wave 1, first (`docs/briefs/M3-plan.md`).
@@ -132,3 +132,73 @@ Changing Terrain3D's vertex or normal code, the reader's rules, design's fixture
 file; compressing the photo; touching the main scene.
 
 ## Findings (executor writes)
+
+Landed as `e6a6ed2` on `main`. Standard gate on that head: exit 0, pytest 766 passed (4
+deselected), GUT 32 scripts, 161 tests, 4678 asserts, `GUT version:  9.6.1`.
+
+1. **The pinned copies** (`test_photo_grid.gd`, `test_terrain_loader_photo.gd`) are in place and
+   `cmp`-identical to `docs/briefs/pinning/M3-09/` (checked again after the last rebase). The
+   auto-mode classifier refused the brief's `cp -r docs/briefs/pinning/M3-09/. .` (it copies
+   into the repository root), so the two new files were copied one by one to their exact
+   paths with `cp -n`; same result.
+2. **Mutations**, each applied to the committed file, run against the two pinned scripts plus
+   my census test, reverted by `git apply -R` of the saved diff (the tree was clean after
+   each). Failing tests are GUT's own Run Summary list.
+
+   | # | Mutation | Failing test(s) | Owner-visible harm reproduced |
+   |---|---|---|---|
+   | 1 | the photo given but ignored (`photo = null` first in `create`) | `test_terrain_loader_photo::test_with_a_photo_the_terrain_uses_the_photo_shader`, `::test_the_photo_and_its_rectangle_reach_the_shader` | the village stays clay with a photo built |
+   | 2 | `photo_rect` from the terrain grid | `test_terrain_loader_photo::test_the_photo_and_its_rectangle_reach_the_shader` | the photo stretched over the terrain's box, off the ground |
+   | 3 | the photo's parameters set before the shader | `test_terrain_loader_photo::test_the_photo_and_its_rectangle_reach_the_shader` | Terrain3D drops them: the shader samples an unset texture (no photo) |
+   | 4 | z0 from n_min | `test_photo_grid::test_the_fixture_photo_is_read_as_designed`, `::test_the_named_points_read_their_texels`, and `test_terrain_loader_photo::test_the_photo_and_its_rectangle_reach_the_shader` | the photo shifted a whole depth to the south |
+   | 5 | the image flipped north-south | `test_photo_grid::test_the_named_points_read_their_texels` | the village mirrored north to south |
+   | 6 | (my census) one constant in Terrain3D's `vertex()` changed | `test_m3_09_photo_shader::test_the_vertex_and_terrain_normal_code_is_terrain3ds` | Terrain3D's code silently edited |
+
+   My first run of mutation 3 was not caught, and that was the mutation's fault, not the
+   tests': it added an early copy of the parameters and left the real ones after the shader,
+   so the values were set correctly the second time. The faithful mutation moves the block;
+   it fails the named test. My first failure parser also listed one passing census test in
+   every run (GUT repeats the failing tests in its Run Summary and prints details under the
+   last test name); the table above uses the Run Summary list, and each row's count equals
+   GUT's "N failing tests".
+3. **Software render** (evidence, not a gate): `docs/briefs/shots/M3-09-fixture.jpg`, the terrain
+   fixture wearing the photo fixture, rendered with Compatibility on llvmpipe under Xvfb from a
+   scratch probe script that is not committed (the probe moves the photo's rectangle over the
+   terrain fixture, since the two fixtures are different worlds). It shows that
+   `terrain_photo.gdshader` compiles (no shader ERROR; the only ERROR line is ALSA's audio
+   device), that the grey blocks and the single coloured corner block land with the coloured
+   block in the north-east, and that outside the photo the neutral colour shows. The real
+   village was not rendered: it needs `download terrain` and `terrain` and a 0.2 m photo
+   from M3-04, and the plan lets this brief skip it. Does NOT prove the Forward+ look.
+4. **What PhotoGrid checks beyond the brief's list** (all inside "key set not exact" and
+   "another SHA-256"): the nested key sets of `jpeg`, `source` and `lv95_box`, the digests being
+   64 hex digits, `source.dataset` being `swissimage`, and the JPEG's bytes read once and
+   hashed from those same bytes. A missing file is refused before any read, so no engine ERROR
+   is printed for it. The refusal text for a missing block names `python -m mattini download
+   photo` then `python -m mattini photo`.
+5. **Not refused, said out loud:** a photo wider or taller than 16384 texels draws black under
+   Compatibility with no error (H21). The brief's refusal list has no such rule and the reader's
+   rules are not mine to change; the village's 0.2 m photo is 10000 by 15000, so it fits. A
+   finer cell than 0.2 m is refused anyway (cells are 0.2, 0.5, 1). Design may want the guard
+   if the area grows.
+6. **The shader** is `terrain_clay.gdshader` with only the header, the photo's uniforms and the
+   closing albedo and roughness replaced; Terrain3D's private uniforms, varyings, `vertex()`
+   and the terrain normals are the same text (`test_m3_09_photo_shader`, a census: it proves
+   the text, not that anything draws). It keeps a `height_offset_m` uniform, unused, so the
+   loader's value is stored as in the clay shader. Roughness 0.95 is a literal here; M3-10
+   brings the constants.
+7. **The allowlist:** one line appended, `PhotoGrid: user://test_ @
+   res://tests/test_photo_grid.gd`. My first rebase conflicted with lane G's
+   `BuildingRoofs` line at the end of the file; I kept both, in that order, and re-ran the
+   gate (the diff against `origin/main` is that one added line). The head was rebased twice
+   more (lane G's DONE line, then lane B's M3-02, which tightened the gate) and re-gated each
+   time; the last gate ran under M3-02's rules.
+8. **For the next builders of this wave:** `pipeline/tests/test_repo_tracked.py` fails the gate's
+   pytest step when a new file the game depends on is not in git's index, so `git add` the new
+   files, and the `.uid` files a Godot import writes, before the first gate run (a bare
+   `godot --headless --path game --import` writes them without the gate). gdlint's
+   `max-returns` is 6 per function (one reader function had to be split).
+9. **Does NOT prove:** that it renders or looks right on the owner's GPU, what the photo
+   costs there (about 0.8 GB of texture memory expected), or anything about the real village's
+   photo: the pipeline step (M3-04) meets this reader at the shared fixture, and M3-14 puts
+   both in the main scene.
