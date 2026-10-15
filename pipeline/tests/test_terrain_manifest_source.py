@@ -78,11 +78,11 @@ def _manifest(built):
     )
 
 
-def _refused(built, *patterns):
+def _refused(built, *patterns, command=TERRAIN_COMMAND):
     with pytest.raises(TerrainError) as refused:
         _manifest(built)
     message = str(refused.value)
-    for pattern in (TERRAIN_COMMAND, *patterns):
+    for pattern in (command, *patterns):
         assert pattern in message, (pattern, message)
     assert not (built["out"] / "manifest.json").exists()
     return message
@@ -137,15 +137,19 @@ def test_a_tile_the_lock_now_pins_differently_is_refused(built):
     _refused(built, TILE, old, new)
 
 
-@pytest.mark.parametrize("key", ["attribution", "collection"])
-def test_a_changed_datasets_config_is_refused(built, key):
-    """The credits come from the manifest: a new attribution needs a rebuild (T-04)."""
+@pytest.mark.parametrize(
+    ("key", "command"),
+    [("attribution", TERRAIN_COMMAND), ("collection", LOCK_COMMAND)],
+)
+def test_a_changed_datasets_config_is_refused(built, key, command):
+    """The credits come from the manifest: a new attribution needs a rebuild (T-04). A new
+    collection is the lock's to match first (M3-01), so `lock terrain` is named."""
     changed = {"attribution": "© swisstopo, new wording", "collection": "ch.swisstopo.other"}
     _edit_json(
         built["paths"]["datasets"],
         lambda d: d["datasets"]["swissalti3d"].update({key: changed[key]}),
     )
-    _refused(built, key, changed[key])
+    _refused(built, key, changed[key], command=command)
 
 
 SOURCE_KEYS = "exactly the keys ['attribution', 'collection', 'dataset', 'edition', 'resolution_m'"

@@ -11,11 +11,13 @@ written. A mismatch deletes the temporary file; after one retry it is a Download
 the tile and the URL (Hard Rule 2). A file already on disk that matches is not fetched again.
 
 Every tile's published file name and SHA-256 must equal the tile lock's
-(config/datasets.lock.json, brief M1-01): all the STAC items are read and compared with the
-lock before any file is fetched or deleted, so a tile swisstopo republished inside the
-edition is refused, never adopted silently (Hard Rule 5); `python -m mattini lock terrain`
-adopts it deliberately, and design then recomputes the expected values in
-config/terrain.json, which record the lock entry they were computed from (brief M2-07).
+(config/datasets.lock.json, brief M1-01): the lock must first fit the config and pin
+exactly the area's tiles (`lock.fit_problem`, before swisstopo is asked anything, brief
+M3-01), then all the STAC items are read and compared with the lock before any file is
+fetched or deleted, so a tile swisstopo republished inside the edition is refused, never
+adopted silently (Hard Rule 5); `python -m mattini lock terrain` adopts it deliberately, and
+design then recomputes the expected values in config/terrain.json, which record the lock
+entry they were computed from (brief M2-07).
 
 `provenance.json` records what was fetched and its attribution: sorted keys, LF endings, no
 times, no absolute paths, so two runs on the same inputs write identical bytes. It is
@@ -29,9 +31,10 @@ sheet within 100 m, SPEC §8 *Sheets*): item `swissbuildings3d_3_0_<edition>_<sh
 one asset whose key ends `_2056_5728.gdb.zip`, compared with the lock's `swissbuildings3d`
 entry before anything on disk changes, into `<out_root>/swissbuildings3d/<edition>/` with
 its own provenance.json. The lock's entry must pin exactly the area's sheets, as the
-buildings step and the manifest require (brief M2-07, M2 R1 I-04). A sheet swisstopo
-republished is adopted only by `python -m mattini lock buildings`, and design then
-recomputes config/buildings.json. The zips are not opened here (M2-04 reads them).
+buildings step and the manifest require (brief M2-07, M2 R1 I-04), by the same rule
+(`lock.fit_problem`). A sheet swisstopo republished is adopted only by `python -m mattini
+lock buildings`, and design then recomputes config/buildings.json. The zips are not opened
+here (M2-04 reads them).
 
 A datasets config without the dataset, and an area the sheet grid cannot place, are
 DownloadErrors naming config/datasets.json or the world config and the area, never a
@@ -208,15 +211,21 @@ def download_terrain(
 ) -> list[dict]:
     """Fetch and verify the tiles of `area` into `<out_root>/swissalti3d/<edition>/`.
 
-    `lock` is the tile lock (`mattini.lock.load_lock()`): it must be for the config's
-    collection, edition and resolution and list every tile of the area, and every published
-    file name and SHA-256 must equal it, all checked before anything on disk changes.
-    Returns the provenance entries, one per tile in tile order, and writes them with the
-    dataset's edition and attribution to `provenance.json` in the same directory.
+    `lock` is the tile lock (`mattini.lock.load_lock()`): it must fit the config and pin
+    exactly the tiles of the area (`lock.fit_problem`, refused before swisstopo is asked
+    anything, naming `lock terrain`), and every published file name and SHA-256 must equal
+    it, all checked before anything on disk changes. Returns the provenance entries, one per
+    tile in tile order, and writes them with the dataset's edition and attribution to
+    `provenance.json` in the same directory.
     """
+    from mattini.lock import fit_problem  # lock imports this module
+
     alti = dataset_of(datasets, DATASET)
     _resolution_tag(alti["resolution_m"])
-    pinned = _locked_tiles(lock, alti, area_tiles(world, area), area)
+    problem = fit_problem(lock, datasets, world, area, DATASET)
+    if problem:
+        raise DownloadError(problem)
+    pinned = lock["datasets"][DATASET]["tiles"]
     assets = published_assets(world, datasets, fetch_json, area=area)
     for asset in assets:
         locked = pinned[asset.tile]
@@ -272,15 +281,20 @@ def download_buildings(
 ) -> list[dict]:
     """Fetch and verify the map sheets of `area` into `<out_root>/swissbuildings3d/<edition>/`.
 
-    `lock` is the lock (`mattini.lock.load_lock()`): its `swissbuildings3d` entry must be
-    for the config's collection and edition and pin exactly the sheets of the area, as the
-    buildings step and the manifest require, and every published file name and SHA-256
-    must equal it, all checked before anything on disk changes (M2 R1 I-02, I-04). Returns
-    the provenance entries, one per sheet in sheet order, and writes them with the
-    dataset's edition and attribution to `provenance.json` in the same directory.
+    `lock` is the lock (`mattini.lock.load_lock()`): its `swissbuildings3d` entry must fit
+    the config and pin exactly the sheets of the area (`lock.fit_problem`, as the buildings
+    step and the manifest require, naming `lock buildings`), and every published file name
+    and SHA-256 must equal it, all checked before anything on disk changes (M2 R1 I-02,
+    I-04). Returns the provenance entries, one per sheet in sheet order, and writes them
+    with the dataset's edition and attribution to `provenance.json` in the same directory.
     """
+    from mattini.lock import fit_problem  # lock imports this module
+
     buildings = dataset_of(datasets, BUILDINGS)
-    pinned = _locked_sheets(lock, buildings, area_sheets(world, area), area)
+    problem = fit_problem(lock, datasets, world, area, BUILDINGS)
+    if problem:
+        raise DownloadError(problem)
+    pinned = lock["datasets"][BUILDINGS]["sheets"]
     published = published_sheets(world, datasets, fetch_json, area=area)
     for sheet in published:
         locked = pinned[sheet.sheet]
@@ -349,64 +363,6 @@ def _resolution_tag(resolution_m: object) -> str:
             f"{DATASET}: resolution_m must be a positive number of metres, found {resolution_m!r}"
         )
     return format(resolution_m, "g")
-
-
-def _locked_tiles(lock: object, alti: dict, tiles: list[str], area: str) -> dict:
-    """The lock's tile entries, once it is shown to be for this config's tiles."""
-
-    def fail(message: str) -> DownloadError:
-        return DownloadError(
-            f"the tile lock {message} (area {area!r}); `{LOCK_COMMAND}` writes the lock for "
-            f"the config"
-        )
-
-    datasets = lock.get("datasets") if isinstance(lock, dict) else None
-    locked = datasets.get(DATASET) if isinstance(datasets, dict) else None
-    if not isinstance(locked, dict):
-        raise fail(f"has no {DATASET!r} entry")
-    for key in ("collection", "edition", "resolution_m"):
-        if locked.get(key) != alti[key]:
-            raise fail(f"is for {key} {locked.get(key)!r}, the config pins {alti[key]!r}")
-    entries = locked.get("tiles")
-    if not isinstance(entries, dict):
-        raise fail("has no tiles")
-    missing = [tile for tile in tiles if tile not in entries]
-    if missing:
-        raise fail(f"pins no checksum for the tiles {missing} of the area")
-    return entries
-
-
-def _locked_sheets(lock: object, buildings: dict, sheets: list[str], area: str) -> dict:
-    """The lock's sheet entries, once its buildings entry is shown to be for these sheets.
-
-    Exactly these sheets, as `buildings._locked_sheets` and the manifest require: a lock
-    that pins others too would download here and then be refused by the step (M2 R1 I-04).
-    """
-
-    def fail(message: str) -> DownloadError:
-        return DownloadError(
-            f"the lock {message} (area {area!r}); `{BUILDINGS_LOCK_COMMAND}` writes the "
-            f"lock's buildings entry for the config"
-        )
-
-    datasets = lock.get("datasets") if isinstance(lock, dict) else None
-    locked = datasets.get(BUILDINGS) if isinstance(datasets, dict) else None
-    if not isinstance(locked, dict):
-        raise fail(f"has no {BUILDINGS!r} entry")
-    for key in ("collection", "edition"):
-        if locked.get(key) != buildings[key]:
-            raise fail(
-                f"is for {BUILDINGS} {key} {locked.get(key)!r}, the config pins {buildings[key]!r}"
-            )
-    entries = locked.get("sheets")
-    if not isinstance(entries, dict):
-        raise fail("has no sheets")
-    missing = [sheet for sheet in sheets if sheet not in entries]
-    if missing:
-        raise fail(f"pins no checksum for the sheets {missing} of the area")
-    if sorted(entries) != sheets:
-        raise fail(f"pins the sheets {sorted(entries)}, the area needs exactly {sheets}")
-    return entries
 
 
 def _published_asset(

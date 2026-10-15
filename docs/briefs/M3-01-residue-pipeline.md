@@ -162,3 +162,116 @@ Changing an output byte (the fixtures, design's expected values), the lock, a co
 pinned file; the export presets (M3-08); `game/` and `tools/` (M3-02).
 
 ## Findings (executor writes)
+
+1. **Pinned copies and the counts before the fix.** All ten files are in place and `cmp`
+   identical to `docs/briefs/pinning/M3-01/` (checked before the gate). On the unmodified
+   code they failed as design measured: `test_lock_fit.py` 12, `test_refusals_not_tracebacks.py`
+   9, `test_docstring_claims.py` 2, `test_part_leftovers.py` 2, `test_fiona_import.py` 1;
+   `test_checks_before_reading.py` (6), `test_lock_canonical.py` (3), `test_buildings_read.py`
+   (4) and `test_buildings_reader.py` (7) pass on it, as the brief says.
+
+2. **What changed, by decision.**
+   - 1: `lock.fit_problem(lock, datasets, world, area, dataset)`, one table (`_FITS`, rows of
+     `_Fit(keys, files, ids, command)`) for `swissalti3d` and `swissbuildings3d`; M3-03 adds
+     rows. `download_terrain`, `download_buildings`, `build_terrain`, `build_buildings`,
+     `built_terrain_block` and `built_buildings_block` call it; the fit is exact for both
+     datasets. The order in all four step/manifest paths: world, fit, inputs, then the rest.
+     `download.py` imports it inside the two download functions, because `lock.py` imports
+     `download.py` at module level. `_lock_problem`, `_locked_tiles`, `_locked_sheets` and the
+     now unused `terrain.LOCK_COMMAND` are gone (decision 10 does not keep them);
+     `buildings._check_source` lost the lock-fit branches the fit made unreachable.
+   - 2: no code change; the pinned test passes on the unmodified order, and the mutation below
+     moves the inputs check and fails it.
+   - 3: the two test docstrings now name `test_computed_for_terrain.py` and
+     `test_computed_for_buildings`; `manifest.py`'s docstring names the box, columns and rows
+     and the new order.
+   - 4: `DatasetsConfigError` for a `swissalti3d` entry whose `resolution_m` is not a positive
+     finite int or float (`RESOLUTION_DATASETS` in `datasets.py` is M3-03's extension point).
+   - 5: `terrain._write_files` and `buildings.write_buildings` remove `*.part` in their own
+     folder after writing (files only; a directory named `*.part` is left); a refusal removes
+     nothing. Each step says how many it removed, only when it removed any.
+   - 6, 7, 8: tests only, as pinned. 9: `read_sheet`'s fiona import moved inside the function.
+
+3. **Two reversible choices inside the scope** (BUILD.md §The orchestrator 5; for the board's
+   *Decisions for design to audit*):
+   - *The steps check `computed_for.inputs_sha256` before reading provenance.json*, not after
+     it as before (the brief fixes "the fit before provenance" and the order "world, fit,
+     inputs, block"; where the inputs sit relative to provenance in the *step* it leaves open).
+     Chosen because an adopted lock with a stale download is design's to recompute first, and
+     "no download has completed here" cannot help until then. The alternative is to leave the
+     inputs check after provenance; undoing it is moving one four-line block in each step
+     (`test_m3_01_step_order.py` pins the chosen order, two cases).
+   - *`fit_problem` returns the whole refusal* (it names the area and `lock <x>`); each caller
+     raises it in its own error class without a prefix, so the step, `download` and `manifest`
+     say the same words. The alternative is a short reason that each caller dresses.
+
+4. **Existing tests changed**, the five files the brief names and no others, each to expect
+   `lock <x>` or the removed `.part`:
+   - `test_buildings_manifest.py`: a datasets config with another collection or edition, a lock
+     with an extra or another sheet, another edition, or no buildings entry now name
+     `lock buildings` (`_refused` takes the command); the source's attribution, collection,
+     edition and sheet are edited in the block instead, so those branches keep their cases; the
+     sheet-order test needs a lock pinning two sheets, which now fits only an area that needs
+     two (the fixture's box widened west to E 2650500, the block's box and world hash edited to
+     match).
+   - `test_buildings_step.py`: the earlier build's `.part` is removed, with its message.
+   - `test_terrain_manifest.py`, `test_terrain_refusals.py`: another edition or resolution in the
+     datasets config names `lock terrain`; the block's own edition and resolution stay covered
+     by `test_terrain_manifest_source.py`'s source edits.
+   - `test_terrain_manifest_source.py`: another collection names `lock terrain`, another
+     attribution still the rebuild (`_refused` takes the command).
+
+5. **New tests** (`test_m3_01_*`): `fit_problem.py` (33: every branch, both datasets, one
+   command per refusal, a lock that is no lock), `step_order.py` (7: both steps check the fit
+   and the inputs before provenance.json, positive controls reach the download; `manifest` over
+   built buildings without the dataset in the config names the rebuild, where evaluating the
+   lock's entry first would have raised a KeyError: found while editing, not a shipped defect),
+   `part_and_resolution.py` (22: a refusal keeps `.part`, the progress line, a directory named
+   `.part`, `write_terrain`, the loader's edges: NaN, infinity, a boolean, a list, null).
+
+6. **Mutations**, each applied alone, the named test failed, restored with `git apply -R` of
+   its saved diff (the tree was clean after each). Harm in every row: a wrong lock answered by a
+   command that cannot help, or a step that reads or builds before it has the right to.
+   | mutation | failed |
+   |---|---|
+   | `built_terrain_block`: inputs before the fit | `test_lock_fit.py` 6 (terrain and manifest) |
+   | `built_terrain_block`: fit after the block | `test_lock_fit.py` 6 |
+   | `built_buildings_block`: inputs before the fit | `test_lock_fit.py` 5 |
+   | `built_buildings_block`: fit after the block | `test_lock_fit.py` 5 |
+   | `build_terrain`: fit after the inputs | `test_lock_fit.py` 6 |
+   | fit not exact (extra tile or sheet accepted) | `test_lock_fit.py` 3, `test_download_before_fetching.py` 2, `test_m3_01_fit_problem.py` 2 |
+   | `build_terrain`: inputs check after the tile loop | `test_checks_before_reading.py::test_republished_and_relocked_inputs_are_refused_before_any_tile_is_read` |
+   | `build_buildings`: inputs check after the sheet loop | `test_checks_before_reading.py::test_republished_and_relocked_sheets_are_refused_before_any_sheet_is_read` |
+   | steps read provenance.json before the fit | `test_m3_01_step_order.py` 2 per step |
+   | `entry_sha256` without `sort_keys` / with `ensure_ascii=True` | `test_lock_canonical.py::test_an_entry_s_sha256_is_that_of_its_canonical_text_whatever_its_key_order` (both) |
+   | `write_lock` without `sort_keys` / with `ensure_ascii=True` | `test_lock_canonical.py::test_the_lock_file_is_sorted_utf_8_with_two_space_indent_and_a_final_lf` (both) |
+   | `read_sheet` keeps the ring's closing point (`ring[:3]` as `ring`), or drops the first point | `test_buildings_read.py::test_a_synthetic_sheet_reads_its_triangles` and `test_buildings_reader.py::test_features_come_in_reading_order_with_their_attributes` (both) |
+   | fiona imported at module level | `test_fiona_import.py` |
+   | terrain step leaves its `.part` files | `test_part_leftovers.py::test_the_terrain_step_removes_part_files_from_its_folder`, `test_m3_01_part_and_resolution.py` 1 |
+   | buildings step leaves its `.part` files | `test_part_leftovers.py::test_the_buildings_step_removes_part_files_from_its_folder`, `test_buildings_step.py` 1 |
+   | terrain step cleans the other step's folder | `test_part_leftovers.py::test_the_terrain_step_removes_part_files_from_its_folder` |
+   | loader accepts a boolean | `test_refusals_not_tracebacks.py::test_the_datasets_loader_refuses_swissalti3d_without_a_resolution[a-boolean]`, `test_m3_01_part_and_resolution.py` 1 |
+   | loader has no `resolution_m` rule | `test_refusals_not_tracebacks.py` 9 |
+
+   does NOT prove: that the pinned tests are the only way to see these defects; mutation shows
+   a gate is sensitive to its own subject (lesson 4).
+
+7. **Gate.** `tools/gate.sh > gate.log && git commit`: exit 0 in 1 min 49 s on this tree;
+   pytest 849 passed, 4 network tests deselected (787 before the three new files; 743 at the
+   M2 close); GUT 23 scripts, 110 tests, 2800 asserts, `GUT version:  9.6.1`; ruff check and
+   format, gdlint and gdformat clean. No output byte changed: `manifest`'s step is in the gate
+   and the fixtures' expected values are untouched (`git diff` of `tests/shared/` and `config/`
+   is empty).
+
+8. **For M3-03 (the next brief in this lane).** `fit_problem`'s table fits `swissimage` with
+   one row (keys collection, edition, resolution_m; files `tiles`; `download.area_tiles`
+   under another lock command). `swisssurface3d` needs the per-tile `edition` checked against
+   `editions` and `swisstlm3d` has no files object (its entry holds `file` and `sha256`), so
+   `_Fit` gets two more fields or the function a branch for them; `fit_problem` reads
+   `config[key]` for each key, so `editions` is a list compared whole. The loader's
+   `RESOLUTION_DATASETS` takes `swissimage` and `swisssurface3d`, after M3-03's
+   edition/editions rule, which `load_datasets` must run first.
+
+9. **What is not proven.** That the committed lock is swisstopo's (the network tests); that
+   `manifest` is right for a real run (`3ca0445c…` is wave 2's); anything about the
+   export's `.part` filter (M3-08).

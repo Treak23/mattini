@@ -5,7 +5,9 @@ folder's listing), which must be the sheets within 100 m of the area's box
 (`download.area_sheets`), each zip's SHA-256 equal to its provenance entry and the lock's.
 Each zip is read from the very bytes that were hashed: its one `.gdb` folder, layer
 `Building_solid`, one closed triangle solid per building (fiona reads swisstopo's
-MultiPatch as a MultiPolygon Z whose every polygon is one triangle).
+MultiPatch as a MultiPolygon Z whose every polygon is one triangle). fiona is imported
+inside `read_sheet` only, never when this module is: a fiona that cannot load stops the
+buildings and nothing else (brief M3-01, M2-04's check).
 
 The rule, in order (`build_chunks`):
 - *Snapping:* every coordinate goes to the file's storage grid in 64-bit, E and N to 1 mm,
@@ -32,19 +34,22 @@ The file `buildings/<tile>.bin`: the chunk's vertices (x, y, z little-endian flo
 then its triangles (three little-endian uint32 indices into the chunk's vertices each), no
 header. Its description `buildings/<area>.json` lists the chunks; the manifest copies it
 verbatim into its `buildings` block. After writing, the step removes every other `*.bin`
-in `buildings/`, the chunks of an earlier build that this one does not list, and says how
-many (brief M2-07, M2 R1 G-06): an export would otherwise ship them.
+in `buildings/`, the chunks of an earlier build that this one does not list, and every
+`*.part` there, a write cut short (briefs M2-07, M3-01; M2 R1 G-06, M2 V1-P-06), and says
+how many: an export would otherwise ship them.
 
 The chunks must be the ones design computed: config/buildings.json holds the SHA-256 of
 every chunk, and the step compares the set of tiles and every chunk with it before it
 writes anything (lesson 38). Those values hold only for the world config and the lock
 entry the area's `computed_for` records (brief M2-07, M2 R1 P-02, I-01). The step and the
-manifest compare the world before any output, and the lock's entry before any output once
-the lock is shown to fit the datasets config (a lock that does not fit is refused by its
-own check, naming `lock buildings`); a difference names design's step, never this machine
-or this code. Every refusal is a BuildingsError naming the sheet and UUID, the file, or the
-command that fixes it (Hard Rule 2). Same inputs, same bytes: no times, no absolute paths,
-a fixed order everywhere (Hard Rule 5).
+manifest check in one order (brief M3-01): the world first, then the lock's fit
+(`lock.fit_problem`: the datasets config's collection and edition and exactly the area's
+sheets; a lock that does not fit is refused naming `lock buildings`), then the lock's
+entry, and only then the inputs and the block itself; a difference in the world or the
+entry names design's step, never this machine or this code. Every refusal is a
+BuildingsError naming the sheet and UUID, the file, or the command that fixes it (Hard
+Rule 2). Same inputs, same bytes: no times, no absolute paths, a fixed order everywhere
+(Hard Rule 5).
 """
 
 from __future__ import annotations
@@ -59,12 +64,10 @@ import zipfile
 from collections.abc import Callable
 from pathlib import Path
 
-import fiona.io
 import numpy as np
-from fiona.errors import FionaError
 
 from mattini.download import BUILDINGS, BUILDINGS_LOCK_COMMAND, PROVENANCE, area_sheets
-from mattini.lock import load_lock
+from mattini.lock import fit_problem, load_lock
 from mattini.terrain import (
     AREA_NAME,
     check_computed_for,
@@ -191,7 +194,12 @@ def read_sheet(data: bytes, sheet: str) -> list[dict]:
     snapped). A feature without a non-empty text UUID, or whose geometry is not a
     MultiPolygon Z of triangles (every polygon one ring of four points, the first equal to
     the last), is refused naming the sheet and the UUID.
+
+    fiona is imported here and nowhere else (brief M3-01): its wheel bundles its own GDAL,
+    which is loaded only when a sheet is read.
     """
+    import fiona.io
+    from fiona.errors import FionaError
 
     def fail(message: str) -> BuildingsError:
         return BuildingsError(f"sheet {sheet}: {message}")
@@ -443,9 +451,11 @@ def write_buildings(
 
     Then remove every other `*.bin` in `buildings/`: the chunks of an earlier build that
     the new description does not list, which the game never reads and an export would ship
-    (brief M2-07, M2 R1 G-06). Other files, the description among them, are kept. How many
-    were removed goes to `progress` (stderr on the command line). Returns the description,
-    which is what the `.json` holds.
+    (brief M2-07, M2 R1 G-06); and every `*.part` there, the files of a run cut short
+    between a write and its rename (brief M3-01, M2 V1-P-06). Other files, the description
+    among them, are kept; only this folder is cleaned. How many were removed goes to
+    `progress` (stderr on the command line). Returns the description, which is what the
+    `.json` holds.
     """
     say = progress or (lambda message: None)
     block = _describe(area, chunks, box, world_sha256, source)
@@ -463,6 +473,14 @@ def write_buildings(
         f"removed {len(stale)} chunk file{'' if len(stale) == 1 else 's'} of an earlier build "
         f"that {area}.json does not list from {buildings_dir}"
     )
+    leftovers = [path for path in sorted(buildings_dir.glob("*.part")) if path.is_file()]
+    for path in leftovers:
+        path.unlink()
+    if leftovers:
+        say(
+            f"removed {len(leftovers)} .part file{'' if len(leftovers) == 1 else 's'} left "
+            f"in {buildings_dir}"
+        )
     return block
 
 
@@ -528,10 +546,11 @@ def build_buildings(
     The area is the terrain config's one area (T-06). Every chunk's SHA-256, and the set of
     tiles, must equal the buildings config's `expected_sha256`; they are compared before
     anything is written, and a difference is a BuildingsError naming the tile and both
-    values (SPEC §8, lesson 38). Before any sheet is read, the area's `computed_for` must
-    name this world config (checked as soon as it is read) and the lock's entry (checked
-    once the lock is shown to pin exactly the area's sheets): each difference is its own
-    BuildingsError naming design's step (brief M2-07).
+    values (SPEC §8, lesson 38). Before any sheet is read, and before provenance.json is,
+    the checks come in this order: the area's `computed_for` must name this world config
+    (as soon as it is read), the lock must fit the datasets config and the area
+    (`lock.fit_problem`, a refusal naming `lock buildings`), and `computed_for` must name
+    the lock's entry; each difference is its own BuildingsError (briefs M2-07, M3-01).
     """
     say = progress or (lambda message: None)
     check_terrain_config(terrain_config)
@@ -553,15 +572,18 @@ def build_buildings(
     if BUILDINGS not in datasets:
         raise BuildingsError(f"the datasets config has no {BUILDINGS!r} dataset")
     dataset = datasets[BUILDINGS]
-    sheets = area_sheets(world, area)
-    raw_dir = Path(raw_root) / BUILDINGS / dataset["edition"]
-    listed = _provenance_sheets(raw_dir / PROVENANCE, dataset, sheets)
-    locked = _locked_sheets(lock, dataset, sheets)
+    problem = fit_problem(lock, datasets, world, area, BUILDINGS)
+    if problem:
+        raise BuildingsError(problem)
+    locked = lock["datasets"][BUILDINGS]["sheets"]
     problem = inputs_refusal(
         BUILDINGS_CONFIG_NAME, computed_for, BUILDINGS, lock["datasets"][BUILDINGS]
     )
     if problem:
         raise BuildingsError(f"area {area!r}: {problem}")
+    sheets = area_sheets(world, area)
+    raw_dir = Path(raw_root) / BUILDINGS / dataset["edition"]
+    listed = _provenance_sheets(raw_dir / PROVENANCE, dataset, sheets)
 
     features, ranges, source_sheets = [], [], []
     for sheet in sheets:
@@ -665,29 +687,6 @@ def _provenance_sheets(path: Path, dataset: dict, sheets: list[str]) -> dict[str
     return {entry["sheet"]: entry for entry in entries}
 
 
-def _locked_sheets(lock: dict, dataset: dict, sheets: list[str]) -> dict[str, dict]:
-    """The lock's sheet entries, once they are shown to be exactly the area's sheets (D7).
-
-    Exactly: the manifest checks a built block's sheets against the lock's, so a lock that
-    pins other sheets too would give buildings the manifest refuses.
-    """
-
-    def fail(message: str) -> BuildingsError:
-        return BuildingsError(f"the lock {message}; `{LOCK_COMMAND}` writes its buildings entry")
-
-    locked = lock.get("datasets", {}).get(BUILDINGS) if isinstance(lock, dict) else None
-    if not isinstance(locked, dict):
-        raise fail(f"has no {BUILDINGS!r} entry")
-    for key in ("collection", "edition"):
-        if locked.get(key) != dataset[key]:
-            raise fail(f"is for {key} {locked.get(key)!r}, the config pins {dataset[key]!r}")
-    entries = locked.get("sheets")
-    pinned = sorted(entries) if isinstance(entries, dict) else []
-    if pinned != sheets:
-        raise fail(f"pins the sheets {pinned}, the area needs {sheets}")
-    return entries
-
-
 def _read_sheet_file(path: Path, sheet: str) -> bytes:
     try:
         return path.read_bytes()
@@ -716,18 +715,20 @@ def built_buildings_block(
     path; a path is read only when buildings are built. `world` is the world config the
     manifest is written from, parsed from the bytes whose SHA-256 is `world_sha256`.
 
-    First the buildings config's `computed_for` is compared with the world config and,
-    when the lock's entry is for the datasets config's collection and edition, with that
-    entry (brief M2-07): a difference is a BuildingsError naming design's step, not the
-    rebuild, which would be refused for the same reason. A lock that does not fit is left
-    to the source check below, which refuses it naming `python -m mattini lock buildings`
-    (unless an earlier check of the block refuses first). Then a built description that
-    no longer matches is a BuildingsError naming `python -m mattini buildings` (SPEC §8):
-    key sets that are not exact, another world config, an `lv95_box` that is not the world
-    config's box for the area (as floats, like the terrain's; M2 R1 P-03), a `source` that
-    is not the datasets config's attribution, collection and edition and, in order, the
-    sheets the lock pins with their SHA-256s, a chunk file whose size or SHA-256 differs
-    from its entry, or chunks that are not the buildings config's.
+    First, in the step's order (brief M3-01): the buildings config's `computed_for` is
+    compared with the world config; then the lock must fit the datasets config and the
+    area (`lock.fit_problem`), or it is refused naming `python -m mattini lock buildings`
+    and no other command; then `computed_for` is compared with the lock's entry (brief
+    M2-07). A difference in the world or the entry is a BuildingsError naming design's
+    step, not the rebuild, which would be refused for the same reason. Then a built
+    description that no longer matches is a BuildingsError naming `python -m mattini
+    buildings` (SPEC §8): key sets that are not exact, another world config, an `lv95_box`
+    that is not the world config's box for the area (as floats, like the terrain's; M2 R1
+    P-03), a `source` that is not the datasets config's attribution, collection and edition
+    and, in order, the sheets the lock pins with their SHA-256s, a chunk file whose size or
+    SHA-256 differs from its entry, or chunks that are not the buildings config's. A world
+    config without the area, or a datasets config without swissBUILDINGS3D, has no lock to
+    fit: the block's own checks refuse it, naming the rebuild.
     """
     check_terrain_config(terrain_config)
     area = configured_area(terrain_config)
@@ -747,13 +748,11 @@ def built_buildings_block(
         raise BuildingsError(f"area {area!r}: {problem}")
     if not isinstance(lock, dict):
         lock = load_lock(lock)
-    entry = lock["datasets"].get(BUILDINGS)
-    dataset = datasets.get(BUILDINGS)
-    if (
-        entry is not None
-        and dataset is not None
-        and all(entry[key] == dataset[key] for key in ("collection", "edition"))
-    ):
+    if area in world.areas and BUILDINGS in datasets:
+        problem = fit_problem(lock, datasets, world, area, BUILDINGS)
+        if problem:
+            raise BuildingsError(problem)
+        entry = lock["datasets"][BUILDINGS]
         problem = inputs_refusal(BUILDINGS_CONFIG_NAME, settings["computed_for"], BUILDINGS, entry)
         if problem:
             raise BuildingsError(f"area {area!r}: {problem}")
@@ -822,8 +821,12 @@ def _check_box(found: object, world: World, area: str, fail) -> None:
         raise fail(f"lv95_box is {found!r}, the world config's area {area!r} is {box!r}")
 
 
-def _check_source(source: object, datasets: dict, lock: dict | Path | str, fail) -> None:
-    """Refuse a `source` that is not the datasets config's and, in order, the lock's sheets."""
+def _check_source(source: object, datasets: dict, lock: dict, fail) -> None:
+    """Refuse a `source` that is not the datasets config's and, in order, the lock's sheets.
+
+    `lock` is the parsed lock; once the datasets config has the dataset, its entry has been
+    shown to fit the config and the area (`lock.fit_problem`, in `built_buildings_block`).
+    """
     if not isinstance(source, dict) or set(source) != SOURCE_KEYS:
         raise fail(f"its source must have exactly the keys {sorted(SOURCE_KEYS)}")
     sheets = source["sheets"]
@@ -845,21 +848,8 @@ def _check_source(source: object, datasets: dict, lock: dict | Path | str, fail)
                 f"it was built from swissBUILDINGS3D {key} {source[key]!r}, the datasets "
                 f"config pins {dataset[key]!r}"
             )
-    if not isinstance(lock, dict):
-        lock = load_lock(lock)
-    locked = lock["datasets"].get(BUILDINGS)
-    if locked is None:
-        raise fail(f"the lock has no {BUILDINGS!r} entry (`{LOCK_COMMAND}` writes it)")
-    for key in ("collection", "edition"):
-        if locked[key] != dataset[key]:
-            raise fail(
-                f"the lock is for {key} {locked[key]!r}, the datasets config pins "
-                f"{dataset[key]!r} (`{LOCK_COMMAND}` writes it)"
-            )
-    pinned = [
-        {"sha256": locked["sheets"][sheet]["sha256"], "sheet": sheet}
-        for sheet in sorted(locked["sheets"])
-    ]
+    locked = lock["datasets"][BUILDINGS]["sheets"]
+    pinned = [{"sha256": locked[sheet]["sha256"], "sheet": sheet} for sheet in sorted(locked)]
     if sheets != pinned:
         raise fail(f"it was built from the sheets {sheets}, the lock pins {pinned}")
 

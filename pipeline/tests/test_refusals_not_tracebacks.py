@@ -1,4 +1,7 @@
-"""Refusals, not tracebacks, on the command line (brief M2-07, M2 R1 I-05; Hard Rule 2).
+"""Pinning tests for brief M3-01 (M2 V1-P-05): refusals, not tracebacks, on the command line.
+
+Design's full replacement of the file brief M2-07 wrote (M2 R1 I-05; Hard Rule 2), which
+it keeps whole, adding one case and the means to run it.
 
 The review found `lock buildings` and `download buildings` ending in a Python traceback
 (`KeyError: 'swissbuildings3d'`) when config/datasets.json lacks the dataset, and the sheet
@@ -10,6 +13,16 @@ anything reaches for the network. Every run must end with exit status 1, a
 `mattini: error:` line naming the file and no `Traceback`, and write nothing. The
 terrain's twin (a datasets config without swissalti3d) is the same class of defect and
 is checked the same way.
+
+Pinned decision (brief M3-01, V1-P-05): a `swissalti3d` entry without `resolution_m` is a
+refusal naming the datasets config and `resolution_m`, for each of the four commands that
+read it (`lock terrain`, `download terrain`, `terrain`, and `manifest` over a built
+terrain), which ended in `KeyError: 'resolution_m'`. The check lives in the datasets
+config's loader, `load_datasets`, which refuses an entry without a positive number of
+metres there (a DatasetsConfigError naming the file), and which brief M3-03 extends to its
+new datasets. So that case hands the commands a datasets FILE (`datasets_file`), read by
+the real loader and passed to `write_manifest` as its `datasets_path`, where the other
+cases hand them the parsed config: a check in the loader is reached only that way.
 
 Does NOT prove: that no other input ends in a traceback (these are the ones the review
 found and their twins).
@@ -23,16 +36,18 @@ import sys
 
 import pytest
 
+from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.manifest import write_manifest
 from mattini.terrain import TerrainError
 from mattini.world import REPO
 
 # Run in a process of its own: an uncaught exception prints a traceback on stderr there.
 DRIVER = """
-import json, sys
+import functools, json, sys
 from pathlib import Path
 import mattini.__main__ as cli
 from mattini import buildings, download, lock, terrain
+from mattini.datasets import load_datasets
 from mattini.world import load_world
 
 spec = json.loads(sys.argv[1])
@@ -51,6 +66,9 @@ if spec["buildings"] is not None:
     buildings.load_buildings_config = lambda: spec["buildings"]
 if spec["datasets"] is not None:
     cli.load_datasets = lambda: spec["datasets"]
+if spec["datasets_file"] is not None:  # read by the real loader, as config/datasets.json is
+    cli.load_datasets = lambda: load_datasets(spec["datasets_file"])
+    cli.write_manifest = functools.partial(cli.write_manifest, datasets_path=spec["datasets_file"])
 sys.exit(cli.main(spec["argv"]))
 """
 
@@ -61,7 +79,9 @@ BUILDINGS = json.loads((REPO / "config" / "buildings.json").read_text(encoding="
 LOCK = (REPO / "config" / "datasets.lock.json").read_bytes()
 
 
-def _run(tmp_path, argv, *, world=None, terrain=None, buildings=None, datasets=None):
+def _run(
+    tmp_path, argv, *, world=None, terrain=None, buildings=None, datasets=None, datasets_file=None
+):
     lock_path = tmp_path / "config" / "datasets.lock.json"
     lock_path.parent.mkdir(exist_ok=True)
     lock_path.write_bytes(LOCK)
@@ -72,6 +92,7 @@ def _run(tmp_path, argv, *, world=None, terrain=None, buildings=None, datasets=N
         "terrain": terrain,
         "buildings": buildings,
         "datasets": datasets,
+        "datasets_file": str(datasets_file) if datasets_file else None,
     }
     done = subprocess.run(  # the exit status is checked by _refused
         [sys.executable, "-c", DRIVER, json.dumps(spec)],
@@ -147,6 +168,54 @@ def test_manifest_over_a_built_terrain_without_swissalti3d_is_a_refusal(tmp_path
     for part in ("has no 'swissalti3d' dataset", "`python -m mattini terrain`"):
         assert part in message, (part, message)
     assert not (out / "manifest.json").exists()
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["lock", "terrain"],
+        ["download", "terrain", "--out", "raw"],
+        ["terrain", "--raw", "raw", "--out", "generated"],
+        ["manifest", "--out", "generated"],
+    ],
+    ids=["lock-terrain", "download-terrain", "terrain", "manifest"],
+)
+def test_a_swissalti3d_entry_without_resolution_m_is_a_refusal(tmp_path, argv):
+    """V1-P-05: each of the four ended in `KeyError: 'resolution_m'`. The datasets file is
+    config/datasets.json without that one key; `manifest` has a terrain to check (a stand-in
+    description, which it must not reach)."""
+    data = json.loads(json.dumps(DATASETS))
+    del data["datasets"]["swissalti3d"]["resolution_m"]
+    datasets_file = tmp_path / "config" / "datasets.json"
+    datasets_file.parent.mkdir(exist_ok=True)
+    datasets_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    ((area, _),) = TERRAIN["areas"].items()
+    (tmp_path / "generated" / "terrain").mkdir(parents=True)
+    (tmp_path / "generated" / "terrain" / f"{area}.json").write_text("{}\n", encoding="utf-8")
+    done = _run(tmp_path, argv, datasets_file=datasets_file)
+    _refused(done, "datasets.json", "resolution_m")
+    assert not (tmp_path / "raw").exists()
+    assert sorted(p.name for p in (tmp_path / "generated").iterdir()) == ["terrain"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [None, "0.5", 0, -0.5, True],
+    ids=["missing", "a-string", "zero", "negative", "a-boolean"],
+)
+def test_the_datasets_loader_refuses_swissalti3d_without_a_resolution(tmp_path, value):
+    data = json.loads(json.dumps(DATASETS))
+    if value is None:
+        del data["datasets"]["swissalti3d"]["resolution_m"]
+    else:
+        data["datasets"]["swissalti3d"]["resolution_m"] = value
+    path = tmp_path / "datasets.json"
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    with pytest.raises(DatasetsConfigError) as refused:
+        load_datasets(path)
+    message = str(refused.value)
+    for part in (str(path), "swissalti3d", "resolution_m"):
+        assert part in message, (part, message)
 
 
 EAST_EDGE = (2829000.0, 2829950.0, 1167500.0, 1168500.0)  # the review's box, 50 m from it

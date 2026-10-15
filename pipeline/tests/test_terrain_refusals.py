@@ -305,12 +305,14 @@ def test_a_description_that_is_not_json_is_refused(tmp_path):
         _manifest(out)
 
 
-def test_terrain_from_another_resolution_is_refused(tmp_path):
+def test_a_datasets_config_with_another_resolution_is_refused_naming_the_lock(tmp_path):
+    """The lock no longer fits the datasets config (M3-01): `lock terrain` is the command
+    that helps. The block's own resolution is edited in test_terrain_manifest_source.py."""
     datasets = json.loads((FIXTURE / "datasets.json").read_text(encoding="utf-8"))
     datasets["datasets"]["swissalti3d"]["resolution_m"] = 2.0
     path = tmp_path / "datasets.json"
     path.write_text(json.dumps(datasets), encoding="utf-8")
-    with pytest.raises(TerrainError, match=TERRAIN_COMMAND):
+    with pytest.raises(TerrainError, match=LOCK_COMMAND):
         _manifest(_fixture_out(tmp_path), datasets=path)
 
 

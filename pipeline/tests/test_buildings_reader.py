@@ -1,4 +1,7 @@
-"""`read_sheet` beyond its pinned tests (brief M2-04; docs/SPEC.md §8 *Reading*).
+"""Pinning tests for brief M3-01 (M2-09 Findings 8): `read_sheet` beyond M2-04's pinned tests.
+
+Design's full replacement of the file brief M2-04's builder wrote (docs/SPEC.md §8
+*Reading*); only the comparison of the triangles and the triangle written changed.
 
 The pinned tests (test_buildings_read.py) read one synthetic building and refuse a quad, a
 missing UUID and bytes that are not a zip. These add: the features come in reading order
@@ -6,6 +9,12 @@ with their UUID and OBJEKTART, and a zip that is not one FileGDB with a `Buildin
 layer, or a feature with no geometry, is refused naming the sheet (and the UUID where
 there is one). The files are FileGDBs that fiona writes (MultiPolygon Z, see
 synthetic_sheets.py).
+
+Pinned decision (brief M3-01): each triangle is compared in order, no longer as a set of
+points (a reader keeping each ring's closing point, or dropping its first point, passed
+the set). The triangle is written clockwise seen from above, which GDAL's writer keeps as
+it is (it re-winds the others, keeping the first point; measured with fiona 1.10.1), so
+it comes back exactly as written.
 
 Does NOT prove: that swisstopo's own MultiPatch reads the same way (the real run, checked
 against design's chunk hashes).
@@ -30,7 +39,8 @@ A, B, C = (
 
 
 def _building(uuid, objektart="Gebaeude Einzelhaus", h=0.0):
-    triangle = tuple((e, n, z + h) for e, n, z in (A, B, C))
+    """One triangle, (A, C, B): clockwise seen from above, as GDAL stores a ring."""
+    triangle = tuple((e, n, z + h) for e, n, z in (A, C, B))
     return {"uuid": uuid, "objektart": objektart, "triangles": [triangle]}
 
 
@@ -42,11 +52,9 @@ def test_features_come_in_reading_order_with_their_attributes(tmp_path):
         ("{A}", "Gebaeude Einzelhaus"),
         ("{M}", "Im Bau"),
     ]
-    # the points as written; GDAL's writer re-winds a ring it stores (clockwise seen from
-    # above, Esri's outer rings, measured), so the order within the triangle is its own
-    assert [[set(t) for t in f["triangles"]] for f in features] == [
-        [set(t) for t in w["triangles"]] for w in written
-    ]
+    # the triangles in order, each its points in ring order, as written (clockwise seen
+    # from above, which GDAL's writer keeps; it re-winds the others, measured)
+    assert [f["triangles"] for f in features] == [w["triangles"] for w in written]
     assert all(set(f) == {"uuid", "objektart", "triangles"} for f in features)
 
 

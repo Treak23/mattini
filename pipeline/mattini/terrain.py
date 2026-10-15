@@ -21,12 +21,14 @@ its box, rows and columns against the world config's area at the spacing (M2-06)
 The expected values hold only for the world config and the inputs design computed them
 for, which the area records as `computed_for` (brief M2-07, M2 R1 P-02, I-01): the SHA-256
 of config/world.json's bytes and of the lock's `swissalti3d` entry rendered canonically
-(`lock.entry_sha256`). The step and the manifest compare the world before any output, and
-the lock's entry before any output once the lock is shown to fit the datasets config and
-the area (a lock that does not fit is refused by its own check, naming `lock terrain`); a
-difference is a refusal that names design's step, since no command of the owner's can
-make the heights match an expected value computed for another world or other inputs. The
-buildings share this check (`world_refusal`, `inputs_refusal`).
+(`lock.entry_sha256`). The step and the manifest check in one order (brief M3-01): the
+world first, then the lock's fit (`lock.fit_problem`: the datasets config's collection,
+edition and resolution and exactly the area's tiles; a lock that does not fit is refused
+naming `lock terrain`), then the lock's entry, and only then the inputs and the block
+itself. A difference in the world or the entry is a refusal that names design's step, since
+no command of the owner's can make the heights match an expected value computed for
+another world or other inputs. The buildings share this order (`world_refusal`,
+`inputs_refusal`).
 
 The inputs are the tiles `provenance.json` lists (D9), never the folder's listing; every
 file's SHA-256 must equal its provenance entry and the tile lock's (D7), and every tile
@@ -36,7 +38,9 @@ Rule 2).
 
 The file: little-endian float32, row-major, rows north to south (+z), columns west to
 east (+x), no header, `terrain/<area>.f32`; its description `terrain/<area>.json`, which
-the manifest copies verbatim. Only the owner's axes (x = +e, y = +h, z = −n) are
+the manifest copies verbatim. After the files are written, every `*.part` left in
+`terrain/` by a run that was cut short is removed (brief M3-01, M2 V1-P-06): an export
+would ship it. Only the owner's axes (x = +e, y = +h, z = −n) are
 supported: another mapping would place these rows and columns wrongly (Hard Rule 4).
 """
 
@@ -55,7 +59,7 @@ from rasterio.errors import RasterioError
 from rasterio.io import MemoryFile
 
 from mattini.download import DATASET, PROVENANCE, area_tiles, dataset_of
-from mattini.lock import LOCK_PATH, entry_sha256, load_lock
+from mattini.lock import LOCK_PATH, entry_sha256, fit_problem, load_lock
 from mattini.world import REPO, SOURCE_AXES, World, parse_world, read_config_bytes
 
 TERRAIN_CONFIG_PATH = REPO / "config" / "terrain.json"
@@ -73,7 +77,6 @@ TILE_PIXELS = round(TILE_M / SOURCE_M)
 TILE_EPSG = 2056
 TERRAIN_COMMAND = "python -m mattini terrain"
 DOWNLOAD_COMMAND = "python -m mattini download terrain"
-LOCK_COMMAND = "python -m mattini lock terrain"
 # World.mapping of x = +e, y = +h, z = -n: (sign, source axis) per game axis
 OWNER_AXES = tuple(
     (sign, SOURCE_AXES.index(axis)) for sign, axis in ((1.0, "e"), (1.0, "h"), (-1.0, "n"))
@@ -290,7 +293,8 @@ def write_terrain(
 ) -> dict:
     """Write `terrain/<area>.f32` (through a `.part` rename), then `terrain/<area>.json`.
 
-    Returns the description, which is what the `.json` holds.
+    Then remove every `*.part` in `terrain/`, whoever left it (`_write_files`). Returns the
+    description, which is what the `.json` holds.
     """
     data, block = _describe(area, heights, box, spacing_m, world_sha256, source)
     _write_files(out_dir, data, block)
@@ -327,12 +331,21 @@ def _describe(
     return data, block
 
 
-def _write_files(out_dir: Path | str, data: bytes, block: dict) -> None:
-    """Write `terrain/<area>.f32` (through a `.part` rename), then `terrain/<area>.json`."""
+def _write_files(out_dir: Path | str, data: bytes, block: dict) -> int:
+    """Write `terrain/<area>.f32` (through a `.part` rename), then `terrain/<area>.json`.
+
+    Then remove every `*.part` left in `terrain/`, the files of a run cut short between a
+    write and its rename, which an export would ship (brief M3-01, M2 V1-P-06); only this
+    folder is cleaned. Returns how many were removed.
+    """
     terrain_dir = Path(out_dir) / "terrain"
     terrain_dir.mkdir(parents=True, exist_ok=True)
     _replace(terrain_dir / f"{block['area']}.f32", data)
     _replace(terrain_dir / f"{block['area']}.json", _json_bytes(block))
+    leftovers = [path for path in sorted(terrain_dir.glob("*.part")) if path.is_file()]
+    for path in leftovers:
+        path.unlink()
+    return len(leftovers)
 
 
 def build_terrain(
@@ -349,10 +362,11 @@ def build_terrain(
 
     The heights' SHA-256 must equal the terrain config's `expected_sha256` for the spacing;
     it is compared before anything is written, and a difference is a TerrainError naming
-    both values (SPEC §8, lesson 38). Before any tile is read, the area's `computed_for`
-    must name this world config (checked as soon as it is read) and the lock's entry
-    (checked once the lock is shown to fit the datasets config and the area): each
-    difference is its own TerrainError naming design's step (brief M2-07).
+    both values (SPEC §8, lesson 38). Before any tile is read, and before provenance.json is,
+    the checks come in this order: the area's `computed_for` must name this world config
+    (as soon as it is read), the lock must fit the datasets config and the area
+    (`lock.fit_problem`, a refusal naming `lock terrain`), and `computed_for` must name the
+    lock's entry; each difference is its own TerrainError (brief M2-07, M3-01).
     """
     say = progress or (lambda message: None)
     if world.mapping != OWNER_AXES:
@@ -389,13 +403,16 @@ def build_terrain(
             f"the terrain is built from {SOURCE_M} m swissALTI3D pixels, the datasets config "
             f"pins resolution_m {alti['resolution_m']!r}"
         )
-    tiles = area_tiles(world, area)
-    raw_dir = Path(raw_root) / DATASET / alti["edition"]
-    listed = _provenance_tiles(raw_dir / PROVENANCE, alti, tiles)
-    locked = _locked_tiles(lock, alti, tiles)
+    problem = fit_problem(lock, datasets, world, area, DATASET)
+    if problem:
+        raise TerrainError(problem)
+    locked = lock["datasets"][DATASET]["tiles"]
     problem = inputs_refusal(TERRAIN_CONFIG_NAME, computed_for, DATASET, lock["datasets"][DATASET])
     if problem:
         raise TerrainError(f"area {area!r}: {problem}")
+    tiles = area_tiles(world, area)
+    raw_dir = Path(raw_root) / DATASET / alti["edition"]
+    listed = _provenance_tiles(raw_dir / PROVENANCE, alti, tiles)
 
     height, width = _whole_count(n_max - n_min, SOURCE_M), _whole_count(e_max - e_min, SOURCE_M)
     mosaic = np.full((height, width), np.nan, dtype=np.float32)
@@ -444,8 +461,10 @@ def build_terrain(
             f"other heights than the design's; nothing was written"
         )
     say(f"the heights have the SHA-256 {TERRAIN_CONFIG_NAME} expects, {expected}")
-    _write_files(out_dir, data, block)
+    removed = _write_files(out_dir, data, block)
     say(f"wrote {Path(out_dir) / block['file']} ({block['columns']} × {block['rows']} vertices)")
+    if removed:
+        say(f"removed {removed} .part file{'' if removed == 1 else 's'} left in terrain/")
     return block
 
 
@@ -470,12 +489,14 @@ def built_terrain_block(
     written from, parsed from the bytes whose SHA-256 is `world_sha256`. The lock is read
     only when a terrain is built.
 
-    Before any of that, the terrain config's `computed_for` is compared with the world
-    config and, when the lock fits the datasets config and the area, with the lock's entry
-    (brief M2-07): a difference is a TerrainError naming design's step, not the rebuild,
-    which would be refused for the same reason. A lock that does not fit is left to the
-    lock check at the end, which refuses it naming `python -m mattini lock terrain` (unless
-    an earlier check of the block refuses first).
+    Before any of that, in the step's order (brief M3-01): the terrain config's
+    `computed_for` is compared with the world config; then the lock must fit the datasets
+    config and the area (`lock.fit_problem`), or it is refused naming `python -m mattini
+    lock terrain` and no other command; then `computed_for` is compared with the lock's
+    entry (brief M2-07). A difference in the world or the entry is a TerrainError naming
+    design's step, not the rebuild, which would be refused for the same reason. A world
+    config without the area, or a datasets config without swissALTI3D, has no lock to fit:
+    the block's own checks refuse it, naming the rebuild.
     """
     check_terrain_config(terrain_config)
     area = configured_area(terrain_config)
@@ -491,11 +512,10 @@ def built_terrain_block(
     if problem:
         raise TerrainError(f"area {area!r}: {problem}")
     lock = load_lock(lock_path)
-    if (
-        area in world.areas
-        and DATASET in datasets
-        and _lock_problem(lock, datasets[DATASET], area_tiles(world, area)) is None
-    ):
+    if area in world.areas and DATASET in datasets:
+        problem = fit_problem(lock, datasets, world, area, DATASET)
+        if problem:
+            raise TerrainError(problem)
         entry = lock["datasets"][DATASET]
         problem = inputs_refusal(TERRAIN_CONFIG_NAME, settings["computed_for"], DATASET, entry)
         if problem:
@@ -568,7 +588,7 @@ def built_terrain_block(
             f"{spacing_key(settings['spacing_m'])} m"
         )
     tiles = area_tiles(world, area)
-    locked = _locked_tiles(lock, alti, tiles)
+    locked = lock["datasets"][DATASET]["tiles"]  # the lock fits: checked above
     built = [entry["tile"] for entry in built_tiles]
     if built != tiles:
         raise fail(f"it was built from the tiles {built}, the area needs {tiles}")
@@ -671,29 +691,6 @@ def _provenance_tiles(path: Path, alti: dict, tiles: list[str]) -> dict[str, dic
         if not isinstance(sha256, str):
             raise fail(f"tile {entry['tile']}: no sha256")
     return {entry["tile"]: entry for entry in entries}
-
-
-def _locked_tiles(lock: dict, alti: dict, tiles: list[str]) -> dict[str, dict]:
-    """The lock's entries for the area's tiles, once it is shown to be for the config (D7)."""
-    problem = _lock_problem(lock, alti, tiles)
-    if problem:
-        raise TerrainError(f"the tile lock {problem}; `{LOCK_COMMAND}` writes the lock")
-    return lock["datasets"][DATASET]["tiles"]
-
-
-def _lock_problem(lock: dict, alti: dict, tiles: list[str]) -> str | None:
-    """Why the lock does not fit the datasets config's swissALTI3D and the tiles, or None."""
-    locked = lock.get("datasets", {}).get(DATASET) if isinstance(lock, dict) else None
-    if not isinstance(locked, dict):
-        return f"has no {DATASET!r} entry"
-    for key in ("collection", "edition", "resolution_m"):
-        if locked.get(key) != alti[key]:
-            return f"is for {key} {locked.get(key)!r}, the config pins {alti[key]!r}"
-    entries = locked.get("tiles")
-    missing = [tile for tile in tiles if not isinstance(entries, dict) or tile not in entries]
-    if missing:
-        return f"pins no checksum for the tiles {missing}"
-    return None
 
 
 def _place_tile(mosaic: np.ndarray, box: Box, tile: str, path: Path, raw: bytes) -> None:

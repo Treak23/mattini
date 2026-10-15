@@ -29,6 +29,7 @@ REPO = Path(__file__).resolve().parents[2]
 FIXTURE = REPO / "tests" / "shared" / "terrain_fixture"
 GENERATED = FIXTURE / "generated"
 TERRAIN_COMMAND = "python -m mattini terrain"
+LOCK_COMMAND = "python -m mattini lock terrain"
 # M2-04: the M1-03 bytes with `  "buildings": null,` added
 MANIFEST_WITHOUT_TERRAIN_SHA256 = "ba8383ffd4e67eeafc456fb24a00a6c57cad9d5c03bf4214049969642dd9aabd"
 
@@ -81,7 +82,7 @@ def test_a_built_terrain_is_copied_verbatim(tmp_path):
 def test_terrain_built_for_another_world_is_refused(tmp_path):
     """Design has recomputed for the changed world (the config records it, M2-07): the old
     terrain is refused, naming `terrain`. Without design's step the refusal names design's
-    (test_expected_inputs_steps.py)."""
+    (test_computed_for_terrain.py)."""
     world = _copy_with(tmp_path, "world.json", lambda d: d.update(height_offset_m=900.0))
     lock = json.loads((FIXTURE / "datasets.lock.json").read_text(encoding="utf-8"))
     config = recorded(
@@ -106,11 +107,13 @@ def test_terrain_built_at_another_spacing_is_refused(tmp_path):
         _write(_fixture_out(tmp_path), terrain=terrain)
 
 
-def test_terrain_from_another_edition_is_refused(tmp_path):
+def test_a_datasets_config_with_another_edition_is_refused_naming_the_lock(tmp_path):
+    """The lock no longer fits the datasets config (M3-01): `lock terrain` is the command
+    that helps. The block's own edition is edited in test_terrain_manifest_source.py."""
     datasets = _copy_with(
         tmp_path, "datasets.json", lambda d: d["datasets"]["swissalti3d"].update(edition="2019")
     )
-    with pytest.raises(TerrainError, match=TERRAIN_COMMAND):
+    with pytest.raises(TerrainError, match=LOCK_COMMAND):
         write_manifest(
             _fixture_out(tmp_path),
             FIXTURE / "world.json",

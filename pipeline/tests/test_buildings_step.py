@@ -151,16 +151,18 @@ def test_a_build_removes_the_chunks_an_earlier_build_left(case):
 
     An earlier build's chunks in `buildings/` (here a village tile and a tile of the
     fixture's own area the new build does not fill), a stray file that is not a chunk and
-    a chunk-like name that is not `*.bin`: the build removes the two chunks, keeps the rest
-    and the description, and says how many it removed. Harm: every file in
-    assets/generated/ ships in an export, so an earlier build's chunks grow the .pck (M2 R1
-    measured 1 MiB of 5.2 MiB left under GitHub's limit) though the game never reads them.
+    the `.part` of a write cut short: the build removes the two chunks and, since M3-01
+    (M2 V1-P-06), the `.part`; it keeps the stray file and the description, and says how
+    many of each it removed. Harm: every file in assets/generated/ ships in an export, so
+    an earlier build's chunks grow the .pck (M2 R1 measured 1 MiB of 5.2 MiB left under
+    GitHub's limit) though the game never reads them.
     """
     buildings_dir = case["out"] / "buildings"
     buildings_dir.mkdir(parents=True)
     stale = {"2622-1095.bin": b"\0" * 1024, "2651-1149.bin": b"\1" * 24}
-    kept = {"notes.txt": b"not a chunk", "2622-1095.bin.part": b"an interrupted write"}
-    for name, data in {**stale, **kept}.items():
+    kept = {"notes.txt": b"not a chunk"}
+    part = {"2622-1095.bin.part": b"an interrupted write"}
+    for name, data in {**stale, **kept, **part}.items():
         (buildings_dir / name).write_bytes(data)
 
     def build():
@@ -187,9 +189,12 @@ def test_a_build_removes_the_chunks_an_earlier_build_left(case):
     for path in sorted((GENERATED / "buildings").iterdir()):
         assert (buildings_dir / path.name).read_bytes() == path.read_bytes(), path
     where = f"of an earlier build that fixture.json does not list from {buildings_dir}"
-    assert removed == [f"removed 2 chunk files {where}"]
+    assert removed == [
+        f"removed 2 chunk files {where}",
+        f"removed 1 .part file left in {buildings_dir}",
+    ]
 
-    _, removed = build()  # nothing left to remove, and it says so
+    _, removed = build()  # nothing left to remove, and it says so for the chunks
     assert removed == [f"removed 0 chunk files {where}"]
     assert sorted(p.name for p in buildings_dir.iterdir()) == after
 

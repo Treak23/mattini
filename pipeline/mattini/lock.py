@@ -19,6 +19,12 @@ lock is a LockError naming the file (Hard Rule 2).
 The expected values in config/terrain.json and config/buildings.json record the inputs
 they were computed from as `entry_sha256` of the dataset's entry (brief M2-07, SPEC §8):
 the entry rendered canonically, so the lock file's own formatting does not count.
+
+Whether a lock *fits* the configs has one home, `fit_problem` (brief M3-01, M2 V1-P-01):
+the entry is for the datasets config's collection, edition and (swissALTI3D) resolution and
+pins exactly the area's tiles or map sheets, no more and no fewer. `download`, the steps and
+`manifest` all ask it, so each refuses a lock that does not fit with the same words, naming
+`python -m mattini lock <dataset>` and no other command.
 """
 
 from __future__ import annotations
@@ -29,6 +35,8 @@ import json
 import math
 import os
 import re
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from mattini import download
@@ -91,6 +99,71 @@ def buildings_entry(
             for sheet in download.published_sheets(world, datasets, fetch_json, area=area)
         },
     }
+
+
+@dataclass(frozen=True)
+class _Fit:
+    """What `fit_problem` compares for one dataset."""
+
+    keys: tuple[str, ...]  # the entry's keys that must equal the datasets config's
+    files: str  # the entry's object of files: "tiles" or "sheets"
+    ids: Callable  # (world, area) -> the ids the area needs, in the order messages list them
+    command: str  # the lock command that writes the entry
+
+
+_FITS = {
+    download.DATASET: _Fit(
+        ("collection", "edition", "resolution_m"), "tiles", download.area_tiles, LOCK_COMMAND
+    ),
+    download.BUILDINGS: _Fit(
+        ("collection", "edition"), "sheets", download.area_sheets, download.BUILDINGS_LOCK_COMMAND
+    ),
+}
+
+
+def fit_problem(lock: object, datasets: dict, world: World, area: str, dataset: str) -> str | None:
+    """Why the lock's entry for `dataset` does not fit the configs and `area`, or None.
+
+    It fits when it exists, is for the datasets config's collection, edition and (for
+    swissalti3d) resolution, and pins exactly the tiles or map sheets the area needs
+    (`download.area_tiles`, `download.area_sheets`), none missing and none beside them: a
+    lock that pins others too would download and then be refused by the step and by
+    `manifest` (brief M3-01, M2 R1 I-04, M2 V1-P-01, V1-P-02, V1-P-07). The text is the
+    whole refusal for the caller to raise in its own error class; it names the area and the
+    lock command that fixes it, `python -m mattini lock <x>`, and no other command. A
+    datasets config without `dataset` is a DownloadError naming config/datasets.json
+    (`download.dataset_of`); an area the sheet grid cannot place is one too.
+    """
+    if dataset not in _FITS:
+        raise ValueError(f"no fit rule for dataset {dataset!r}: the lock knows {sorted(_FITS)}")
+    fit = _FITS[dataset]
+    config = download.dataset_of(datasets, dataset)
+
+    def problem(message: str) -> str:
+        return (
+            f"the lock {message} (area {area!r}); `{fit.command}` writes the lock's "
+            f"{dataset} entry for the config"
+        )
+
+    locked = lock.get("datasets") if isinstance(lock, dict) else None
+    entry = locked.get(dataset) if isinstance(locked, dict) else None
+    if not isinstance(entry, dict):
+        return problem(f"has no {dataset!r} entry")
+    for key in fit.keys:
+        if entry.get(key) != config[key]:
+            return problem(
+                f"is for {dataset} {key} {entry.get(key)!r}, the config pins {config[key]!r}"
+            )
+    pinned = entry.get(fit.files)
+    if not isinstance(pinned, dict):
+        return problem(f"has no {fit.files}")
+    needed = fit.ids(world, area)
+    missing = [part for part in needed if part not in pinned]
+    if missing:
+        return problem(f"pins no checksum for the {fit.files} {missing} of the area")
+    if set(pinned) != set(needed):
+        return problem(f"pins the {fit.files} {sorted(pinned)}, the area needs exactly {needed}")
+    return None
 
 
 def entry_sha256(entry: dict) -> str:

@@ -2,13 +2,17 @@
 
 docs/SPEC.md §5. Every dataset names its STAC collection, a pinned edition and the credit
 it requires; the pipeline never asks for "the latest" edition (Hard Rule 5), so an edition
-must be a year. The loader refuses a malformed config with a DatasetsConfigError whose
-message names the file (Hard Rule 2).
+must be a year. A dataset the pipeline reads at a resolution (`RESOLUTION_DATASETS`:
+swissALTI3D) must name it, `resolution_m`, a positive number of metres: every command that
+reads the config would otherwise end in a KeyError (brief M3-01, M2 V1-P-05). The loader
+refuses a malformed config with a DatasetsConfigError whose message names the file (Hard
+Rule 2).
 """
 
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -20,6 +24,7 @@ SCHEMA = 1
 TOP_LEVEL_KEYS = {"schema", "terms", "datasets"}
 REQUIRED_KEYS = ("collection", "edition", "attribution")
 EDITION = re.compile(r"[0-9]{4}")
+RESOLUTION_DATASETS = ("swissalti3d",)  # the datasets whose entry must carry `resolution_m`
 
 
 class DatasetsConfigError(ValueError):
@@ -59,4 +64,13 @@ def load_datasets(path: Path | str = DEFAULT_PATH) -> dict:
                 f"dataset {name!r}: edition must be a pinned year like '2024', "
                 f"found {dataset['edition']!r}"
             )
+        if name in RESOLUTION_DATASETS:
+            resolution = dataset.get("resolution_m")
+            if type(resolution) not in (int, float) or not (
+                math.isfinite(resolution) and resolution > 0
+            ):
+                raise fail(
+                    f"dataset {name!r}: resolution_m must be a positive number of metres, "
+                    f"found {resolution!r}"
+                )
     return datasets

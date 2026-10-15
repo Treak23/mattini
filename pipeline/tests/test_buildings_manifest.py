@@ -14,10 +14,16 @@ with exact keys (M2 R1 P-03); and a test that changes the world or the lock to r
 checks records the change in the buildings config (`_adopted`), since a config computed
 for another world or lock entry is refused first, naming design's step.
 
+Since M3-01 (M2 V1-P-01, V1-P-07) a lock that does not fit the datasets config and pin
+exactly the area's sheets is refused before any check of the block, naming
+`python -m mattini lock buildings` (test_lock_fit.py pins the order against the step's);
+so the cases that reach the source's and the sheets' checks change the block, or the area.
+
 Does NOT prove: that the game reads the block (M2-05); that the real village's block is
 accepted (the real run writes the manifest after the step, Findings).
 """
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -33,6 +39,7 @@ REPO = Path(__file__).resolve().parents[2]
 FIXTURE = REPO / "tests" / "shared" / "buildings_fixture"
 GENERATED = FIXTURE / "generated"
 BUILDINGS_COMMAND = "python -m mattini buildings"
+LOCK_COMMAND = "python -m mattini lock buildings"
 TERRAIN_FIXTURE_LOCK = REPO / "tests" / "shared" / "terrain_fixture" / "datasets.lock.json"
 
 
@@ -75,8 +82,8 @@ def _edit_description(out, change) -> None:
     path.write_text(json.dumps(block, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def _refused(out, **changes) -> str:
-    with pytest.raises(BuildingsError, match=BUILDINGS_COMMAND) as refusal:
+def _refused(out, command=BUILDINGS_COMMAND, **changes) -> str:
+    with pytest.raises(BuildingsError, match=command) as refusal:
         _write(out, **changes)
     assert not (out / "manifest.json").exists(), "a refusal must write nothing"
     return str(refusal.value)
@@ -141,8 +148,26 @@ def test_key_sets_that_are_not_exact_are_refused(tmp_path, change):
         lambda b: b["chunks"][0].update(vertices=b["chunks"][0]["vertices"] + 1),
         lambda b: b["chunks"][0].update(sha256="0" * 64),
         lambda b: b["source"].update(dataset="swissalti3d"),
+        lambda b: b["source"].update(attribution="© someone"),
+        lambda b: b["source"].update(collection="ch.other"),
+        lambda b: b["source"].update(edition="2019"),
+        lambda b: b["source"]["sheets"][0].update(sheet="1249-41"),
     ],
-    ids=["area", "format", "world", "order", "file", "tile", "size", "sha256", "dataset"],
+    ids=[
+        "area",
+        "format",
+        "world",
+        "order",
+        "file",
+        "tile",
+        "size",
+        "sha256",
+        "dataset",
+        "source-attribution",
+        "source-collection",
+        "source-edition",
+        "source-sheet",
+    ],
 )
 def test_a_description_that_does_not_match_is_refused(tmp_path, change):
     out = _out(tmp_path)
@@ -224,7 +249,7 @@ def _adopted(tmp_path, world: Path = FIXTURE / "world.json", lock: Path | None =
 
 def test_buildings_built_for_another_world_are_refused(tmp_path):
     """Design has recomputed for the changed world: the old block is refused, naming the
-    rebuild. Without design's step the refusal names design's (test_expected_inputs_steps)."""
+    rebuild. Without design's step the refusal names design's (test_computed_for_buildings)."""
     world = _copy_with(tmp_path, FIXTURE / "world.json", lambda d: d.update(height_offset_m=0.0))
     message = _refused(
         _out(tmp_path), config_path=world, buildings_config_path=_adopted(tmp_path, world)
@@ -232,15 +257,22 @@ def test_buildings_built_for_another_world_are_refused(tmp_path):
     assert "built for the world config" in message
 
 
-@pytest.mark.parametrize("key", ["attribution", "collection", "edition"])
-def test_a_source_that_is_not_the_datasets_config_s_is_refused(tmp_path, key):
+@pytest.mark.parametrize(
+    ("key", "command"),
+    [("attribution", BUILDINGS_COMMAND), ("collection", LOCK_COMMAND), ("edition", LOCK_COMMAND)],
+)
+def test_a_datasets_config_that_is_not_the_source_s_is_refused(tmp_path, key, command):
+    """The datasets config changed under a built block. The attribution is checked against
+    the block's source; the collection and the edition are the lock's to match first (M3-01),
+    so the refusal names `lock buildings`. The block's own source values are edited in
+    test_a_description_that_does_not_match_is_refused."""
     value = {"attribution": "© someone", "collection": "ch.other", "edition": "2019"}[key]
     datasets = _copy_with(
         tmp_path,
         FIXTURE / "datasets.json",
         lambda d: d["datasets"]["swissbuildings3d"].update({key: value}),
     )
-    message = _refused(_out(tmp_path), datasets_path=datasets)
+    message = _refused(_out(tmp_path), command, datasets_path=datasets)
     assert key in message
 
 
@@ -250,39 +282,64 @@ def _lock_with(tmp_path, change) -> Path:
     return write_lock(data, tmp_path / "datasets.lock.json")
 
 
+def test_a_sheet_whose_sha256_is_not_the_lock_s_is_refused(tmp_path):
+    """The lock re-pinned a sheet and adopted by design, the buildings not rebuilt since."""
+    lock = _lock_with(tmp_path, lambda e: e["sheets"]["1249-42"].update(sha256="ab" * 32))
+    message = _refused(
+        _out(tmp_path), lock_path=lock, buildings_config_path=_adopted(tmp_path, lock=lock)
+    )
+    assert "ab" * 32 in message
+
+
 @pytest.mark.parametrize(
     "change",
     [
-        lambda e: e["sheets"]["1249-42"].update(sha256="ab" * 32),
         lambda e: e["sheets"].update({"1249-41": e["sheets"]["1249-42"]}),
         lambda e: e.update(sheets={"1249-41": e["sheets"]["1249-42"]}),
         lambda e: e.update(edition="2019"),
     ],
-    ids=["sha256", "another-sheet", "other-sheet", "edition"],
+    ids=["another-sheet", "other-sheet", "edition"],
 )
-def test_sheets_that_are_not_the_lock_s_are_refused(tmp_path, change):
-    """The lock changed and adopted by design, the buildings not rebuilt since."""
-    lock = _lock_with(tmp_path, change)
-    _refused(_out(tmp_path), lock_path=lock, buildings_config_path=_adopted(tmp_path, lock=lock))
+def test_a_lock_that_does_not_fit_the_area_is_refused_naming_lock_buildings(tmp_path, change):
+    """An extra sheet, another sheet or another edition, even where design adopted the lock:
+    the fit is checked before the block (M3-01)."""
+    data = json.loads((FIXTURE / "datasets.lock.json").read_text(encoding="utf-8"))
+    change(data["datasets"]["swissbuildings3d"])
+    lock = tmp_path / "datasets.lock.json"
+    lock.write_text(json.dumps(data, indent=2), encoding="utf-8")  # as a hand edit leaves it
+    _refused(_out(tmp_path), LOCK_COMMAND, lock_path=lock, buildings_config_path=_adopted(tmp_path))
 
 
 def test_the_sheets_must_come_in_the_lock_s_order(tmp_path):
+    """An area whose box reaches 1249-41 as well as 1249-42, so that the lock pins both."""
     out = _out(tmp_path)
+    world = _copy_with(
+        tmp_path,
+        FIXTURE / "world.json",
+        lambda d: d["areas"]["fixture"].update(e_min=2650500.0),
+    )
     lock = _lock_with(tmp_path, lambda e: e["sheets"].update({"1249-41": e["sheets"]["1249-42"]}))
-    config = _adopted(tmp_path, lock=lock)
+    config = _adopted(tmp_path, world, lock)
     sheets = json.loads(lock.read_bytes())["datasets"]["swissbuildings3d"]["sheets"]
     in_order = [{"sha256": sheets[s]["sha256"], "sheet": s} for s in ("1249-41", "1249-42")]
-    _edit_description(out, lambda b: b["source"].update(sheets=in_order))
-    written = json.loads(_write(out, lock_path=lock, buildings_config_path=config).read_bytes())
+
+    def built_for_it(block):
+        block["source"].update(sheets=in_order)
+        block["lv95_box"].update(e_min=2650500.0)
+        block.update(world_sha256=hashlib.sha256(world.read_bytes()).hexdigest())
+
+    _edit_description(out, built_for_it)
+    paths = {"config_path": world, "lock_path": lock, "buildings_config_path": config}
+    written = json.loads(_write(out, **paths).read_bytes())
     assert written["buildings"]["source"]["sheets"] == in_order
     (out / "manifest.json").unlink()
     _edit_description(out, lambda b: b["source"]["sheets"].reverse())
-    _refused(out, lock_path=lock, buildings_config_path=config)
+    _refused(out, **paths)
 
 
 def test_a_lock_without_buildings_is_refused(tmp_path):
-    message = _refused(_out(tmp_path), lock_path=TERRAIN_FIXTURE_LOCK)
-    assert "python -m mattini lock buildings" in message
+    message = _refused(_out(tmp_path), LOCK_COMMAND, lock_path=TERRAIN_FIXTURE_LOCK)
+    assert "has no 'swissbuildings3d' entry" in message
 
 
 @pytest.mark.parametrize("damage", ["changed", "missing", "short", "longer"])
