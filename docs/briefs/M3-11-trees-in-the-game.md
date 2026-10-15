@@ -1,5 +1,5 @@
 # Brief: M3-11 — Trees in the game
-Status: OPEN
+Status: DONE (ce5e845)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane F of wave 1 (`docs/briefs/M3-plan.md`).
@@ -151,8 +151,14 @@ touching the main scene; editing a pinned file or the fixture.
 2. **The gate:** `tools/gate.sh` exit 0 on the tree before the commit: pytest 743 passed
    (4 deselected), GUT 28 scripts, 141 tests, 6387 asserts, `---- All tests passed! ----`, gdlint
    and `gdformat --check` clean. The allowlist's line is appended at the end, verbatim from
-   decision 5; no rebase had brought another lane's lines in when the gate ran (the rebase
-   and its re-run are noted at the end of this list).
+   decision 5. Four rebases followed, because three other lanes landed while the gate ran
+   (M3-12, M3-02 and M3-09, plus M3-12's status commit); each brought commits in, so the gate
+   was re-run on every rebased tree. The allowlist conflicted twice (each lane appends at the
+   end): resolved by keeping every line, so it holds `BuildingRoofs`, `PhotoGrid` and
+   `TreeChunks` once each, none with `Ignoring script` or `Failed to load script`. The gate of
+   the pushed tree (`ce5e845`): pytest 766 passed (4 deselected), GUT 37 scripts, 192 tests,
+   8265 asserts, `---- All tests passed! ----`, exit 0, with M3-02's stricter gate (script
+   count equal to the `test_*.gd` files, GUT's version line) in force.
 3. **Mutations,** each applied alone, the tree tests run, then undone with `git apply -R`
    of its saved diff (`git status` showed only the staged tree afterwards). The harm each
    reproduces is the owner's: the village's trees in the wrong place, wrong size or without
