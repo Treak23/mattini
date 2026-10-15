@@ -105,9 +105,12 @@ carried items: `PhotoGrid` does not refuse a photo wider than 16384 texels (M3-0
 `trees.py` imports private grid helpers from `surfaces.py`, a manifest write cut before its rename
 leaves `manifest.json.part` (M3-13 Findings 8).
 
-**Waiting on design (BLOCKED.md §Open):** P-01 trees at a terrain spacing other than 0.5 m; P-03's
-software-render gate step. The placement round cannot be clean, and 0.3.0 cannot ship, until both
-are answered and built.
+Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified, no P0 to P2), all P3: V1-1 fix-1's placement census does not name `xz` or `origin` (an edit of either after its declaration moves the classes or the crowns' colour with the gate green: the remainder of P-03); V1-2 fix-4's normal census counts lines that begin with `NORMAL` (a braced second statement passes, a correct `dFdyCoarse` spelling fails); V1-3 the scene-level tree tests see one cell south-east of the origin (a sign error that shows only at x < 0 passes); V1-4 `ManifestValue.differs` calls a String and a StringName different types (no site passes a StringName); V1-5 the fix-5 brief's gate boxes were unticked (ticked).
+
+**Waiting on design (BLOCKED.md §Open), what waits on which answer:**
+- **Q1, P-01** (trees at a terrain spacing other than 0.5 m): the orchestrator's recommendation is (b), refuse a terrain config whose spacing is not 0.5 in `build_trees` and `built_trees_block` and amend SPEC §7 and §8 (the harm becomes inexpressible; the trees' expected chunks stay design's one set; the owner's 1 m or 2 m switch then needs the trees step, which is built when it is wanted). Answer "b" or "a"; then fix brief `M3-R1-fix-2` is written and built.
+- **Q2, P-03's render step** (a software render in the gate): the recommendation is (a), the step with a refusal where `xvfb-run` is missing unless a named variable skips it with a printed line, and BUILD.md rule 2b and CLAUDE.md's "what the gate cannot see" amended to say which claims a render gates (the lens measured 19 s, and V1 found the interim text census's own gaps, V1-1 and V1-2). Answer "a" or "b"; then `M3-R1-fix-3` is written and built.
+- **Then:** the placement round again (Tier 1, until a round reports no P2 or above) over fix-1, fix-5 and the answers' fixes; the standard gate from clean on the head; release 0.3.0 through `docs/RELEASE.md` §C with the data packs, its record in `docs/releases/` first. Not waiting on design: the I-01 question (the zlib dependence of the PNG's hash and so of the manifest), which the release record names.
 
 ## Later
 

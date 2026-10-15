@@ -160,11 +160,16 @@ builders, and by its review (M0 R1, `docs/reviews/`).
     exit: it is not vendored.
   - Loading 4001 × 6001 heights (the village at 0.5 m) takes 2.9 s and about 540 MB
     headless; 2001 × 3001, 0.3 s.
-- **H12 — Software rendering in containers (measured 2026-09-25).** Xvfb and Mesa's
-  llvmpipe are preinstalled: `xvfb-run -a godot --path game --rendering-method
-  gl_compatibility …` renders Terrain3D and saves screenshots. Forward+ on Mesa's lavapipe
-  (Vulkan, installable with apt) crashes as soon as Terrain3D draws. A Compatibility image
-  is not the Forward+ look.
+- **H12 — Software rendering in containers (measured 2026-09-25; corrected 2026-10-15).** Xvfb and
+  Mesa's llvmpipe are preinstalled: `xvfb-run -a godot --path game --rendering-method
+  gl_compatibility …` renders Terrain3D and saves screenshots. Forward+ on Mesa's lavapipe did
+  crash as soon as Terrain3D drew (M1); measured again in M3's review round and its verification
+  pass, it renders the whole village and the exported build: `apt-get update`, then `apt-get install
+  mesa-vulkan-drivers`, then `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a godot
+  --path game --rendering-driver vulkan --rendering-method forward_plus …` (the install fails
+  without the `update` in a fresh container). A Forward+ software image shows what Forward+ does
+  with normals, lighting and `source_color`, which a Compatibility image cannot; it is still not the
+  owner's GPU or look. A Compatibility image is not the Forward+ look.
 - **H13 — Firing a Routine with `text` starts a new session (measured 2026-09-25).** On a
   Routine that targets an existing session (then the supervisor's waker), `fire_trigger` without `text` wakes
   the waker (04:05 and 04:08, each turn visible in `get_session`), and so does a one-shot
@@ -284,6 +289,19 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   but keeps an assigned `buffer`: fill `buffer`. A SceneTree script that fails in
   `_initialize`, or names a class whose script fails to parse, can hang with no output and
   no exit: run `--check-only` first and wrap such runs in `timeout`.
+- **H26 — GDScript `!=` across types, and Godot's flat normal (measured in M3's review round,
+  2026-10-15).** `!=` between a bool, a String, an Array or a Dictionary and a value of another type is
+  a runtime error ("Invalid operands … in operator '!='"): the function stops, a guard that held it
+  does not refuse and the reader returns its block (a numeric `world_sha256` passed all six readers,
+  R1 G-03). null and an int against a float are not errors; two containers of one type compare
+  without error whatever their elements hold. `ManifestValue.differs` (fix-5) is the guarded compare.
+  Godot 4.6.3's face normal from screen derivatives is `cross(dFdy(VERTEX), dFdx(VERTEX))`; the other
+  order points into the surface and lights every facet from inside, in both renderers (R1 G-01).
+- **H27 — The surfaces PNG depends on the zlib build (measured in M3's review round, 2026-10-15).**
+  `zlib.compress(…, 9)` writes 1'148'848 bytes with zlib 1.3 and 950'236 with zlib-ng 2.2.5 for the
+  village's class grid; the PNG's SHA-256 is in its description and so in `manifest.json`: the
+  expected manifest `3ca0445c…` holds only where zlib is 1.3 (R1 I-01, the board's design question).
+  Every other step's output is byte-identical across machines in every run so far.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

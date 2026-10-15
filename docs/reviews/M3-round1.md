@@ -56,14 +56,43 @@ mesa-vulkan-drivers`) and rendered the whole village and the exported build with
 lavapipe under Xvfb: brain.md H12 ("Forward+ on lavapipe crashes as soon as Terrain3D draws") is
 stale and is corrected at the close. A Forward+ software render is still not the owner's GPU.
 
+## State after V1 (2026-10-15)
+
+`M3-R1-fix-5` landed (`2c70fd7`, `8cbb5c1`) and **verification pass V1** ran over fixes `77e8508`,
+`0385a7f` and `8cbb5c1` (`M3-V1.md`, commit `4289b41`): every R1 finding the fixes own is FIXED,
+P-03's interim half is PARTLY (its render step is Q2), no P0, P1 or P2, five P3 (on the board's
+residue list), no Tier-1 escalation; the gate solo from a fresh clone exit 0 (pytest 2169, GUT 47
+scripts, 261 tests, 9760 asserts); the real village's manifest `3ca0445c…`; the export exit 0 with
+all eight startup lines and every file under 100 MiB.
+
 ## Next
 
-1. `M3-R1-fix-5` (lane K) lands; then **verification pass V1** (Tier 2, one round) over the
-   fixes `77e8508`, `0385a7f` and `M3-R1-fix-5`: reproduce each finding's harm on the unfixed
-   tree and show it gone on the fixed one, and look for what each fix broke.
-2. Design answers BLOCKED Q1 (P-01) and Q2 (P-03's render step); their fix briefs are written
-   from the answers and built as a lane.
-3. **Placement is Tier 1: rounds until clean.** The placement lens re-runs over the fixes that
-   touch placement (fix-1, fix-5 and the answers' fixes); the round is clean when it reports no
-   P2 or above. Release 0.3.0 (docs/RELEASE.md §C) follows a clean round, V1 clean and the full
-   gate green from clean.
+1. Design answers BLOCKED Q1 (P-01) and Q2 (P-03's render step): `docs/briefs/BLOCKED.md` and the board
+   carry the options and a recommendation each; an answer sets its fix brief to OPEN (the orchestrator
+   writes `M3-R1-fix-2` or `M3-R1-fix-3` from the answer and builds it as a lane).
+2. **Placement is Tier 1: rounds until clean.** The placement lens re-runs over fix-1, fix-5 and the
+   answers' fixes; the round is clean when it reports no P2 or above.
+3. Release 0.3.0 (docs/RELEASE.md §C) follows a clean round, the standard gate from clean on the head,
+   and the walk with the data packs; the close also corrects brain.md's header and §6, appends the arc to
+   `docs/history/ARCS.md` and the lessons below to `docs/LESSONS.md`, and sets the plan's Status.
+
+## Lesson candidates for the close (numbers given when appended)
+
+- **A caveat about the look is not an explanation.** M3-14's Findings and the plan's wave 2 record said
+  the trees read near black in the Compatibility shots and named the owner's Forward+ as the check; the
+  game lens showed a shader bug in both renderers (G-01, the normals pointing into the tree). Before an
+  anomaly in a screenshot is put down to the renderer, run the other renderer: Forward+ on lavapipe
+  works here.
+- **"Renders / looks right is not gated" was stretched to "placed right".** Where an image lies on the
+  ground is a number, and seven mutations of the shaders that place it passed the whole gate (P-03).
+  BUILD.md rule 2b's exception covers looks, not placement.
+- **Two design statements can disagree until the first config change.** SPEC §7 ("1 or 2 m is a config
+  change, no code change") and §8 item 7 (the trees take their height from the 0.5 m grid whatever the
+  spacing) both stood; the lens found 18'932 trees off the ground at 2 m (P-01).
+- **A census is as strong as its pattern.** fix-1's and fix-4's text pins each had a gap V1 found
+  (V1-1, V1-2); a mutation of the neighbour, not of the pinned line, finds it (lesson 5, lesson 4).
+- **A wrong-typed value is not a wrong value.** In GDScript `!=` across types is a runtime error and the
+  guard that holds it accepts the block (G-03): a guard on parsed input compares through a type test.
+- **A worker restart stalls every session at once.** The seven wave-1 builders stood still for ten hours;
+  check-ins fired ten hours late; the landings on GitHub, not the sessions' states, were the status
+  (lessons 27 and 30 held).

@@ -84,19 +84,19 @@ the tree shader.)
 
 ## Done when (gates)
 
-- [ ] The fuzz cases of G-03 are refused, one by one, with exactly one named `push_error`, a
+- [x] The fuzz cases of G-03 are refused, one by one, with exactly one named `push_error`, a
       null result and no SCRIPT ERROR, by the new tests; a numeric `world_sha256` is refused by
       all six readers. Mutation: put the plain `!=` back at any one site; that site's test
       fails and names the field (record the failing output of every site, saved diffs undone
       with `git apply -R`).
       - does NOT prove: that no other manifest field of a wrong type is mishandled (a field no
         reader reads), nor that the pre-arc readers' other checks are right.
-- [ ] The world guard of `PhotoGrid` and of `SurfaceGrid`: made never true (`if false and (`),
+- [x] The world guard of `PhotoGrid` and of `SurfaceGrid`: made never true (`if false and (`),
       each of the three differences (origin e, origin n, height offset) fails a named test
       whose needle is the guard's words; record all six runs.
       - does NOT prove: that the manifest's `world` copy is bound to `config/world.json` at read
         time (G-12, by design: the pipeline's step 1 writes it and its tests pin it).
-- [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`; GUT's script count equals the
+- [x] Standard gate: `tools/gate.sh > gate.log && git commit …`; GUT's script count equals the
       `test_*.gd` files; new files are `git add`ed first (test_repo_tracked), `.uid` files
       included.
       - does NOT prove: that it renders or looks right.
@@ -256,3 +256,5 @@ anywhere in the repository.
    `config/world.json` at read time (G-12, by design); that a refusal of a wrong-typed manifest
    reaches the error panel in the started game (the readers' refusals are collected as before;
    no main-scene test was added); that it renders or looks right.
+
+Gate boxes ticked by the orchestrator after verification pass V1 confirmed each (docs/reviews/M3-V1.md; its finding M3-V1-5).

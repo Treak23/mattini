@@ -32,6 +32,10 @@ which claims a software render gates. (b) The gate stays as it is and the placem
 expressions of the three shaders are pinned by substring, as line 375 of `terrain_photo.
 gdshader` is today (weaker, lesson 5: a census proves text).
 
+Recommendation (the orchestrator's, not a ruling): (a). The harm is a Tier-1 class (a silent shift
+of the photo or the classes) that a software render measures in 19 s; rule 2b was written when no render
+was known to work in a container, and V1 found the text census's own gaps (M3-V1-1, M3-V1-2).
+
 State: the part that needs no answer goes to fix brief M3-R1-fix-1 (a test that the surface
 texture's bytes equal the class bytes, and the placement expressions pinned by substring as
 the interim); nothing else of it moves until design answers.
@@ -55,6 +59,9 @@ copy the code under test). (b) Making the harm refuse: `build_trees` and `built_
 refuse a terrain config whose spacing is not 0.5, naming `config/terrain.json`, and SPEC §7
 and §8 are changed to say that the trees tie the terrain to 0.5 m: that changes a design
 promise.
+
+Recommendation (the orchestrator's, not a ruling): (b). It makes the defect inexpressible (lesson 5), keeps
+the trees' one expected set, and the 1 m or 2 m switch (SPEC §7) gains the trees step when the owner wants it.
 
 State: nothing of it is built. The placement round cannot be clean (the plan: no P2 or above)
 until one is chosen and built.
