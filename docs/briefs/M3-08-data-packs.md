@@ -1,5 +1,5 @@
 # Brief: M3-08 — Data packs: the large generated folders ship beside the executable
-Status: OPEN
+Status: DONE (5cccce2)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane B of wave 1, after M3-02 (`docs/briefs/M3-plan.md`).
@@ -186,6 +186,10 @@ Lane builder B (the same wave-1 builder session as M3-02, which landed first as 
    `GUT version:  9.6.1`, `Scripts 39` equal to the 39 `test_*.gd` files; gdlint clean; gdformat
    54 files unchanged; 108 `ERROR` lines in the log, all excepted. The new allowlist line is
    the brief's, appended once at the end; the lines the other lanes appended are all still there.
+   M3-10 (`d5875c6`) landed its `SurfaceGrid` line while this brief was open: both appended at
+   the end of the same file, the merge conflicted, I kept every line (13 lines, this brief's
+   last) and ran the gate on the result (GUT 41 scripts, pytest 1041). The implementation
+   commit is `5cccce2` on `origin/main`.
 3. **What was built.**
    - `game/tools/pack.gd` (+ `.uid`): `write_pack(pack_path, source_dir, target_dir) -> String`
      as pinned (sorted `DirAccess.get_files_at`, minus `.part` and `.import`; `PCKPacker` at its
