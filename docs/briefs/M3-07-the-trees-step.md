@@ -164,3 +164,96 @@ own lock; M3-03 (lane A) writes the lock's new entries, and its pinned
 - Command-line or manifest wiring (M3-13).
 
 ## Findings (executor writes)
+
+1. **The real village gives design's six chunks.** The inputs were fetched once into a
+   scratch root in M3-03's layout: the six swissSURFACE3D tiles (SHA-256s equal to M3-03's
+   pinned measurements) by curl, the six swissALTI3D tiles and the six building sheets by the
+   existing `download terrain` and `download buildings`, the TLM zip of M3-06; the surface
+   tiles' provenance.json by hand in M3-03's form (the terrain's keys, `editions` for
+   `edition`, each tile's `edition`). The lock is the committed one's two entries plus
+   M3-03's measured swisssurface3d and swisstlm3d entries, and the four together hash to
+   `1eb7b79e450774e7aec8f15ebed4b8600c864de1f61d2813c49e967ad079164a`, config/trees.json's
+   `inputs_sha256`. `build_trees` wrote all six chunks with design's SHA-256s (5'731, 3'659,
+   1'278, 10'031, 8'566 and 5'147 trees: **34'412 trees, 688'240 bytes**), its own comparison
+   with the config passing, then `built_trees_block` accepted them. **37.6 s end to end, peak
+   1'291 MB resident** (design's two implementations: 2.6 GB and 1.7 GB; 33.5 s and 35.8 s);
+   the 35'399 tops lose 27 above 40 m, 12 below 3 m and 952 on slopes of 60° or more, the
+   numbers SPEC §8 gives, and 1'489 buildings, 2'625 TLM footprints and 224 land-cover
+   polygons met the area. Where the time goes: the six tiles 3 s, the sheets 4 s, the TLM
+   zip 17 s (9 s hashing, 8 s reading), the masks 2 s, the smoothing 5 s, the tops 2 s, the
+   chunks 3 s. *does NOT prove:* that the trees stand where the owner sees trees (the owner's
+   eyes), or a run on another machine.
+2. **The six required mutations, each caught by a named pinned test** (applied to a copy of
+   `trees.py`, run against the four pinned files; the module restored byte-identical):
+   - ties in column order (`first = dj < 0 or (dj == 0 and di < 0)`):
+     `test_trees_fixture.py::test_each_case_has_its_outcome[diagonal tie]` and `[diagonal tie, second]`,
+     `test_the_chunks_are_the_fixture_s_bytes` (5 failures). Harm: of two equal crowns, or on a
+     flat roof of canopy, the tree stands on the other pixel, up to a metre away;
+   - a square margin (`if True` for the disc test): `test_each_case_has_its_outcome[beside the margin]`
+     and the bytes (4 failures). Harm: trees near a wall's corner vanish that stand on the
+     photo;
+   - dropped tops counted as neighbours (d over all tops): `test_the_chunks_are_the_fixture_s_bytes`,
+     `test_every_named_tree_is_in_its_chunk_at_its_index` (3 failures). Harm: crowns shrink
+     beside a cliff top or a steep one that was dropped;
+   - no 2⁻¹³ m check: `test_trees_rules.py::test_a_canopy_height_off_the_2_13_grid_is_refused`.
+     Harm: a surface model with heights below 1024 m would give tops by an inexact rule with
+     no error;
+   - the height / 4 cap left out: `test_a_tree_alone_takes_a_quarter_of_its_height` and the
+     bytes (4 failures). Harm: every short tree gets a crown up to 6 m wide;
+   - OBJEKTART 16 masked: `test_each_case_has_its_outcome[over an underground building]`,
+     `test_each_mask_input_decides_its_trees[underground building as a building]` (5
+     failures). Harm: real trees above a cellar or a tunnel entrance are erased.
+3. **Own mutations against my own tests** (17, the full `-k trees` run, first failure
+   shown): the triangle's edge rows strict, its last column one short, degenerate triangles
+   kept, the bounding-box test dropped, a kernel weight changed, the window not growing,
+   the outer ring allowed, the slope limit 4, the radius clamp 7, the base height taken from
+   the DTM pixel, the expected chunks not compared, the world checked after the lock, stale
+   chunks kept, the tile by `round`, the tree its own nearest neighbour, nodata allowed:
+   each a named test of `test_trees_fixture.py`, `test_trees_helpers.py` or
+   `test_trees_checks.py`. One survived: the minimum smoothed height 2 m instead of 3 m
+   (no fixture crown has S between 2 and 3 m); it is now killed by
+   `test_a_single_pixel_needs_36_over_256_of_its_height_to_reach_3_m` (a one-pixel pole has S =
+   36/256 of its height: 18 m and 21.25 m give no tree, 21.5 m and 40.0 m one, 40.125 m none).
+   *does NOT prove:* the game's reading (M3-11).
+4. **Decisions inside the brief's scope** (the first of each is the one taken):
+   - `surfaces.py` is unchanged. `trees.py` imports `read_tlm` and, from the same lane's
+     module, its private grid helpers (`_Frame`, `_polygon_spans`, `_paint`, `_row_pairs`,
+     `_ceil_div`, `_floor_div`, `_snapped`): the TLM masks use the surfaces step's even-odd
+     rule, not a copy of it. If M3-13 renames one, `trees.py` fails to import; the alternative
+     (exposing public names in `surfaces.py`) would have touched a landed module.
+   - The base height is the mean of the four float32 vertices `terrain.resample(dtm, box, 0.5,
+     height_offset)` gives around the centre, in 64-bit, rounded once. The alternative (the
+     mean of the exact DTM minus the offset, one rounding) is not what the real run needed:
+     design's six hashes matched with this one.
+   - The TLM is read with the area's box itself, not a grown one: only the pixels in the
+     area are masked, and the margin B stops at the area's edge.
+   - `build_tree_chunks` has exactly the pinned signature; the counts the step reports come
+     from an internal `_rule` that returns them too.
+   - All four provenance.json files are checked (in sorted dataset order) before any file is
+     hashed or read; a lock that does not fit is refused naming the first dataset's lock
+     command in sorted order; `check_trees_config` refuses an empty `expected_sha256`.
+   - Building sheets are read one at a time, and a building whose raw bounding box is more
+     than a millimetre outside the area is dropped at once (it can mask no pixel); the
+     rule's own selection in `_triangles` is the exact one, on snapped coordinates.
+   - The step's own lock-fit and provenance checks are in `trees.py`, as the brief says; none is
+     imported from `terrain.py`, `buildings.py` or `download.py` (the names M3-01 keeps
+     are: `area_tiles`, `area_sheets`, `PROVENANCE`, `terrain.resample`, `check_terrain_config`,
+     `configured_area`, `world_refusal`, `check_computed_for`, `AREA_NAME`, `OWNER_AXES`,
+     `buildings.read_sheet`).
+5. **Seams for the orchestrator and wave 2.** `build_trees(world, datasets, lock,
+   trees_config, terrain_config, raw_root, out_dir, *, progress=None)`: `datasets` must hold
+   the four datasets (swisssurface3d with `editions`), which `load_datasets` refuses until M3-01
+   and M3-03 have landed in full (my driver passed a dict). The tests of the step replace
+   `mattini.trees.read_sheet` and `mattini.trees.read_tlm`: M3-13's CLI test can do the same.
+   `built_trees_block` takes the lock as a dict or a path. A memory note: the 24 million
+   pixels of the village are held as a 96 MB float32 model each for the surface and the
+   terrain, one int64 canopy array and the padded S (195 MB each), and bands handle the
+   per-pixel checks.
+6. **Gates.** The pinned copies are byte-identical to `docs/briefs/pinning/M3-07/` (`cmp`);
+   own tests: `test_trees_helpers.py` (71: the neighbours, triangles, margin, smoothing and tops
+   against slow exact definitions, the one-pixel pole, the rule's refusals),
+   `test_trees_checks.py` (105: the step on a synthetic world with real GeoTIFF tiles, the
+   checks in order, a missing download per dataset, every lock and provenance refusal, the
+   tile checks, the TLM zip's size, hash and stability, the comparison before writing, stale
+   files, the built block); 237 trees tests with the pinned 66. The standard gate: see the
+   line below.
