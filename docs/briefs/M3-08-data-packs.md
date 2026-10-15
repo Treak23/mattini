@@ -172,3 +172,116 @@ appended lines.
 - Editing a pinned file.
 
 ## Findings (executor writes)
+
+Lane builder B (the same wave-1 builder session as M3-02, which landed first as `d67e17e`),
+2026-10-15, on `main`. Nothing outside the Scope was touched.
+
+1. **Pinned copies.** `test_data_packs.gd`, `test_pack_tool.gd` and `test_release_settings.gd`
+   copied from `docs/briefs/pinning/M3-08/` one file at a time; `cmp` identical before the
+   gate and before the commit. Before the work: `test_data_packs.gd` 0 of 4 passing,
+   `test_pack_tool.gd` 0 of 4, `test_release_settings.gd` 2 of 4. After: 4/4, 4/4, 4/4.
+2. **Standard gate** (`tools/gate.sh > gate.log && git commit`), exit 0, on the tree with
+   everything that had landed on `main` by then (`2fa05c0`):
+   pytest **1041 passed**, 4 deselected; GUT **39 scripts, 201 tests, 201 passing, 8350 asserts**,
+   `GUT version:  9.6.1`, `Scripts 39` equal to the 39 `test_*.gd` files; gdlint clean; gdformat
+   54 files unchanged; 108 `ERROR` lines in the log, all excepted. The new allowlist line is
+   the brief's, appended once at the end; the lines the other lanes appended are all still there.
+3. **What was built.**
+   - `game/tools/pack.gd` (+ `.uid`): `write_pack(pack_path, source_dir, target_dir) -> String`
+     as pinned (sorted `DirAccess.get_files_at`, minus `.part` and `.import`; `PCKPacker` at its
+     defaults; `<pack path>.part`, then a rename; a `source_dir` that does not exist, holds a
+     folder or holds nothing to pack is refused, naming it, and the `.part` is removed after a
+     failed write). Extra: a public `packed_names(source_dir)` the command line uses to count
+     the files. Command line `-- <pack path> res://assets/generated/<folder>`: the folder is
+     both source and target, so each file keeps its own `res://` path (decision 1); exit 0
+     prints `pack: wrote <pack path>, <n> files of res://assets/generated/<folder>` (the
+     brief's `<folder>` is read as the `res://` folder), exit 1 prints `pack: <problem>` on
+     stderr, exit 2 on anything but two arguments with a `res://assets/generated/` second one.
+   - `game/scripts/data_packs.gd` (+ `.uid`, no `class_name`) and `[autoload]
+     DataPacks="*res://scripts/data_packs.gd"` in `project.godot` (a new section, between
+     `[application]` and `[display]`): `load_from(dir)` as pinned, `_init()` in an exported
+     build, with the `no data pack (mattini-*.pck) in <folder>` line when none loads.
+   - Both presets' `exclude_filter` exactly as the brief (the pinned
+     `test_release_settings.gd` reads which generated files each filter keeps).
+   - `tools/gate_allowlist.txt`: `DataPacks: cannot load the data pack @
+     res://tests/test_data_packs.gd # …`, the only new ERROR line (the broken pack's
+     `push_error`; Godot prints no ERROR line of its own for it, measured in the test's log).
+   - `tools/export.sh`: `PACKED_FOLDERS=(photo terrain)`, step **4b** (the tool per existing
+     folder into `build/linux/`, its output cleaned and scanned for ERROR lines, exit status
+     and the file checked, then copied beside the Windows executable through a `.part` and a
+     rename; a missing folder prints `no game/assets/generated/<folder>: no mattini-<folder>.pck`),
+     step **4c** (Python through `uv run … python -c`, as step 6's; messages as the brief's
+     examples) and step **6** (one `data pack` line per pack 4b wrote, then the terrain and
+     buildings lines). My reading where the brief is silent: step 6 also checks that its lines
+     appear in the order listed, not only that each appears ("in name order, then…"); 4c
+     requires a pack's header to say format 3, Godot 4.6.3 and flags 2, fails on a path twice
+     in one pack or an entry past the file's end, and takes a `res://` prefix on a path as
+     absent; the data-pack timeout is `PACK_TIMEOUT_S=300`.
+4. **The real village, in a scratch `git clone`** (so no copied venv, H22). `download terrain`
+   (6 tiles) and `download buildings` (6 sheets) verified; `terrain` and `buildings` exit 0, the
+   steps' own comparisons with `config/terrain.json` and `config/buildings.json` passed (the
+   6 chunks have the SHA-256s `config/buildings.json` expects; `village.f32` 96'040'004 bytes).
+   The Godot export templates were downloaded by `export.sh` itself (1'255'918'323 bytes, the
+   pinned SHA-256 matched).
+   - **`tools/export.sh`, exit 0, 75 s with the template download:** 4b: `no
+     game/assets/generated/photo: no mattini-photo.pck`, `pack: wrote …/mattini-terrain.pck, 2
+     files …`; 4c: `checked build/linux build/windows: every generated file is in its pack,
+     with its size and MD5`; sizes: `mattini-terrain.pck` **96'041'728** (design's number),
+     `mattini.pck` 3'419'044 (design measured 3'365'376 on an earlier tree: the tree now holds
+     M3-09 to M3-12's code), `mattini.x86_64` 71'075'864, `mattini.exe` 104'659'456 (99.81 MiB);
+     step 6 started the Linux build with `data pack mattini-terrain.pck loaded`, then the
+     terrain and buildings lines (`1486 buildings in 6 chunks, 178910 triangles`), no ERROR.
+   - **With a stand-in photo folder** (`game/assets/generated/photo/standin.bin`, 52'428'800
+     random bytes, no image): two packs, `mattini-photo.pck` 52'429'008 bytes, step 6 printed
+     both pack lines in name order; the stand-in was then deleted. `sha256sum build/*/*` over
+     the second and third exports: **identical** for all nine files, `mattini.pck` included.
+     The first export of the fresh checkout (the one that also imported the project) wrote
+     another `mattini.pck`, same size, other bytes, so H15's "not byte-reproducible" is
+     about the first export from an unimported tree here, not between two later runs; I did
+     not isolate why.
+   - **The seam M3-04 will make** (a `photo/village.jpg` with its keep `.import`, and a json;
+     3'000'000 random bytes, standing in): the whole export passes; `mattini-photo.pck` holds
+     `photo/village.jpg` (3'000'000) and `photo/village.json` and no `.import`.
+   - **Without `mattini-terrain.pck`**, the Linux build (copied alone, started as step 6
+     starts it) exits 0 and prints `mattini 0.2.0: no data pack (mattini-*.pck) in <folder>`,
+     then, as an ERROR line, `ERROR: TerrainGrid: res://assets/generated/manifest.json: the
+     heights file res://assets/generated/terrain/village.f32 is missing; python -m mattini
+     terrain rebuilds it` (its fix line is for the source tree, brief decision 7). Step 6
+     failed on it in a scratch copy of `export.sh` with `PACKED_FOLDERS=(photo)` and 4c made
+     non-fatal: `export: the Linux build printed error lines:` and that line. The same copy
+     with 4c on stops there: `terrain/village.f32 is in no pack, not in mattini.pck alone`
+     (and `game/assets/generated/terrain/village.f32 is 96040004 bytes, 10485760 or more,
+     outside the packed folders (photo)`).
+5. **The four mutations of 4c**, real exports in the scratch clone, each restored after (the
+   presets by a saved copy, the files by removing them):
+   - presets without `assets/generated/terrain/*`: `build/linux: terrain/village.f32 is in
+     mattini-terrain.pck, mattini.pck, not in mattini-terrain.pck alone` (and
+     `village.json`, and for `build/windows`), exit 1 at 4c. Harm: `mattini.pck` grows past
+     GitHub's limit and the heights ship twice.
+   - a `buildings/2623-1096.bin.part` with the presets without `*.part`: `build/linux:
+     mattini.pck holds assets/generated/buildings/2623-1096.bin.part, which is not a
+     generated file that ships` (and windows). Harm: a step's half-written file ships.
+   - a PNG without a keep `.import` in `buildings/` (not packed): `build/linux:
+     buildings/probe.png is in no pack, not in mattini.pck alone`, and `mattini.pck holds
+     assets/generated/buildings/probe.png.import, which is not a generated file that ships`
+     (the export ships the imported texture and the `.import`, H24). Harm: a game that cannot
+     read the file it expects.
+   - a 12 MiB `buildings/big.bin`: `game/assets/generated/buildings/big.bin is 12582912
+     bytes, 10485760 or more, outside the packed folders (photo terrain)`. Harm: a large file
+     that silently grows `mattini.pck`.
+   `manifest` (step 1) accepted all four extra files; none stopped the run before 4c.
+6. **Not proved, said aloud.**
+   - The Windows build finding its packs (no Windows here): `DataPacks` reads
+     `OS.get_executable_path().get_base_dir()`, the same call on both systems.
+   - That the pack tool and 4c cover a **photo** of real size: the photo exists only as the
+     stand-ins above (the step lands in M3-04).
+   - `pipeline/tests/` is outside this brief's Scope, so 4b and 4c have no pytest of their own
+     with stand-ins; I ran one ad hoc harness (not committed) on the pinned `fake_tools.py`:
+     a tree with all three kinds of folders passed; an extra 12 MiB file, a pack line missing
+     from the started build's output and the pack lines out of order each failed with their
+     message. A committed one is a candidate for M3-14 (it owns `fake_tools.py`) or the review.
+   - 4c reads each pack's directory, so it proves what Godot wrote about the files, not that
+     the bytes read back from the pack at run time are the same (the started build reading
+     the heights is that check for the terrain, step 6's line).
+   - The brief's gate wording "sha256sum build/*/* is identical over two runs" held for the
+     second and third exports, not for the first (above).

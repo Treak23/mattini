@@ -10,3 +10,4 @@ BuildingRoofs: user://test_ @ res://tests/test_building_roofs.gd # its refusal t
 PhotoGrid: user://test_ @ res://tests/test_photo_grid.gd # its refusal tests write broken manifests under user://test_photo_grid on purpose (brief M3-09)
 TreeChunks: user://test_ @ res://tests/test_tree_chunks.gd # its refusal tests write broken manifests under user://test_tree_chunks on purpose (brief M3-11)
 SurfaceGrid: user://test_ @ res://tests/test_surface_grid.gd # its refusal tests write broken manifests under user://test_surface_grid on purpose (brief M3-10)
+DataPacks: cannot load the data pack @ res://tests/test_data_packs.gd # its broken pack is refused on purpose (brief M3-08)

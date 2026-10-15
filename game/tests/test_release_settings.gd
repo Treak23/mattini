@@ -16,12 +16,37 @@ extends GutTest
 ##
 ## Brief M2-08 (M2 R1 G-06): the development tools under res://tools/ (the screenshot
 ## script) do not ship: both presets exclude tools/*.
+##
+## Brief M3-08 (the data packs; docs/SPEC.md §11): the generated folders terrain/ and photo/
+## ship in their own packs beside the executable, mattini-terrain.pck and
+## mattini-photo.pck, which tools/export.sh writes, so both presets exclude
+## assets/generated/terrain/* and assets/generated/photo/* from mattini.pck, and *.part (a
+## pipeline step's unfinished write) everywhere. The filters are matched as Godot's export
+## matches them (String.matchn against the path with and without res://), so the test also
+## reads which generated files each filter keeps in mattini.pck: a folder that only starts
+## like a packed one (terrain_old/) stays.
 
 const PRESETS := "res://export_presets.cfg"
 const INCLUDE_FILTER := (
 	"assets/generated/*, addons/terrain_3d/LICENSE.txt, " + "credits/godot-cpp-LICENSE.txt"
 )
-const EXCLUDE_FILTER := "tests/*, addons/gut/*, tools/*"
+const EXCLUDE_FILTER := (
+	"tests/*, addons/gut/*, tools/*, *.part, "
+	+ "assets/generated/photo/*, assets/generated/terrain/*"
+)
+## Generated paths and whether mattini.pck holds them (true) or not (false).
+const GENERATED_IN_MAIN_PACK := {
+	"res://assets/generated/manifest.json": true,
+	"res://assets/generated/buildings/2623-1096.bin": true,
+	"res://assets/generated/buildings/village.json": true,
+	"res://assets/generated/terrain/village.f32": false,
+	"res://assets/generated/terrain/village.json": false,
+	"res://assets/generated/photo/village.jpg": false,
+	"res://assets/generated/photo/village.json": false,
+	"res://assets/generated/terrain_old/village.f32": true,
+	"res://assets/generated/buildings/2623-1096.bin.part": false,
+	"res://assets/generated/manifest.json.part": false,
+}
 
 
 func _presets() -> Dictionary:
@@ -69,3 +94,29 @@ func test_each_preset_ships_the_data_and_the_licence_but_not_the_tests() -> void
 	if not windows.is_empty():
 		var config: ConfigFile = windows["config"]
 		assert_eq(config.get_value(windows["options"], "application/modify_resources"), false)
+
+
+## True when a filter of comma-separated globs holds [param path] as Godot's export reads it
+## (editor_export_platform.cpp: String.matchn against the path with and without res://).
+static func _filter_holds(filter: String, path: String) -> bool:
+	for glob in filter.split(","):
+		var pattern := glob.strip_edges()
+		if pattern.is_empty():
+			continue
+		if path.matchn(pattern) or path.trim_prefix("res://").matchn(pattern):
+			return true
+	return false
+
+
+func test_the_main_pack_keeps_the_small_generated_files_and_no_part() -> void:
+	for name: String in ["Linux", "Windows Desktop"]:
+		var p: Dictionary = _presets().get(name, {})
+		if p.is_empty():
+			fail_test("no preset %s" % name)
+			continue
+		var config: ConfigFile = p["config"]
+		var include: String = config.get_value(p["preset"], "include_filter", "")
+		var exclude: String = config.get_value(p["preset"], "exclude_filter", "")
+		for path: String in GENERATED_IN_MAIN_PACK:
+			var held := _filter_holds(include, path) and not _filter_holds(exclude, path)
+			assert_eq(held, GENERATED_IN_MAIN_PACK[path], "%s: mattini.pck holds %s" % [name, path])
