@@ -14,8 +14,8 @@ colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §
 M2's residue is M3-01 and M3-02.
 
 Orchestrator: session_014zvmfwGgSKjxfe3feiiL91 · M3 · since 2026-10-14T19:45Z
-Builder: M3-13 · pending · since 2026-10-15T08:20Z
-Builder: M3-14 · pending · since 2026-10-15T08:20Z
+Builder: M3-13 · session_01HM862MXAydNqmJLBWd2asp · since 2026-10-15T08:09Z
+Builder: M3-14 · session_01Hd3YzbAzQPKDnbChCFrgtw · since 2026-10-15T08:09Z
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
