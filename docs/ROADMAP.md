@@ -15,7 +15,7 @@ M2's residue is M3-01 and M3-02.
 
 Orchestrator: session_014zvmfwGgSKjxfe3feiiL91 · M3 · since 2026-10-14T19:45Z
 Review R1 (head 410dbba): placement session_01UyfhtHNQQtrAF4JfdSXPaG · inputs session_014qJkvMTqRCbTaAHcPfVcor · game session_0197UUnhCMWvPLNrHq6UPGLJ · since 2026-10-15T09:10Z
-Builder: M3-R1-fix-5 · pending · since 2026-10-15T10:55Z
+Builder: M3-R1-fix-5 · session_01JGRumvwXEUDSeoWnxVsghC · since 2026-10-15T10:44Z
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
@@ -83,6 +83,31 @@ Open entry, FB-001, goes to M3.
 - Two M1 sessions of the former supervisor were not archived at the close, because the
   auto-mode classifier refused it: `session_01Nf7BgWfr9p8KWviRiSQHKG` and
   `session_01X6QWucdq2PdcnnthGwjLX9`. For the owner, from the session list.
+
+## M3 R1 residue (P2 and P3 of round R1, `docs/reviews/M3-round1.md`)
+
+Design's question, not holding 0.3.0: **I-01** (P2) the surfaces PNG's SHA-256 depends on the zlib
+build and is copied into the manifest (see the round's table for the three remedies).
+P2: **G-02** `source_color` of the photo, detail textures and tree colours is pinned by no test;
+**G-04** (the part that is not Hard Rule 4) the readers' refusal tests assert refusal, not cause;
+**G-05** 22 of 31 mutations of `tools/export.sh`'s refusals leave its tests green (step 5's 100 MiB
+check, 4c, exit status).
+P3: P-04 roof/wall split on float32 local coordinates; G-06 the terrain's credits line unvalidated;
+G-07 build messages still say "run pipeline commands", a damaged pack reads "missing"; G-08 the photo
+shader's wiring and loaders' look parameters mostly unpinned; G-09 `BuildingLoader.roofs_problem`'s
+refusing branch and the tile check untested; G-10 two gate behaviours unpinned; G-11 the steps' JSON
+copies ship in the packs; G-12 the manifest's `world` block not bound to `world_sha256` at read time
+(by design); I-02 a cut transfer is told only by the SHA-256 (the message does not say run it
+again); I-03 an `OSError` ends a command in a traceback; I-04 `resolution_m` for swissimage and
+swisssurface3d has no test; I-05 the roofs step's inputs-before-provenance order is not pinned; I-06
+a step runs to its end before the manifest refuses another step's damaged config; wave 1 and 2's
+carried items: `PhotoGrid` does not refuse a photo wider than 16384 texels (M3-09 Findings 5),
+`trees.py` imports private grid helpers from `surfaces.py`, a manifest write cut before its rename
+leaves `manifest.json.part` (M3-13 Findings 8).
+
+**Waiting on design (BLOCKED.md §Open):** P-01 trees at a terrain spacing other than 0.5 m; P-03's
+software-render gate step. The placement round cannot be clean, and 0.3.0 cannot ship, until both
+are answered and built.
 
 ## Later
 
