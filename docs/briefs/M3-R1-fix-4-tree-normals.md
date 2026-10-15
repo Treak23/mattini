@@ -1,5 +1,5 @@
 # Brief: M3-R1-fix-4 — The trees' flat normals point the right way
-Status: OPEN
+Status: DONE (77e8508)
 
 Written by the build orchestrator from review finding M3-R1-G-01 (P1;
 `docs/reviews/M3-R1-game.md`), executed by one fresh builder session under
