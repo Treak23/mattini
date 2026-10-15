@@ -25,10 +25,18 @@ extends GutTest
 ## matches them (String.matchn against the path with and without res://), so the test also
 ## reads which generated files each filter keeps in mattini.pck: a folder that only starts
 ## like a packed one (terrain_old/) stays.
+##
+## Brief M3-14 (design's full replacement of M3-08's file; only the include filter and this
+## paragraph change): the credits read the CC0 textures' licence note,
+## res://textures/LICENSE.txt, at run time. It is no resource, so an export ships it only
+## through the include filter: without it the exported build printed "ERROR: Main: cannot
+## read res://textures/LICENSE.txt (File not found)" and tools/export.sh's step 6 failed
+## (measured, 2026-10-14).
 
 const PRESETS := "res://export_presets.cfg"
 const INCLUDE_FILTER := (
-	"assets/generated/*, addons/terrain_3d/LICENSE.txt, " + "credits/godot-cpp-LICENSE.txt"
+	"assets/generated/*, addons/terrain_3d/LICENSE.txt, credits/godot-cpp-LICENSE.txt, "
+	+ "textures/LICENSE.txt"
 )
 const EXCLUDE_FILTER := (
 	"tests/*, addons/gut/*, tools/*, *.part, "

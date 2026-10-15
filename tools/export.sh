@@ -12,10 +12,11 @@
 # failure:
 #   1. rewrites the generated manifest, which re-checks the generated data against the
 #      config (and writes a block null when its generated data is gone);
-#   2. refuses unless the manifest step 1 has just written has a terrain block and a
-#      buildings block (the build ships them), naming the commands that build the missing
-#      one. Nothing is exported before this check (M2 R1 G-03: it used to run before the
-#      rewrite, so a block the rewrite dropped was found only after both exports);
+#   2. refuses unless the manifest step 1 has just written has all six blocks the build
+#      ships (terrain, buildings, photo, surfaces, trees and roofs: BLOCKS below), naming the
+#      commands that build the first missing one, in order (brief M3-14). Nothing is exported
+#      before this check (M2 R1 G-03: it used to run before the rewrite, so a block the
+#      rewrite dropped was found only after both exports);
 #   3. installs Godot 4.6.3-stable's export templates for these two presets into Godot's
 #      templates folder when they are missing, from Godot's download mirror (github.com
 #      release downloads are refused in cloud containers, brain.md H6), verified against
@@ -43,12 +44,19 @@
 #      touched), and requires its startup lines, in this order: one
 #      "mattini <version>: data pack <name> loaded" per pack step 4b wrote (name order),
 #      then
-#      "mattini <version>: terrain <area> loaded, <columns> x <rows> vertices at <spacing> m"
-#      and "mattini <version>: buildings <area> loaded, <n> buildings in <k> chunks, <t>
-#      triangles" with game/project.godot's version and the manifest's values (brief M2-05),
-#      exit 0 and no ERROR line (M1 review G-02: an export without its terrain passed every
-#      step before this one). A manifest without one of the blocks is refused there too,
-#      with step 2's message.
+#      "mattini <version>: terrain <area> loaded, <columns> x <rows> vertices at <spacing> m",
+#      "mattini <version>: buildings <area> loaded, <n> buildings in <k> chunks, <t>
+#      triangles",
+#      "mattini <version>: photo <area> loaded, <columns> x <rows> texels at <cell> m",
+#      "mattini <version>: surfaces <area> loaded, <columns> x <rows> cells at <cell> m",
+#      "mattini <version>: trees <area> loaded, <n> trees in <k> chunks" and
+#      "mattini <version>: roofs <area> loaded, <n> of <m> buildings coloured" with
+#      game/project.godot's version and the manifest's values (briefs M2-05, M3-14). Each
+#      line must be printed after the one before it (its first occurrence after the previous
+#      one's counts: a line never printed fails, a line only printed earlier is out of
+#      order). It also requires exit 0 and no ERROR line (M1 review G-02: an export without
+#      its terrain passed every step before this one). A manifest without one of the blocks
+#      is refused there too, with step 2's message.
 #      Nothing here starts the Windows build (the owner's PC is its test).
 # Godot's output is read with ANSI colours and a CR at the end of a line removed, so a CR LF
 # run reads as an LF one (brief M3-02, V1-G-07).
@@ -120,30 +128,49 @@ error_lines() {
 	grep -a -E '^(ERROR|SCRIPT ERROR)' "$1" || true
 }
 
-# What steps 2 and 6 say when the manifest lacks a block, naming the commands that build
-# it.
-NO_TERRAIN="$MANIFEST has no terrain block: run uv run --project pipeline python -m mattini download terrain, then uv run --project pipeline python -m mattini terrain"
-NO_BUILDINGS="$MANIFEST has no buildings block: run uv run --project pipeline python -m mattini download buildings, then uv run --project pipeline python -m mattini buildings"
+# The blocks of the manifest the build ships, in the order of the startup lines, each with the
+# commands that build it, in order (brief M3-14).
+BLOCKS=(
+	"terrain|download terrain|terrain"
+	"buildings|download buildings|buildings"
+	"photo|download photo|photo"
+	"surfaces|download tlm|surfaces"
+	"trees|download surface|download tlm|trees"
+	"roofs|download photo|roofs"
+)
+
+# What steps 2 and 6 say when the manifest lacks the block named $1: the commands that build
+# it, in order.
+no_block_message() {
+	local entry parts commands="" i
+	for entry in "${BLOCKS[@]}"; do
+		[ "${entry%%|*}" = "$1" ] || continue
+		IFS='|' read -ra parts <<< "$entry"
+		for ((i = 1; i < ${#parts[@]}; i++)); do
+			commands+="${commands:+, then }uv run --project pipeline python -m mattini ${parts[$i]}"
+		done
+		echo "$MANIFEST has no $1 block: run $commands"
+		return 0
+	done
+	echo "$MANIFEST has no $1 block"
+}
 
 # The startup lines of the started build, one per line: first one per data pack name given
 # as an argument ("mattini <version>: data pack <name> loaded", which
-# game/scripts/data_packs.gd prints), in the order given; then the two lines
-# game/scripts/main.gd prints: once the terrain is loaded, the version from
-# game/project.godot, the area, columns, rows and spacing from the manifest's terrain block,
-# the spacing written as main.gd writes it (at most two decimals, no trailing zeros); once
-# the buildings are loaded, the version, the area, the count of buildings, of chunks and of
-# triangles from the manifest's buildings block. A missing block is refused with step 2's
-# message, not a traceback.
+# game/scripts/data_packs.gd prints), in the order given; then the six lines
+# game/scripts/main.gd prints, each written as main.gd writes it (numbers with at most two
+# decimals and no trailing zeros), the version from game/project.godot and the rest from the
+# manifest's blocks: the terrain's area, columns, rows and spacing; the buildings' area and
+# counts of buildings, chunks and triangles; the photo's and the surfaces' area, columns,
+# rows and cell; the trees' area, count and chunks; the roofs' area, the buildings with a
+# colour and all buildings. A missing block is refused with step 2's message, not a
+# traceback (require_blocks).
 expected_startup_lines() {
+	require_blocks
 	"${UV_RUN[@]}" python -c '
 import json, sys
 
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-terrain, buildings = manifest.get("terrain"), manifest.get("buildings")
-if not isinstance(terrain, dict):
-    sys.exit(sys.argv[3])
-if not isinstance(buildings, dict):
-    sys.exit(sys.argv[4])
 section, version = "", None
 for line in open(sys.argv[2], encoding="utf-8"):
     line = line.strip()
@@ -153,17 +180,36 @@ for line in open(sys.argv[2], encoding="utf-8"):
         version = json.loads(line.split("=", 1)[1])
 if not isinstance(version, str) or not version:
     sys.exit(sys.argv[2] + " has no application/config/version")
-for pack in sys.argv[5:]:
+for pack in sys.argv[3:]:
     print("mattini %s: data pack %s loaded" % (version, pack))
-spacing = ("%.2f" % terrain["spacing_m"]).rstrip("0").rstrip(".")
-fields = (version, terrain["area"], terrain["columns"], terrain["rows"], spacing)
+
+
+def number(value):
+    return ("%.2f" % value).rstrip("0").rstrip(".")
+
+
+terrain, buildings = manifest["terrain"], manifest["buildings"]
+photo, surfaces = manifest["photo"], manifest["surfaces"]
+trees, roofs = manifest["trees"], manifest["roofs"]
+fields = (version, terrain["area"], terrain["columns"], terrain["rows"], number(terrain["spacing_m"]))
 print("mattini %s: terrain %s loaded, %d x %d vertices at %s m" % fields)
 chunks = buildings["chunks"]
 count = sum(chunk["buildings"] for chunk in chunks)
 triangles = sum(chunk["triangles"] for chunk in chunks)
 fields = (version, buildings["area"], count, len(chunks), triangles)
 print("mattini %s: buildings %s loaded, %d buildings in %d chunks, %d triangles" % fields)
-' "$MANIFEST" game/project.godot "$NO_TERRAIN" "$NO_BUILDINGS" "$@"
+fields = (version, photo["area"], photo["columns"], photo["rows"], number(photo["cell_m"]))
+print("mattini %s: photo %s loaded, %d x %d texels at %s m" % fields)
+fields = (version, surfaces["area"], surfaces["columns"], surfaces["rows"], number(surfaces["cell_m"]))
+print("mattini %s: surfaces %s loaded, %d x %d cells at %s m" % fields)
+chunks = trees["chunks"]
+fields = (version, trees["area"], sum(chunk["trees"] for chunk in chunks), len(chunks))
+print("mattini %s: trees %s loaded, %d trees in %d chunks" % fields)
+roofed = [building for chunk in roofs["chunks"] for building in chunk["buildings"]]
+coloured = sum(1 for building in roofed if building.get("roof") is not None)
+fields = (version, roofs["area"], coloured, len(roofed))
+print("mattini %s: roofs %s loaded, %d of %d buildings coloured" % fields)
+' "$MANIFEST" game/project.godot "$@"
 }
 
 # Step 4c's check (Python, run through uv like step 6's): arguments are the generated folder,
@@ -296,6 +342,14 @@ has_block() {
 	"${UV_RUN[@]}" python -c 'import json, sys; sys.exit(0 if isinstance(json.load(open(sys.argv[1], encoding="utf-8")).get(sys.argv[2]), dict) else 1)' "$MANIFEST" "$1"
 }
 
+# Fails, naming the commands that build it, at the first block of BLOCKS the manifest lacks.
+require_blocks() {
+	local entry
+	for entry in "${BLOCKS[@]}"; do
+		has_block "${entry%%|*}" || fail "$(no_block_message "${entry%%|*}")"
+	done
+}
+
 system="$(uname -s)"
 [ "$system" = "Linux" ] \
 	|| fail "step 6 starts the Linux build, which needs Linux; this is $system: run tools/export.sh on Linux (nothing was downloaded, installed or exported)"
@@ -303,11 +357,10 @@ system="$(uname -s)"
 step "1. the manifest, rewritten and re-checked against the config"
 "${UV_RUN[@]}" python -m mattini manifest || fail "python -m mattini manifest refused the generated data (see above)"
 
-step "2. the manifest step 1 wrote has a terrain block and a buildings block"
+step "2. the manifest step 1 wrote has all six blocks"
 [ -f "$MANIFEST" ] || fail "$MANIFEST is missing after step 1 wrote it"
-has_block terrain || fail "$NO_TERRAIN"
-has_block buildings || fail "$NO_BUILDINGS"
-echo "both blocks are there"
+require_blocks
+echo "all six blocks are there: terrain, buildings, photo, surfaces, trees and roofs"
 
 step "3. Godot $GODOT_VERSION's export templates"
 found="$("$GODOT" --version 2>&1)" || fail "$GODOT --version failed: $found"
@@ -412,8 +465,8 @@ fi
 step "6. the Linux build starts"
 expected="$(expected_startup_lines ${PACKS_WRITTEN[@]+"${PACKS_WRITTEN[@]}"})" || fail "no startup lines to expect (see above)"
 mapfile -t EXPECTED <<< "$expected"
-[ "${#EXPECTED[@]}" -eq $((2 + ${#PACKS_WRITTEN[@]})) ] \
-	|| fail "expected $((2 + ${#PACKS_WRITTEN[@]})) startup lines, found: $expected"
+[ "${#EXPECTED[@]}" -eq $((6 + ${#PACKS_WRITTEN[@]})) ] \
+	|| fail "expected $((6 + ${#PACKS_WRITTEN[@]})) startup lines, found: $expected"
 for line in "${EXPECTED[@]}"; do
 	echo "expecting: $line"
 done
@@ -426,9 +479,13 @@ errors="$(error_lines "$SCRATCH/start.log")"
 [ "$status" -eq 0 ] || fail "the Linux build exited $status (124: still running after $START_TIMEOUT_S s)"
 previous=0
 for line in "${EXPECTED[@]}"; do
-	at="$(grep -a -n -x -F -e "$line" "$SCRATCH/start.log" | head -n 1 | cut -d: -f1)" || true
-	[ -n "$at" ] || fail "the Linux build did not print its startup line: $line"
-	[ "$at" -gt "$previous" ] || fail "the Linux build printed its startup line out of order: $line"
+	# Every line number the line is printed at; under pipefail a line never printed would end
+	# the script at this assignment without a word, hence the || true inside.
+	printed="$(grep -a -n -x -F -e "$line" "$SCRATCH/start.log" | cut -d: -f1 || true)"
+	[ -n "$printed" ] || fail "the Linux build did not print its startup line: $line"
+	# Its first occurrence after the previous line's.
+	at="$(printf '%s\n' "$printed" | awk -v previous="$previous" '$1 > previous { print $1; exit }' || true)"
+	[ -n "$at" ] || fail "the Linux build printed its startup line out of order: $line"
 	previous="$at"
 	echo "started: $line"
 done

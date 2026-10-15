@@ -17,6 +17,11 @@ extends GutTest
 ## inside the bounds and above the highest vertex: a start over a corner of the bounds,
 ## START_ABOVE_M above the lowest vertex, passed that.
 ##
+## Since brief M3-14 (design's full replacement of M3-02's file; only this paragraph and the
+## errors absorbed change): the main scene also reads the photo, surfaces, trees and roofs
+## blocks, and the shared buildings fixture has none of them, so their readers' refusals of
+## it are absorbed as the terrain's are; complete_world.gd now holds every block.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); that the real village's
 ## buildings meet its terrain (measured at M2 planning and by the review, SPEC §8).
 
@@ -25,6 +30,10 @@ const Main := preload("res://scripts/main.gd")
 const TOLERANCE_M := 0.01
 const SCRATCH_DIR := "user://test_scene_placement"
 const DEPRECATION := "instance_reset_physics_interpolation() is deprecated"
+## The readers whose refusals of the buildings fixture (it holds only buildings) are expected.
+const ABSENT_BLOCKS := [
+	"TerrainGrid: ", "PhotoGrid: ", "SurfaceGrid: ", "TreeChunks: ", "BuildingRoofs: "
+]
 
 var _cases := 0
 
@@ -47,8 +56,11 @@ func _remove_tree(dir: String) -> void:
 
 func _absorb_expected_errors() -> void:
 	for error in get_errors():
-		if error.contains_text(DEPRECATION) or error.contains_text("TerrainGrid: "):
+		if error.contains_text(DEPRECATION):
 			error.handled = true
+		for reader: String in ABSENT_BLOCKS:
+			if error.contains_text(reader):
+				error.handled = true
 
 
 func _main_with(manifest_path: String) -> Node3D:

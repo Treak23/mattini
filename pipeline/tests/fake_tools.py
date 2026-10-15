@@ -21,6 +21,11 @@ So the scripts' own logic runs as it does for the owner, on output the test cont
 (2026-10-14, design's probes): its ANSI codes, its per-script heading and `<n>/<m>
 passed.` lines, its run summary with GUT's own padding, and its final line.
 
+Since brief M3-14 (design's full replacement of M3-02's file; only MANIFEST, STARTUP_LINES
+and this paragraph change): the export ships six blocks, so the stand-in manifest holds the
+terrain, buildings, photo, surfaces, trees and roofs blocks, and the started build prints
+their six startup lines, M2's two first (test_export_startup_lines.py pins them).
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -338,12 +343,29 @@ MANIFEST = {
             {"buildings": 486, "triangles": 78910},
         ],
     },
+    "photo": {"area": "village", "cell_m": 0.2, "columns": 10000, "rows": 15000},
+    "roofs": {
+        "area": "village",
+        "chunks": [
+            {"buildings": [{"roof": "a1b2c3"}] * 999 + [{"roof": None}]},
+            {"buildings": [{"roof": "445566"}] * 486},
+        ],
+    },
     "schema": 1,
+    "surfaces": {"area": "village", "cell_m": 0.5, "columns": 4000, "rows": 6000},
     "terrain": {"area": "village", "columns": 4001, "rows": 6001, "spacing_m": 0.5},
+    "trees": {
+        "area": "village",
+        "chunks": [{"trees": 5734}, {"trees": 3662}, {"trees": 25027}],
+    },
 }
 STARTUP_LINES = (
     f"mattini {VERSION}: terrain village loaded, 4001 x 6001 vertices at 0.5 m",
     f"mattini {VERSION}: buildings village loaded, 1486 buildings in 2 chunks, 178910 triangles",
+    f"mattini {VERSION}: photo village loaded, 10000 x 15000 texels at 0.2 m",
+    f"mattini {VERSION}: surfaces village loaded, 4000 x 6000 cells at 0.5 m",
+    f"mattini {VERSION}: trees village loaded, 34423 trees in 3 chunks",
+    f"mattini {VERSION}: roofs village loaded, 1485 of 1486 buildings coloured",
 )
 
 

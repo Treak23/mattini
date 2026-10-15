@@ -14,8 +14,9 @@ sky_material = SubResource("ProceduralSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_sky")
 ambient_light_source = 3
+ambient_light_sky_contribution = 0.25
 tonemap_mode = 2
-tonemap_exposure = 0.85
+tonemap_exposure = 0.54
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_error"]
 content_margin_left = 20.0

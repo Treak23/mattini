@@ -1,10 +1,10 @@
 extends GutTest
 ## The main scene beyond the pinned tests (brief M1-05; M0-03's default-path test replaced):
 ## it frees cleanly; the controls reach the camera through the InputMap and stop while the
-## pause screen is open; the sun is placed through WorldConfig; the error panel shows the
-## refusal itself with the command that fixes it; the credits and the controls hold what
-## the pause screen promises. Every test sets manifest_path, so no result depends on what
-## this machine has generated.
+## pause screen is open; the error panel shows the refusal itself with the command that fixes
+## it; the credits and the controls hold what the pause screen promises. The sun and the
+## light are test_main_scene_light.gd's since brief M3-14. Every test sets manifest_path, so
+## no result depends on what this machine has generated.
 ##
 ## Brief M2-05: the shared terrain fixture has no buildings, and a missing buildings block
 ## is refused on screen, so these tests read a complete world (complete_world.gd): the
@@ -182,19 +182,6 @@ func test_the_wheel_changes_the_speed_but_not_while_paused() -> void:
 	assert_almost_eq(camera.speed_mps, 37.5, 0.0001, "the wheel is ignored while paused")
 
 
-func test_the_sun_shines_from_azimuth_150_at_35_degrees() -> void:
-	var main := _main_with(_fixture_manifest_path())
-	var sun: DirectionalLight3D = main.get_node("Sun")
-	assert_true(sun.shadow_enabled, "the sun casts shadows")
-	var to_sun := sun.global_transform.basis.z  # a light shines along its −z
-	var elevation := deg_to_rad(35.0)
-	var azimuth := deg_to_rad(150.0)
-	assert_almost_eq(to_sun.y, sin(elevation), 0.0001, "elevation 35 degrees")
-	# The owner's axes: east is +x, north is −z.
-	assert_almost_eq(to_sun.x, sin(azimuth) * cos(elevation), 0.0001, "east part")
-	assert_almost_eq(to_sun.z, -cos(azimuth) * cos(elevation), 0.0001, "south part")
-
-
 func test_a_manifest_that_is_not_json_shows_its_refusal_and_the_manifest_command() -> void:
 	var path := _write_text("{ not json")
 	var main := _main_with(path)
@@ -204,8 +191,13 @@ func test_a_manifest_that_is_not_json_shows_its_refusal_and_the_manifest_command
 	assert_string_contains(message, path)
 	assert_string_contains(message, "uv run --project pipeline python -m mattini manifest")
 	assert_true(
-		message.begins_with("mattini cannot show the terrain and the buildings.\n"),
-		"a refused manifest shows neither (M2-05)"
+		message.begins_with(
+			(
+				"mattini cannot show the terrain, the buildings, the aerial photo, the surfaces"
+				+ " (roads, paths, water and rock), the trees and the roof colours.\n"
+			)
+		),
+		"a refused manifest shows nothing: all six are named (M2-05, M3-14)"
 	)
 	assert_null(main.get_node_or_null("Terrain"))
 	assert_null(main.get_node_or_null("Buildings"))
