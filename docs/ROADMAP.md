@@ -27,6 +27,10 @@ all OK).
 
 **Decisions for design to audit** (BUILD.md §The orchestrator 5):
 - M3-01: the steps check `computed_for.inputs_sha256` before reading `provenance.json` (the brief fixes only "the lock's fit before provenance"); the alternative, inputs after provenance, is four lines to move per step; pinned by `test_m3_01_step_order.py` (its Findings).
+- M3-03: the TLM download's five GETs count per round, not per run (a complete part with a wrong SHA-256 is deleted and fetched once more, with five GETs of its own: ten at most), where SPEC §5 and the brief say "up to five GETs per run"; the alternative is one counter for the run, one line in `_fetch_resumable`; design either rewords the SPEC or asks for the line (M3-03 Findings 4).
+- M3-03: `fit_problem(lock, datasets, None, None, "swisstlm3d")` serves the national file (no second function); the download's Ctrl-C line says "any part of the file is kept" (M3-03 Findings 4).
+- M3-09: `PhotoGrid` refuses nothing for a photo wider than 16384 texels (Compatibility draws it black, no error, brain.md H21); the village's 10000 x 15000 fits (M3-09 Findings 5).
+- M3-08: export checks 4b/4c have no committed stand-in pytest (`pipeline/tests/` was outside its Scope); the review's game-and-tools lens or M3-14 adds one (M3-08 Findings).
 
 **Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
 (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).
