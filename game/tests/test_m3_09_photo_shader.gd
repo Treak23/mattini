@@ -14,7 +14,7 @@ const PRIVATE_FROM := "// Defined Constants"
 const PRIVATE_TO := "// Public Uniforms"
 const TERRAIN_FROM := "// Varyings & Types"
 const CLAY_LOOK := "\t// Apply PBR: clay with contour lines of the real height H."
-const PHOTO_LOOK := "\t// The photo by world position."
+const PHOTO_LOOK := "\t// The photo look."
 
 
 ## The text of [param path] from [param from] up to (not including) [param to].

@@ -1,12 +1,18 @@
 // Copyright © 2023-2026 Cory Petkovsek, Roope Palmroos, and Contributors.
 // This shader is the minimum needed to allow the terrain to function, without any texturing.
 //
-// mattini's photo look (brief M3-09; docs/SPEC.md §10): Terrain3D 1.0.2's
+// mattini's photo look (briefs M3-09 and M3-10; docs/SPEC.md §10): Terrain3D 1.0.2's
 // extras/shaders/minimum.gdshader (MIT, res://addons/terrain_3d/LICENSE.txt) as in
 // terrain_clay.gdshader, its vertex() and the terrain normals in fragment() unchanged, without
 // the contour lines. The albedo is the aerial photo (SWISSIMAGE 2023): photo_rect holds the
 // local x and z of its north-west corner, its width and its depth in metres, and the photo is
-// sampled by world position; outside it the neutral colour of the clay look.
+// sampled by world position; outside it the neutral colour of the clay look. On it the surface
+// classes (swissTLM3D: one byte per texel, placed by surfaces_rect, read with texelFetch and
+// never filtered) add: on rock, a triplanar CC0 rock texture weighted by smoothstep(35°, 55°,
+// slope), its luminance relative to its mean tinting the photo's colour; on roads and paths,
+// CC0 detail textures whose luminance relative to their mean multiplies the photo, fading out
+// by near_fade_m from the camera; on water, roughness 0.05, the photo darkened, two drifting
+// noise normal maps (NoiseTexture2D, made by TerrainLoader).
 
 shader_type spatial;
 render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx,skip_vertex_transform;
@@ -56,7 +62,132 @@ uniform sampler2D photo : source_color, filter_linear_mipmap_anisotropic, repeat
 uniform vec4 photo_rect = vec4(0.0, 0.0, 1.0, 1.0);
 // Outside the photo: the clay's neutral colour, never an invented ground.
 uniform vec3 outside_albedo : source_color = vec3(0.52, 0.50, 0.47);
+
+group_uniforms surfaces;
+// The surface classes, one byte per texel (0 none, 1 rock, 2 water, 3 path, 4 road), placed
+// like the photo: local x0, z0 (the north-west corner), width, depth (m). Read only with
+// texelFetch: a filtered class would invent a class between two. No sRGB hint: a class is a
+// number. Unset (no SurfaceGrid): black, class 0 everywhere.
+uniform sampler2D surfaces : hint_default_black, filter_nearest, repeat_disable;
+uniform vec4 surfaces_rect = vec4(0.0, 0.0, 1.0, 1.0);
+// The road and path detail fades out by this distance from the camera (m).
+uniform float near_fade_m = 150.0;
+
+group_uniforms rock;
+// Poly Haven rock_face_03 (CC0), 2.7 m on the ground.
+uniform sampler2D rock_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D rock_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D rock_roughness : hint_roughness_r, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float rock_scale_m = 2.7;
+
+group_uniforms road_and_path;
+// Poly Haven worn_asphalt and rocky_trail (CC0), 2 m on the ground each.
+uniform sampler2D road_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D road_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float road_scale_m = 2.0;
+uniform sampler2D path_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D path_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float path_scale_m = 2.0;
+uniform float detail_normal_strength = 1.0;
+
+group_uniforms water;
+// Two NoiseTexture2D normal maps (TerrainLoader makes them; no file), drifting apart.
+uniform sampler2D water_normal_a : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform sampler2D water_normal_b : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform float water_scale_m = 10.0;
+uniform vec2 water_drift_a = vec2(0.23, 0.11); // m/s
+uniform vec2 water_drift_b = vec2(-0.13, 0.19); // m/s
+uniform float water_normal_strength = 0.2;
+uniform float water_darken = 0.6;
 group_uniforms;
+
+const float PHOTO_ROUGHNESS = 0.95;
+const float WATER_ROUGHNESS = 0.05;
+
+// Luminance of a linear colour (Rec. 709).
+float luminance(vec3 c) {
+	return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
+
+// The mean luminance of a texture: its smallest mip level (box-filtered by the importer).
+float mean_luminance(sampler2D tex) {
+	return max(luminance(textureLod(tex, vec2(0.5), 16.0).rgb), 1e-4);
+}
+
+// A tangent-space normal from a normal map, as (along +u, along +v, out). OpenGL convention:
+// green points up the picture, which is -v in Godot's texture space. z is rebuilt from x and
+// y: a two-channel compressed normal map has no blue.
+vec3 unpack_normal(vec4 s) {
+	vec2 xy = s.xy * 2.0 - 1.0;
+	return vec3(xy.x, -xy.y, sqrt(max(0.0, 1.0 - dot(xy, xy))));
+}
+
+// The surface classes around (x, z): the weights of rock, water, path and road. Each of the
+// four nearest class texels is read exactly (texelFetch) and the four are blended bilinearly
+// per class, so a class edge is soft over one texel instead of stair-stepped. Texel (c, r) is
+// centred at uv ((c + 0.5) / columns, (r + 0.5) / rows) of surfaces_rect, rows from the north
+// (+z). Outside the grid: class 0.
+vec4 class_weights(vec2 xz) {
+	ivec2 size = textureSize(surfaces, 0);
+	vec2 t = (xz - surfaces_rect.xy) / surfaces_rect.zw * vec2(size) - 0.5;
+	vec2 base = floor(t);
+	vec2 f = t - base;
+	ivec2 i0 = ivec2(base);
+	vec4 w = vec4(0.0);
+	for (int k = 0; k < 4; k++) {
+		ivec2 o = ivec2(k % 2, k / 2);
+		ivec2 p = i0 + o;
+		if (p.x < 0 || p.y < 0 || p.x >= size.x || p.y >= size.y) {
+			continue;
+		}
+		int c = int(texelFetch(surfaces, p, 0).r * 255.0 + 0.5);
+		float b = (o.x == 1 ? f.x : 1.0 - f.x) * (o.y == 1 ? f.y : 1.0 - f.y);
+		w += b * vec4(float(c == 1), float(c == 2), float(c == 3), float(c == 4));
+	}
+	return w;
+}
+
+// The rock texture projected along the three world axes and blended by the terrain normal n
+// (triplanar). Returns its luminance relative to its mean, its roughness, and the normal
+// perturbation to add to n (UDN blend). p is the world position, dpdx and dpdy its screen
+// derivatives (taken outside any branch, so textureGrad is exact inside one).
+void rock_triplanar(vec3 p, vec3 n, vec3 dpdx, vec3 dpdy,
+		out float relative, out float rough, out vec3 bump) {
+	vec3 bw = pow(abs(n), vec3(4.0));
+	bw /= bw.x + bw.y + bw.z;
+	vec3 q = p / rock_scale_m;
+	vec3 qx = dpdx / rock_scale_m;
+	vec3 qy = dpdy / rock_scale_m;
+	// X looks along x (u = z, v = y), Y along y (u = x, v = z), Z along z (u = x, v = y).
+	vec2 ux = q.zy;
+	vec2 uy = q.xz;
+	vec2 uz = q.xy;
+	float mean = mean_luminance(rock_albedo);
+	relative = (
+		luminance(textureGrad(rock_albedo, ux, qx.zy, qy.zy).rgb) * bw.x
+		+ luminance(textureGrad(rock_albedo, uy, qx.xz, qy.xz).rgb) * bw.y
+		+ luminance(textureGrad(rock_albedo, uz, qx.xy, qy.xy).rgb) * bw.z
+	) / mean;
+	rough = textureGrad(rock_roughness, ux, qx.zy, qy.zy).r * bw.x
+		+ textureGrad(rock_roughness, uy, qx.xz, qy.xz).r * bw.y
+		+ textureGrad(rock_roughness, uz, qx.xy, qy.xy).r * bw.z;
+	vec3 tx = unpack_normal(textureGrad(rock_normal, ux, qx.zy, qy.zy));
+	vec3 ty = unpack_normal(textureGrad(rock_normal, uy, qx.xz, qy.xz));
+	vec3 tz = unpack_normal(textureGrad(rock_normal, uz, qx.xy, qy.xy));
+	// Each projection's (along +u, along +v) in world axes.
+	bump = vec3(0.0, tx.y, tx.x) * bw.x + vec3(ty.x, 0.0, ty.y) * bw.y + vec3(tz.x, tz.y, 0.0) * bw.z;
+}
+
+// A detail texture on the ground (u = x, v = z): its luminance relative to its mean and the
+// normal perturbation (UDN) to add to the terrain normal.
+void ground_detail(sampler2D albedo_tex, sampler2D normal_tex, vec2 xz, float scale, vec2 ddx,
+		vec2 ddy, out float relative, out vec3 bump) {
+	vec2 uv = xz / scale;
+	relative = luminance(textureGrad(albedo_tex, uv, ddx / scale, ddy / scale).rgb)
+		/ mean_luminance(albedo_tex);
+	vec3 t = unpack_normal(textureGrad(normal_tex, uv, ddx / scale, ddy / scale));
+	bump = vec3(t.x, 0.0, t.y);
+}
 
 // Varyings & Types
 // Some are required for editor functions
@@ -229,14 +360,76 @@ void fragment() {
 		BINORMAL = normalize(cross(NORMAL, TANGENT));
 	}
 
-	// The photo by world position. v_vertex is in world space, so the screen derivatives of
-	// the uv are world-space ones and the sampling has no seam at Terrain3D's region borders.
-	// texture() stays outside any branch so those derivatives are valid.
+	// The photo look. n is the terrain's world normal from above. The position and its screen
+	// derivatives are world-space ones (v_vertex is in world space), taken here outside any
+	// branch, so there is no seam at Terrain3D's region borders and textureGrad is exact inside
+	// the branches below.
+	vec3 n = w_normal;
+	vec2 xz = v_vertex.xz;
+	vec2 ddx_xz = base_ddx.xz;
+	vec2 ddy_xz = base_ddy.xz;
+	float dist = length(VERTEX);
+
+	// The photo, sampled everywhere (texture() outside any branch, so its derivatives stay
+	// valid); outside it the neutral colour.
 	vec2 puv = (v_vertex.xz - photo_rect.xy) / photo_rect.zw;
 	vec3 albedo = texture(photo, puv).rgb;
 	if (any(lessThan(puv, vec2(0.0))) || any(greaterThan(puv, vec2(1.0)))) {
 		albedo = outside_albedo;
 	}
+	float roughness = PHOTO_ROUGHNESS;
+	vec3 bump = vec3(0.0);
+
+	vec4 classes = class_weights(xz); // rock, water, path, road
+
+	// Rock: only on class rock, by the slope of the terrain.
+	float slope = acos(clamp(n.y, -1.0, 1.0));
+	float w_rock = classes.x * smoothstep(radians(35.0), radians(55.0), slope);
+	if (w_rock > 0.0) {
+		float relative;
+		float rough;
+		vec3 rock_bump;
+		rock_triplanar(v_vertex, n, base_ddx, base_ddy, relative, rough, rock_bump);
+		albedo *= mix(1.0, relative, w_rock);
+		roughness = mix(roughness, rough, w_rock);
+		bump += rock_bump * w_rock;
+	}
+
+	// Roads and paths: detail near the camera, the photo's colour kept (mean 1).
+	float near = 1.0 - smoothstep(near_fade_m / 3.0, near_fade_m, dist);
+	float w_road = classes.w * near;
+	float w_path = classes.z * near;
+	if (w_road > 0.0) {
+		float relative;
+		vec3 detail_bump;
+		ground_detail(road_albedo, road_normal, xz, road_scale_m, ddx_xz, ddy_xz, relative, detail_bump);
+		albedo *= mix(1.0, relative, w_road);
+		bump += detail_bump * detail_normal_strength * w_road;
+	}
+	if (w_path > 0.0) {
+		float relative;
+		vec3 detail_bump;
+		ground_detail(path_albedo, path_normal, xz, path_scale_m, ddx_xz, ddy_xz, relative, detail_bump);
+		albedo *= mix(1.0, relative, w_path);
+		bump += detail_bump * detail_normal_strength * w_path;
+	}
+
+	// Water: smooth, darker, its normals drifting.
+	float w_water = classes.y;
+	if (w_water > 0.0) {
+		vec2 ua = xz / water_scale_m + TIME * water_drift_a / water_scale_m;
+		vec2 ub = xz / (water_scale_m * 1.7) + TIME * water_drift_b / (water_scale_m * 1.7);
+		vec3 na = unpack_normal(textureGrad(water_normal_a, ua, ddx_xz / water_scale_m, ddy_xz / water_scale_m));
+		vec3 nb = unpack_normal(textureGrad(water_normal_b, ub, ddx_xz / (water_scale_m * 1.7), ddy_xz / (water_scale_m * 1.7)));
+		vec2 ripple = (na.xy + nb.xy) * water_normal_strength;
+		bump = mix(bump, vec3(ripple.x, 0.0, ripple.y), w_water);
+		albedo *= mix(1.0, water_darken, w_water);
+		roughness = mix(roughness, WATER_ROUGHNESS, w_water);
+	}
+
+	if (!flat_terrain_normals) {
+		NORMAL = mat3(VIEW_MATRIX) * normalize(n + bump);
+	}
 	ALBEDO = albedo;
-	ROUGHNESS = 0.95;
+	ROUGHNESS = roughness;
 }

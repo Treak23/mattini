@@ -13,19 +13,41 @@ extends RefCounted
 ##
 ## Given a PhotoGrid the terrain wears the aerial photo: the override shader is
 ## terrain_photo.gdshader, which samples the photo by world position inside the PhotoGrid's
-## rectangle. Without one it keeps M2's clay look.
+## rectangle. Without one it keeps M2's clay look. Given a SurfaceGrid as well, the shader
+## also draws swissTLM3D's classes on the photo (rock, water, path, road) with the CC0
+## textures under res://textures/ and two generated water normal maps; the classes alone,
+## without a photo, change nothing.
 
 const TERRAIN_NAME := "Terrain"
 const REGION_WIDTH_M := 1024.0
 const CLAY_SHADER := "res://shaders/terrain_clay.gdshader"
 const PHOTO_SHADER := "res://shaders/terrain_photo.gdshader"
+const TEXTURES_DIR := "res://textures"
+## The photo shader's CC0 texture uniforms and the Poly Haven files they take (each named in
+## res://textures/LICENSE.txt, imported with mipmaps).
+const SURFACE_TEXTURES := {
+	"rock_albedo": "rock_face_03_diff_2k.jpg",
+	"rock_normal": "rock_face_03_nor_gl_2k.jpg",
+	"rock_roughness": "rock_face_03_rough_2k.jpg",
+	"road_albedo": "worn_asphalt_diff_1k.jpg",
+	"road_normal": "worn_asphalt_nor_gl_1k.jpg",
+	"path_albedo": "rocky_trail_diff_1k.jpg",
+	"path_normal": "rocky_trail_nor_gl_1k.jpg",
+}
+## The water's two generated normal maps: uniform and noise seed.
+const WATER_NORMALS := {"water_normal_a": 1, "water_normal_b": 2}
+const WATER_NORMAL_SIZE := 256
+const WATER_BUMP_STRENGTH := 6.0
 
 
 ## Adds a Terrain3D node named "Terrain" to [param parent] (in the tree, with a camera in
 ## its viewport) and returns it with the grid's heights loaded. The parent must be in the
 ## tree: Terrain3D builds its material and data only on entering it. With [param photo] the
-## terrain shows that photo, otherwise the clay look.
-static func create(grid: TerrainGrid, parent: Node, photo: PhotoGrid = null) -> Terrain3D:
+## terrain shows that photo, otherwise the clay look; with [param surfaces] too, the classes
+## are drawn on the photo.
+static func create(
+	grid: TerrainGrid, parent: Node, photo: PhotoGrid = null, surfaces: SurfaceGrid = null
+) -> Terrain3D:
 	var terrain := Terrain3D.new()
 	terrain.name = TERRAIN_NAME
 	# Before entering the tree: made in code, it prints ERROR lines on entering unless
@@ -48,8 +70,39 @@ static func create(grid: TerrainGrid, parent: Node, photo: PhotoGrid = null) -> 
 	if photo != null:
 		material.set_shader_param("photo", photo.texture)
 		material.set_shader_param("photo_rect", photo.rect())
+		if surfaces != null:
+			_set_surfaces(material, surfaces)
 	_import(terrain, grid, region_vertices)
 	return terrain
+
+
+## Hands the photo shader the classes, their own rectangle (not the photo's), the CC0
+## textures and the water's generated normal maps. Every sampler the shader declares is set:
+## an unset one draws Godot's default texture, silently.
+static func _set_surfaces(material: Terrain3DMaterial, surfaces: SurfaceGrid) -> void:
+	material.set_shader_param("surfaces", surfaces.texture)
+	material.set_shader_param("surfaces_rect", surfaces.rect())
+	for uniform: String in SURFACE_TEXTURES:
+		material.set_shader_param(uniform, load(TEXTURES_DIR.path_join(SURFACE_TEXTURES[uniform])))
+	for uniform: String in WATER_NORMALS:
+		material.set_shader_param(uniform, _water_normal(WATER_NORMALS[uniform]))
+
+
+## A seamless 256 × 256 normal map of smooth simplex noise (3 octaves), made in memory: the
+## water's ripples need no file.
+static func _water_normal(noise_seed: int) -> NoiseTexture2D:
+	var noise := FastNoiseLite.new()
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.seed = noise_seed
+	noise.fractal_octaves = 3
+	var texture := NoiseTexture2D.new()
+	texture.noise = noise
+	texture.width = WATER_NORMAL_SIZE
+	texture.height = WATER_NORMAL_SIZE
+	texture.seamless = true
+	texture.as_normal_map = true
+	texture.bump_strength = WATER_BUMP_STRENGTH
+	return texture
 
 
 ## Imports the grid as one height image and one control image covering every region the

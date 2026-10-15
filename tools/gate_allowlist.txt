@@ -9,3 +9,4 @@ the WorldConfig given was not read from this manifest @ res://tests/test_scene_p
 BuildingRoofs: user://test_ @ res://tests/test_building_roofs.gd # its refusal tests write broken manifests under user://test_building_roofs on purpose (brief M3-12)
 PhotoGrid: user://test_ @ res://tests/test_photo_grid.gd # its refusal tests write broken manifests under user://test_photo_grid on purpose (brief M3-09)
 TreeChunks: user://test_ @ res://tests/test_tree_chunks.gd # its refusal tests write broken manifests under user://test_tree_chunks on purpose (brief M3-11)
+SurfaceGrid: user://test_ @ res://tests/test_surface_grid.gd # its refusal tests write broken manifests under user://test_surface_grid on purpose (brief M3-10)

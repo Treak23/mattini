@@ -1,0 +1,12 @@
+The detail textures for rock, roads and paths are CC0 1.0 Universal (public domain; no
+attribution is required, it is given here with thanks), from Poly Haven
+(https://polyhaven.com/license), used unchanged:
+
+Rock Face 03 by Dario Barresi and Rico Cilliers, https://polyhaven.com/a/rock_face_03
+    rock_face_03_diff_2k.jpg, rock_face_03_nor_gl_2k.jpg, rock_face_03_rough_2k.jpg
+Worn Asphalt by Amal Kumar, https://polyhaven.com/a/worn_asphalt
+    worn_asphalt_diff_1k.jpg, worn_asphalt_nor_gl_1k.jpg
+Rocky Trail by Amal Kumar, https://polyhaven.com/a/rocky_trail
+    rocky_trail_diff_1k.jpg, rocky_trail_nor_gl_1k.jpg
+
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
