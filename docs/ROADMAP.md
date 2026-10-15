@@ -15,7 +15,7 @@ M2's residue is M3-01 and M3-02.
 
 Orchestrator: session_014zvmfwGgSKjxfe3feiiL91 · M3 · since 2026-10-14T19:45Z
 Review R1 (head 410dbba): placement session_01UyfhtHNQQtrAF4JfdSXPaG · inputs session_014qJkvMTqRCbTaAHcPfVcor · game session_0197UUnhCMWvPLNrHq6UPGLJ · since 2026-10-15T09:10Z
-Builder: M3-R1-fix-4, M3-R1-fix-1 · pending · since 2026-10-15T10:35Z
+Builder: M3-R1-fix-4, M3-R1-fix-1 · session_01J6SoFqNMsghbpUsZdRaNzk · since 2026-10-15T10:15Z
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
