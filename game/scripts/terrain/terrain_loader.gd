@@ -10,16 +10,22 @@ extends RefCounted
 ## hole. Heights outside the grid are 0.0, never NaN (Terrain3D turns NaN into 0 m, not a
 ## hole); the control map's hole bit is what hides them. Nothing is drawn outside the
 ## regions (world background none) and there is no collision in M1.
+##
+## Given a PhotoGrid the terrain wears the aerial photo: the override shader is
+## terrain_photo.gdshader, which samples the photo by world position inside the PhotoGrid's
+## rectangle. Without one it keeps M2's clay look.
 
 const TERRAIN_NAME := "Terrain"
 const REGION_WIDTH_M := 1024.0
 const CLAY_SHADER := "res://shaders/terrain_clay.gdshader"
+const PHOTO_SHADER := "res://shaders/terrain_photo.gdshader"
 
 
 ## Adds a Terrain3D node named "Terrain" to [param parent] (in the tree, with a camera in
 ## its viewport) and returns it with the grid's heights loaded. The parent must be in the
-## tree: Terrain3D builds its material and data only on entering it.
-static func create(grid: TerrainGrid, parent: Node) -> Terrain3D:
+## tree: Terrain3D builds its material and data only on entering it. With [param photo] the
+## terrain shows that photo, otherwise the clay look.
+static func create(grid: TerrainGrid, parent: Node, photo: PhotoGrid = null) -> Terrain3D:
 	var terrain := Terrain3D.new()
 	terrain.name = TERRAIN_NAME
 	# Before entering the tree: made in code, it prints ERROR lines on entering unless
@@ -35,9 +41,13 @@ static func create(grid: TerrainGrid, parent: Node) -> Terrain3D:
 	var material := terrain.material
 	material.world_background = Terrain3DMaterial.NONE
 	material.show_checkered = false
-	material.shader_override = load(CLAY_SHADER)
+	# The shader first: Terrain3D drops a parameter set before the shader declares it (H25).
+	material.shader_override = load(CLAY_SHADER if photo == null else PHOTO_SHADER)
 	material.shader_override_enabled = true
 	material.set_shader_param("height_offset_m", grid.height_offset_m)
+	if photo != null:
+		material.set_shader_param("photo", photo.texture)
+		material.set_shader_param("photo_rect", photo.rect())
 	_import(terrain, grid, region_vertices)
 	return terrain
 
