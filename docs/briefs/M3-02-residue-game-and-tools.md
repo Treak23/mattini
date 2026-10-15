@@ -114,3 +114,93 @@ Changing `main.gd`, `building_chunks.gd`, the allowlist's lines or a pinned file
 pipeline module (M3-01).
 
 ## Findings (executor writes)
+
+Lane builder B (a wave-1 builder session of the M3 orchestrator), 2026-10-14/15, on `main`
+at `2aba135`. Nothing outside the Scope was touched; `tools/gate_allowlist.txt` is
+unchanged (no entry was needed).
+
+1. **Pinned copies.** The six files of `docs/briefs/pinning/M3-02/` were copied one by one
+   (`cp -r … .` was refused by the sandbox's classifier as a bulk overwrite; the only live file
+   it replaces is `test_scene_placement.gd`, saved first). `cmp` with the pinned files:
+   identical before the gate and before the commit. The two `.uid` files were written by
+   Godot's first run and are staged.
+2. **Before the fix** (the pinned files against the unmodified tools and `terrain_grid.gd`):
+   `test_gate_gut_run.py` **12 failed** of 16, `test_export_checks.py` **5 failed** of 6,
+   `test_terrain_grid_world.gd` **2 failed** of 3; `test_scene_placement.gd` 5/5 and
+   `test_building_chunks_axes.gd` 4/4 pass, as designed (they close test gaps). Exactly design's
+   counts. After: 16/16, 6/6, 3/3.
+3. **Standard gate** (`tools/gate.sh > gate.log && git commit`), exit 0: `uv lock --check`;
+   pytest **766 passed**, 4 deselected (743 before + the 23 tests of the two pinned pytest
+   files); ruff check and format; `manifest`; Godot `4.6.3.stable.official.7d41c59c4`,
+   GUT `version="9.6.1"`; import and parse check; GUT **25 scripts, 117 tests, 117 passing,
+   2830 asserts** with `GUT version:  9.6.1` and `Scripts 25` equal to the 25 `test_*.gd` files
+   on disk; gdlint clean; gdformat 34 files unchanged; 85 `ERROR` lines in the log, all
+   excepted by the existing entries (the gate would fail on one that is not).
+4. **What changed, per finding.**
+   - *V1-G-01:* `unexcused_lines` prints a line matching `Ignoring script|Failed to load
+     script` (`NOT_RUN_LINES`) before it looks at any entry, global or scoped. The optional
+     half is built too: `read_allowlist` refuses an entry whose text holds either phrase, so
+     such an entry now fails the gate at the first scanned step (the import) with its own message.
+     The scan covers the entries the refusal cannot see (`res://tests/… because it does not
+     extend GutTest`, `script "res://…" with error`).
+   - *V1-G-05:* `gut_run` reads `Scripts <n>` after the last `= Run Summary` and requires it to
+     equal `find game/tests -name '.?*' -prune -o -type f -name 'test_*.gd' -print | wc -l`
+     (hidden files and folders left out, as GUT's `_get_files` leaves them out, `gut.gd:957`).
+     It names both numbers, or says the summary has no count. When the allowlist was refused
+     nothing ran, and `gut_run` returns at once instead of adding messages about a missing log.
+   - *V1-G-06:* `gut_run` requires the line `GUT version:  9.6.1` exactly (`grep -x -F`) and
+     names the `GUT version:` line it found.
+   - *V1-G-07:* `run_scanned` (gate.sh) and `clean_output` (export.sh) remove a CR at a line's
+     end after the ANSI codes (`sed -e … -e 's/\r$//'`).
+   - *V1-G-08:* `TerrainGrid._check_world` says `(its origin or height offset differs)`, split
+     over two lines as BuildingChunks' is.
+   - *V1-G-02, V1-G-03:* test-only; `main.gd` and `building_chunks.gd` are untouched.
+   - *M2-02 Findings 9:* `export.sh` checks `uname -s` = Linux before step 1, so on another
+     system it downloads, installs and exports nothing; its message names the system and
+     Linux. The check that was in step 6 is gone (it could not be reached any more), and so is
+     the MINGW/MSYS/CYGWIN branch of `templates_dir`, which only the other systems could reach
+     (my reading of the brief's decision 7, not its words: a dead branch whose comment claimed
+     Windows support would be a Hard Rule 2 breach); the header comments say so. Nothing else
+     changed in `export.sh`.
+5. **Real gate, in a scratch clone** (`git clone`, so no copied venv, H22; the probes
+   staged, which `test_repo_tracked.py` requires), logs kept in the session's scratchpad:
+   - *A, an ignored script.* `game/tests/test_zz_notgut.gd` extending Node, 26 files on disk.
+     With the entry `Ignoring script res://tests/test_zz_notgut.gd # …`: refused when the
+     allowlist is read, `== gate: FAILED at step: godot import` (exit 1). With the entry
+     `res://tests/test_zz_notgut.gd because it does not extend GutTest # …` (no phrase, so only
+     the scan can tell): `FAILED at step: gut`, with the lines `[WARNING]:  Ignoring script
+     res://tests/test_zz_notgut.gd because it does not extend GutTest` and `GUT counted 25 test
+     scripts, game/tests holds 26 test_*.gd files: a script was ignored, not loaded or is an inner
+     class, or the run did not reach its summary`.
+   - *B, a fake summary.* `test_zz_fake.gd` printing `= Run Summary` and `---- All tests
+     passed! ----`, then `get_tree().quit()`: `FAILED at step: gut` with `GUT's last run summary
+     has no 'Scripts <n>' line: it counted no test scripts (26 test_*.gd files under
+     game/tests)` (the run printed the fake summary and pass line and no `Scripts` line). The
+     unmodified gate's verdict on this probe is design's measurement (exit 0, no allowlist
+     entry); I did not repeat it, since a comparison run through the pinned pytest files cannot
+     use the old script.
+6. **Mutations**, each in the scratch clone, undone with `git apply -R` of its saved diff
+   (nothing in the working tree was mutated); controls first: `test_scene_placement.gd` 5/5, M2-08's
+   old copy of it 5/5, `test_building_chunks_axes.gd` 4/4, `test_building_chunks_world.gd` 5/5.
+   Harm each reproduces: the owner's first view starts off the village (over a corner of the
+   buildings' bounds, or at the height of their lowest vertex) or the world's axes are accepted
+   when two of three are wrong (a mirrored or turned world places buildings elsewhere).
+   - `main.gd` start at the bounds' corner (`bounds.position.x/z` for `centre.x/z`):
+     `test_scene_placement.gd::test_without_terrain_the_camera_starts_over_the_buildings`
+     fails on "over the centre of the bounds" (x: 895.48 against 985.20; z: −26.42 against 14.70).
+     M2-08's old copy passes (5/5).
+   - at the lowest vertex (`bounds.position.y` for `bounds.end.y`): the same test fails on
+     "START_ABOVE_M above the highest vertex" (1153.61 against 1196.09). Old copy 5/5.
+   - both: the same test, three assertions. Old copy 5/5.
+   - the axes check reduced to the east step: `test_building_chunks_axes.gd::
+     test_east_kept_north_and_up_turned_is_refused` fails (the check returns `""`); the old
+     `test_building_chunks_world.gd` passes (5/5).
+   - reduced to the north step: `…::test_north_kept_east_and_up_turned_is_refused` fails; the
+     old test passes (5/5).
+   - reduced to the up step (extra): `…::test_up_kept_east_and_north_turned_is_refused` fails;
+     the old test fails here too.
+7. **Left as it was, said aloud.** `test_zzold_placement.gd`, the probes and their logs live
+   only in the scratch clone and the session's scratchpad. The gate's two checks that I added
+   read GUT's text, so they prove what GUT printed, not that every script ran: a test that
+   prints both a fake summary and a `Scripts <n>` line equal to the count, then quits, still
+   passes (not measured, not closed). The CR handling was tested on simulated CR LF output only.

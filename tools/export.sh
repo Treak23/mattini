@@ -5,7 +5,11 @@
 #
 #   tools/export.sh
 #
-# In order, stopping with a non-zero exit and a message at the first failure:
+# Before step 1 it refuses a system other than Linux (`uname -s`), naming the system and
+# Linux: step 6 starts the Linux build, so on another system the export used to run to its
+# end and then fail. Nothing is downloaded, installed or exported on a refusal (brief M3-02;
+# M2-02 Findings 9). In order, stopping with a non-zero exit and a message at the first
+# failure:
 #   1. rewrites the generated manifest, which re-checks the generated data against the
 #      config (and writes a block null when its generated data is gone);
 #   2. refuses unless the manifest step 1 has just written has a terrain block and a
@@ -31,8 +35,9 @@
 #      exit 0 and no ERROR line (M1 review G-02: an export without its terrain passed every
 #      step before this one). A manifest without one of the blocks is refused there too,
 #      with step 2's message.
-#      It needs Linux, and fails on another system. Nothing here starts the Windows build
-#      (the owner's PC is its test).
+#      Nothing here starts the Windows build (the owner's PC is its test).
+# Godot's output is read with ANSI colours and a CR at the end of a line removed, so a CR LF
+# run reads as an LF one (brief M3-02, V1-G-07).
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -80,9 +85,10 @@ step() {
 	echo "== export: $1"
 }
 
-# Copies the output file $1 to $2 with ANSI colours removed, and prints it.
+# Copies the output file $1 to $2 with ANSI colours and a CR at the end of a line removed
+# (V1-G-07), and prints it.
 clean_output() {
-	sed 's/\x1b\[[0-9;]*[A-Za-z]//g' "$1" > "$2"
+	sed -e 's/\x1b\[[0-9;]*[A-Za-z]//g' -e 's/\r$//' "$1" > "$2"
 	cat "$2"
 }
 
@@ -133,18 +139,20 @@ print("mattini %s: buildings %s loaded, %d buildings in %d chunks, %d triangles"
 ' "$MANIFEST" game/project.godot "$NO_TERRAIN" "$NO_BUILDINGS"
 }
 
-# Godot's templates folder for this version (Linux, or Windows under Git Bash).
+# Godot's templates folder for this version (Linux only: the script refuses any other system
+# before it gets here).
 templates_dir() {
-	case "$(uname -s)" in
-		MINGW* | MSYS* | CYGWIN*) echo "${APPDATA:?}/Godot/export_templates/$GODOT_VERSION" ;;
-		*) echo "${XDG_DATA_HOME:-$HOME/.local/share}/godot/export_templates/$GODOT_VERSION" ;;
-	esac
+	echo "${XDG_DATA_HOME:-$HOME/.local/share}/godot/export_templates/$GODOT_VERSION"
 }
 
 # Exits 0 when the manifest's block named $1 is an object (not null, not missing), else 1.
 has_block() {
 	"${UV_RUN[@]}" python -c 'import json, sys; sys.exit(0 if isinstance(json.load(open(sys.argv[1], encoding="utf-8")).get(sys.argv[2]), dict) else 1)' "$MANIFEST" "$1"
 }
+
+system="$(uname -s)"
+[ "$system" = "Linux" ] \
+	|| fail "step 6 starts the Linux build, which needs Linux; this is $system: run tools/export.sh on Linux (nothing was downloaded, installed or exported)"
 
 step "1. the manifest, rewritten and re-checked against the config"
 "${UV_RUN[@]}" python -m mattini manifest || fail "python -m mattini manifest refused the generated data (see above)"
@@ -223,8 +231,6 @@ if [ "${#over[@]}" -gt 0 ]; then
 fi
 
 step "6. the Linux build starts"
-[ "$(uname -s)" = "Linux" ] \
-	|| fail "step 6 starts the Linux build, which needs Linux; this is $(uname -s): run tools/export.sh on Linux"
 expected="$(expected_startup_lines)" || fail "no startup lines to expect (see above)"
 mapfile -t EXPECTED <<< "$expected"
 [ "${#EXPECTED[@]}" -eq 2 ] || fail "expected two startup lines, found: $expected"

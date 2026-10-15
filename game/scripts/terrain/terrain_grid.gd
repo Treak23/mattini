@@ -114,7 +114,10 @@ func _check_world(world: WorldConfig, block: Variant) -> String:
 		or origin.get("n") != world.origin_n
 		or block.get("height_offset_m") != world.height_offset
 	):
-		return "the WorldConfig given was not read from this manifest (its origin differs)"
+		return (
+			"the WorldConfig given was not read from this manifest"
+			+ " (its origin or height offset differs)"
+		)
 	var e := world.origin_e
 	var n := world.origin_n
 	var h := world.height_offset

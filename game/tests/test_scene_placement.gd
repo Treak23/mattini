@@ -1,6 +1,6 @@
 extends GutTest
-## Pinning tests for brief M2-08 (M2 R1 P-01, P-04, G-02): the buildings stand in the scene
-## where the world config puts them, on their terrain.
+## Pinning tests for briefs M2-08 and M3-02 (M2 R1 P-01, P-04, G-02; M2 V1-G-02): the
+## buildings stand in the scene where the world config puts them, on their terrain.
 ##
 ## Pinned decisions (docs/SPEC.md §8, the buildings, the game part; brief M2-08): the
 ## Buildings node and every chunk mesh sit at the scene's origin with no rotation or scale
@@ -9,13 +9,20 @@ extends GutTest
 ## shared buildings fixture every named vertex lies, in the scene, at WorldConfig.to_local
 ## of its LV95 point. In the complete test world the ground at the box's footprint lies
 ## between its floor and its roof. BuildingChunks refuses a WorldConfig read from another
-## manifest. With the terrain refused, the camera starts over the buildings, above the
-## highest of them.
+## manifest. With the terrain refused, the camera starts over the centre of the buildings'
+## bounds, START_ABOVE_M above the highest of their vertices.
+##
+## Since brief M3-02 (M2 V1-G-02; design's full replacement of M2-08's file) the camera's
+## start is compared with those two points within 1 cm, where it was only required to lie
+## inside the bounds and above the highest vertex: a start over a corner of the bounds,
+## START_ABOVE_M above the lowest vertex, passed that.
 ##
 ## Does NOT prove: that anything renders or looks right (no GPU); that the real village's
 ## buildings meet its terrain (measured at M2 planning and by the review, SPEC §8).
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
+const Main := preload("res://scripts/main.gd")
+const TOLERANCE_M := 0.01
 const SCRATCH_DIR := "user://test_scene_placement"
 const DEPRECATION := "instance_reset_physics_interpolation() is deprecated"
 
@@ -148,17 +155,23 @@ func test_a_world_config_from_another_manifest_is_refused() -> void:
 func test_without_terrain_the_camera_starts_over_the_buildings() -> void:
 	var main := _main_with(_buildings_fixture())
 	var camera: Camera3D = main.get_node("Camera")
-	var highest := -INF
 	var box := AABB()
 	var first := true
 	for mesh in main.get_node("Buildings").get_children():
 		for p in _global_vertices(mesh):
-			highest = maxf(highest, p.y)
 			if first:
 				box = AABB(p, Vector3.ZERO)
 				first = false
 			else:
 				box = box.expand(p)
-	assert_gt(camera.position.y, highest, "above the highest building")
-	assert_between(camera.position.x, box.position.x, box.end.x, "over the buildings (x)")
-	assert_between(camera.position.z, box.position.z, box.end.z, "over the buildings (z)")
+	assert_false(first, "the fixture's buildings have vertices")
+	# The fixture is asymmetric enough that a corner or the lowest vertex is metres away.
+	assert_gt(box.size.x, 1.0, "the bounds are wider than the tolerance (x)")
+	assert_gt(box.size.y, 1.0, "the bounds are taller than the tolerance")
+	assert_gt(box.size.z, 1.0, "the bounds are deeper than the tolerance (z)")
+	var centre := box.get_center()
+	var at := camera.position
+	assert_almost_eq(at.x, centre.x, TOLERANCE_M, "over the centre of the bounds (x)")
+	assert_almost_eq(at.z, centre.z, TOLERANCE_M, "over the centre of the bounds (z)")
+	var start_y: float = box.end.y + Main.START_ABOVE_M
+	assert_almost_eq(at.y, start_y, TOLERANCE_M, "START_ABOVE_M above the highest vertex")

@@ -16,7 +16,13 @@
 # configures it (G-04). The scans are only as good as the output formats they were
 # measured on, so the Godot-version step requires Godot 4.6.3 (G-09) and GUT 9.6.1, as
 # game/addons/gut/plugin.cfg names it (M2 R1 G-04: the scoped window below reads GUT's
-# lines).
+# lines), and the GUT run requires GUT's own line "GUT version:  9.6.1" (two spaces; GUT's
+# source of truth is its utils.gd, not plugin.cfg) and a script count in GUT's run summary
+# ("Scripts <n>") equal to the test_*.gd files under game/tests/ (M3-02: V1-G-06, V1-G-05;
+# a test that prints the summary and the pass line itself and quits has no count of its own
+# after its fake summary, and GUT counts an inner test class as one more script, so none may
+# exist). Every output is read with the ANSI codes and a CR at the end of a line removed, so
+# a CR LF run (a Windows console) reads as an LF one (V1-G-07).
 #
 # An error line known to be benign may be excepted in tools/gate_allowlist.txt, one entry
 # per line; blank lines and lines starting with # are ignored. Two kinds (M1 review G-03):
@@ -34,8 +40,11 @@
 # line), whose text (spaces at its ends not counted) is shorter than 12 characters or is a
 # scan prefix (ERROR, SCRIPT ERROR or [ERROR], with or without the colon Godot and GUT
 # print after it: every line of its kind holds it), or scoped to anything but an existing
-# file res://tests/<script>.gd, fails the gate (M2 R1 G-05). Every entry is a Findings item
-# of the brief that adds it.
+# file res://tests/<script>.gd, fails the gate (M2 R1 G-05). So does an entry whose text
+# holds "Ignoring script" or "Failed to load script": those lines mean a test script did not
+# run, and no entry, global or scoped, excepts them (M3-02, V1-G-01: the review passed a
+# whole gate with an ignored script allowlisted). Every entry is a Findings item of the
+# brief that adds it.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -48,6 +57,10 @@ GUT_PLUGIN="game/addons/gut/plugin.cfg"
 ALLOWLIST="tools/gate_allowlist.txt"
 # The shortest allowlist text that is specific enough to except anything (M2 R1 G-05).
 ALLOWLIST_MIN_TEXT=12
+# The lines that mean a test script did not run (GUT's "Ignoring script <path> because it
+# does not extend GutTest", Godot's "Failed to load script"): an extended regex, never
+# excepted by the allowlist (M3-02, V1-G-01).
+NOT_RUN_LINES='Ignoring script|Failed to load script'
 SCRATCH="$(mktemp -d)"
 trap 'rm -rf "$SCRATCH"' EXIT
 
@@ -76,8 +89,8 @@ allowlist_refused() {
 # and $SCRATCH/scoped.txt, "<script>\t<text>" per scoped entry; neither holds an empty text
 # (an empty pattern would match every line). Fails when an entry has no reason, a text
 # that is empty or only spaces, shorter than ALLOWLIST_MIN_TEXT characters or a scan
-# prefix (spaces at its ends not counted, nor a colon after the prefix), or a scope that is
-# not an existing test script.
+# prefix (spaces at its ends not counted, nor a colon after the prefix), a text holding
+# one of the NOT_RUN_LINES phrases, or a scope that is not an existing test script.
 read_allowlist() {
 	: > "$SCRATCH/allowed.txt" || return 1
 	: > "$SCRATCH/scoped.txt" || return 1
@@ -121,6 +134,12 @@ read_allowlist() {
 				return 1
 				;;
 		esac
+		case "$text" in
+			*"Ignoring script"* | *"Failed to load script"*)
+				allowlist_refused "whose text holds a line that means a test script did not run, which no entry excepts" "$line"
+				return 1
+				;;
+		esac
 		if [ -z "$script" ]; then
 			printf '%s\n' "$text" >> "$SCRATCH/allowed.txt"
 			continue
@@ -141,12 +160,13 @@ read_allowlist() {
 }
 
 # Prints the lines of the cleaned output $2 that match the extended regex $1 and that no
-# allowlist entry excepts (read_allowlist has read them). A global entry excepts a line
+# allowlist entry excepts (read_allowlist has read them); a line matching NOT_RUN_LINES is
+# printed whatever the allowlist says. A global entry excepts a line
 # containing its text. A scoped entry does so only when $3 is "gut", and only while its
 # script runs: after GUT's line naming the script and before that script's "<n>/<m>
 # passed." line, the next script's line or "= Run Summary" (the header above).
 unexcused_lines() {
-	PATTERN="$1" STEP="${3:-}" awk '
+	PATTERN="$1" STEP="${3:-}" NOT_RUN="$NOT_RUN_LINES" awk '
 		FILENAME == ARGV[1] { global[++globals] = $0; next }
 		FILENAME == ARGV[2] {
 			tab = index($0, "\t")
@@ -160,6 +180,7 @@ unexcused_lines() {
 			else if ($0 == "= Run Summary") { running = ""; summary = 1 }
 		}
 		$0 !~ ENVIRON["PATTERN"] { next }
+		$0 ~ ENVIRON["NOT_RUN"] { print; next }
 		{
 			for (i = 1; i <= globals; i++) if (index($0, global[i])) next
 			if (running != "")
@@ -177,18 +198,19 @@ run_godot() {
 	XDG_DATA_HOME="$SCRATCH/data" "$GODOT" "$@"
 }
 
-# Runs a command, prints its output with ANSI colours removed, and fails when the command
-# exits non-zero or when an output line matches the extended regex $1 and is not allowed.
-# With $2 "gut", the entries scoped to a test script apply too; with "", only the global
-# ones. The cleaned output stays in $SCRATCH/out.log for the caller. The scan reads a NUL
-# byte in the output as any other byte (awk; grep would need -a, M0 review G-07).
+# Runs a command, prints its output with ANSI colours and a CR at the end of a line removed
+# (V1-G-07), and fails when the command exits non-zero or when an output line matches the
+# extended regex $1 and is not allowed. With $2 "gut", the entries scoped to a test script
+# apply too; with "", only the global ones. The cleaned output stays in $SCRATCH/out.log
+# for the caller. The scan reads a NUL byte in the output as any other byte (awk; grep would
+# need -a, M0 review G-07).
 run_scanned() {
 	local pattern="$1" scan="$2"
 	shift 2
 	local out="$SCRATCH/out.log" status=0
 	read_allowlist || return 1
 	"$@" > "$out.raw" 2>&1 || status=$?
-	sed 's/\x1b\[[0-9;]*[A-Za-z]//g' "$out.raw" > "$out" || return 1
+	sed -e 's/\x1b\[[0-9;]*[A-Za-z]//g' -e 's/\r$//' "$out.raw" > "$out" || return 1
 	cat "$out"
 	local found
 	found="$(unexcused_lines "$pattern" "$out" "$scan")" || return 1
@@ -270,17 +292,30 @@ parse_check() {
 	return "$status"
 }
 
+# The test scripts GUT collects from res://tests (-gdir with -ginclude_subdirs): the files
+# named test_*.gd under game/tests/, hidden files and folders left out as GUT leaves them
+# out (gut.gd _get_files; M3-02).
+test_script_count() {
+	find game/tests -name '.?*' -prune -o -type f -name 'test_*.gd' -print | wc -l | tr -d '[:space:]'
+}
+
 # The GUT run, with the scoped allowlist entries. All checks always run, so a failing run
 # names every reason it failed. The second compares GUT's last line starting with "---- ",
 # its trailing spaces removed, with the pass line; the third requires GUT's run summary
 # ("= Run Summary") before that line, so a test that prints the pass line itself and quits
-# before GUT's summary passes nothing (M2-02's check).
+# before GUT's summary passes nothing (M2-02's check); the fourth requires the script count
+# in the last run summary ("Scripts <n>") to equal the test scripts on disk, so a test that
+# prints a fake summary and the pass line, then quits, has no count to show, and an ignored
+# or unloaded script, or an inner test class, shows as a difference (V1-G-05); the fifth
+# requires GUT's own version line (V1-G-06). The last four read the cleaned output the first
+# left in $SCRATCH/out.log; when the allowlist was refused nothing ran and they are skipped.
 gut_run() {
-	local status=0 last
+	local status=0 last version counted expected
 	rm -f "$SCRATCH/out.log"
 	run_scanned '^(ERROR|SCRIPT ERROR)|Ignoring script|Parse Error|Failed to load script|\[ERROR\]' gut \
 		run_godot --headless --path game -s addons/gut/gut_cmdln.gd \
 		-gdir=res://tests -ginclude_subdirs -gexit -gconfig= || status=1
+	[ -f "$SCRATCH/out.log" ] || return 1
 	last="$(grep -a -s -E '^---- ' "$SCRATCH/out.log" | tail -n 1)" || true
 	last="${last%"${last##*[![:space:]]}"}"
 	if [ "$last" != "---- All tests passed! ----" ]; then
@@ -293,6 +328,24 @@ gut_run() {
 		END { exit !(last && before) }
 	' "$SCRATCH/out.log" 2> /dev/null; then
 		echo "== gate: GUT's run summary ('= Run Summary') does not come before its last '---- ' line: the run did not reach GUT's summary"
+		status=1
+	fi
+	counted="$(awk '
+		$0 == "= Run Summary" { count = ""; reading = 1; next }
+		reading && count == "" && /^Scripts +[0-9]+ *$/ { count = $2 }
+		END { print count }
+	' "$SCRATCH/out.log")" || true
+	expected="$(test_script_count)"
+	if [ -z "$counted" ]; then
+		echo "== gate: GUT's last run summary has no 'Scripts <n>' line: it counted no test scripts ($expected test_*.gd files under game/tests)"
+		status=1
+	elif [ "$counted" != "$expected" ]; then
+		echo "== gate: GUT counted $counted test scripts, game/tests holds $expected test_*.gd files: a script was ignored, not loaded or is an inner class, or the run did not reach its summary"
+		status=1
+	fi
+	version="$(grep -a -s -E '^GUT version:' "$SCRATCH/out.log" | head -n 1)" || true
+	if ! grep -a -s -q -x -F "GUT version:  $GUT_VERSION" "$SCRATCH/out.log"; then
+		echo "== gate: GUT's own line 'GUT version:  $GUT_VERSION' (two spaces) is not in its output; found: ${version:-no GUT version line}"
 		status=1
 	fi
 	return "$status"
