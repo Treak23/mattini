@@ -14,8 +14,6 @@ colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §
 M2's residue is M3-01 and M3-02.
 
 Orchestrator: session_014zvmfwGgSKjxfe3feiiL91 · M3 · since 2026-10-14T19:45Z
-Builder: M3-13 · session_01HM862MXAydNqmJLBWd2asp · since 2026-10-15T08:09Z
-Builder: M3-14 · session_01Hd3YzbAzQPKDnbChCFrgtw · since 2026-10-15T08:09Z
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
@@ -29,6 +27,7 @@ all OK).
 - M3-13: `lock.shape_problem(lock)` (validate_lock's refusal as text) is asked by the four steps right after `lock.fit_problem`, because 13 wave-1 tests outside the brief's Scope (test_photo_refusals 2, test_surfaces_config 6, test_trees_checks 5) pin that a wrong key set, file name or checksum is refused by the step in its own error class, which `fit_problem` does not look at; the alternative, widening `fit_problem`, changes the terrain and buildings steps and M3-01/M3-03's pins; undo: delete `shape_problem` and its four calls, then edit those 13 tests (M3-13 Findings 2, 4).
 - M3-13: `photo.photo_lock_problem` (now `(lock, datasets, world, area)`), `roofs.inputs_sha256` and `trees._inputs_sha256` keep their names because out-of-Scope tests pin them; `manifest.py` repeats the steps' block checks on purpose (brief decision 3), so one pinned mutation stays green when only the manifest's own refusal goes, and `test_m3_13_manifest_checks.py` catches it (Findings 2, 5).
 - M3-13 residue: a write cut between `manifest.json.part` and its rename leaves the `.part` in `game/assets/generated/` until the next manifest run (Findings 8).
+- M3-14: `BuildingLoader.roofs_problem` is not called from `main` (`BuildingRoofs` already refuses every pair it would); without the photo the surfaces are still read, credited and their startup line printed though not drawn, and the photo is credited when only the terrain is refused; a refused manifest is one panel entry holding the six names (M3-14 Findings 6).
 
 **Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
 (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).

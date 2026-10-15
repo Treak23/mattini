@@ -183,6 +183,27 @@ no seam needed a fix):
    `complete_world.gd` leave every game test green on the combined head (measured in
    design's rehearsal); the gate's GUT count rises with M3-14's three new scripts.
 
+**Wave 2 integration record** (the orchestrator, 2026-10-15, head `ffa5b91`; M3-13 `3ccb38f`,
+M3-14 `4f7af57`; no seam needed a fix):
+
+- The full gate on the combined head, to a log, exit 0: pytest 2169 passed (5 network tests
+  deselected), GUT 44 scripts = 44 `test_*.gd` files, 236 tests, 8745 asserts, `GUT version:  9.6.1`.
+- Item 1, the real village end to end, in a scratch `git clone` with the wave-1 downloads: every
+  step from the command line wrote design's values (terrain 14.9 s, buildings 8.8 s, photo 85.2 s
+  at 1'213 MB, roofs 32.3 s at 1'299 MB, surfaces 217.1 s (a cold page cache: it hashes the TLM's
+  2.88 GB first; 22 s when the file is cached), trees 38.1 s at 1'304 MB); `manifest` is
+  `3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065`, 324'359 bytes, design's. Then
+  `tools/export.sh` (its own `XDG_DATA_HOME`, H9) exit 0 in 102 s: no ERROR line, the exported Linux
+  build started headless with its two packs and printed all eight startup lines in order. Sizes:
+  `mattini.pck` 21'280'420, `mattini-terrain.pck` 96'041'728, `mattini-photo.pck` 50'224'444,
+  `mattini.exe` 104'659'456 (99.81 MiB), `mattini.x86_64` 71'075'864; every file under 100 MiB.
+- Item 2: seven software screenshots, `docs/briefs/shots/M3-14-*.jpg` (start, centre at 60 m,
+  street and river and forest edge at 30 m, rock face, pause screen), taken by M3-14 in the
+  Compatibility renderer. They are evidence of what is drawn, not of the look: the conifers read
+  near black there (the owner's Forward+ is the check, brain.md H21, H23).
+- Item 3: lanes H and I met at the manifest: `complete_world.gd` and the three M2 fixture manifests
+  leave every game test green; the gate's GUT count rose from 41 to 44 scripts.
+
 ## The review plan (WORKFLOW §Review policy)
 
 Run by the orchestrator once every brief is DONE and integrated (BUILD.md §The orchestrator
