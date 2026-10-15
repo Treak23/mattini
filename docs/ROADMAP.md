@@ -6,16 +6,15 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**M3 Surfaces and trees — GO (2026-10-14, the owner); the build runs.** The plan is
+**M3 Surfaces and trees — GO (2026-10-14, the owner); built, reviewed and verified; PAUSED on two answers from design (2026-10-15).** The plan is
 `docs/briefs/M3-plan.md`: fourteen briefs in two waves (wave 1 seven sessions at once, wave 2
 two), the review plan and the release 0.3.0: the village in a realistic look made from
 swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
 colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §13 rows 29–34 (rows 35–36 are design's).
 M2's residue is M3-01 and M3-02.
 
-Orchestrator: session_014zvmfwGgSKjxfe3feiiL91 · M3 · since 2026-10-14T19:45Z
-Review R1 (head 410dbba): placement session_01UyfhtHNQQtrAF4JfdSXPaG · inputs session_014qJkvMTqRCbTaAHcPfVcor · game session_0197UUnhCMWvPLNrHq6UPGLJ · since 2026-10-15T09:10Z
-Review V1 (fixes 77e8508, 0385a7f, 8cbb5c1; head bed42ec): session_017JhyaEQyF6fCyaACBXFMZj · since 2026-10-15T11:21Z
+**State (2026-10-15, head `22d2ca6`):** all fourteen briefs DONE and integrated; the real village from the command line gives design's manifest `3ca0445c…` (324'359 bytes); `tools/export.sh` exits 0 with the data packs and the started Linux build prints its eight startup lines; round R1 (three lenses) adjudicated in `docs/reviews/M3-round1.md`; its P1 and the placement P2s that need no answer are fixed (`77e8508`, `0385a7f`, `8cbb5c1`); verification pass V1 clean (`docs/reviews/M3-V1.md`). **Open: design's answers to Q1 and Q2** (`docs/briefs/BLOCKED.md`, each with a recommendation), then their fix briefs, the placement round again, the release 0.3.0. Nobody holds the orchestrator claim: the next `ultracode build` (or design's spawn after it answers) picks the arc up from the list below.
+
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
