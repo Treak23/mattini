@@ -60,6 +60,79 @@
           "sha256": "32c47a7da978832ba56c3e2709d692bf96dc1e386016c80dfda09f9f093db1e2"
         }
       }
+    },
+    "swissimage": {
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "edition": "2023",
+      "resolution_m": 0.1,
+      "tiles": {
+        "2623-1095": {
+          "file": "swissimage-dop10_2023_2623-1095_0.1_2056.tif",
+          "sha256": "49397f69d28bbab566fd6618090a088d0661f64551aca8b7d98da55ca16bd47b"
+        },
+        "2623-1096": {
+          "file": "swissimage-dop10_2023_2623-1096_0.1_2056.tif",
+          "sha256": "9fb6d0cfcbcb4119e602821ae1a88da9d027bf477a807784bd7068dc1877335a"
+        },
+        "2623-1097": {
+          "file": "swissimage-dop10_2023_2623-1097_0.1_2056.tif",
+          "sha256": "e491d7198993a5f515b886f6f3234efeebdad958afffe6a7b8643e2189c594d0"
+        },
+        "2624-1095": {
+          "file": "swissimage-dop10_2023_2624-1095_0.1_2056.tif",
+          "sha256": "0913fdfc65ea5a1468d6d7ee857ad800040afb3516754570aec270b3756bb285"
+        },
+        "2624-1096": {
+          "file": "swissimage-dop10_2023_2624-1096_0.1_2056.tif",
+          "sha256": "adf3ef9d934c3947a1c12b5e45a4dc48b7b2655b6aa8ecb11785d6ec281c817d"
+        },
+        "2624-1097": {
+          "file": "swissimage-dop10_2023_2624-1097_0.1_2056.tif",
+          "sha256": "b911565192a58e408e9dc9bdad33f93ba30ac8022294bc727eb0c8919bb41d5b"
+        }
+      }
+    },
+    "swisssurface3d": {
+      "collection": "ch.swisstopo.swisssurface3d-raster",
+      "resolution_m": 0.5,
+      "tiles": {
+        "2623-1095": {
+          "edition": "2022",
+          "file": "swisssurface3d-raster_2022_2623-1095_0.5_2056_5728.tif",
+          "sha256": "5cb9ad15b887de6b15c3371119c276b00ae75053ad27a5ee2e9ae19d3276b3d0"
+        },
+        "2623-1096": {
+          "edition": "2021",
+          "file": "swisssurface3d-raster_2021_2623-1096_0.5_2056_5728.tif",
+          "sha256": "34657277bb0380973aab9b6abedec3e9946228fbadebd7192a00cd910c3c8771"
+        },
+        "2623-1097": {
+          "edition": "2021",
+          "file": "swisssurface3d-raster_2021_2623-1097_0.5_2056_5728.tif",
+          "sha256": "d20fc78b1fbf096da544c91a6536d74cf911ce793dfe1ca5c8cf1a016dce464f"
+        },
+        "2624-1095": {
+          "edition": "2021",
+          "file": "swisssurface3d-raster_2021_2624-1095_0.5_2056_5728.tif",
+          "sha256": "575090d21fb3a1fd1676bd030d825610fcbee75bc129eec9afe5726e1ecab391"
+        },
+        "2624-1096": {
+          "edition": "2021",
+          "file": "swisssurface3d-raster_2021_2624-1096_0.5_2056_5728.tif",
+          "sha256": "17d6ba7e75b972c2abcb014563760a435cc992f1e2a8c274936b0c291c67e582"
+        },
+        "2624-1097": {
+          "edition": "2021",
+          "file": "swisssurface3d-raster_2021_2624-1097_0.5_2056_5728.tif",
+          "sha256": "62d4b06901dc900f00c31cc230cda614f78913aa1e84c19cfa2e5ac054497571"
+        }
+      }
+    },
+    "swisstlm3d": {
+      "collection": "ch.swisstopo.swisstlm3d",
+      "edition": "2026-02",
+      "file": "swisstlm3d_2026-02_2056_5728.gdb.zip",
+      "sha256": "185ffca883e7a2d6be4ea3d1f62ee4d1a09f07fe90e381738fdcb3a849df28da"
     }
   },
   "schema": 1

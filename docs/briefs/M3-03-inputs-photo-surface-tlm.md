@@ -181,3 +181,115 @@ M3-01 (the same lane; it edits `datasets.py` and `download.py` too). Start from 
 - Any manifest or game change.
 
 ## Findings (executor writes)
+
+1. **Pinned copies and the counts before the fix.** All eight files are in place and `cmp`
+   identical to `docs/briefs/pinning/M3-03/`. On the code as M3-01 left it they failed:
+   `test_datasets_editions.py` 25, `test_lock_photo_surface_tlm.py` 4,
+   `test_download_photo_surface_tlm.py` 10, `test_measured_photo_surface_tlm.py` 1,
+   `test_expected_inputs_m3.py` 5, `test_buildings_download.py` 11 (1 passes). Copying
+   `config/datasets.json` alone made the whole suite fail to collect, as the brief warned; it
+   landed with `datasets.py` in one commit.
+
+2. **The live gates**, each against the real services from this container on 2026-10-15:
+   - `lock photo`, `lock surface`, `lock tlm` (3.5 s, 6.3 s, 0.8 s): `config/datasets.lock.json`
+     is 5'617 bytes, SHA-256 `c071385c…8cd0`, `git diff --numstat` 73 added and 0 removed: the
+     brief's values exactly. A second run changes nothing.
+     `test_measured_photo_surface_tlm.py` and `test_expected_inputs_m3.py` pass on it.
+   - `download photo` and `download surface` into a scratch root: six files each (43 MB and
+     16 MB each; 10 s and 11 s), provenance `f28eed29…` and `088f8bd2…` exactly; a second run of
+     each: `6 tiles verified, 0 fetches`, provenance unchanged.
+   - `download tlm` (a script outside the repository, `python -I`, real processes and a real
+     SIGINT): killed at 1'005'584'384 bytes after 34.6 s: exit 130, one line
+     `mattini: interrupted: `python -m mattini download tlm` did not finish; run it again;
+     any part of the file is kept and the next run resumes it`, no traceback, the part kept
+     at that size, no file, no provenance.json. The second run (48.9 s): one request, from byte
+     1'005'584'384; the file `185ffca8…` (2'882'823'552 bytes), provenance `7034bea8…`
+     exactly. A third run (9.6 s, the hashing): `1 file verified, 0 fetches`, provenance
+     unchanged. The lock's TLM sha256 changed by one digit (a copy of the lock, file-host calls
+     recorded): refused in 0.4 s with `swisstlm3d 2026-02: …nothing was fetched… lock tlm…
+     config/surfaces.json and config/trees.json`, no call to the file host, nothing written.
+   - `pytest -m network` (opt-in): the committed lock equals all five published entries, and the
+     file host's HEAD for the TLM gives a size over 2 GB and the lock's checksum.
+   - does NOT prove: a cut made by the network itself (the stand-in and the signal do), a
+     republish after today, or that the steps read these files right (M3-04 to M3-07).
+
+3. **What changed.**
+   - `datasets.py`: exactly one of `edition` (`YYYY` or `YYYY-MM`, month 01 to 12) and
+     `editions` (non-empty, distinct, ascending years); `resolution_m` required for
+     `swissalti3d`, `swissimage` and `swisssurface3d`, after the edition rule.
+   - `lock.py`: `photo_entry`, `surface_entry`, `tlm_entry`; `validate_lock` and the exact key
+     sets for the three entries; five lock commands named in every malformed-lock error;
+     `fit_problem` rows for the three (the surface: every tile's edition one of `editions`;
+     the TLM: no area, `world` and `area` may be None); a config with the wrong kind of
+     edition is a DownloadError naming `config/datasets.json` there too.
+   - `download.py`: the terrain's tile download generalised (`_download_tiles`, the terrain
+     and the photo share it), `download_photo`, `download_surface` (reads only the items the
+     lock pins), `published_surface` (every year of `editions`; 404 is absent, anything else
+     is "cannot read the STAC item"), `published_tlm`, `download_tlm` with `urllib_head` and
+     `urllib_fetch_range`, `edition_of`, `editions_of`, `raw_folder`, `LOCK_COMMAND_OF`.
+     The republish refusals of all five datasets name their dependants (the terrain's and the
+     buildings' now name `config/trees.json` too).
+   - `__main__.py`: `lock` and `download` take `photo`, `surface`, `tlm`; one handler in
+     `main()` turns a Ctrl-C of any command into the one `interrupted` line and exit 130.
+   - Names kept for lanes C and D: every name in M3-01's decision 10 is still there with its
+     signature (`_resolution_tag` gained an optional second argument).
+
+4. **Choices inside the scope, for the board's *Decisions for design to audit*.**
+   - *The TLM's five GETs are per round.* A complete part with a wrong SHA-256 is deleted and
+     fetched once more, and that second round has five GETs of its own, where the SPEC says
+     "up to five GETs per run". At most ten in the worst case; the alternative is one counter
+     for the run (one line in `_fetch_resumable`).
+   - *`fit_problem(lock, datasets, None, None, "swisstlm3d")`* rather than a second function
+     for the national file; the refusal for the TLM starts `swisstlm3d <edition>: ` (the
+     download adds it) and names no area.
+   - *The Ctrl-C line for `download tlm`* says `any part of the file is kept`, since a Ctrl-C
+     before the first byte leaves no part.
+   - *`urllib_fetch_range` prints a progress line every 256 MiB* to stderr (the CLI passes
+     the printer); the brief asks for none.
+
+5. **Existing tests changed** (the brief's list, and nothing else): `test_download_before_fetching.py`
+   (the republish wording names the new dependants), `test_download_datasets_config.py` (the
+   neither-nor case: dropping `edition` now reads "exactly one of edition and editions", and a
+   `editions` list beside it is refused), `test_download_network.py` (five entries; the TLM's
+   HEAD), `test_buildings_download.py` (design's update, pinned). Also my own
+   `test_m3_01_fit_problem.py`: `swissimage` is no longer a dataset without a fit rule.
+
+6. **New tests** (`test_m3_03_*`, 91): `fit_and_lock_shapes.py` (47: the three rows, every
+   branch; the lock's exact shapes and the five commands in the error; the wrong kind of
+   edition), `tlm_transfer.py` (21: the transfer with a scripted file host: a cut, a drop, a
+   host that ignores the Range, a 206 from another byte, five cuts then a resumed run, a wrong
+   body once and twice, a part too long, a complete part, a damaged file, the checksum header
+   in upper case or absent, no Content-Length, a Ctrl-C), `commands.py` (23: the Ctrl-C line
+   for seven commands, the wrong kind of edition before any request, which STAC items each
+   command reads, a lock that does not fit before any request).
+
+7. **Mutations**, each alone, restored with `git apply -R` (the tree clean after each):
+   | mutation | failed |
+   |---|---|
+   | `lock <x>` writes its own entry alone | `test_each_command_writes_its_exact_entry_and_keeps_every_other` |
+   | the first asset taken for the TLM | `test_lock_photo_surface_tlm.py`, `test_download_photo_surface_tlm.py` 6 |
+   | `lock surface` takes the first edition that answers | `…_refuses_a_tile_in_no_edition_or_in_two[two]` |
+   | a server error read as an absent item | `test_a_server_error_is_not_an_absent_edition` |
+   | the checksum stored as published (upper case) | 11 |
+   | the lock compared lazily before each fetch | `test_a_republished_file_is_refused_before_anything_is_fetched[photo]` |
+   | `download surface` chooses the edition again | `test_download_surface_takes_the_edition_the_lock_pins`, `test_download_surface_reads_only_the_items_the_lock_pins` |
+   | the host checksum compared case-sensitively | `test_the_file_host_s_checksum_in_upper_case_is_the_lock_s` |
+   | a cut transfer fetched again from the start / from a wrong offset | 16 / 8 |
+   | the part deleted at the end of a failed run | `test_a_run_that_fails_keeps_its_part_for_the_next_run`, `test_five_cuts_in_a_row_…` |
+   | the file named before its checksum is checked | `test_a_complete_part_never_has_the_file_s_name_before_it_is_verified` (found equivalent to the real code on every outcome until a Ctrl-C during the hashing was added to the test) |
+   | provenance.json not removed before the first change | `test_a_damaged_file_is_replaced_and_provenance_goes_before_the_first_change` |
+   | a HEAD sent although the file is verified | `test_download_fetches_verifies_and_records[tlm]` |
+   | a 206 from another byte appended; the five GETs not enforced | `test_a_206_from_another_byte_deletes_the_part_and_starts_again`; `test_five_cuts_in_a_row_…` |
+   | the fit ignores the surface editions; names an area for the TLM | `test_a_surface_tile_in_an_edition_the_config_does_not_list_is_refused`; `test_the_tlm_needs_neither_a_world_nor_an_area` |
+   | the Ctrl-C handler removed / exit status 1 | `test_a_ctrl_c_ends_one_line_with_status_130` 8 (the first form aborted pytest itself until the helper turned an escaped Ctrl-C into a failure) |
+   | editions may repeat / descend; month 13 accepted; both keys accepted | `test_datasets_editions.py` 2 / 1 / 2 / 2 |
+   | the validator accepts a surface tile without an edition | 10 |
+   | `lock tlm` asks the file host (a HEAD) | `test_each_command_writes_its_exact_entry_and_keeps_every_other` |
+
+   does NOT prove: that these are the only ways to see the defects (lesson 4).
+
+8. **For M3-13** (the manifest and the command line): `fit_problem` already knows the three
+   datasets, so its manifest blocks call it as they call it for the terrain; the Ctrl-C
+   handler is in `main()` for every command, with the label `python -m mattini <command>` and
+   the dataset for `lock` and `download`; `download.LOCK_COMMAND_OF` is the one table of lock
+   commands.

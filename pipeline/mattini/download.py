@@ -1,4 +1,4 @@
-"""swisstopo downloads for the configured area (briefs M0-04, M2-01, M2-03; SPEC §5, §7-§9).
+"""swisstopo downloads for the configured area (briefs M0-04, M2-01, M2-03, M3-03; SPEC §5, §7-§9).
 
 swissALTI3D (`download terrain`): the 1 km tiles covering the area config/terrain.json names
 (its one area; the box is in config/world.json) are fetched at the edition and resolution
@@ -36,9 +36,28 @@ buildings step and the manifest require (brief M2-07, M2 R1 I-04), by the same r
 lock buildings`, and design then recomputes config/buildings.json. The zips are not opened
 here (M2-04 reads them).
 
+SWISSIMAGE 2023 (`download photo`, brief M3-03) is the terrain's flow for item
+`swissimage-dop10_<edition>_<tile>` and the asset ending `_<resolution>_2056.tif`.
+swissSURFACE3D (`download surface`) reads, per tile, only the item of the edition the lock
+pins (`swisssurface3d-raster_<year>_<tile>`, the asset ending `_<resolution>_2056_5728.tif`);
+choosing the edition is `lock surface`'s, which reads the item of every year in the config's
+`editions` and needs exactly one to exist (HTTP 404 means absent, any other failure is
+"cannot read the STAC item"). Their files go to `swissimage/<edition>/` and
+`swisssurface3d/<editions joined by "-">/` under the root, each with its provenance.json.
+
+swissTLM3D (`download tlm`) is one national file of 2.88 GB, `swisstlm3d_<edition>`'s asset
+ending `_2056_5728.gdb.zip`: a verified file already on disk is kept with no request to the
+file host; otherwise one HEAD (an `x-amz-meta-sha256` that is not the lock's is refused
+before any GET), then GETs into `<file>.part` with `Range: bytes=<part size>-` once the part
+holds bytes, at most five a round, since Python's urllib ends a body cut short without an
+error (brain.md H9) and only the part's size shows the cut. The part is kept when a run
+cannot finish (also on Ctrl-C), and the file takes its name only when its SHA-256 equals
+the lock's. Every refusal of the TLM starts `swisstlm3d <edition>: `.
+
 A datasets config without the dataset, and an area the sheet grid cannot place, are
 DownloadErrors naming config/datasets.json or the world config and the area, never a
-traceback (M2 R1 I-05).
+traceback (M2 R1 I-05); so is one that lists `editions` where the command needs one
+`edition`, or the other way round (brief M3-03).
 """
 
 from __future__ import annotations
@@ -50,6 +69,7 @@ import math
 import os
 import re
 import shutil
+import urllib.error
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -60,14 +80,22 @@ from mattini.world import REPO, World
 
 DATASET = "swissalti3d"
 BUILDINGS = "swissbuildings3d"
+PHOTO = "swissimage"
+SURFACE = "swisssurface3d"
+TLM = "swisstlm3d"
 BUILDINGS_ITEM = "swissbuildings3d_3_0_{edition}_{sheet}"  # a STAC item of the collection
 BUILDINGS_SUFFIX = "_2056_5728.gdb.zip"  # the zipped FileGDB; the item also holds a DWG
+PHOTO_ITEM = "swissimage-dop10_{edition}_{tile}"
+SURFACE_ITEM = "swisssurface3d-raster_{year}_{tile}"
+TLM_ITEM = "swisstlm3d_{edition}"
+TLM_SUFFIX = "_2056_5728.gdb.zip"  # the zipped FileGDB; the item also holds three other formats
 STAC_ITEM = "https://data.geo.admin.ch/api/stac/v1/collections/{collection}/items/{item_id}"
 DEFAULT_OUT = REPO / "data" / "raw"
 PROVENANCE = "provenance.json"
 PROVENANCE_SCHEMA = 1
 TILE_M = 1000  # swissALTI3D tiles are 1 km squares named by their south-west corner in km
 ATTEMPTS = 2  # the first fetch and the one retry
+TLM_GETS = 5  # the GETs a round of the TLM file may make: a cut transfer is resumed
 SHA256_MULTIHASH = re.compile(r"1220([0-9A-Fa-f]{64})")
 SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 FETCH_ERRORS = (OSError, http.client.HTTPException)  # urllib's errors are OSErrors
@@ -75,10 +103,27 @@ TIMEOUT_S = 60
 USER_AGENT = "mattini-pipeline"
 LOCK_COMMAND = "python -m mattini lock terrain"
 BUILDINGS_LOCK_COMMAND = "python -m mattini lock buildings"
+PHOTO_LOCK_COMMAND = "python -m mattini lock photo"
+SURFACE_LOCK_COMMAND = "python -m mattini lock surface"
+TLM_LOCK_COMMAND = "python -m mattini lock tlm"
+TLM_DOWNLOAD_COMMAND = "python -m mattini download tlm"
+LOCK_COMMAND_OF = {  # dataset -> the command that writes its lock entry
+    DATASET: LOCK_COMMAND,
+    BUILDINGS: BUILDINGS_LOCK_COMMAND,
+    PHOTO: PHOTO_LOCK_COMMAND,
+    SURFACE: SURFACE_LOCK_COMMAND,
+    TLM: TLM_LOCK_COMMAND,
+}
 DATASETS_CONFIG_NAME = "config/datasets.json"  # the home of the datasets, for messages
 # the config whose expected values design recomputes when a dataset's inputs change, and
 # the step the republish refusals name after the lock command (brief M2-07)
-EXPECTED_CONFIG_NAMES = {DATASET: "config/terrain.json", BUILDINGS: "config/buildings.json"}
+EXPECTED_CONFIG_NAMES = {
+    DATASET: "config/terrain.json and config/trees.json",
+    BUILDINGS: "config/buildings.json, config/roofs.json and config/trees.json",
+    PHOTO: "config/photo.json and config/roofs.json",
+    SURFACE: "config/trees.json",
+    TLM: "config/surfaces.json and config/trees.json",
+}
 _RECOMPUTE = {
     name: f"then design recomputes the expected values in {config} (docs/SPEC.md §8)"
     for name, config in EXPECTED_CONFIG_NAMES.items()
@@ -86,10 +131,17 @@ _RECOMPUTE = {
 
 FetchJson = Callable[[str], object]
 FetchFile = Callable[[str, Path], None]
+FetchHead = Callable[[str], tuple[int | None, str | None]]  # (Content-Length, x-amz-meta-sha256)
+FetchRange = Callable[[str, Path, int], None]  # url, part file, first byte wanted
+Progress = Callable[[str], None]
 
 
 class DownloadError(RuntimeError):
     """A download could not be completed or verified; the message names the tile and URL."""
+
+
+class ResumeMismatch(OSError):
+    """A 206 answer that does not start at the byte asked for: the part cannot be extended."""
 
 
 def dataset_of(datasets: dict, name: str) -> dict:
@@ -104,6 +156,41 @@ def dataset_of(datasets: dict, name: str) -> dict:
             f"attribution are read from there"
         )
     return datasets[name]
+
+
+def edition_of(datasets: dict, name: str) -> str:
+    """The one pinned `edition` of `name`; a dataset that lists `editions` is a DownloadError.
+
+    The commands that read one edition (everything but swissSURFACE3D) refuse a config that
+    lists several, naming config/datasets.json (brief M3-03, M2 R1 I-05).
+    """
+    config = dataset_of(datasets, name)
+    if "edition" not in config:
+        raise DownloadError(
+            f"{DATASETS_CONFIG_NAME}: dataset {name!r} lists editions {config.get('editions')!r}; "
+            f"this command reads one pinned edition"
+        )
+    return config["edition"]
+
+
+def editions_of(datasets: dict, name: str) -> list[str]:
+    """The `editions` of `name` (swissSURFACE3D); a dataset with one `edition` is refused."""
+    config = dataset_of(datasets, name)
+    if "editions" not in config:
+        raise DownloadError(
+            f"{DATASETS_CONFIG_NAME}: dataset {name!r} pins one edition "
+            f"{config.get('edition')!r}; this command reads a list of editions"
+        )
+    return config["editions"]
+
+
+def raw_folder(datasets: dict, name: str) -> str:
+    """The folder under the download root for `name`: its edition, or its editions joined by `-`.
+
+    `2024`, `2026-02` or `2021-2022` (brief M3-03): the layout the steps read.
+    """
+    config = dataset_of(datasets, name)
+    return config["edition"] if "edition" in config else "-".join(editions_of(datasets, name))
 
 
 def area_tiles(world: World, area: str) -> list[str]:
@@ -143,28 +230,118 @@ def parse_multihash_sha256(text: object) -> str:
 
 @dataclass(frozen=True)
 class PublishedAsset:
-    """What a tile's STAC item publishes for the pinned edition and resolution."""
+    """What a tile's STAC item publishes for the pinned edition and resolution.
+
+    `edition` is the year of a swissSURFACE3D tile's item (a tile has one of several); None
+    for the datasets that pin one edition.
+    """
 
     tile: str
     item_id: str
     name: str
     href: str
     sha256: str
+    edition: str | None = None
+
+
+@dataclass(frozen=True)
+class _TileSet:
+    """What differs between the tile datasets that download alike (swissALTI3D, SWISSIMAGE)."""
+
+    item: str  # the STAC item id: {edition} and {tile}
+    suffix: str  # the asset key's ending: {tag} is the resolution as swisstopo writes it
+
+
+_TILE_SETS = {
+    DATASET: _TileSet(DATASET + "_{edition}_{tile}", "_{tag}_2056_5728.tif"),
+    PHOTO: _TileSet(PHOTO_ITEM, "_{tag}_2056.tif"),
+}
 
 
 def published_assets(
     world: World, datasets: dict, fetch_json: FetchJson, *, area: str
 ) -> list[PublishedAsset]:
-    """Read the STAC item of every tile of `area`, in tile order; no file is fetched."""
-    alti = dataset_of(datasets, DATASET)
-    edition = alti["edition"]
-    suffix = f"_{_resolution_tag(alti['resolution_m'])}_2056_5728.tif"
+    """Read the STAC item of every swissALTI3D tile of `area`, in tile order; no file is fetched."""
+    return _published_tiles(DATASET, world, datasets, fetch_json, area)
+
+
+def published_photo(
+    world: World, datasets: dict, fetch_json: FetchJson, *, area: str
+) -> list[PublishedAsset]:
+    """Read the STAC item of every SWISSIMAGE tile of `area`, in tile order; no file is fetched.
+
+    Item `swissimage-dop10_<edition>_<tile>`, the asset ending `_<resolution>_2056.tif` (the
+    item also holds the 2 m image, which is not it).
+    """
+    return _published_tiles(PHOTO, world, datasets, fetch_json, area)
+
+
+def _published_tiles(
+    dataset: str, world: World, datasets: dict, fetch_json: FetchJson, area: str
+) -> list[PublishedAsset]:
+    config = dataset_of(datasets, dataset)
+    spec = _TILE_SETS[dataset]
+    edition = edition_of(datasets, dataset)
+    suffix = spec.suffix.format(tag=_resolution_tag(config["resolution_m"], dataset))
     assets = []
     for tile in area_tiles(world, area):
-        item_id = f"{DATASET}_{edition}_{tile}"
-        item_url = STAC_ITEM.format(collection=alti["collection"], item_id=item_id)
+        item_id = spec.item.format(edition=edition, tile=tile)
+        item_url = STAC_ITEM.format(collection=config["collection"], item_id=item_id)
         name, href, sha256 = _published_asset(fetch_json, item_url, item_id, tile, area, suffix)
         assets.append(PublishedAsset(tile, item_id, name, href, sha256))
+    return assets
+
+
+def published_surface(
+    world: World, datasets: dict, fetch_json: FetchJson, *, area: str
+) -> list[PublishedAsset]:
+    """Read, for every tile of `area`, the item of every year in the `editions`; no file is fetched.
+
+    Exactly one of a tile's items must exist (HTTP 404 means absent; any other failure to
+    read one is "cannot read the STAC item"), else it is a DownloadError naming the tile and
+    the years found (`found none`, `found ['2021', '2022']`). The result is in tile order,
+    each with its edition. This is `lock surface`'s read.
+    """
+    config = dataset_of(datasets, SURFACE)
+    editions = editions_of(datasets, SURFACE)
+    suffix = f"_{_resolution_tag(config['resolution_m'], SURFACE)}_2056_5728.tif"
+    assets = []
+    for tile in area_tiles(world, area):
+        found = []
+        for year in editions:
+            item_id = SURFACE_ITEM.format(year=year, tile=tile)
+            item_url = STAC_ITEM.format(collection=config["collection"], item_id=item_id)
+            read = _published_asset(
+                fetch_json, item_url, item_id, tile, area, suffix, absent_ok=True
+            )
+            if read is not None:
+                found.append(PublishedAsset(tile, item_id, *read, edition=year))
+        if len(found) != 1:
+            raise DownloadError(
+                f"tile {tile} of area {area!r}: {SURFACE} is published in exactly one of the "
+                f"editions {editions} per tile, found {[asset.edition for asset in found] or 'none'}"
+            )
+        assets.append(found[0])
+    return assets
+
+
+def _published_surface_pinned(
+    world: World, datasets: dict, fetch_json: FetchJson, locked: dict, area: str
+) -> list[PublishedAsset]:
+    """Read, per tile of `area`, only the item of the edition the lock pins (`download surface`).
+
+    Choosing the edition is the lock's: an edition swisstopo publishes later stops no download
+    of the pinned files. `locked` is the lock's `tiles` object, already shown to fit.
+    """
+    config = dataset_of(datasets, SURFACE)
+    suffix = f"_{_resolution_tag(config['resolution_m'], SURFACE)}_2056_5728.tif"
+    assets = []
+    for tile in area_tiles(world, area):
+        year = locked[tile]["edition"]
+        item_id = SURFACE_ITEM.format(year=year, tile=tile)
+        item_url = STAC_ITEM.format(collection=config["collection"], item_id=item_id)
+        name, href, sha256 = _published_asset(fetch_json, item_url, item_id, tile, area, suffix)
+        assets.append(PublishedAsset(tile, item_id, name, href, sha256, edition=year))
     return assets
 
 
@@ -218,15 +395,111 @@ def download_terrain(
     tile in tile order, and writes them with the dataset's edition and attribution to
     `provenance.json` in the same directory.
     """
+    return _download_tiles(DATASET, world, datasets, out_root, fetch_json, fetch_file, lock, area)
+
+
+def download_photo(
+    world: World,
+    datasets: dict,
+    out_root: Path | str,
+    fetch_json: FetchJson,
+    fetch_file: FetchFile,
+    *,
+    lock: dict,
+    area: str,
+) -> list[dict]:
+    """Fetch and verify the SWISSIMAGE tiles of `area` into `<out_root>/swissimage/<edition>/`.
+
+    As `download_terrain`, for the lock's `swissimage` entry (naming `lock photo`); the
+    provenance.json has exactly the terrain's keys (brief M3-03).
+    """
+    return _download_tiles(PHOTO, world, datasets, out_root, fetch_json, fetch_file, lock, area)
+
+
+def _download_tiles(
+    dataset: str,
+    world: World,
+    datasets: dict,
+    out_root: Path | str,
+    fetch_json: FetchJson,
+    fetch_file: FetchFile,
+    lock: dict,
+    area: str,
+) -> list[dict]:
     from mattini.lock import fit_problem  # lock imports this module
 
-    alti = dataset_of(datasets, DATASET)
-    _resolution_tag(alti["resolution_m"])
-    problem = fit_problem(lock, datasets, world, area, DATASET)
+    config = dataset_of(datasets, dataset)
+    _resolution_tag(config["resolution_m"], dataset)
+    problem = fit_problem(lock, datasets, world, area, dataset)
     if problem:
         raise DownloadError(problem)
-    pinned = lock["datasets"][DATASET]["tiles"]
-    assets = published_assets(world, datasets, fetch_json, area=area)
+    pinned = lock["datasets"][dataset]["tiles"]
+    assets = _published_tiles(dataset, world, datasets, fetch_json, area)
+    _compare_with_lock(assets, pinned, dataset, area)
+    out_dir = Path(out_root) / dataset / edition_of(datasets, dataset)
+    entries = _fetch_tiles(out_dir, assets, fetch_file, area)
+    _write_provenance(
+        out_dir,
+        {
+            "attribution": config["attribution"],
+            "collection": config["collection"],
+            "dataset": dataset,
+            "edition": config["edition"],
+            "resolution_m": config["resolution_m"],
+            "schema": PROVENANCE_SCHEMA,
+            "tiles": entries,
+        },
+    )
+    return entries
+
+
+def download_surface(
+    world: World,
+    datasets: dict,
+    out_root: Path | str,
+    fetch_json: FetchJson,
+    fetch_file: FetchFile,
+    *,
+    lock: dict,
+    area: str,
+) -> list[dict]:
+    """Fetch and verify the swissSURFACE3D tiles of `area` into `<out_root>/swisssurface3d/<editions>/`.
+
+    The lock must fit (`lock.fit_problem`: every tile's edition one of the config's `editions`,
+    exactly the area's tiles; naming `lock surface`); each tile's item is read for the
+    edition the lock pins and nothing else, and its published file name and SHA-256 must
+    equal the lock's before anything is fetched. provenance.json has `editions` (the
+    config's list) for `edition` and each tile's `edition` added (brief M3-03).
+    """
+    from mattini.lock import fit_problem  # lock imports this module
+
+    config = dataset_of(datasets, SURFACE)
+    _resolution_tag(config["resolution_m"], SURFACE)
+    problem = fit_problem(lock, datasets, world, area, SURFACE)
+    if problem:
+        raise DownloadError(problem)
+    pinned = lock["datasets"][SURFACE]["tiles"]
+    assets = _published_surface_pinned(world, datasets, fetch_json, pinned, area)
+    _compare_with_lock(assets, pinned, SURFACE, area)
+    out_dir = Path(out_root) / SURFACE / raw_folder(datasets, SURFACE)
+    entries = _fetch_tiles(out_dir, assets, fetch_file, area)
+    _write_provenance(
+        out_dir,
+        {
+            "attribution": config["attribution"],
+            "collection": config["collection"],
+            "dataset": SURFACE,
+            "editions": config["editions"],
+            "resolution_m": config["resolution_m"],
+            "schema": PROVENANCE_SCHEMA,
+            "tiles": entries,
+        },
+    )
+    return entries
+
+
+def _compare_with_lock(assets: list[PublishedAsset], pinned: dict, dataset: str, area: str) -> None:
+    """Refuse the first tile whose published name or SHA-256 is not the lock's; nothing fetched."""
     for asset in assets:
         locked = pinned[asset.tile]
         if (asset.name, asset.sha256) != (locked["file"], locked["sha256"]):
@@ -234,39 +507,197 @@ def download_terrain(
                 f"tile {asset.tile} of area {area!r}: swisstopo now publishes {asset.name} with "
                 f"SHA-256 {asset.sha256}, the tile lock pins {locked['file']} with SHA-256 "
                 f"{locked['sha256']}; nothing was fetched. A republished tile is adopted "
-                f"only on purpose: `{LOCK_COMMAND}`, then commit the lock, {_RECOMPUTE[DATASET]}"
+                f"only on purpose: `{LOCK_COMMAND_OF[dataset]}`, then commit the lock, "
+                f"{_RECOMPUTE[dataset]}"
             )
 
-    out_dir = Path(out_root) / DATASET / alti["edition"]
+
+def _fetch_tiles(
+    out_dir: Path, assets: list[PublishedAsset], fetch_file: FetchFile, area: str
+) -> list[dict]:
+    """Make every asset's file the verified file in `out_dir`; return the provenance entries."""
     out_dir.mkdir(parents=True, exist_ok=True)
     entries = []
     for asset in assets:
         where = f"tile {asset.tile} of area {area!r}"
         size = _fetch_into(out_dir, asset.name, asset.href, asset.sha256, fetch_file, where)
-        entries.append(
-            {
-                "file": asset.name,
-                "item": asset.item_id,
-                "sha256": asset.sha256,
-                "size_bytes": size,
-                "tile": asset.tile,
-                "url": asset.href,
-            }
+        entry = {
+            "file": asset.name,
+            "item": asset.item_id,
+            "sha256": asset.sha256,
+            "size_bytes": size,
+            "tile": asset.tile,
+            "url": asset.href,
+        }
+        if asset.edition is not None:
+            entry["edition"] = asset.edition
+        entries.append(entry)
+    return entries
+
+
+@dataclass(frozen=True)
+class PublishedFile:
+    """What the STAC item of the national swissTLM3D publishes for the pinned edition."""
+
+    item_id: str
+    name: str
+    href: str
+    sha256: str
+
+
+def published_tlm(datasets: dict, fetch_json: FetchJson) -> PublishedFile:
+    """Read the STAC item `swisstlm3d_<edition>`; no file is fetched (and no HEAD is sent).
+
+    The one asset ending `_2056_5728.gdb.zip`, not the GeoPackage, Shapefile or INTERLIS zip.
+    Every refusal starts `swisstlm3d <edition>: `.
+    """
+    config = dataset_of(datasets, TLM)
+    edition = edition_of(datasets, TLM)
+    item_id = TLM_ITEM.format(edition=edition)
+    item_url = STAC_ITEM.format(collection=config["collection"], item_id=item_id)
+    name, href, sha256 = _published_asset(
+        fetch_json, item_url, item_id, "", "", TLM_SUFFIX, where=f"{TLM} {edition}"
+    )
+    return PublishedFile(item_id, name, href, sha256)
+
+
+def download_tlm(
+    datasets: dict,
+    out_root: Path | str,
+    fetch_json: FetchJson,
+    fetch_head: FetchHead,
+    fetch_range: FetchRange,
+    *,
+    lock: dict,
+    progress: Progress | None = None,
+) -> dict:
+    """Fetch and verify swissTLM3D into `<out_root>/swisstlm3d/<edition>/`; return the provenance.
+
+    The lock's `swisstlm3d` entry must fit the config (`lock.fit_problem`, naming `lock
+    tlm`), and the published file name and SHA-256 must equal it before any request for the
+    file. A verified file already there is kept with no request to the file host. Otherwise
+    one HEAD (`fetch_head`: Content-Length, `x-amz-meta-sha256`), whose checksum, when it is
+    not the lock's, is refused before any GET and before anything on disk changes; then
+    GETs (`fetch_range(url, part, first_byte)`) into `<file>.part` until the part has the
+    size, each from the part's size, at most `TLM_GETS` a round: a body cut short ends
+    without an error (brain.md H9), so only the size shows it. The part is verified and
+    takes the file's name only if its SHA-256 equals the lock's; a wrong one is deleted and
+    fetched once more, then refused. A round that cannot finish keeps its part and names
+    `python -m mattini download tlm`, which resumes it; a Ctrl-C keeps it too. provenance.json
+    is removed before the first change on disk and written at the end. Every refusal starts
+    `swisstlm3d <edition>: `.
+    """
+    from mattini.lock import fit_problem  # lock imports this module
+
+    say = progress or (lambda message: None)
+    config = dataset_of(datasets, TLM)
+    edition = edition_of(datasets, TLM)
+
+    def fail(message: str) -> DownloadError:
+        return DownloadError(f"{TLM} {edition}: {message}")
+
+    problem = fit_problem(lock, datasets, None, None, TLM)
+    if problem:
+        raise fail(problem)
+    entry = lock["datasets"][TLM]
+    published = published_tlm(datasets, fetch_json)
+    if (published.name, published.sha256) != (entry["file"], entry["sha256"]):
+        raise fail(
+            f"swisstopo now publishes {published.name} with SHA-256 {published.sha256}, the "
+            f"lock pins {entry['file']} with SHA-256 {entry['sha256']}; nothing was fetched. "
+            f"A republished file is adopted only on purpose: `{TLM_LOCK_COMMAND}`, then "
+            f"commit the lock, {_RECOMPUTE[TLM]}"
         )
 
-    _write_provenance(
-        out_dir,
-        {
-            "attribution": alti["attribution"],
-            "collection": alti["collection"],
-            "dataset": DATASET,
-            "edition": alti["edition"],
-            "resolution_m": alti["resolution_m"],
-            "schema": PROVENANCE_SCHEMA,
-            "tiles": entries,
-        },
+    out_dir = Path(out_root) / TLM / edition
+    dest = out_dir / published.name
+    part = dest.with_name(dest.name + ".part")
+    provenance = out_dir / PROVENANCE
+    if not (dest.is_file() and _sha256(dest) == published.sha256):
+        try:
+            size, host_sha256 = fetch_head(published.href)
+        except FETCH_ERRORS as exc:
+            raise fail(f"{published.href}: cannot ask the file host: {exc}") from exc
+        if not isinstance(size, int) or size < 1:
+            raise fail(
+                f"{published.href}: the file host sends no Content-Length; nothing was fetched"
+            )
+        if host_sha256 is not None and host_sha256.lower() != published.sha256:
+            raise fail(
+                f"{published.href}: the file host says SHA-256 {host_sha256}, the lock pins "
+                f"{published.sha256}; nothing was fetched (the file host and the STAC item "
+                f"disagree: try again later)"
+            )
+        out_dir.mkdir(parents=True, exist_ok=True)
+        provenance.unlink(missing_ok=True)  # it would list a file this run changes
+        if dest.exists():
+            dest.unlink()  # stale or damaged: never leave it looking valid
+        _fetch_resumable(published, part, dest, size, fetch_range, say, fail)
+    result = {
+        "attribution": config["attribution"],
+        "collection": config["collection"],
+        "dataset": TLM,
+        "edition": edition,
+        "file": published.name,
+        "item": published.item_id,
+        "schema": PROVENANCE_SCHEMA,
+        "sha256": published.sha256,
+        "size_bytes": dest.stat().st_size,
+        "url": published.href,
+    }
+    _write_provenance(out_dir, result)
+    return result
+
+
+def _fetch_resumable(
+    published: PublishedFile,
+    part: Path,
+    dest: Path,
+    size: int,
+    fetch_range: FetchRange,
+    say: Progress,
+    fail: Callable[[str], DownloadError],
+) -> None:
+    """Make `dest` the verified file: GET into `part` from its size until it has `size` bytes.
+
+    Two rounds at most, of `TLM_GETS` GETs each: the second only after a complete part had
+    the wrong SHA-256 (deleted first).
+    """
+    wrong = ""
+    for _ in range(2):
+        gets, problem = 0, "the transfers were cut short"
+        while True:
+            have = part.stat().st_size if part.exists() else 0
+            if have > size:
+                part.unlink()  # not a start of this file
+                have = 0
+            if have == size:
+                break
+            if gets == TLM_GETS:
+                raise fail(
+                    f"{published.href}: the file has {size} bytes, the part holds {have} "
+                    f"after {gets} requests ({problem}); the part is kept, and "
+                    f"`{TLM_DOWNLOAD_COMMAND}` resumes it"
+                )
+            gets += 1
+            say(f"fetching {published.href}" + (f" from byte {have}" if have else ""))
+            try:
+                fetch_range(published.href, part, have)
+            except ResumeMismatch as exc:
+                part.unlink(missing_ok=True)
+                problem = str(exc)
+            except FETCH_ERRORS as exc:
+                problem = f"fetch failed: {exc}"
+        wrong = _sha256(part)
+        if wrong == published.sha256:
+            os.replace(part, dest)
+            return
+        part.unlink()
+        say(f"{part.name} has SHA-256 {wrong}, not the lock's; fetching it again")
+    raise fail(
+        f"{published.href}: two complete fetches gave SHA-256 {wrong}, the lock pins "
+        f"{published.sha256}; the part was deleted. `{TLM_DOWNLOAD_COMMAND}` tries again"
     )
-    return entries
 
 
 def download_buildings(
@@ -354,13 +785,55 @@ def urllib_fetch_file(url: str, dest: Path) -> None:
         shutil.copyfileobj(response, out, 1 << 20)
 
 
-def _resolution_tag(resolution_m: object) -> str:
-    """How swisstopo writes a resolution in asset names: 0.5 → '0.5', 2.0 → '2'."""
+def urllib_head(url: str) -> tuple[int | None, str | None]:
+    """HEAD `url` with the standard library: (Content-Length, x-amz-meta-sha256) or None each."""
+    request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:
+        length = response.headers.get("Content-Length")
+        return (int(length) if length and length.isdigit() else None), response.headers.get(
+            "x-amz-meta-sha256"
+        )
+
+
+def urllib_fetch_range(url: str, part: Path, start: int, progress: Progress | None = None) -> None:
+    """GET `url` into `part` from byte `start`: `Range: bytes=<start>-` once there are bytes.
+
+    A 206 appends to the part and must start at `start`, else it is a ResumeMismatch (the
+    caller deletes the part); a 200 is the whole file and rewrites the part. A body cut short
+    ends without an error (brain.md H9): the part's size is the caller's evidence.
+    """
+    headers = {"User-Agent": USER_AGENT}
+    if start:
+        headers["Range"] = f"bytes={start}-"
+    request = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:
+        resumed = response.status == 206
+        if resumed:
+            match = re.fullmatch(
+                r"bytes ([0-9]+)-[0-9]+/[0-9]+", response.headers.get("Content-Range", "")
+            )
+            if match is None or int(match.group(1)) != start:
+                raise ResumeMismatch(
+                    f"asked for bytes from {start}, the answer is "
+                    f"{response.headers.get('Content-Range')!r}"
+                )
+        received, reported = 0, 0
+        with open(part, "ab" if resumed else "wb") as out:
+            while chunk := response.read(1 << 20):
+                out.write(chunk)
+                received += len(chunk)
+                if progress is not None and received - reported >= 256 << 20:
+                    reported = received
+                    progress(f"  {(start if resumed else 0) + received >> 20} MiB of the file")
+
+
+def _resolution_tag(resolution_m: object, dataset: str = DATASET) -> str:
+    """How swisstopo writes a resolution in asset names: 0.5 -> '0.5', 2.0 -> '2', 0.1 -> '0.1'."""
     if type(resolution_m) not in (int, float) or not (
         math.isfinite(resolution_m) and resolution_m > 0
     ):
         raise DownloadError(
-            f"{DATASET}: resolution_m must be a positive number of metres, found {resolution_m!r}"
+            f"{dataset}: resolution_m must be a positive number of metres, found {resolution_m!r}"
         )
     return format(resolution_m, "g")
 
@@ -374,17 +847,27 @@ def _published_asset(
     suffix: str,
     *,
     kind: str = "tile",
-) -> tuple[str, str, str]:
+    where: str | None = None,
+    absent_ok: bool = False,
+) -> tuple[str, str, str] | None:
     """The (file name, href, SHA-256) of the one asset of the item whose key ends `suffix`.
 
-    `tile` is the item's tile or, with `kind="sheet"`, its map sheet; errors name it.
+    `tile` is the item's tile or, with `kind="sheet"`, its map sheet; errors name it, and
+    the area, unless `where` replaces that (`swisstlm3d 2026-02`, the national file). With
+    `absent_ok`, an item that answers HTTP 404 is None (swissSURFACE3D: a tile is in one
+    edition of several); any other failure to read it is still a refusal.
     """
+    prefix = where if where is not None else f"{kind} {tile} of area {area!r}"
 
     def fail(message: str) -> DownloadError:
-        return DownloadError(f"{kind} {tile} of area {area!r}: {item_url}: {message}")
+        return DownloadError(f"{prefix}: {item_url}: {message}")
 
     try:
         item = fetch_json(item_url)
+    except urllib.error.HTTPError as exc:
+        if absent_ok and exc.code == 404:
+            return None
+        raise fail(f"cannot read the STAC item: {exc}") from exc
     except (*FETCH_ERRORS, ValueError) as exc:
         raise fail(f"cannot read the STAC item: {exc}") from exc
     if not isinstance(item, dict) or item.get("id") != item_id:

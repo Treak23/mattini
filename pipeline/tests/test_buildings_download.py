@@ -132,8 +132,9 @@ def test_writing_one_entry_keeps_the_others():
     fake = FakeBuildingsStac()
     before = load_lock()
     lock = _lock(fake)
-    assert lock["datasets"]["swissalti3d"] == before["datasets"]["swissalti3d"]
-    assert set(lock["datasets"]) == {"swissalti3d", "swissbuildings3d"}
+    assert set(lock["datasets"]) == set(before["datasets"]) | {"swissbuildings3d"}
+    for name in set(before["datasets"]) - {"swissbuildings3d"}:  # M3-03: five datasets now
+        assert lock["datasets"][name] == before["datasets"][name], name
     validate_lock(lock, "test")
     assert with_entry(None, "swissbuildings3d", _entry(fake)) == {
         "schema": 1,

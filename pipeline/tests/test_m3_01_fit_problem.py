@@ -155,5 +155,5 @@ def test_a_datasets_config_without_the_dataset_is_a_download_error_naming_the_fi
 
 
 def test_a_dataset_without_a_rule_is_refused_by_name():
-    with pytest.raises(ValueError, match="no fit rule for dataset 'swissimage'"):
-        fit_problem(COMMITTED, DATASETS, WORLD, AREA, "swissimage")
+    with pytest.raises(ValueError, match="no fit rule for dataset 'swissnothing'"):
+        fit_problem(COMMITTED, DATASETS, WORLD, AREA, "swissnothing")

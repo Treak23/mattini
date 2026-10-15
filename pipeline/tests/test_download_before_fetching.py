@@ -58,7 +58,10 @@ def test_a_republished_middle_sheet_is_refused_from_an_empty_folder(tmp_path):
     assert "`python -m mattini lock buildings`, then commit the lock, then design recomputes" in (
         message
     )
-    assert "the expected values in config/buildings.json (docs/SPEC.md §8)" in message
+    assert (
+        "the expected values in config/buildings.json, config/roofs.json and "
+        "config/trees.json (docs/SPEC.md §8)"
+    ) in message
     assert fake.file_fetches == []
     assert not (tmp_path / "swissbuildings3d").exists()
     assert list(tmp_path.iterdir()) == []
@@ -76,7 +79,9 @@ def test_a_republished_middle_tile_is_refused_from_an_empty_folder(tmp_path):
     assert "`python -m mattini lock terrain`, then commit the lock, then design recomputes" in (
         message
     )
-    assert "the expected values in config/terrain.json (docs/SPEC.md §8)" in message
+    assert (
+        "the expected values in config/terrain.json and config/trees.json (docs/SPEC.md §8)"
+    ) in message
     assert fake.file_fetches == []
     assert not (tmp_path / "swissalti3d").exists()
     assert list(tmp_path.iterdir()) == []
