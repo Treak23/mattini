@@ -1,5 +1,5 @@
 # Brief: M3-03 — The inputs of the photo, the surface model and swissTLM3D
-Status: OPEN
+Status: DONE (b6aee70)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane A of wave 1, after M3-01 (`docs/briefs/M3-plan.md`).
@@ -293,3 +293,10 @@ M3-01 (the same lane; it edits `datasets.py` and `download.py` too). Start from 
    handler is in `main()` for every command, with the label `python -m mattini <command>` and
    the dataset for `lock` and `download`; `download.LOCK_COMMAND_OF` is the one table of lock
    commands.
+
+9. **The landing.** The push needed no second rebase. The rebase before it brought in M3-08,
+   M3-06, M3-10 and their DONE lines, so the gate ran again on the tree that landed, `b6aee70`:
+   exit 0, pytest 1560 passed and 5 deselected, GUT 41 scripts, 224 tests, 8618 asserts. The
+   DONE line is a docs-only commit: no test or tool reads `docs/briefs/` (grepped at M3-01,
+   lesson 18). The scratch downloads (3 GB) were removed after the runs; nothing under `data/`
+   was written.
