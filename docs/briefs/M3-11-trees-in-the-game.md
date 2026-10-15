@@ -137,3 +137,79 @@ A tree mesh or texture from elsewhere (procedural only); colours through instanc
 touching the main scene; editing a pinned file or the fixture.
 
 ## Findings (executor writes)
+
+1. **Built, as the brief decides:** `TreeChunks` (`game/scripts/trees/tree_chunks.gd`),
+   `TreeLoader` (`tree_loader.gd`) and `game/shaders/tree_conifer.gdshader`, with their
+   `.uid` files. The pinned tests are in place and byte-identical to
+   `docs/briefs/pinning/M3-11/` (`cmp` on all three): 12 of 12 pass. Two test files of my
+   own, `test_m3_11_tree_chunks_checks.gd` (10 tests) and `test_m3_11_tree_conifer.gd` (9).
+   The first reaches every refusal the pinned tests leave open through `TreeChunks._read`,
+   which returns the problem and prints no ERROR line, so the one allowlist line the brief
+   names is enough. The conifer is 138 vertices and 192 triangles (six tiers of an apex, ten
+   shoulders and ten rim points, and a hexagonal trunk), three variants, one `custom_aabb`
+   (x and z from −1 to 1, y from the trunk's foot, −0.06, to 1).
+2. **The gate:** `tools/gate.sh` exit 0 on the tree before the commit: pytest 743 passed
+   (4 deselected), GUT 28 scripts, 141 tests, 6387 asserts, `---- All tests passed! ----`, gdlint
+   and `gdformat --check` clean. The allowlist's line is appended at the end, verbatim from
+   decision 5; no rebase had brought another lane's lines in when the gate ran (the rebase
+   and its re-run are noted at the end of this list).
+3. **Mutations,** each applied alone, the tree tests run, then undone with `git apply -R`
+   of its saved diff (`git status` showed only the staged tree afterwards). The harm each
+   reproduces is the owner's: the village's trees in the wrong place, wrong size or without
+   their shadows.
+   - 200 m cells (`CELL_M`): `test_tree_loader.gd` `test_one_multimesh_per_250_m_cell` (the
+     names `4_-1 4_0 5_-1`, not `3_-1 3_0 4_-1`) and
+     `test_every_named_tree_stands_at_its_position_scaled_to_its_size`.
+   - No shadows (`SHADOW_CASTING_SETTING_OFF`): `test_one_multimesh_per_250_m_cell`
+     ("casts shadows").
+   - No turn (yaw 0): `test_every_named_tree_stands_at_its_position_scaled_to_its_size`
+     ("the turns differ from tree to tree").
+   - Height and radius swapped (`Vector3(height, radius, height)`): the same test, every
+     named tree, height and crown radius.
+   - The edition from the datasets config's list (`editions[0]-editions[-1]`, "2019-2022"):
+     `test_tree_chunks.gd` `test_the_fixture_chunks_are_read_as_designed`.
+   - z mirrored in the reader (`−z`): `test_every_named_tree_is_where_the_world_config_puts_it`
+     ("as written" and "to_local" for every tree).
+   - `set_instance_transform` instead of `buffer`: `test_one_multimesh_per_250_m_cell` (the
+     buffer reads 0 floats) and the position test ("an instance at the file's position").
+   - `photo_rect`'s width and depth swapped: `test_tree_loader_photo.gd`
+     `test_the_photo_is_bound_to_the_trees_material`.
+   - Mine, each failing a named test of `test_m3_11_*`: a flipped winding (outward
+     faces), a shader uniform renamed or a syntax error in the shader (the declared
+     `photo` and `photo_rect`), `source_color` removed from the photo's declaration, a
+     custom AABB half as wide, the owner's-axes check removed, the plain-path check removed,
+     the missing-file check removed (the size message and an engine ERROR instead), the
+     duplicate-tile check removed, a turn that ignores z, the block's key-set check removed.
+   - **Does NOT prove:** the look, the colour encoding (H21) or GPU time.
+4. **Software screenshots** (evidence, never a gate; not the Forward+ look):
+   `docs/briefs/shots/M3-11-fixture-trees-photo.jpg` and `M3-11-fixture-trees-placeholder.jpg`.
+   The fixture's 19 trees in a bare scene (a flat plane, a sun with shadows), made with a
+   throwaway script kept in scratch and never committed, under Compatibility on Mesa's
+   llvmpipe (Xvfb). The first binds a **synthetic gradient** as the photo (red grows with x,
+   blue with z), not the real photo: the crowns' colours differ by position, so the vertex
+   shader samples the photo at the tree. The second binds none: the placeholder green, which
+   reads nearly black there. They show that the shader compiles and draws under a software
+   GL, not what the owner's GPU shows. The real village was not built here (no swisstopo
+   data in a container), so there is no shot of an isolated tree, a forest edge or the
+   village.
+5. **Timing,** headless, on 34'412 synthetic trees (random positions in a 2.5 × 3.5 km box,
+   six chunks of one file each, so 140 cells, at most 287 in one; design's village has 90
+   cells, at most 937): `TreeChunks.from_manifest` 7 to 12 ms, `TreeLoader.create` 40 to
+   50 ms, `conifer()` 0.3 to 0.6 ms (three runs). Design measured 13.1 and 61.4 ms on the
+   real village. GPU time and GPU memory are unmeasured here (the owner's PC).
+6. **Stricter than the brief's list, on purpose:** the reader checks the exact key sets of
+   the block, `lv95_box`, `parameters`, `source` (the four datasets, each named by its
+   `dataset`), swisssurface3d's block and its tiles, and each chunk's entry. The brief says
+   "key sets that are not exact" without the list; these are design's fixture's own. A seam
+   for M3-07 (lane D): its written block must carry exactly these keys, which its pinned
+   tests against the same fixture already require.
+7. **Reuse and limits:** `TreeChunks._check_world` calls `BuildingChunks._check_world` (the
+   one home of "this WorldConfig is the manifest's") and adds the owner's axes, as
+   `TerrainGrid` does. The reader does not look at a tree's values (finite, positive): the
+   SHA-256 of the file is the check, and the pipeline wrote them. The shader reads a tree's
+   position in world space, so `photo_rect` must be in world space and the trees' parent at
+   the origin, unturned and unscaled (the main scene's root is; both comments say so). A
+   photo given with a rectangle of no width or depth leaves the placeholder, as no photo:
+   M3-14 passes a validated PhotoGrid's rectangle.
+8. **Not done:** the main scene does not use the loader (M3-14); no screenshot of the real
+   village (see 4).
