@@ -72,7 +72,9 @@ void vertex() {
 }
 
 void fragment() {
-	NORMAL = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
+	// dFdy before dFdx: Godot's face normal from screen derivatives points out of the surface,
+	// towards the viewer, as terrain_photo.gdshader's flat normal does (brief M3-R1-fix-4).
+	NORMAL = normalize(cross(dFdy(VERTEX), dFdx(VERTEX)));
 	ALBEDO = mix(crown_color * shade, trunk_color, trunk);
 	ROUGHNESS = 0.95;
 	SPECULAR = 0.15;

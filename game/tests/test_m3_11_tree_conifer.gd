@@ -9,12 +9,13 @@ extends GutTest
 ## drawn as variant 1 or 2 would be culled at the edge of variant 0); a loader that sets a
 ## shader parameter the shader does not declare (set_shader_parameter accepts any name, and
 ## the pinned tests read the name back from the material, so they cannot see it); a turn
-## that is not a hash of both coordinates in 4096 steps.
+## that is not a hash of both coordinates in 4096 steps; a flat normal built in the order
+## that points into the tree (M3 review R1, G-01).
 ##
 ## Does NOT prove: that the shader compiles on a GPU or that the trees look right (no GPU:
 ## the headless renderer parses the shader's declarations, nothing more); the colour
 ## encoding (brain.md H21: the one text check below only proves the photo's declaration
-## says source_color).
+## says source_color); the lighting (the normal's test below is a census of one line's text).
 
 const CROWN_TRIANGLES := 180
 const TRIANGLES := 192
@@ -184,6 +185,25 @@ func test_the_photo_is_declared_as_a_source_colour_sampler() -> void:
 			found = true
 			assert_true(line.contains("source_color"), "photo is a source_color sampler: %s" % line)
 	assert_true(found, "the shader declares the photo sampler")
+
+
+func test_the_flat_normal_is_built_as_cross_dfdy_dfdx() -> void:
+	# A census of text (lesson 5): it proves the shader's NORMAL statement says
+	# cross(dFdy(VERTEX), dFdx(VERTEX)), the order Godot 4.6.3 lights a facet from outside with
+	# (the terrain shader's flat normal has it); the other order points into the tree, so facets
+	# that face the sun are black (M3 review R1, G-01, measured on a sphere in Compatibility and
+	# in Forward+). It cannot prove the render, and it does not follow NORMAL through a
+	# variable or a macro.
+	var statements := []
+	for line in FileAccess.get_file_as_string(TreeLoader.SHADER).split("\n"):
+		var code := line.strip_edges()
+		if code.begins_with("NORMAL"):
+			statements.append(code)
+	assert_eq(
+		statements,
+		["NORMAL = normalize(cross(dFdy(VERTEX), dFdx(VERTEX)));"],
+		"one NORMAL statement, with dFdy first: dFdx first points into the tree"
+	)
 
 
 func _repo_file(rel: String) -> String:

@@ -45,13 +45,13 @@ None.
 
 ## Done when (gates)
 
-- [ ] `NORMAL` in `tree_conifer.gdshader` is `normalize(cross(dFdy(VERTEX), dFdx(VERTEX)))`.
+- [x] `NORMAL` in `tree_conifer.gdshader` is `normalize(cross(dFdy(VERTEX), dFdx(VERTEX)))`.
       - does NOT prove: that the trees look right on the owner's GPU.
-- [ ] Mutation: put the two arguments back; the new text test fails and names the order
+- [x] Mutation: put the two arguments back; the new text test fails and names the order
       (record both runs in Findings, the saved diff undone with `git apply -R`).
       - does NOT prove: that the shader's lighting is right in any other respect (it proves
         the line).
-- [ ] Render evidence in Findings: the review's sphere probe (a dozen lines, in the review)
+- [x] Render evidence in Findings: the review's sphere probe (a dozen lines, in the review)
       run before and after under `xvfb-run` in Compatibility (and in Forward+ on lavapipe
       where it starts: `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json`, `apt-get
       install mesa-vulkan-drivers` if missing): the "front" and "back" centre pixels swap
@@ -60,7 +60,7 @@ None.
       real village) to `docs/briefs/shots/M3-R1-fix-4-*.jpg`.
       - does NOT prove: that it renders or looks right on the owner's PC (software
         rendering; Forward+ is the owner's check).
-- [ ] Standard gate: `tools/gate.sh > gate.log && git commit …`
+- [x] Standard gate: `tools/gate.sh > gate.log && git commit …`
       - does NOT prove: that it renders or looks right.
 
 ## Forbidden
@@ -70,4 +70,60 @@ parameters; a new dependency; a version bump; a model's name or id anywhere in t
 repository.
 
 ## Findings (executor writes)
+
+1. **The change.** `tree_conifer.gdshader`'s `NORMAL` is now
+   `normalize(cross(dFdy(VERTEX), dFdx(VERTEX)))`, with a two-line comment above it saying why
+   (a comment only: no colour, light or ambient value moved). The new test
+   `test_the_flat_normal_is_built_as_cross_dfdy_dfdx` (`test_m3_11_tree_conifer.gd`, beside the
+   `source_color` check) reads the shader's text: exactly one statement starting with `NORMAL`,
+   and it is that line. It is labelled a census in a comment and in the file's header, whose
+   "Does NOT prove" now names the lighting. It also fails a second `NORMAL` statement added
+   after the line, or `NORMAL` replaced (the review's s3, `vec3(0, 1, 0)`).
+2. **Mutation** (a throwaway `git clone` of the repository, the fix applied from a saved diff,
+   the mutation from its own saved diff: the two arguments back):
+   - fix applied, `test_m3_11_tree_conifer.gd`: `Tests 10, Passing Tests 10, Asserts 3073`,
+     `---- All tests passed! ----`;
+   - mutation applied: `Passing Tests 9, Failing Tests 1`, `test_the_flat_normal_is_built_as_cross_dfdy_dfdx`
+     `[Failed]`, `["NORMAL = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));"] !=
+     ["NORMAL = normalize(cross(dFdy(VERTEX), dFdx(VERTEX)));"]`, message "one NORMAL statement,
+     with dFdy first: dFdx first points into the tree";
+   - undone with `git apply -R`: 10 of 10 again. The clone was deleted after.
+   - Owner-visible harm it reproduces: every tree lit from the inside (G-01).
+3. **Render evidence** (software; not the owner's GPU). Mesa 25.2.8's lavapipe was installed with
+   `apt-get update` then `apt-get install mesa-vulkan-drivers vulkan-tools` (the package list
+   was empty until `apt-get update`); Forward+ ran with
+   `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a godot --rendering-driver
+   vulkan --rendering-method forward_plus`. The review's sphere probe, run unchanged but for the
+   shader's line chosen by an argument, centre pixel (r, g, b of 0 to 1):
+
+   | `NORMAL = normalize(…)` | renderer | front | back |
+   |---|---|---|---|
+   | `cross(dFdx, dFdy)` (shipped before) | Compatibility | (0, 0, 0) | (0.9137, 0.8157, 0.7529) |
+   | `cross(dFdy, dFdx)` (this fix) | Compatibility | (0.6078, 0.4157, 0.2275) | (0, 0, 0) |
+   | `cross(dFdx, dFdy)` (shipped before) | Forward+ on lavapipe | (0, 0, 0) | (1.0, 0.9569, 0.8588) |
+   | `cross(dFdy, dFdx)` (this fix) | Forward+ on lavapipe | (0.8039, 0.6745, 0.498) | (0, 0, 0) |
+
+   The "before" rows equal the review's measured values exactly; the two "front" and "back"
+   columns trade places, as the report's table has it. The shipped shader itself, the
+   fixture's 19 trees through `TreeLoader.create` (no photo: the placeholder crown), the sun
+   along the view ("front") and towards the camera ("back"), mean RGB (0 to 255) of every
+   non-background pixel, 2287 pixels:
+
+   | | Compatibility front / back | Forward+ front / back |
+   |---|---|---|
+   | before | (0, 0, 0) / (71, 73, 69) | (0, 0, 0) / (71, 75, 70) |
+   | after | (30, 41, 22) / (0, 0, 0) | (34, 47, 26) / (0, 0, 0) |
+
+   Two software screenshots, 1280 x 720, Compatibility on llvmpipe, the fixture's 19 trees on a
+   bare plane under the main scene's sun (azimuth 183°, elevation 52°, through the world config)
+   and its sky and exposure copied, the camera south of the trees looking north (the sun-facing
+   side): `docs/briefs/shots/M3-R1-fix-4-trees-south-before.jpg` (black silhouettes, a shipped
+   shader with the arguments back) and `docs/briefs/shots/M3-R1-fix-4-trees-south-after.jpg`
+   (faceted dark green crowns). The crowns stay dark because they carry the labelled
+   placeholder green (no photo bound, as in M3-11's shots), not because of the normal. The
+   probe and shot scripts were throwaways in the scratch folder, never committed.
+4. **Not done, by the brief:** the real village (no swisstopo data in a container) was not
+   rendered; the G-01 report's village views are the review's. brain.md H12's "Forward+ on
+   lavapipe crashes" does not hold here either (Mesa 25.2.8, the review's note): it is the
+   orchestrator's to correct, not this brief's scope.
 
