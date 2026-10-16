@@ -136,12 +136,13 @@ def test_the_progress_lines_come_in_order_and_the_hash_comes_before_the_read(tmp
     monkeypatch.setattr(surfaces, "read_tlm", lambda *a: (events.append("read"), real_read(*a))[1])
     said: list[str] = []
     _build(case, progress=lambda line: (events.append("say"), said.append(line)))
-    assert events == ["say", "hash", "say", "read", "say", "say", "say"]
+    assert events == ["say", "hash", "say", "read", "say", "say", "say", "say"]
     starts = [
         "checking the SHA-256 of",
         "reading",
         "read ",
         "the classes have the SHA-256",
+        "the PNG has the SHA-256",
         "wrote",
     ]
     assert len(said) == len(starts) and all(
@@ -336,6 +337,102 @@ def test_a_refused_build_leaves_the_part_files_where_they_were(tmp_path):
     assert [p.name for p in folder.iterdir()] == ["fixture.png.part"]
 
 
+# ------------------------------------------------- the PNG's bytes are design's (fix-6)
+
+
+ZLIB_HERE = "9.8.7-test"  # no refusal text holds it unless the refusal names this machine's zlib
+
+
+def _other_deflate(monkeypatch) -> None:
+    """This machine's zlib writes another stream: level 1 where the PNG is pinned to level 9."""
+    original = zlib.compress  # surfaces.zlib is this module: patch with a closure over it
+    monkeypatch.setattr(surfaces.zlib, "compress", lambda data, level=-1: original(data, 1))
+    monkeypatch.setattr(surfaces.zlib, "ZLIB_RUNTIME_VERSION", ZLIB_HERE)
+
+
+def test_a_png_of_other_bytes_is_refused_after_the_classes_and_before_anything_is_written(
+    tmp_path, monkeypatch
+):
+    case = _case(tmp_path)
+    expected = case.config["areas"]["fixture"]["expected_png_sha256"]["0.2"]
+    designed = (GENERATED / "surfaces" / "fixture.png").read_bytes()
+    _other_deflate(monkeypatch)
+    other = _sha(surfaces.png_l8(surfaces.read_png_l8(designed)))
+    assert other != expected, "the premise: another deflate writes other bytes"
+    said: list[str] = []
+    with pytest.raises(SurfacesError) as refusal:
+        _build(case, progress=said.append)
+    text = str(refusal.value)
+    for part in (
+        expected,
+        other,
+        "config/surfaces.json",
+        "expected_png_sha256",
+        f"zlib {ZLIB_HERE}",
+        "uv python install 3.13 --managed-python",
+        "UV_PYTHON_PREFERENCE=only-managed",
+        "nothing was written",
+    ):
+        assert part in text, (part, text)
+    assert said[-1].startswith("the classes have the SHA-256"), "the classes matched first"
+    assert not case.out.exists(), "not a folder, not a .part, nothing"
+
+
+def test_the_classes_are_compared_before_the_png_is_encoded(tmp_path, monkeypatch):
+    case = _case(tmp_path)
+    area = case.config["areas"]["fixture"]
+    area["expected_pixels_sha256"]["0.2"] = "0" * 64
+    area["expected_png_sha256"]["0.2"] = "1" * 64
+
+    def no_encoding(pixels):
+        raise AssertionError("the PNG was encoded before the classes were compared")
+
+    monkeypatch.setattr(surfaces, "png_l8", no_encoding)
+    with pytest.raises(SurfacesError, match="the classes built here") as refusal:
+        _build(case)
+    assert "expected_png_sha256" not in str(refusal.value)
+    assert not case.out.exists()
+
+
+def test_the_png_is_encoded_once_and_is_the_one_written(tmp_path, monkeypatch):
+    case = _case(tmp_path)
+    original, calls = zlib.compress, []
+    monkeypatch.setattr(
+        surfaces.zlib, "compress", lambda *a, **k: (calls.append(1), original(*a, **k))[1]
+    )
+    block = _build(case)
+    assert len(calls) == 1, "about 150 MB of scanlines for the village: compressed once"
+    png = (case.out / "surfaces" / "fixture.png").read_bytes()
+    designed = case.config["areas"]["fixture"]["expected_png_sha256"]["0.2"]
+    assert _sha(png) == block["sha256"] == designed
+
+
+@pytest.mark.parametrize(("cell", "key"), [(0.5, "0.5"), (1.0, "1")])
+def test_the_png_is_compared_with_the_value_of_its_own_cell(tmp_path, cell, key):
+    """Likeliest wrong twin: the value of the village's own cell (0.2) used for every cell."""
+    case = _case(tmp_path)
+    area = case.config["areas"]["fixture"]
+    area["cell_m"] = cell
+    block = _build(case)
+    assert block["cell_m"] == cell and block["sha256"] == area["expected_png_sha256"][key]
+    world_sha256 = _sha(case.world.path.read_bytes())
+
+    def check():
+        return built_surfaces_block(
+            case.out, case.config, case.world, world_sha256, case.datasets, case.lock
+        )
+
+    assert check() == block
+    other = "0.2"
+    area["expected_png_sha256"][other] = "0" * 64
+    assert check() == block, "the value of another cell is not this cell's"
+    area["expected_png_sha256"][other] = block["sha256"]
+    area["expected_png_sha256"][key] = "0" * 64
+    with pytest.raises(SurfacesError, match="expected_png_sha256") as refusal:
+        check()
+    assert REBUILD in str(refusal.value)
+
+
 def test_two_builds_give_the_same_files(tmp_path):
     case = _case(tmp_path)
     first = _build(case)
@@ -374,7 +471,7 @@ def _edit_description(out: Path, **changes) -> None:
     path.write_text(json.dumps(block, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _lines_png(pixels: np.ndarray) -> bytes:
+def _lines_png(pixels: np.ndarray, level: int = 9) -> bytes:
     rows, columns = pixels.shape
     lines = np.zeros((rows, columns + 1), dtype=np.uint8)
     lines[:, 1:] = pixels
@@ -388,7 +485,7 @@ def _lines_png(pixels: np.ndarray) -> bytes:
     return (
         b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", header)
-        + chunk(b"IDAT", zlib.compress(lines.tobytes(), 9))
+        + chunk(b"IDAT", zlib.compress(lines.tobytes(), level))
         + chunk(b"IEND", b"")
     )
 
@@ -487,6 +584,36 @@ def test_pixels_that_are_not_the_configs_expected_classes_are_refused(tmp_path):
     with pytest.raises(SurfacesError, match="expects") as refusal:
         _check(out)
     assert "pixels_sha256" in str(refusal.value) and REBUILD in str(refusal.value)
+
+
+def test_a_png_of_the_designed_classes_and_other_bytes_is_refused_naming_the_rebuild(
+    tmp_path, monkeypatch
+):
+    """Another deflate's file: its description agrees with it, its pixels are design's, and the
+    manifest written from it would not be design's (brief M3-R1-fix-6)."""
+    monkeypatch.setattr(surfaces.zlib, "ZLIB_RUNTIME_VERSION", ZLIB_HERE)
+    out = _built(tmp_path)
+    block = json.loads((GENERATED / "surfaces" / "fixture.json").read_text(encoding="utf-8"))
+    pixels = surfaces.read_png_l8((GENERATED / "surfaces" / "fixture.png").read_bytes())
+    png = _lines_png(pixels, level=1)
+    assert _sha(pixels.tobytes()) == block["pixels_sha256"] and _sha(png) != block["sha256"]
+    (out / "surfaces" / "fixture.png").write_bytes(png)
+    _edit_description(out, sha256=_sha(png))
+    with pytest.raises(SurfacesError, match="expected_png_sha256") as refusal:
+        _check(out)
+    text = str(refusal.value)
+    assert _sha(png) in text and block["sha256"] in text, "both SHA-256s"
+    assert REBUILD in text and "config/surfaces.json" in text and "fixture.png" in text
+    assert f"zlib {ZLIB_HERE}" in text, "this machine's zlib, for the reader of the refusal"
+
+
+def test_a_png_that_is_not_the_one_the_config_expects_is_refused_whatever_it_holds(tmp_path):
+    out = _built(tmp_path)
+    config = load_surfaces_config(FIXTURE / "surfaces.json")
+    config["areas"]["fixture"]["expected_png_sha256"]["0.2"] = "0" * 64
+    with pytest.raises(SurfacesError, match="expected_png_sha256") as refusal:
+        _check(out, config=config)
+    assert REBUILD in str(refusal.value)
 
 
 def test_a_world_that_is_not_the_one_the_values_were_computed_for_names_design(tmp_path):

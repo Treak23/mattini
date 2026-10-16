@@ -7,7 +7,7 @@ without it naming `python -m mattini lock tlm` (design's rehearsal measured a Ke
 traceback there).
 
 Does NOT prove: the lock command or the downloads (brief M3-03); that the committed values
-are right (the real run compares the classes with them).
+are right (the real run compares the classes and the PNG with them).
 """
 
 import copy
@@ -63,6 +63,38 @@ def _changed(change):
             "SHA-256",
         ),
         (lambda c: c["areas"]["village"]["expected_pixels_sha256"].pop("0.2"), "no value for"),
+        # the PNG's bytes are design's too (brief M3-R1-fix-6): checked as the classes are
+        (lambda c: c["areas"]["village"].pop("expected_png_sha256"), "expected_png_sha256"),
+        (lambda c: c["areas"]["village"].update(expected_png_sha256=[]), "png_sha256 must be an"),
+        (lambda c: c["areas"]["village"].update(expected_png_sha256=SHA), "png_sha256 must be an"),
+        (
+            lambda c: c["areas"]["village"]["expected_png_sha256"].update({"2": SHA}),
+            "expected_png_sha256 holds only",
+        ),
+        (
+            lambda c: c["areas"]["village"]["expected_png_sha256"].update({"0.5": "xyz"}),
+            r"expected_png_sha256\['0.5'\] must be a SHA-256",
+        ),
+        (
+            lambda c: c["areas"]["village"]["expected_png_sha256"].update({"0.5": "A" * 64}),
+            r"expected_png_sha256\['0.5'\] must be a SHA-256",
+        ),
+        (
+            lambda c: c["areas"]["village"]["expected_png_sha256"].update({"0.5": 5}),
+            r"expected_png_sha256\['0.5'\] must be a SHA-256",
+        ),
+        (
+            lambda c: c["areas"]["village"]["expected_png_sha256"].pop("0.2"),
+            "expected_png_sha256 holds no value for",
+        ),
+        (
+            lambda c: c["areas"]["village"]["expected_png_sha256"].pop("1"),
+            "the two must hold the same cells",
+        ),
+        (
+            lambda c: c["areas"]["village"]["expected_pixels_sha256"].pop("0.5"),
+            "the two must hold the same cells",
+        ),
         (lambda c: c["areas"]["village"]["computed_for"].pop("world_sha256"), "computed_for"),
         (
             lambda c: c["areas"]["village"]["computed_for"].update(inputs_sha256="no"),

@@ -37,11 +37,17 @@ Walk it top to bottom before any version bump.
 - [ ] Every built output has its designed value: the village heights at 0.5 m `b6334c1f…`
       (SPEC §8); the six building chunks (`config/buildings.json`); from M3, the photo's
       pixels and JPEG (`config/photo.json`), the roof colours (`config/roofs.json`), the
-      surfaces by their pixels only (`config/surfaces.json`: the PNG's bytes depend on zlib)
-      and the six tree chunks (`config/trees.json`). `terrain`, `buildings`, `photo`,
-      `roofs`, `surfaces` and `trees` compare before they write, and `manifest` refuses any
-      other file (M2-01, M2-04, M3-04 to M3-07, M3-13), so their exit 0 in the fresh
-      checkout is the check.
+      surfaces by their pixels and their PNG's bytes (`config/surfaces.json`: the PNG's
+      bytes depend on the zlib build, so they are design's too; a machine whose zlib writes
+      other bytes is refused, M3-R1-fix-6) and the six tree chunks (`config/trees.json`).
+      `terrain`, `buildings`, `photo`, `roofs`, `surfaces` and `trees` compare before they
+      write, and `manifest` refuses any other file (M2-01, M2-04, M3-04 to M3-07, M3-13),
+      so their exit 0 in the fresh checkout is the check.
+- [ ] The fresh checkout's `game/assets/generated/manifest.json` has the size and SHA-256
+      the arc plan names (M3: 324'359 bytes, `3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065`),
+      compared by a command, its output in the release record:
+      `test "$(wc -c < game/assets/generated/manifest.json)" -eq 324359 && echo "3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065  game/assets/generated/manifest.json" | sha256sum -c -`
+      (a later arc's plan names its own pair).
 - [ ] Windows and Linux exports built with the pinned Godot version's export templates,
       each with its data packs beside the executable (`tools/export.sh` steps 4–4b:
       `mattini-terrain.pck`, `mattini-photo.pck`; from M3-08, SPEC §11).

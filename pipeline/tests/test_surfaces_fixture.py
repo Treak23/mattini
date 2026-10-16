@@ -17,7 +17,8 @@ Pinned decisions (m3-design §4, as refined by design on 2026-10-14):
   colour type 0, no interlace), each scanline prefixed by filter byte 0, ONE zlib stream
   (zlib.compress, level 9) split into IDAT chunks of at most 1 MiB, IEND, CRC32 from
   zlib.crc32. Determinism is pinned on the pixels (`pixels_sha256`); the PNG's bytes
-  depend on the zlib build.
+  depend on the zlib build and are design's too (`expected_png_sha256`, brief
+  M3-R1-fix-6: the committed fixture PNG is written again byte for byte).
 - `write_surfaces` writes surfaces/<area>.png.import (`importer="keep"`, so that Godot
   ships the PNG as it is: an imported PNG is not in an export, measured), the PNG and
   surfaces/<area>.json, each through a `.part` rename; the description has exactly its
@@ -42,6 +43,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from mattini import surfaces
 from mattini.surfaces import class_grid, load_surfaces_config, png_l8, write_surfaces
 
 REPO = Path(__file__).resolve().parents[2]
@@ -55,6 +57,11 @@ VILLAGE = {
     "0.2": "93d78ba6d89eea27d0ec897d9f5fca244633336ff29378cd2b2fc9def77e5093",
     "0.5": "adda417b52b9ebff5a4f8f9d6d9d985da65134c0e4eda1938db07b5f35b01d9e",
     "1": "4ea3d1e660fed1d46b4a7152e7378924c6597d1611faace59686d945e15db408",
+}
+VILLAGE_PNG = {  # the PNG's bytes, zlib 1.3 (brief M3-R1-fix-6); they pin the encoder, not the classes
+    "0.2": "8922edf904e3e4e1de40c65daf1af1aae3474d71481d628a548152ce5b843e12",
+    "0.5": "6773cfc4b553cd3fa7e6c19fda08a66a8db711f8fd9ff0a498852d5dac17b071",
+    "1": "e68a251cef28046b921999e2792c1bab3497cc193ee42e6afd49dc9cc60d6344",
 }
 VILLAGE_TLM_ENTRY = {  # the lock entry design computed the village from (`lock tlm` writes it)
     "collection": "ch.swisstopo.swisstlm3d",
@@ -134,6 +141,7 @@ def test_the_fixture_s_files_hold_the_designed_classes():
     config = load_surfaces_config(FIXTURE / "surfaces.json")
     assert config["areas"]["fixture"]["cell_m"] == 0.2
     assert config["areas"]["fixture"]["expected_pixels_sha256"] == VECTORS["pixels_sha256"]
+    assert config["areas"]["fixture"]["expected_png_sha256"]["0.2"] == block["sha256"]
     manifest = json.loads((GENERATED / "manifest.json").read_text(encoding="utf-8"))
     world_raw = (FIXTURE / "world.json").read_bytes()
     assert manifest["surfaces"] == block and manifest["world"] == json.loads(world_raw)
@@ -147,7 +155,8 @@ def test_write_surfaces_writes_the_designed_files(tmp_path):
         tmp_path, "fixture", grid, BOX, 0.2, block["world_sha256"], block["source"]
     )
     png = (tmp_path / "surfaces" / "fixture.png").read_bytes()
-    assert written == {**block, "sha256": _sha(png)}, "only the PNG's own SHA-256 may differ"
+    assert written == block, "the whole description, the PNG's SHA-256 too, is design's"
+    assert _sha(png) == block["sha256"], f"this machine's zlib {zlib.ZLIB_RUNTIME_VERSION}"
     text = json.dumps(written, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     assert (tmp_path / "surfaces" / "fixture.json").read_bytes() == text.encode("utf-8")
     assert (tmp_path / "surfaces" / "fixture.png.import").read_bytes() == KEEP
@@ -157,6 +166,22 @@ def test_write_surfaces_writes_the_designed_files(tmp_path):
         "fixture.png",
         "fixture.png.import",
     ]
+
+
+def test_write_surfaces_writes_the_png_it_is_given_and_encodes_nothing_again(tmp_path, monkeypatch):
+    block = json.loads((GENERATED / "surfaces" / "fixture.json").read_text(encoding="utf-8"))
+    designed = (GENERATED / "surfaces" / "fixture.png").read_bytes()
+    grid = class_grid(_features(), BOX, 0.2)
+
+    def no_encoding(*args, **keywords):
+        raise AssertionError("the PNG was compressed again")
+
+    monkeypatch.setattr(surfaces.zlib, "compress", no_encoding)
+    written = write_surfaces(
+        tmp_path, "fixture", grid, BOX, 0.2, block["world_sha256"], block["source"], png=designed
+    )
+    assert written == block
+    assert (tmp_path / "surfaces" / "fixture.png").read_bytes() == designed
 
 
 def test_one_level_9_stream_is_split_into_idat_chunks_of_at_most_1_mib():
@@ -181,6 +206,7 @@ def test_the_committed_config_expects_design_s_village():
                     "world_sha256": world_sha256,
                 },
                 "expected_pixels_sha256": VILLAGE,
+                "expected_png_sha256": VILLAGE_PNG,
             }
         },
     }

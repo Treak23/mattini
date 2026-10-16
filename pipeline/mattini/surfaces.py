@@ -43,12 +43,16 @@ that fixes it (Hard Rule 2).
 
 The PNG is written without Pillow, by the standard library: 8-bit grey, no interlace, filter
 0 on every row, one zlib stream at level 9 in IDAT chunks of at most 1 MiB, values 0 to 4. Its
-content is pinned (`pixels_sha256`); its bytes depend on the zlib build, so they are checked
-for integrity only (`sha256`). `surfaces/<area>.png.import` says `importer="keep"` (brain.md
-H24: Godot would import the PNG as a texture, and an export would ship the texture instead
-of the PNG). The files are written in the order `.png.import`, `.png`, `.json`, each through
-a `.part` rename. Only the owner's axes (x = +e, y = +h, z = −n) are supported: another
-mapping would place the rows and columns wrongly (Hard Rule 4).
+content is pinned (`pixels_sha256`) and so are its bytes (`expected_png_sha256`, per cell like
+`expected_pixels_sha256`): they depend on the zlib build (zlib 1.3 and 1.3.2 write design's
+bytes, zlib-ng does not, measured), and the PNG's SHA-256 is in the description and so in
+`manifest.json`. The step encodes the PNG once, after the classes match, and refuses another
+SHA-256 before it writes anything, naming the machine's zlib (SPEC §13 row 39); the manifest's
+check refuses a built PNG that is not design's. `surfaces/<area>.png.import` says
+`importer="keep"` (brain.md H24: Godot would import the PNG as a texture, and an export would
+ship the texture instead of the PNG). The files are written in the order `.png.import`,
+`.png`, `.json`, each through a `.part` rename. Only the owner's axes (x = +e, y = +h, z = −n)
+are supported: another mapping would place the rows and columns wrongly (Hard Rule 4).
 
 Does NOT prove: that the classes sit on the photo's roads (the grid is the TLM's, which
 the photo does not have to agree with to a texel); the game's reading (brief M3-10).
@@ -86,7 +90,7 @@ SURFACES_CONFIG_NAME = "config/surfaces.json"  # the home of the expected classe
 SCHEMA = 1
 CELLS = (0.2, 0.5, 1.0)
 CELL_KEYS = ("0.2", "0.5", "1")  # CELLS as the config writes them: format(c, "g")
-AREA_CONFIG_KEYS = {"cell_m", "computed_for", "expected_pixels_sha256"}
+AREA_CONFIG_KEYS = {"cell_m", "computed_for", "expected_pixels_sha256", "expected_png_sha256"}
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 DATASET = "swisstlm3d"
@@ -184,9 +188,10 @@ def check_surfaces_config(data: object, where: Path | str = "the surfaces config
     """Refuse a surfaces config that is not schema 1 with exactly one well-formed area.
 
     An area has exactly the keys `cell_m` (0.2, 0.5 or 1), `computed_for` (what the values
-    were computed for, `terrain.check_computed_for`) and `expected_pixels_sha256`: an object
-    from cell sizes as the config writes them ("0.2", "0.5", "1") to the SHA-256 of the
-    class bytes at that cell, 64 lower-case hex digits, holding the configured cell. The
+    were computed for, `terrain.check_computed_for`), `expected_pixels_sha256` and
+    `expected_png_sha256`: each an object from cell sizes as the config writes them ("0.2",
+    "0.5", "1") to the SHA-256 of the class bytes, or of the PNG's bytes, at that cell, 64
+    lower-case hex digits, holding the configured cell; the two hold the same cells. The
     SurfacesError names `where`.
     """
 
@@ -210,33 +215,39 @@ def check_surfaces_config(data: object, where: Path | str = "the surfaces config
             raise fail(
                 f"area {name!r}: cell_m must be one of {list(CELLS)}, found {area['cell_m']!r}"
             )
-        expected = area["expected_pixels_sha256"]
-        if not isinstance(expected, dict):
-            raise fail(
-                f"area {name!r}: expected_pixels_sha256 must be an object, found {expected!r}"
-            )
-        unknown = [key for key in expected if key not in CELL_KEYS]
-        if unknown:
-            raise fail(
-                f"area {name!r}: expected_pixels_sha256 holds only the cells {list(CELL_KEYS)}, "
-                f"found {unknown!r}"
-            )
-        for key, value in expected.items():
-            if not (isinstance(value, str) and SHA256_HEX.fullmatch(value)):
+        for field in ("expected_pixels_sha256", "expected_png_sha256"):
+            expected = area[field]
+            if not isinstance(expected, dict):
+                raise fail(f"area {name!r}: {field} must be an object, found {expected!r}")
+            unknown = [key for key in expected if key not in CELL_KEYS]
+            if unknown:
                 raise fail(
-                    f"area {name!r}: expected_pixels_sha256[{key!r}] must be a SHA-256 in 64 "
-                    f"lower-case hex characters, found {value!r}"
+                    f"area {name!r}: {field} holds only the cells {list(CELL_KEYS)}, "
+                    f"found {unknown!r}"
                 )
-        if cell_key(area["cell_m"]) not in expected:
+            for key, value in expected.items():
+                if not (isinstance(value, str) and SHA256_HEX.fullmatch(value)):
+                    raise fail(
+                        f"area {name!r}: {field}[{key!r}] must be a SHA-256 in 64 "
+                        f"lower-case hex characters, found {value!r}"
+                    )
+            if cell_key(area["cell_m"]) not in expected:
+                raise fail(
+                    f"area {name!r}: {field} holds no value for the configured "
+                    f"cell {cell_key(area['cell_m'])!r}"
+                )
+        if set(area["expected_png_sha256"]) != set(area["expected_pixels_sha256"]):
             raise fail(
-                f"area {name!r}: expected_pixels_sha256 holds no value for the configured "
-                f"cell {cell_key(area['cell_m'])!r}"
+                f"area {name!r}: expected_png_sha256 holds the cells "
+                f"{sorted(area['expected_png_sha256'])}, expected_pixels_sha256 "
+                f"{sorted(area['expected_pixels_sha256'])}; the two must hold the same cells"
             )
         check_computed_for(area["computed_for"], name, fail)
 
 
 def cell_key(cell_m: float) -> str:
-    """A cell size as the config writes it, the key of `expected_pixels_sha256`."""
+    """A cell size as the config writes it, the key of `expected_pixels_sha256` and
+    `expected_png_sha256`."""
     return format(cell_m, "g")
 
 
@@ -661,11 +672,16 @@ def write_surfaces(
     cell_m: float,
     world_sha256: str,
     source: dict,
+    *,
+    png: bytes | None = None,
 ) -> dict:
     """Write `surfaces/<area>.png.import`, `.png` and `.json` (each through a `.part` rename).
 
     Returns the description, which is what the `.json` holds. A `*.part` an earlier run left
-    in `surfaces/` is removed once all three files are written.
+    in `surfaces/` is removed once all three files are written. `png` is `png_l8(grid)` when
+    the caller has encoded it already (the step does, to compare its SHA-256 before anything
+    is written): it is written as given, not checked against `grid`. Without it the writer
+    encodes `grid` itself.
     """
     if not AREA_NAME.fullmatch(area):
         raise SurfacesError(f"area name {area!r} must be lower-case letters, digits and '_'")
@@ -675,7 +691,8 @@ def write_surfaces(
             f"the classes are {grid.shape[1]} × {grid.shape[0]}, the box at {cell_m} m needs "
             f"{frame.columns} × {frame.rows}"
         )
-    png = png_l8(grid)
+    if png is None:
+        png = png_l8(grid)
     e_min, e_max, n_min, n_max = (float(v) for v in box)
     block = {
         "area": area,
@@ -718,9 +735,10 @@ def build_surfaces(
 
     The checks run in the order of the module's docstring, each before the next reads
     anything. The classes' SHA-256 must equal the config's `expected_pixels_sha256` for the
-    cell; it is compared before anything is written, and a difference is a SurfacesError
-    naming both values (lesson 38). A missing download is refused before anything is created
-    under `out_dir` and before any `progress` call.
+    cell, and the PNG's, encoded once from them, its `expected_png_sha256`: each is compared
+    before anything is written, and a difference is a SurfacesError naming both values
+    (lesson 38), the PNG's naming the machine's zlib. A missing download is refused before
+    anything is created under `out_dir` and before any `progress` call.
     """
     say = progress or (lambda message: None)
     if world.mapping != OWNER_AXES:
@@ -732,6 +750,7 @@ def build_surfaces(
     settings = surfaces_config["areas"][area]
     cell_m = float(settings["cell_m"])
     expected = settings["expected_pixels_sha256"][cell_key(cell_m)]
+    expected_png = settings["expected_png_sha256"][cell_key(cell_m)]
     if area not in world.areas:
         raise SurfacesError(f"{world.path}: no area named {area!r} for the surfaces config's area")
     box = world.area(area)
@@ -796,6 +815,20 @@ def build_surfaces(
             f"other classes than the design's; nothing was written"
         )
     say(f"the classes have the SHA-256 {SURFACES_CONFIG_NAME} expects, {expected}")
+    png = png_l8(grid)
+    png_sha256 = hashlib.sha256(png).hexdigest()
+    if png_sha256 != expected_png:
+        raise SurfacesError(
+            f"area {area!r} at {cell_key(cell_m)} m: the classes are design's, but the PNG "
+            f"built here has SHA-256 {png_sha256} and {SURFACES_CONFIG_NAME} expects "
+            f"{expected_png} (expected_png_sha256). The PNG's bytes depend on the zlib build, "
+            f"so this machine's (zlib {zlib.ZLIB_RUNTIME_VERSION}) or this code writes other "
+            f"bytes than design's; that value pins the encoder, not the classes. A Python "
+            f"whose zlib writes design's bytes (zlib 1.3.x was measured to) builds the same "
+            f"file, uv's managed CPython for one: `uv python install 3.13 --managed-python`, "
+            f"then run with UV_PYTHON_PREFERENCE=only-managed; nothing was written"
+        )
+    say(f"the PNG has the SHA-256 {SURFACES_CONFIG_NAME} expects, {expected_png}")
     source = {
         "attribution": tlm["attribution"],
         "collection": tlm["collection"],
@@ -804,7 +837,7 @@ def build_surfaces(
         "file": entry["file"],
         "sha256": entry["sha256"],
     }
-    block = write_surfaces(out_dir, area, grid, box, cell_m, world_sha256, source)
+    block = write_surfaces(out_dir, area, grid, box, cell_m, world_sha256, source, png=png)
     say(f"wrote {Path(out_dir) / block['file']} ({block['columns']} × {block['rows']} texels)")
     return block
 
@@ -825,7 +858,9 @@ def built_surfaces_block(
     box, columns, rows or source are not what the configs and the lock give, a missing or
     wrong `.png.import`, a PNG whose SHA-256 is not the description's, one that is not the
     pinned format (`read_png_l8`: a row with a filter other than 0, say) or whose pixels do
-    not have the description's `pixels_sha256` and the config's expected value for the cell.
+    not have the description's `pixels_sha256` and the config's expected value for the cell,
+    and last a PNG whose bytes are not the config's `expected_png_sha256` for the cell (a
+    PNG another deflate wrote: the manifest would differ from design's).
     `world` is the world config the manifest is written from, parsed from the bytes whose
     SHA-256 is `world_sha256`. `lock` is the lock (a dict) or the path of the lock file; it
     is read only when surfaces are built.
@@ -926,6 +961,14 @@ def built_surfaces_block(
         raise fail(
             f"the classes in {png_path} have SHA-256 {actual}, {SURFACES_CONFIG_NAME} expects "
             f"{expected} at {cell_key(cell_m)} m (pixels_sha256)"
+        )
+    expected_png = settings["expected_png_sha256"][cell_key(cell_m)]
+    if png_sha256 != expected_png:
+        raise fail(
+            f"{png_path} has SHA-256 {png_sha256}, {SURFACES_CONFIG_NAME} expects {expected_png} "
+            f"at {cell_key(cell_m)} m (expected_png_sha256): its classes are design's, its bytes "
+            f"are not (they depend on the zlib build of the machine that wrote it; this "
+            f"machine's is zlib {zlib.ZLIB_RUNTIME_VERSION})"
         )
     return block
 
