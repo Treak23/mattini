@@ -1,6 +1,6 @@
 # M3 — Surfaces and trees: the arc plan
 
-Status: READY — waiting for the owner's GO (the fix wave of 2026-10-15, §Fix wave; the arc's first GO was 2026-10-14, the owner)
+Status: GO (2026-10-16, the owner) — the fix wave of 2026-10-15 (§Fix wave); the arc's first GO was 2026-10-14, the owner
 
 **Base:** the commit that set this status line (its message starts `docs: M3 GO`; `git log
 --grep '^docs: M3 GO' -1`). It is the base of integration note 1 and of the review's diff

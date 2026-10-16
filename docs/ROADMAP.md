@@ -6,12 +6,12 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**M3 Surfaces and trees — GO (2026-10-14, the owner); built, reviewed and verified; the fix wave READY, waiting for the owner's GO (design, 2026-10-15).** The plan is
+**M3 Surfaces and trees — GO (2026-10-14, the owner); built, reviewed and verified; the fix wave has the owner's GO (2026-10-16), the orchestrator is spawned.** The plan is
 `docs/briefs/M3-plan.md`: fourteen briefs in two waves, the review plan and the release 0.3.0: the village in a realistic look made from
 swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
 colours, LiDAR trees, data packs). The owner's answers are SPEC §13 rows 29–34 and 37–38 (rows 35–36, 39–40 are design's).
 
-**State (2026-10-15):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1, fix-4, fix-5 DONE, V1 clean (`docs/reviews/M3-V1.md`). Design answered Q1 (P-01 → b) and Q2 (P-03 → a) with the owner, and I-01 itself (RULINGS 2026-10-15). **Next, after the owner's GO:** the fix wave, three lanes at once (`M3-R1-fix-2` trees refuse a terrain spacing other than 0.5; `M3-R1-fix-3` the render step in the gate; `M3-R1-fix-6` the surfaces PNG's bytes), then round R2 (placement, Tier 1, until clean; fix-6's verification), the standard gate from clean, release 0.3.0 (plan §Fix wave). Nobody holds the orchestrator claim.
+**State (2026-10-15):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1, fix-4, fix-5 DONE, V1 clean (`docs/reviews/M3-V1.md`). Design answered Q1 (P-01 → b) and Q2 (P-03 → a) with the owner, and I-01 itself (RULINGS 2026-10-15). **Running:** the fix wave, three lanes at once (`M3-R1-fix-2` trees refuse a terrain spacing other than 0.5; `M3-R1-fix-3` the render step in the gate; `M3-R1-fix-6` the surfaces PNG's bytes), then round R2 (placement, Tier 1, until clean; fix-6's verification), the standard gate from clean, release 0.3.0 (plan §Fix wave). Nobody holds the orchestrator claim.
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
