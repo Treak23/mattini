@@ -11,17 +11,17 @@ Open items only. Shipped and answered items live in `docs/history/` and
 swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
 colours, LiDAR trees, data packs). The owner's answers are SPEC §13 rows 29–34 and 37–38 (rows 35–36, 39–40 are design's).
 
-**State (2026-10-15):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1, fix-4, fix-5 DONE, V1 clean (`docs/reviews/M3-V1.md`). Design answered Q1 (P-01 → b) and Q2 (P-03 → a) with the owner, and I-01 itself (RULINGS 2026-10-15). **Running:** the fix wave, three lanes at once (`M3-R1-fix-2` trees refuse a terrain spacing other than 0.5; `M3-R1-fix-3` the render step in the gate; `M3-R1-fix-6` the surfaces PNG's bytes), then round R2 (placement, Tier 1, until clean; fix-6's verification), the standard gate from clean, release 0.3.0 (plan §Fix wave).
+**State (2026-10-16):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1 to fix-6 DONE and integrated (fix wave head `fd5febd`: the full gate exit 0 with the render step run, the real village gives the manifest `3ca0445c…`; plan §Fix wave integration record), V1 clean (`docs/reviews/M3-V1.md`). **Running:** round R2 (placement, Tier 1, until clean; fix-6's verification), then the standard gate from clean and release 0.3.0 (plan §Fix wave).
 
 Orchestrator: session_014eNuBxx5mk19Z9zHYQKUiD · M3 · since 2026-10-16T00:41Z
-Builder: M3-R1-fix-2 · session_01PDxE79x5FeRCJzszjT5Hb1 · since 2026-10-16T00:43Z
-Builder: M3-R1-fix-3 · session_01TopLd8uXBT2Wmo2YbL3sgs · since 2026-10-16T00:43Z
-Builder: M3-R1-fix-6 · session_01Py8WYfFSp4TQB7fg78gMow · since 2026-10-16T00:43Z
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
 
-**Decisions for design to audit:** none (the M3 list of ten audited and kept, RULINGS 2026-10-15).
+**Decisions for design to audit:** (the M3 list of ten was audited and kept, RULINGS 2026-10-15; these are the fix wave's.)
+1. fix-3, the trees check's estimator: `render_trees.gd` averages the crown over a 0.4 m disc and keeps the threshold 0.6; the review's 5 × 5 apex-pixel estimator reads 0.5824 on a clean tree since fix-4 (0.7513 before), so keeping it would have needed a threshold under 0.58. The alternative: that estimator and a lower threshold, by changing `CROWN_READ_M` and `TREES_MIN_CORR` (brief Findings 3).
+2. fix-3, `MATTINI_SKIP_RENDER=1` excuses only a machine without `xvfb-run`; where `xvfb-run` is found the step runs and says so. The alternative: the variable skips whenever set (one `if` in `render_step`; Findings 5).
+3. fix-3 added a class-agreement floor of 0.98 (clean 0.9960) that Decision 2 does not name, to catch an `xz.y` negation that draws no class at all, and touched `pipeline/tests/fake_tools.py` (compile-forced: a stand-in `xvfb-run` for the whole-gate stand-in tests). Keep or drop is design's.
 
 **Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
 (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).
@@ -78,7 +78,8 @@ Open entry, FB-001, goes to M3.
 
 ## M3 R1 residue (P2 and P3 of round R1, `docs/reviews/M3-round1.md`)
 
-I-01 (P2, the PNG's bytes and zlib) is fix brief `M3-R1-fix-6`; P-01 and P-03 are `M3-R1-fix-2` and `-3`.
+I-01 (P2, the PNG's bytes and zlib) is fix brief `M3-R1-fix-6`; P-01 and P-03 are `M3-R1-fix-2` and `-3` (all three DONE, 2026-10-16).
+For design (fix wave): `tests/shared/surfaces_vectors.json` still says "its bytes depend on the zlib build, so only its pixels are pinned" (stale since fix-6; design's file, outside every lane's Scope); brain.md H12 may gain one line: under Xvfb a Godot run needs `--audio-driver Dummy` or ALSA's probe prints an `ERROR` line the gate's scan refuses (fix-3 Findings 10); the render step's trees check sees a synthetic flat world and 20 trees, not the village's relief or its MultiMesh cells (fix-3 Findings 10d).
 P2: **G-02** `source_color` of the photo, detail textures and tree colours is pinned by no test;
 **G-04** (the part that is not Hard Rule 4) the readers' refusal tests assert refusal, not cause;
 **G-05** 22 of 31 mutations of `tools/export.sh`'s refusals leave its tests green (step 5's 100 MiB

@@ -274,6 +274,30 @@ step included and not skipped. (2) `trees.py` (F-A) imports grid helpers and `re
 combined pytest proves the pair. (3) F-C's real run gives the manifest `3ca0445c…` unchanged (the
 descriptions do not change); F-A's trees chunks unchanged at 0.5.
 
+**Fix wave integration record** (the orchestrator, 2026-10-16, head `fd5febd`; fix-2 `43aeb86`, fix-6
+`da8914f`, fix-3 `f928ccd`; no seam needed a fix):
+
+- Note 1, the full gate on the combined head, to a log, run by the orchestrator alone, the render
+  step run and not skipped (`MATTINI_SKIP_RENDER` unset, no committed file sets it): exit 0 in 230 s,
+  pytest 2228 passed (5 network tests deselected), GUT 47 scripts = 47 `test_*.gd` files, 261 tests,
+  9760 asserts, `GUT version:  9.6.1`, `RENDER photo: PASS` (0.9761), `RENDER classes: PASS`
+  (83091 of 83427), `RENDER trees: PASS` (0.9380), `== gate: all steps passed`.
+- Note 2, the pair `trees.py` and `surfaces.py`: fix-6 left every helper `trees.py` imports unchanged
+  (its Findings 5), and the combined pytest passes with both landed.
+- Note 3, the real village from the command line on that head, in a scratch `git clone` with fresh
+  downloads (terrain, buildings, photo, surface, tlm: 11, 6, 13, 6 and 23 s, every file verified),
+  one process per step, each exit 0 and each compared with its config before writing: terrain
+  `b6334c1f…` (5 s, 992 MB), buildings six chunks (9 s, 344 MB), photo JPEG `cf83c705…` (56 s,
+  1'213 MB), roofs `8d9664b6…` (25 s, 1'266 MB), surfaces: classes first, then the PNG
+  `8922edf9…` (23 s, 440 MB, zlib 1.3), trees six chunks as `config/trees.json` at 0.5 m (27 s,
+  1'294 MB); `manifest` `game/assets/generated/manifest.json` 324'359 bytes, SHA-256
+  `3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065`, unchanged; RELEASE.md §C's new
+  command (`wc -c` and `sha256sum -c`) prints `OK` on it.
+- Two choices of fix-3's builder, both reversible and inside its brief, are on the board's *Decisions
+  for design to audit*: the trees check's estimator (a 0.4 m disc, the threshold 0.6 unchanged,
+  because fix-4's lighting put the review's 5 × 5 apex estimator at 0.5824) and
+  `MATTINI_SKIP_RENDER` excusing only a machine without `xvfb-run`.
+
 **Round R2 (after the wave lands):** two lenses, each its own session and worktree, real village
 built from the pinned inputs, prove it or downgrade it, reports `docs/reviews/M3-R2-<lens>.md`.
 
