@@ -1,5 +1,5 @@
 # Brief: M3-R1-fix-3 — The gate renders where the photo, the classes and the crowns' colour land
-Status: OPEN
+Status: DONE (f928ccd)
 
 Written in the design realm from review finding M3-R1-P-03 (P2, Tier 1;
 `docs/reviews/M3-R1-placement.md`) and the owner's answer of 2026-10-15 (SPEC §13 row 38, which
