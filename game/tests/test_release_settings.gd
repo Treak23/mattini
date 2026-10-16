@@ -2,7 +2,7 @@ extends GutTest
 ## Pinning tests for brief M1-06: the first version and the two export presets.
 ##
 ## Pinned decisions (docs/SPEC.md §11; the owner, 2026-09-25): the version scheme is
-## 0.<n>.<patch> until v1; M1's close shipped 0.1.0, M2's ships 0.2.0. Exports for Linux
+## 0.<n>.<patch> until v1; M1's close shipped 0.1.0, M2's 0.2.0, M3's ships 0.3.0. Exports for Linux
 ## and Windows, x86_64, go to build/ (git-ignored) with the .pck beside the executable, so
 ## no single file carries the engine and the data together (GitHub's 100 MB limit,
 ## docs/RELEASE.md §C).
@@ -68,8 +68,8 @@ func _presets() -> Dictionary:
 	return by_name
 
 
-func test_the_version_is_0_2_0() -> void:
-	assert_eq(ProjectSettings.get_setting("application/config/version"), "0.2.0")
+func test_the_version_is_0_3_0() -> void:
+	assert_eq(ProjectSettings.get_setting("application/config/version"), "0.3.0")
 
 
 func test_linux_and_windows_presets_exist() -> void:
