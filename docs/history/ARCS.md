@@ -537,3 +537,95 @@ build and review agents ran inside it: nine executors and eight checkers (M2-05,
 on design's pinned tests, was finished and mutation-checked by design itself), three R1
 lenses and fifteen skeptic votes, two V1 lenses, eleven measurement agents at planning
 (two independent implementations of each expected value) and one reader for the close. M1, for comparison: $102.87 over twenty sessions.
+
+## M3 — Surfaces and trees · closed 2026-10-16 · version 0.3.0 (built, checked and recorded; the `dist` push awaits the owner's word)
+
+The report-back is the release record, `docs/releases/v0.3.0.md`; this is the close in full.
+Arc: planned by the design realm (`docs/briefs/M3-plan.md`, GO 2026-10-14, the owner), built by two
+`ultracode build` orchestrators with their lanes and lenses as sessions of their own:
+`session_014zvmfwGgSKjxfe3feiiL91` (2026-10-14 to 15: waves 1 and 2, round R1, the fixes fix-1, fix-4 and
+fix-5, round V1) and `session_014eNuBxx5mk19Z9zHYQKUiD` (2026-10-16: the fix wave, round R2, the close).
+Fourteen briefs, six review-fix briefs, three review rounds (R1, V1, R2). The last brief landed `f928ccd`,
+round R2 closed `cbab677`, the version `697a154`.
+
+**Decisions** (numbered on from M2's D22–D29).
+
+- **D30 · How M3 ran:** the realms' sessions, as the owner's word of 2026-10-14 set them up (RULINGS): design
+  planned and recorded the GO, one build orchestrator spawned a session per lane and per lens, integrated, adjudicated
+  and shipped. Every session ran on the model the owner named for M3 (the repository names none). Two orchestrators,
+  because M3 paused after V1 on design's two questions (P-01, P-03; `0c7f69e` cleared the claim) and the owner's GO of
+  2026-10-16 (`4ab33c0`) started the second for the fix wave.
+- **D31 · The owner's answers and design's:** SPEC §13 rows 29–34 and 37–38 (the owner), rows 35, 36, 39, 40
+  (design, put to the owner, no objection).
+- **D32 · The rounds:** R1 (three lenses) found 0 P0, 1 P1, 8 P2, 13 P3, graded as the lenses wrote them; the
+  P1, the Tier 1 P2 and I-01 became fix briefs (`M3-R1-fix-1` to `-6`; P-01, P-03 and I-01 waited for design's
+  answers); V1 verified the first three fixes (no P0 to P2, five P3); R2 verified all six: placement (Tier 1) 0 P2
+  or above and 4 P3, surfaces (Tier 2 with Hard Rule 5's discipline) 0 P2 or above and 3 P3. The Tier 1 round is
+  clean, so no lens re-ran (WORKFLOW §Review policy, M0 R1's ruling). `docs/reviews/M3-round1.md`, `M3-V1.md`,
+  `M3-round2.md`.
+- **D33 · The builders' reversible choices are kept** (the board's *Decisions for design to audit*, audited by
+  design for the first ten, 2026-10-15): the fix wave's three (fix-3's 0.4 m disc estimator with the threshold
+  unchanged, `MATTINI_SKIP_RENDER` excusing only a machine without `xvfb-run`, the class-agreement floor 0.98) stay
+  for design to audit; round R2's placement lens judged the first two right.
+- **D34 · Delivery:** the ten files are built from `697a154` and checked; the push to `dist` is not made. 0.2.0's went
+  "on the owner's word" (RULINGS 2026-10-14) and the push is the one step that cannot be undone (167'548'344 bytes of
+  new pack files in the history for good), so it waits for the same word. Two exports gave the same bytes, so a later
+  session rebuilds from `697a154` and checks against the record's table.
+- **D35 · Two honesty items stated, not fixed** (R2 P-01, P-03): the render step's PASS line counts the trees in its
+  world, and the docs call its class check "the surface classes" where it reads water. The release record says so;
+  the wording of CLAUDE.md and SPEC §12 is design's.
+- **D36 · The known items:** brain.md H27 (closed by fix-6) and H28, lessons 43 to 45, the board's residue list.
+
+**Carried into M4:** the board's *M3 R1 residue*, *Round R2* and *Round V1* lists; none touches the build that ships.
+First work of M4 is design's to cut (the sun cycle needs the photo's baked shadows lightened, DEFERRED in the plan).
+
+**RELEASE.md, walked at the close.**
+- §A. `git status` clean. Every M3 brief reads `DONE (<sha>)`. The design realm wrote design data and pinned
+  tests only (fixtures under `tests/shared/`, the expected values in `config/`, `docs/briefs/pinning/`). No review is
+  unfinished (the one word "truncated" in the plan is a rule). No census stands alone over load-time code: the main
+  scene and the readers are run by the GUT scripts, the render step and the export. Every brief carries does-NOT-prove
+  lines (four to five or more each). Attribution: the manifest's six sources read `© swisstopo` for all five datasets,
+  the pause screen composes the credits from them, and the textures' CC0 notice ships in `game/textures/LICENSE.txt`.
+  No raw data or unmanaged binary entered history in the arc: the only blobs over 1 MiB added since `9a9612e` are the
+  six CC0 Poly Haven textures (1.1 to 4.5 MB each).
+- §B. `0.3.0` in `game/project.godot` and the two pinned tests. Full gate from a fresh `git clone` of `697a154`, to a
+  log: exit 0 in 226 s, pytest 2228 passed, 5 deselected, GUT 47 scripts, 261 tests, 9760 asserts, the render step run.
+- §C. In that clone: the five `download` commands verified every file; the seven steps compared their outputs with
+  design's values before writing; `manifest.json` 324'359 bytes, SHA-256 `3ca0445c…`, compared by command (output in the
+  record); `tools/export.sh` exit 0 in 39 s, no `ERROR` line, every file under 100 MiB; the Linux build started and printed
+  its eight lines. **Not done: the `dist` commit and its push** (D34); the README for it is the record's file table plus
+  0.2.0's README text.
+- §D. The release record was committed before the chat message; the board is updated and the arc's narrative moved
+  here; no Routine is enabled on the account (the five check-ins fired or were deleted).
+
+**Sessions** (tag `M3`, cost from each one's `usage.cost_usd`; all builders and lenses finished; sessions are archived
+only with the owner present, WORKFLOW §Permissions 5):
+
+| Session | Id | $ |
+|---|---|---|
+| Build · M3 (the first orchestrator) | `session_014zvmfwGgSKjxfe3feiiL91` | 12.88 |
+| Builder · M3-01, M3-03 | `session_01SyWTVZNU6MqzXwtZrAwbYg` | 10.00 |
+| Builder · M3-02, M3-08 | `session_013AQiyLceqtN4v9sBKpq27b` | 5.15 |
+| Builder · M3-04, M3-05 | `session_017BgZYs1XVHCyNJ2xghsd1s` | 9.00 |
+| Builder · M3-06, M3-07 | `session_01AR7BLpVar8joT9EvsQ3zm1` | 11.12 |
+| Builder · M3-09, M3-10 | `session_01LMKkb4WW2Xs8KmeZ4EtmT9` | 7.32 |
+| Builder · M3-11 | `session_01873AyYU9VK7QbufVaWvDnS` | 3.25 |
+| Builder · M3-12 | `session_01Ubbo3bDjuhbt781vs1t54f` | 3.00 |
+| Builder · M3-13 | `session_01HM862MXAydNqmJLBWd2asp` | 6.64 |
+| Builder · M3-14 | `session_01Hd3YzbAzQPKDnbChCFrgtw` | 4.76 |
+| Review · M3 R1 · placement | `session_01UyfhtHNQQtrAF4JfdSXPaG` | 13.33 |
+| Review · M3 R1 · inputs and determinism | `session_014qJkvMTqRCbTaAHcPfVcor` | 13.40 |
+| Review · M3 R1 · game and tools | `session_0197UUnhCMWvPLNrHq6UPGLJ` | 13.36 |
+| Builder · M3-R1-fix-4, fix-1 | `session_01J6SoFqNMsghbpUsZdRaNzk` | 3.10 |
+| Builder · M3-R1-fix-5 | `session_01JGRumvwXEUDSeoWnxVsghC` | 4.71 |
+| Review · M3 V1 | `session_017JhyaEQyF6fCyaACBXFMZj` | 8.23 |
+| Build · M3 (the second orchestrator, so far) | `session_014eNuBxx5mk19Z9zHYQKUiD` | 4.80 |
+| Builder · M3-R1-fix-2 | `session_01PDxE79x5FeRCJzszjT5Hb1` | 0.96 |
+| Builder · M3-R1-fix-3 | `session_01TopLd8uXBT2Wmo2YbL3sgs` | 4.51 |
+| Builder · M3-R1-fix-6 | `session_01Py8WYfFSp4TQB7fg78gMow` | 5.28 |
+| Review · M3 R2 · placement | `session_013bTDzVieFee8zAD2fRmbFw` | 11.58 |
+| Review · M3 R2 · surfaces | `session_01D4QkAjK7dhF4Vn6RScTuNj` | 4.80 |
+
+The lanes cost $78.80 and the reviews $64.69 ($143.49 of work); the two orchestrators $17.68 so far, 12 % of the work
+(lesson 26's ratio). Not tagged: the design sessions that planned M3 and the fix wave (the latter
+`session_01HDyu7gUGpu874YHNGiWtCS`, $6.23).

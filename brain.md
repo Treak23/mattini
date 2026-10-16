@@ -1,11 +1,11 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-10-14 — version 0.2.0 shipped (M2,
-Buildings: the village terrain at 0.5 m in Terrain3D with its 1'486 buildings as a white
-model, a free-fly camera, a pause screen with the credits; builds on the `dist` branch).
-M3 (Surfaces and trees: the realistic look from data) is planned and has the owner's GO
-(`docs/briefs/M3-plan.md`); built, reviewed and verified; its fix wave (design's answers of
-2026-10-15: fix-2, fix-3, fix-6) waits for the owner's GO**
+Orientation for any session. Current as of **2026-10-16 — version 0.2.0 is on the `dist`
+branch (M2, Buildings: the village terrain at 0.5 m in Terrain3D with its 1'486 buildings as
+a white model, a free-fly camera, a pause screen with the credits). Version 0.3.0 (M3,
+Surfaces and trees: the realistic look made from the data) is built, reviewed (R1, V1, R2:
+no P2 or above open), checked from clean and recorded in `docs/releases/v0.3.0.md`; its push
+to `dist` waits for the owner's word ("push dist", as for 0.2.0)**
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -36,20 +36,20 @@ copies it into the generated manifest, and the game learns the origin only from 
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
 4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
 from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (the
-M2 close, 2026-09-26): pytest 743 passed, 4 network tests deselected; GUT 23 scripts, 110
-tests, 2800 asserts.
+M3 close, 2026-10-16): pytest 2228 passed, 5 network tests deselected; GUT 47 scripts, 261
+tests, 9760 asserts; the gate's render step passes.
 
 ## 5. HISTORY
 Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
-0.2.0, 2026-09-26).
+0.2.0, 2026-09-26; 0.3.0 recorded 2026-10-16, not yet on `dist`).
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-M3's build (`docs/briefs/M3-plan.md`, GO 2026-10-14): wave 1 seven lanes at once (M2's
-residue, the inputs, the photo, roof colours, surfaces, trees, data packs and their game
-readers), wave 2 two lanes (the command line and manifest, the main scene), then the
-review round R1 and the release 0.3.0. The owner's first looks at 0.2.0 (Windows) and 0.3.0
-come back through `feedback`. The board is the live version.
+The owner's word "push dist" publishes 0.3.0 (a build session rebuilds from `697a154`, compares
+with the record's file table, and follows `docs/RELEASE.md` §C). The owner's first looks at 0.2.0
+(Windows) and 0.3.0 come back through `feedback` (FB-001 is the one 0.3.0 answers). Then M4, the
+sun cycle (design cuts it; the photo's baked shadows are its known cost), M5 scale-up, M6 weather
+and walking. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -306,7 +306,20 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   Measured at the fix wave's planning (2026-10-15): zlib 1.3.2 (uv's managed CPython 3.13.14) writes
   zlib 1.3's bytes (the fixture at every cell, a 2500 × 4000 class-like grid); zlib-ng writes other bytes
   for the fixture at 0.2 m but the same at 0.5 and 1 m: a small grid can compress alike. Brief M3-R1-fix-6
-  makes the PNG's bytes design's data and refuses another deflate.
+  (`da8914f`, verified in round R2 on zlib 1.2.11 to 1.3.2 and against zlib-ng) made the PNG's bytes
+  design's data: `config/surfaces.json` holds `expected_png_sha256` per cell, and the step refuses
+  another deflate before writing, naming the machine's zlib. Python 3.14's Windows builds move to
+  zlib-ng; the project's `requires-python` pin is below 3.14.
+- **H28 — The gate's render step (measured at M3-R1-fix-3 and round R2, 2026-10-16).** `tools/gate.sh` ends
+  with `render`: two SceneTree scripts in `game/tests/render/` (names without `test_`, so GUT does not count
+  them) run under `xvfb-run -a` with Compatibility on Mesa llvmpipe, 12 to 19 s, and print one `RENDER <check>:
+  PASS|FAIL …` line each (photo, classes, trees). Under Xvfb a Godot run needs `--audio-driver Dummy`, or ALSA's
+  probe prints an `ERROR` line the gate's scan refuses. The classes' counts move by a sample or two between runs
+  (the water's normal maps drift with `TIME`); the other numbers repeat exactly. Where `xvfb-run` is missing the step
+  fails unless `MATTINI_SKIP_RENDER=1`, which skips and says so on both streams and excuses nothing where `xvfb-run`
+  exists. It proves where the photo, the water class and the crowns' colour land on a flat 16 m test world with
+  positive coordinates (a shift of 0.1 m, a flip, swapped axes); it does not see an empty forest, rock, road or path,
+  distance, or the terrain's mesh (round R2 P-01 to P-04), and it is not the look.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

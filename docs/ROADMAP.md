@@ -6,28 +6,23 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**M3 Surfaces and trees — GO (2026-10-14, the owner); built, reviewed and verified; the fix wave has the owner's GO (2026-10-16), the orchestrator is spawned.** The plan is
-`docs/briefs/M3-plan.md`: fourteen briefs in two waves, the review plan and the release 0.3.0: the village in a realistic look made from
-swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
-colours, LiDAR trees, data packs). The owner's answers are SPEC §13 rows 29–34 and 37–38 (rows 35–36, 39–40 are design's).
+**M3 Surfaces and trees — closed 2026-10-16: version 0.3.0 is built, checked from clean and recorded (`docs/releases/v0.3.0.md`); its push to `dist` waits for the owner's word.** The plan is
+`docs/briefs/M3-plan.md` (status DONE); the close in full is `docs/history/ARCS.md` §M3. All fourteen briefs and the six review fixes are DONE; rounds R1, V1 and R2 are adjudicated (`docs/reviews/M3-round1.md`, `M3-V1.md`, `M3-round2.md`): no P0, P1 or P2 is open, and the P3 and the Tier 2 P2 are on the residue list below. The standard gate from a fresh clone of `main` `697a154` is exit 0 (pytest 2228, GUT 47 scripts, 261 tests, 9760 asserts, the render step run); the real village rebuilt from the pinned inputs gives the manifest `3ca0445c…`; the ten files of the export are under 100 MiB and the Linux build starts with all eight startup lines.
 
-**State (2026-10-16):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1 to fix-6 DONE and integrated (fix wave head `fd5febd`: the full gate exit 0 with the render step run, the real village gives the manifest `3ca0445c…`; plan §Fix wave integration record), V1 clean (`docs/reviews/M3-V1.md`). **Round R2 (2026-10-16) is closed, clean:** head `a6779f3`, lens placement `f72fe38` (Tier 1: 0 P0, P1, P2; 4 P3) and lens surfaces `4aa4828` (fix-6 verified: 0 P0, P1, P2; 3 P3), adjudicated in `docs/reviews/M3-round2.md`; no fix brief, no re-run. **Running:** the version bump, the standard gate from clean, the release walk (`docs/RELEASE.md`) and the record of 0.3.0 (plan §The release). The push of the builds to `dist` waits for the owner's word ("push dist", as for 0.2.0, RULINGS 2026-10-14): it puts about 600 MB of binaries into the repository's history.
-
-Orchestrator: session_014eNuBxx5mk19Z9zHYQKUiD · M3 · since 2026-10-16T00:41Z
-
-**Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
-all OK).
+**Waiting on the owner:** (1) **"push dist"** to publish 0.3.0: a build session rebuilds from `697a154`, checks the ten files against the record's table and pushes plain; it puts the three new pack files, 167'548'344 bytes, into the repository's history for good, which is why it waits (0.2.0's went "on the owner's word", RULINGS 2026-10-14). (2) The first look at 0.2.0's Windows build (FB-001 reported Linux all OK) and then 0.3.0's: FB-001 stays Open until that look says whether the realistic look answers "too white".
 
 **Decisions for design to audit:** (the M3 list of ten was audited and kept, RULINGS 2026-10-15; these are the fix wave's.)
 1. fix-3, the trees check's estimator: `render_trees.gd` averages the crown over a 0.4 m disc and keeps the threshold 0.6; the review's 5 × 5 apex-pixel estimator reads 0.5824 on a clean tree since fix-4 (0.7513 before), so keeping it would have needed a threshold under 0.58. The alternative: that estimator and a lower threshold, by changing `CROWN_READ_M` and `TREES_MIN_CORR` (brief Findings 3).
 2. fix-3, `MATTINI_SKIP_RENDER=1` excuses only a machine without `xvfb-run`; where `xvfb-run` is found the step runs and says so. The alternative: the variable skips whenever set (one `if` in `render_step`; Findings 5).
-(Round R2's placement lens judged 1 and 2 right: the disc reads 0.8915 to 0.9360 on five other photos against worst wrong places of 0.1876 to 0.3432, and the variable excuses only a machine without `xvfb-run`; the margin is a property of the shipped layout and photo, so whoever changes either re-measures.)
 3. fix-3 added a class-agreement floor of 0.98 (clean 0.9960) that Decision 2 does not name, to catch an `xz.y` negation that draws no class at all, and touched `pipeline/tests/fake_tools.py` (compile-forced: a stand-in `xvfb-run` for the whole-gate stand-in tests). Keep or drop is design's.
 
-**Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
-(`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).
+(Round R2's placement lens judged 1 and 2 right: the disc reads 0.8915 to 0.9360 on five other photos against worst wrong places of 0.1876 to 0.3432, and the variable excuses only a machine without `xvfb-run`; the margin is a property of the shipped layout and photo, so whoever changes either re-measures.)
 
-Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
+**Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
+(`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`). **Built, not shipped:** 0.3.0
+(`docs/releases/v0.3.0.md`, source `697a154`).
+
+Arc M3 — Surfaces and trees: closed 2026-10-16, 0.3.0 built and recorded; the close in full is `docs/history/ARCS.md` §M3. Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 `docs/history/ARCS.md` §M2. Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0 (ARCS §M1).
 
 **Parked questions:** none.
@@ -43,18 +38,17 @@ Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 
 ## Next, in order (confirmed by the owner, 2026-09-24)
 
-v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0,
-M1 and M2 are closed.
+v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0 to M3
+are closed (M3's release waits for "push dist").
 
-1. M3 Surfaces and trees — ARC, building (`docs/briefs/M3-plan.md`)
-2. M4 Sun cycle — ARC
-3. M5 Scale up — ARC
-4. M6 Weather and walking — ARC
+1. M4 Sun cycle — ARC (design cuts it; the photo's baked shadows are its known cost)
+2. M5 Scale up — ARC
+3. M6 Weather and walking — ARC
 
 ## DEFERRED, said out loud
 
 M3's list, with reasons and costs, is in `docs/briefs/M3-plan.md` §DEFERRED. The inbox's one
-Open entry, FB-001, goes to M3.
+Open entry, FB-001, is answered by 0.3.0 and stays Open until the owner's first look.
 
 ## Residues and hazards
 

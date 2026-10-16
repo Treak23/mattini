@@ -288,3 +288,23 @@ BUILD.md wins, and the *Now:* line under the lesson says what holds.
     that used it passed (M2 R1 P-01). The buildings fixture's terrain config carried
     another fixture's hash, unlabelled (P-06). A fixture that describes a relation (on the
     ground, inside the area, a placeholder) gets a test of that relation, or a label.
+
+43. `[all]` **A byte comparison across machines assumes every library writes the same bytes.** The
+    surfaces PNG's SHA-256 went into `manifest.json`, and zlib-ng writes 950'236 bytes where zlib 1.3 writes
+    1'148'848 for the same pixels: the manifest depended on the machine's zlib with every command at exit 0, because
+    the step compared only the pixels (M3 R1 I-01, 2026-10-15). Fix-6 made the PNG's hash design data and made the step
+    refuse another deflate, naming the zlib; round R2 confirmed the stored values on five zlib builds and an independent
+    encoder (2026-10-16). When an output embeds the product of a library's algorithm (a compressor, an encoder), compare
+    the content and not the bytes, or pin the bytes and refuse the library that differs, and say which in the code.
+
+44. `[all]` **A check's name and its PASS line claim a subject; read them against what the code compares.** The render
+    step's line "over 20 trees" counts the trees in its test world, and the step passes with none drawn; the docs said it
+    gates "the surface classes" where it reads the water class (M3 R2 placement P-01, P-03, 2026-10-16). The step was right
+    about what it measured and its labels promised more. A PASS line names the quantity (what was compared with what), the
+    docs name the class, and "does NOT prove" lists the rest (lesson 10).
+
+45. `[build]` **A threshold measured at an earlier head is a premise that expires.** The review's tree-colour estimator
+    read 0.7513 at the commit it measured and 0.5824 once fix-4 had lit the crowns, so the brief's 0.6 would have failed a
+    clean tree. The fix-3 builder re-measured at the head, changed the estimator and not the threshold, and recorded
+    both (M3-R1-fix-3 Findings 3, 2026-10-16; round R2 found the choice right on five other photos). A number a brief
+    copies from a review is re-measured at the head it will gate, before anything is built on it (lessons 12, 25).
