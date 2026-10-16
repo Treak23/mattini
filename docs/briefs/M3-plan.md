@@ -316,6 +316,8 @@ built from the pinned inputs, prove it or downgrade it, reports `docs/reviews/M3
    gives the manifest 3ca0445c…, and that RELEASE.md §C's new box compares it by a command."
    *Does NOT prove:* Windows' zlib.
 
+**Round R2 record** (the orchestrator, 2026-10-16, head reviewed `a6779f3`): both lenses ran in their own sessions and fresh clones; placement `f72fe38` and surfaces `4aa4828` reported 0 P0, 0 P1, 0 P2 and 4 and 3 P3. The Tier 1 round is clean and fix-6 is verified; no fix brief, no re-run. The adjudication is `docs/reviews/M3-round2.md`, the P3 are on the board's residue list.
+
 **Then:** the standard gate from clean on the head; release 0.3.0 (§The release).
 
 ## The release
