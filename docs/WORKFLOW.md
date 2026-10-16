@@ -108,7 +108,9 @@ Hard Rules 4 and 5 only (below).
   for. Its builder also commits a few software screenshots (Compatibility renderer,
   `tools/shot.sh`, SPEC §12) under `docs/briefs/shots/` and names them in Findings: evidence
   of what is drawn and where, never a gate, and not the Forward+ look (the owner's choice,
-  2026-09-25).
+  2026-09-25). The gate's render step (from M3-R1-fix-3, SPEC §12) is the one
+  exception: it measures where the photo, the classes and the crowns' colour land, never the
+  look.
 - **When the owner designs** (files in `docs/design/`): the design files are the spec;
   a designed surface is DONE only when every element is built or on a "NOT BUILT — needs
   owner decision" list. Nothing is silently simplified.

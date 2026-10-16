@@ -181,9 +181,10 @@ file host and the STAC item disagree, try again later). The file downloads to
 `<file>.part`. Each GET asks `Range: bytes=<part size>-` once the part holds bytes; a 206
 must start there (else the part is deleted), a 200 is the whole file and rewrites the part.
 Python's urllib ends a cut body without an error (brain.md H9), so the part's size, not an
-exception, shows a cut: a short part is resumed, up to five GETs per run. A part that
+exception, shows a cut: a short part is resumed, up to five GETs per round. A part that
 reaches the size is verified: equal to the lock's SHA-256 it takes the file's name;
-otherwise it is deleted and fetched again once, then refused. A run that cannot finish
+otherwise it is deleted and fetched again once, in a second round with five GETs of its own
+(ten at most per run; M3-03 Findings 4, kept 2026-10-15, §13 row 40), then refused. A run that cannot finish
 keeps its part and says so, naming `python -m mattini download tlm`, which resumes it; a
 Ctrl-C or a crash keeps it too. provenance.json is removed before the first change on disk
 and written at the end, as the terrain's. Measured: the host answers Range with 206 and
@@ -246,8 +247,11 @@ The register was used only to measure the box; it is not a game input.
 **Backdrop and the larger area (M5):** extents and resolutions **OPEN**.
 **In-game terrain resolution for the village: 0.5 m** (owner, 2026-09-25: "just do 0.5
 first for the demo at least, I want to see the capabilities, then I can still soften it
-later if needed"). It is one value in `config/terrain.json`; 1 or 2 m is a config change
-and a pipeline re-run, no code change. Measured at 0.5 m: 4001 × 6001 vertices, a 96 MB
+later if needed"). It is one value in `config/terrain.json`; for the terrain, 1 or 2 m is a
+config change and a pipeline re-run, no code change. The trees tie it to 0.5 m: they take
+their base heights from the 0.5 m grid and refuse any other spacing (the owner, 2026-10-15,
+§13 row 37), so softening the terrain first needs the trees step to take its heights at that
+spacing, built when it is wanted. Measured at 0.5 m: 4001 × 6001 vertices, a 96 MB
 heights file, 2.9 s to load into Terrain3D and about 540 MB of memory in a headless run.
 
 ## 8. Architecture (confirmed by the owner on day one)
@@ -332,7 +336,7 @@ places heights in the world (WORKFLOW §Review policy).
   implementation that shares none of it). `terrain` compares its output with the value
   for its spacing before writing anything and refuses a difference, naming both;
   `manifest` refuses any other file. So the owner's switch to 1 or 2 m (§7) stays a
-  config change, and a machine or a code change that computes other heights says so
+  config change for the terrain (the trees refuse it, §7), and a machine or a code change that computes other heights says so
   itself (M1 R1 T-01). A gate test builds a terrain from 2 × 2 synthetic tiles cut by
   its area, pinned to exact bytes at 2 m and 0.5 m.
   Each area also records what its values were computed for (M2 R1 P-02, I-01; brief
@@ -642,8 +646,10 @@ on the photo's grid. Tier 1 where it places the grid (the rectangle), Tier 2 els
   exactly); OR-ed across features.
 - *The PNG:* written without Pillow, by the standard library: 8-bit grey, no interlace,
   filter 0 on every row, one zlib stream at level 9 in IDAT chunks of at most 1 MiB, values
-  0–4. Its content is pinned (`pixels_sha256`); its bytes depend on the zlib build and are
-  checked for integrity only. Files: `surfaces/<area>.png.import` (the keep file, H24), then
+  0–4. Its content is pinned (`pixels_sha256`); its bytes depend on the zlib build (zlib 1.3 and
+  1.3.2 write the same bytes, zlib-ng does not: measured 2026-10-15), so they are design's
+  too: `expected_png_sha256` in the surfaces config, per cell, and the step refuses another
+  PNG before writing, naming the machine's zlib (§13 row 39; brief M3-R1-fix-6). Files: `surfaces/<area>.png.import` (the keep file, H24), then
   `surfaces/<area>.png`, then `surfaces/<area>.json`, each through a `.part` rename; the
   description is exactly {area, cell_m, classes: {"0": "none", "1": "rock", "2": "water",
   "3": "path", "4": "road"}, columns, file, format "png-l8", lv95_box, pixels_sha256, rows,
@@ -703,8 +709,9 @@ Tier 2 elsewhere.
      DTM(i, j+1) − DTM(i, j−1), gy = DTM(i+1, j) − DTM(i−1, j), dropped when gx² + gy² ≥ 3).
   7. A tree: E, N the top's centre; x, z = `to_local(E, N)` in 64-bit, then float32; y = the
      mean of the four vertices of the 0.5 m terrain grid around the centre (heights minus
-     `height_offset_m`), in 64-bit, rounded once to float32, whatever the terrain config's
-     spacing; height = chm at the top; crown radius = clamp(min(d / 2, height / 4), 1.0,
+     `height_offset_m`), in 64-bit, rounded once to float32; the trees step and the manifest's trees
+     block refuse a terrain config whose spacing is not 0.5, naming `config/terrain.json`
+     (§7, §13 row 37; brief M3-R1-fix-2); height = chm at the top; crown radius = clamp(min(d / 2, height / 4), 1.0,
      6.0) m, d the 2-D distance to the nearest other tree kept in the area (+∞ when none),
      in 64-bit with a correctly rounded square root, then float32.
   8. Chunks: the 1 km tile of (E, N); within a chunk, the top pixels' raster order. A tile
@@ -951,6 +958,15 @@ renderer (`tools/shot.sh`, brief M1-04) and commit them with their Findings unde
 Forward+ on the owner's RTX 4090. The "does NOT prove: that it renders or looks right"
 line stays on every visual gate.
 
+**The render step (owner, 2026-10-15: §13 row 38).** Where an image lies on the ground is a
+number, not a look. From brief M3-R1-fix-3 on, `tools/gate.sh` renders the complete test
+world under the Compatibility renderer (Mesa llvmpipe under Xvfb) and asserts, by
+correlation against flipped and shifted alternatives, where the photo shader puts the photo
+and the surface classes and where the tree shader reads the crowns' colour. It refuses where
+`xvfb-run` is missing unless `MATTINI_SKIP_RENDER=1`, which it prints. It gates placement
+only: not the look, not the colour encoding (brain.md H21), not Forward+, not the owner's
+GPU.
+
 ## 13. Decision record (day one, 2026-09-24)
 
 | # | Question | Answer | Source |
@@ -973,7 +989,7 @@ line stays on every visual gate.
 | 15 | Where the game shows its version | Only on the pause screen (option b) | Owner |
 | 16 | Version scheme | `0.<n>.<patch>` until v1, `1.0.0` at v1; 0.1.0 at M1's close (confirmed) | Owner |
 | 17 | Does the owner design screens or visuals? | No; the design realm proposes, the owner reacts through `feedback` | Owner |
-| 18 | Software rendering in containers for smoke screenshots | Yes, as evidence in Findings, never as a gate | Owner |
+| 18 | Software rendering in containers for smoke screenshots | Yes, as evidence in Findings, never as a gate; amended by row 38 (a render gates placement) | Owner |
 | 19 | Camera controls (the design's proposal) | Kept as proposed (Godot editor fly mode) | Owner (no change asked) |
 | 20 | Form of the tile pin (D7) | `config/datasets.lock.json`, written by `python -m mattini lock terrain` | Design (M0 close: "M1 planning picks the form") |
 | 21 | Raster libraries | rasterio and numpy confirmed | Design, delegated (CLAUDE.md §Stack) |
@@ -992,6 +1008,10 @@ line stays on every visual gate.
 | 34 | The game type (FB-002, a collaborative builder) | Stays OPEN: "keep open, lets just build the map first. i want it as detailed and beautiful as possible". The idea is on the board | Owner |
 | 35 | An image library for the pipeline | Pillow, for the photo's JPEG (the surfaces' PNG is written with Python's own zlib, so the lane that builds it needs no new dependency); its JPEG output measured byte-identical across Pillow 10.4.0, 11.0.0 and 12.3.0 and with libjpeg-turbo's SIMD off | Design, delegated (CLAUDE.md §Stack) |
 | 36 | M2's residue | M3's first two briefs (M3-01 pipeline, M3-02 game and tools), as D25 decided; V1-G-04 (the buildings' look test) moves to M3-12, which rewrites that test | Design |
+| 37 | The trees on a 1 m or 2 m terrain (M3 R1 P-01; 2026-10-15) | (b) the trees step and the manifest's trees block refuse a terrain spacing other than 0.5, naming `config/terrain.json`; row 14's "1 or 2 m later is a config change" holds for the terrain, and softening needs the trees step first (§7; brief M3-R1-fix-2). Not taken: (a) the trees' heights interpolated at the terrain's spacing, with expected chunks per spacing | Owner ("I follow your recommendations", design recommended b) |
+| 38 | A software render in the gate (M3 R1 P-03) | (a) the gate's render step asserts the placement of the photo, the surface classes and the crowns' colour (§12; brief M3-R1-fix-3); amends row 18 and BUILD.md rule 2b for placement only. Not taken: (b) the shaders' placement expressions pinned by text alone | Owner (same answer, design recommended a) |
+| 39 | The surfaces PNG's bytes and zlib (M3 R1 I-01) | `expected_png_sha256` per cell in the surfaces config; the step refuses another PNG before writing, naming the zlib; the manifest compares it; RELEASE.md §C compares the manifest (brief M3-R1-fix-6). Not taken: dropping the PNG's SHA-256 from the description (a schema and game change), a deflate of mattini's own | Design (put to the owner 2026-10-15, no objection) |
+| 40 | The build's decisions of M3 for design to audit (the board's list, 2026-10-15) | All ten kept; SPEC §5 reworded for the TLM's GETs per round (§5) | Design (put to the owner, no objection; RULINGS 2026-10-15) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not

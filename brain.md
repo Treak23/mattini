@@ -4,7 +4,8 @@ Orientation for any session. Current as of **2026-10-14 — version 0.2.0 shippe
 Buildings: the village terrain at 0.5 m in Terrain3D with its 1'486 buildings as a white
 model, a free-fly camera, a pause screen with the credits; builds on the `dist` branch).
 M3 (Surfaces and trees: the realistic look from data) is planned and has the owner's GO
-(`docs/briefs/M3-plan.md`); its build runs in parallel sessions**
+(`docs/briefs/M3-plan.md`); built, reviewed and verified; its fix wave (design's answers of
+2026-10-15: fix-2, fix-3, fix-6) waits for the owner's GO**
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -302,6 +303,10 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   village's class grid; the PNG's SHA-256 is in its description and so in `manifest.json`: the
   expected manifest `3ca0445c…` holds only where zlib is 1.3 (R1 I-01, the board's design question).
   Every other step's output is byte-identical across machines in every run so far.
+  Measured at the fix wave's planning (2026-10-15): zlib 1.3.2 (uv's managed CPython 3.13.14) writes
+  zlib 1.3's bytes (the fixture at every cell, a 2500 × 4000 class-like grid); zlib-ng writes other bytes
+  for the fixture at 0.2 m but the same at 0.5 and 1 m: a small grid can compress alike. Brief M3-R1-fix-6
+  makes the PNG's bytes design's data and refuses another deflate.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

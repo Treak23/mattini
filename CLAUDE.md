@@ -44,7 +44,11 @@ guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on bot
 the pipeline's determinism) MUST have tests, mutation-proved.
 
 **What the gate cannot see:** containers have no GPU. Nothing here proves that anything
-renders or looks right; the owner's PC is the visual test (brain.md §Hazards).
+looks right or renders on a GPU; the owner's PC is the visual test (brain.md §Hazards). From
+brief M3-R1-fix-3 on, the gate's render step (Compatibility renderer, Mesa llvmpipe under
+Xvfb) proves one thing a render can: where the photo, the surface classes and the crowns'
+colour land, a number, not a look (SPEC §12, §13 row 38). It refuses where `xvfb-run` is
+missing unless `MATTINI_SKIP_RENDER=1`, which it prints.
 
 ## Stack
 

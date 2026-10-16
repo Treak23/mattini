@@ -134,7 +134,12 @@ the successor's id, commit, push, and end.
    design:** "renders / looks right" cannot be gated in a container without a GPU; for
    that claim alone, the brief's `does NOT prove: that it renders or looks right` line is
    the accepted answer, and the owner's PC is the check. Software screenshots
-   (WORKFLOW §Pace and risk) are evidence in Findings, never a gate.
+   (WORKFLOW §Pace and risk) are evidence in Findings, never a gate. **Amended by design,
+   2026-10-15 (the owner's word, SPEC §13 row 38):** where an image lies on the ground is a
+   number, not a look; from brief M3-R1-fix-3 on, the gate's render step gates the placement
+   of the photo, the surface classes and the crowns' colour, and a brief that changes those
+   shaders keeps it green. The exception still covers the look, the colour encoding, Forward+
+   and the owner's GPU.
 3. **Done = gates green**, not "looks done".
 3b. **What a gate is made of matters.** Every gate carries its "does NOT prove:" line. A
    source census proves text, never behaviour; it is never the sole gate for code that

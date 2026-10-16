@@ -6,29 +6,17 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**M3 Surfaces and trees — GO (2026-10-14, the owner); built, reviewed and verified; PAUSED on two answers from design (2026-10-15).** The plan is
-`docs/briefs/M3-plan.md`: fourteen briefs in two waves (wave 1 seven sessions at once, wave 2
-two), the review plan and the release 0.3.0: the village in a realistic look made from
+**M3 Surfaces and trees — GO (2026-10-14, the owner); built, reviewed and verified; the fix wave READY, waiting for the owner's GO (design, 2026-10-15).** The plan is
+`docs/briefs/M3-plan.md`: fourteen briefs in two waves, the review plan and the release 0.3.0: the village in a realistic look made from
 swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
-colours, LiDAR trees, data packs). The owner's answers of 2026-10-14 are SPEC §13 rows 29–34 (rows 35–36 are design's).
-M2's residue is M3-01 and M3-02.
+colours, LiDAR trees, data packs). The owner's answers are SPEC §13 rows 29–34 and 37–38 (rows 35–36, 39–40 are design's).
 
-**State (2026-10-15, head `22d2ca6`):** all fourteen briefs DONE and integrated; the real village from the command line gives design's manifest `3ca0445c…` (324'359 bytes); `tools/export.sh` exits 0 with the data packs and the started Linux build prints its eight startup lines; round R1 (three lenses) adjudicated in `docs/reviews/M3-round1.md`; its P1 and the placement P2s that need no answer are fixed (`77e8508`, `0385a7f`, `8cbb5c1`); verification pass V1 clean (`docs/reviews/M3-V1.md`). **Open: design's answers to Q1 and Q2** (`docs/briefs/BLOCKED.md`, each with a recommendation), then their fix briefs, the placement round again, the release 0.3.0. Nobody holds the orchestrator claim: the next `ultracode build` (or design's spawn after it answers) picks the arc up from the list below.
-
+**State (2026-10-15):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1, fix-4, fix-5 DONE, V1 clean (`docs/reviews/M3-V1.md`). Design answered Q1 (P-01 → b) and Q2 (P-03 → a) with the owner, and I-01 itself (RULINGS 2026-10-15). **Next, after the owner's GO:** the fix wave, three lanes at once (`M3-R1-fix-2` trees refuse a terrain spacing other than 0.5; `M3-R1-fix-3` the render step in the gate; `M3-R1-fix-6` the surfaces PNG's bytes), then round R2 (placement, Tier 1, until clean; fix-6's verification), the standard gate from clean, release 0.3.0 (plan §Fix wave). Nobody holds the orchestrator claim.
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
 
-**Decisions for design to audit** (BUILD.md §The orchestrator 5):
-- M3-01: the steps check `computed_for.inputs_sha256` before reading `provenance.json` (the brief fixes only "the lock's fit before provenance"); the alternative, inputs after provenance, is four lines to move per step; pinned by `test_m3_01_step_order.py` (its Findings).
-- M3-03: the TLM download's five GETs count per round, not per run (a complete part with a wrong SHA-256 is deleted and fetched once more, with five GETs of its own: ten at most), where SPEC §5 and the brief say "up to five GETs per run"; the alternative is one counter for the run, one line in `_fetch_resumable`; design either rewords the SPEC or asks for the line (M3-03 Findings 4).
-- M3-03: `fit_problem(lock, datasets, None, None, "swisstlm3d")` serves the national file (no second function); the download's Ctrl-C line says "any part of the file is kept" (M3-03 Findings 4).
-- M3-09: `PhotoGrid` refuses nothing for a photo wider than 16384 texels (Compatibility draws it black, no error, brain.md H21); the village's 10000 x 15000 fits (M3-09 Findings 5).
-- M3-08: export checks 4b/4c have no committed stand-in pytest (`pipeline/tests/` was outside its Scope); the review's game-and-tools lens or M3-14 adds one (M3-08 Findings).
-- M3-13: `lock.shape_problem(lock)` (validate_lock's refusal as text) is asked by the four steps right after `lock.fit_problem`, because 13 wave-1 tests outside the brief's Scope (test_photo_refusals 2, test_surfaces_config 6, test_trees_checks 5) pin that a wrong key set, file name or checksum is refused by the step in its own error class, which `fit_problem` does not look at; the alternative, widening `fit_problem`, changes the terrain and buildings steps and M3-01/M3-03's pins; undo: delete `shape_problem` and its four calls, then edit those 13 tests (M3-13 Findings 2, 4).
-- M3-13: `photo.photo_lock_problem` (now `(lock, datasets, world, area)`), `roofs.inputs_sha256` and `trees._inputs_sha256` keep their names because out-of-Scope tests pin them; `manifest.py` repeats the steps' block checks on purpose (brief decision 3), so one pinned mutation stays green when only the manifest's own refusal goes, and `test_m3_13_manifest_checks.py` catches it (Findings 2, 5).
-- M3-13 residue: a write cut between `manifest.json.part` and its rename leaves the `.part` in `game/assets/generated/` until the next manifest run (Findings 8).
-- M3-14: `BuildingLoader.roofs_problem` is not called from `main` (`BuildingRoofs` already refuses every pair it would); without the photo the surfaces are still read, credited and their startup line printed though not drawn, and the photo is credited when only the terrain is refused; a refused manifest is one panel entry holding the six names (M3-14 Findings 6).
+**Decisions for design to audit:** none (the M3 list of ten audited and kept, RULINGS 2026-10-15).
 
 **Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
 (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`).
@@ -73,9 +61,9 @@ Open entry, FB-001, goes to M3.
 - The export's size: Godot's Windows template alone is 99.81 MiB, 198 KB under GitHub's
   limit; from M3 the large data ships in packs (`mattini-terrain.pck` 96 MB, 8.4 MiB under,
   `mattini-photo.pck` 50 MB; SPEC §11). M5's larger area needs more (SPEC §14).
-- M2's residue: sixteen P3s and the builders' follow-ups, M3-01 and M3-02.
-- Software screenshots use the Compatibility renderer; Forward+ crashes in software when
-  Terrain3D draws (brain.md H12). They are evidence of what is drawn, not of the look.
+- Software screenshots use the Compatibility renderer, evidence of what is drawn, not of the
+  look; Forward+ on lavapipe works since M3's review (brain.md H12). From M3-R1-fix-3 the gate's
+  render step measures placement (SPEC §12).
 - A session's checkout is shallow, and its local `main` can be an old ref that `git pull`
   calls diverged (brain.md H14): the spawn prompts' sync line handles it since M2
   planning.
@@ -85,8 +73,7 @@ Open entry, FB-001, goes to M3.
 
 ## M3 R1 residue (P2 and P3 of round R1, `docs/reviews/M3-round1.md`)
 
-Design's question, not holding 0.3.0: **I-01** (P2) the surfaces PNG's SHA-256 depends on the zlib
-build and is copied into the manifest (see the round's table for the three remedies).
+I-01 (P2, the PNG's bytes and zlib) is fix brief `M3-R1-fix-6`; P-01 and P-03 are `M3-R1-fix-2` and `-3`.
 P2: **G-02** `source_color` of the photo, detail textures and tree colours is pinned by no test;
 **G-04** (the part that is not Hard Rule 4) the readers' refusal tests assert refusal, not cause;
 **G-05** 22 of 31 mutations of `tools/export.sh`'s refusals leave its tests green (step 5's 100 MiB
@@ -105,11 +92,6 @@ carried items: `PhotoGrid` does not refuse a photo wider than 16384 texels (M3-0
 leaves `manifest.json.part` (M3-13 Findings 8).
 
 Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified, no P0 to P2), all P3: V1-1 fix-1's placement census does not name `xz` or `origin` (an edit of either after its declaration moves the classes or the crowns' colour with the gate green: the remainder of P-03); V1-2 fix-4's normal census counts lines that begin with `NORMAL` (a braced second statement passes, a correct `dFdyCoarse` spelling fails); V1-3 the scene-level tree tests see one cell south-east of the origin (a sign error that shows only at x < 0 passes); V1-4 `ManifestValue.differs` calls a String and a StringName different types (no site passes a StringName); V1-5 the fix-5 brief's gate boxes were unticked (ticked).
-
-**Waiting on design (BLOCKED.md §Open), what waits on which answer:**
-- **Q1, P-01** (trees at a terrain spacing other than 0.5 m): the orchestrator's recommendation is (b), refuse a terrain config whose spacing is not 0.5 in `build_trees` and `built_trees_block` and amend SPEC §7 and §8 (the harm becomes inexpressible; the trees' expected chunks stay design's one set; the owner's 1 m or 2 m switch then needs the trees step, which is built when it is wanted). Answer "b" or "a"; then fix brief `M3-R1-fix-2` is written and built.
-- **Q2, P-03's render step** (a software render in the gate): the recommendation is (a), the step with a refusal where `xvfb-run` is missing unless a named variable skips it with a printed line, and BUILD.md rule 2b and CLAUDE.md's "what the gate cannot see" amended to say which claims a render gates (the lens measured 19 s, and V1 found the interim text census's own gaps, V1-1 and V1-2). Answer "a" or "b"; then `M3-R1-fix-3` is written and built.
-- **Then:** the placement round again (Tier 1, until a round reports no P2 or above) over fix-1, fix-5 and the answers' fixes; the standard gate from clean on the head; release 0.3.0 through `docs/RELEASE.md` §C with the data packs, its record in `docs/releases/` first. Not waiting on design: the I-01 question (the zlib dependence of the PNG's hash and so of the manifest), which the release record names.
 
 ## Later
 

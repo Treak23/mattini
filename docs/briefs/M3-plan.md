@@ -1,6 +1,6 @@
 # M3 — Surfaces and trees: the arc plan
 
-Status: GO (2026-10-14, the owner)
+Status: READY — waiting for the owner's GO (the fix wave of 2026-10-15, §Fix wave; the arc's first GO was 2026-10-14, the owner)
 
 **Base:** the commit that set this status line (its message starts `docs: M3 GO`; `git log
 --grep '^docs: M3 GO' -1`). It is the base of integration note 1 and of the review's diff
@@ -251,6 +251,48 @@ fix briefs (BUILD.md §The orchestrator 6); the other P2s and the P3s go to the 
 residue list. **Verification pass V1** over the fixes (one round, Tier 2). **Tier 1 rounds
 until clean:** a placement round is clean when it reports no P2 or above; until then lens 1
 re-runs over each fix. A truncated round leaves the arc open.
+
+## Fix wave (design, 2026-10-15)
+
+R1 and V1 left two questions for design (P-01, P-03) and design's own I-01. The answers are
+SPEC §13 rows 37–40 and `docs/history/RULINGS.md` 2026-10-15; the fix-1, fix-4 and fix-5 briefs
+of the orchestrator are DONE. One wave, three lanes at once, each one brief:
+
+| Lane | Brief | Files (Scope) | Tier |
+|---|---|---|---|
+| F-A | `M3-R1-fix-2` trees tie the terrain to 0.5 m | `pipeline/mattini/trees.py`, its pinned test | 1 |
+| F-B | `M3-R1-fix-3` the render step in the gate | `tools/gate.sh`, `game/tests/render/`, a gate test, maybe `tools/gate_allowlist.txt` | 1 |
+| F-C | `M3-R1-fix-6` the surfaces PNG's bytes | `pipeline/mattini/surfaces.py`, `config/surfaces.json`, the fixture's `surfaces.json`, surfaces tests, `docs/RELEASE.md` §C | 2 (Hard Rule 5's discipline) |
+
+No two lanes share a file in their Scope and none depends on another. Every builder runs the
+standard gate; F-B's lane changes the gate itself, so the lanes that land before it run the gate
+without the render step and those after with it.
+
+**Integration notes.** (1) After the three land, the full gate on the combined head, the render
+step included and not skipped. (2) `trees.py` (F-A) imports grid helpers and `read_tlm` from
+`surfaces.py` (F-C), not its config check: F-C must not rename or change those helpers; the
+combined pytest proves the pair. (3) F-C's real run gives the manifest `3ca0445c…` unchanged (the
+descriptions do not change); F-A's trees chunks unchanged at 0.5.
+
+**Round R2 (after the wave lands):** two lenses, each its own session and worktree, real village
+built from the pinned inputs, prove it or downgrade it, reports `docs/reviews/M3-R2-<lens>.md`.
+
+1. **placement (Tier 1),** over fix-1, fix-4, fix-5, fix-2 and fix-3 (diff range: `410dbba`, the head R1
+   reviewed, to the integrated head). *Prompt:* "Prove or break that the R1 placement fixes
+   and the answers hold: the trees refuse every terrain spacing but 0.5 from the step and the
+   manifest; the gate's render step fails on every misplacement of the photo, the classes and the
+   crowns' colour (flip, half texel, 0.1 m, swapped axes, a second assignment after a
+   declaration) on its own, and passes ten clean runs; the placement census gaps V1-1 to V1-3."
+   *Must prove:* each by a mutation that fails a named check. *Does NOT prove:* the look,
+   Forward+, the owner's GPU. Clean = no P2 or above; else fix briefs and the lens again
+   (WORKFLOW §Review policy, Tier 1).
+2. **verification of fix-6 (Tier 2, Hard Rule 5's discipline).** *Prompt:* "Prove or break that
+   the surfaces step and the manifest refuse a PNG another deflate writes (zlib-ng in place of
+   zlib, mattini untouched), that the gate fails on such a machine, that the real village still
+   gives the manifest 3ca0445c…, and that RELEASE.md §C's new box compares it by a command."
+   *Does NOT prove:* Windows' zlib.
+
+**Then:** the standard gate from clean on the head; release 0.3.0 (§The release).
 
 ## The release
 
