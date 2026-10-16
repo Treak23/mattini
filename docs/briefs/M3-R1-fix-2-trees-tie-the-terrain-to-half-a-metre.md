@@ -1,5 +1,5 @@
 # Brief: M3-R1-fix-2 — The trees tie the terrain to 0.5 m, and refuse any other spacing
-Status: OPEN
+Status: DONE (43aeb86)
 
 Written in the design realm from review finding M3-R1-P-01 (P2, Tier 1;
 `docs/reviews/M3-R1-placement.md`) and the owner's answer of 2026-10-15 (SPEC §13 row 37);
@@ -78,3 +78,60 @@ step, `config/terrain.json`, `config/trees.json` or a game file; a version bump;
 dependency; a model's name or id anywhere in the repository.
 
 ## Findings (executor writes)
+
+1. **What changed.** `pipeline/mattini/trees.py` only (plus the pinned test, byte-identical, `cmp`
+   exit 0). One helper, `_spacing_refusal(area, terrain_config)`, raises a `TreesError` when the
+   area's `spacing_m` is not `SOURCE_M` (0.5); the message starts `config/terrain.json:` and
+   names the spacing found (`spacing_key`, so `1` or `2` as swisstopo writes it), 0.5, SPEC §8
+   trees item 7 and SPEC §7. `build_trees` calls it straight after `_area` (the two configs'
+   checks), so before the world checks, the lock, provenance, every input, anything under
+   `out_dir` and every progress line. `built_trees_block` calls it right after the
+   "description does not exist, return None" line, so a terrain-only manifest at 1 m is still
+   written. The module docstring's item 7 and its check order, and both functions' docstrings,
+   say what the code now does. The terrain step, both configs and the game are untouched.
+2. **Pinned cases:** 7 passed. The full pytest in the gate: 2176 passed, 5 deselected, with the
+   pinned file in (design's throwaway run counted the same 2176); no existing test needed a
+   change.
+3. **Mutations** (throwaway `git clone`, each from a saved diff undone with `git apply -R`,
+   `git status` clean after each). Each reproduces the owner-visible harm: trees written or
+   accepted on a 1 m or 2 m terrain with exit 0, floating or sunk.
+   - (1) the call in `build_trees` removed: `FAILED ...::test_the_trees_step_refuses_a_terrain_that_is_not_half_a_metre[1.0]` and `[2.0]` (2 failed, 5 passed); the error that
+     came instead was `the lock has no 'swissalti3d' entry`, i.e. the step went on to read the
+     lock.
+   - (2) the call in `built_trees_block` removed: `FAILED ...::test_the_manifest_refuses_built_trees_on_a_terrain_that_is_not_half_a_metre[1.0]` and `[2.0]` (2 failed, 5 passed).
+   - (3) `spacing != SOURCE_M` made `spacing > 1.0` (2 m refused, 1 m let through): `FAILED`
+     `test_the_trees_step_refuses_...[1.0]` and `test_the_manifest_refuses_built_trees_...[1.0]`
+     (2 failed, 5 passed): the 1 m case, the one the placement lens measured at 3'542 trees
+     off, is what the twin catches.
+   - (4) the call in `build_trees` moved after the lock check: `FAILED
+     test_the_trees_step_refuses_...[1.0]` and `[2.0]` (2 failed, 5 passed), the lock's
+     refusal arriving first.
+   - does NOT prove: a mutation outside the four. In particular the cases never have a
+     spacing that is a non-`float` number (e.g. `1`), which `check_terrain_config` already
+     refuses (`_is_spacing`, terrain.py:640) before this code runs.
+4. **Real check, as far as this machine allows.** The raw swisstopo downloads are not on this
+   machine (no `data/`; H7), so the village's six chunks (`config/trees.json`:
+   2623-1095, 2623-1096, 2623-1097, 2624-1095, 2624-1096, 2624-1097) could not be rebuilt at
+   0.5 here and were not; the gate's `config/trees.json` check and the pipeline tests that
+   build at 0.5 are unchanged and green. In a clone with `spacing_m` 1.0 in
+   `config/terrain.json`: `python -m mattini trees` printed `mattini: error:
+   config/terrain.json: area 'village' has spacing_m 1, but the trees take their base heights
+   from the 0.5 m terrain grid (docs/SPEC.md §8, trees, item 7) and stand off the ground at any
+   other spacing; set spacing_m to 0.5 (...)`, exit 1, no traceback, nothing created. `python -m
+   mattini manifest` with no trees built wrote the manifest, exit 0 (decision 2). With a
+   stand-in `trees/village.json` (`{"stand-in": true}`, a scratch clone only, not data) the same
+   `manifest` ended `mattini: error: config/terrain.json: ...`, exit 1; with 0.5 it refused the
+   stand-in for its keys, not for the spacing. So the CLI path of both commands is driven, not
+   only the functions. Not driven: the whole-village manifest with real built trees at 1 m.
+5. **Render step.** `tools/gate.sh` has no render step yet at this head (`grep` finds none);
+   `xvfb-run` is installed on this machine. Nothing here depends on it. No
+   `MATTINI_SKIP_RENDER` was set anywhere.
+6. **Two first-run gate failures, both mine, both fixed before the commit:** the word `village`
+   in a new docstring tripped `test_the_pipeline_code_names_no_area` (M2-01's census of
+   `pipeline/mattini/`), now "the real area"; and the new test file was untracked, which
+   `test_repo_tracked.py` refuses until it is staged.
+7. **Decision for design to audit:** none. The refusal sits after `_area` and before the world
+   check, one of two places the pinned decisions allow ("before it reads the lock, provenance or
+   any input"); the other, after the world check, would also pass the pinned cases. This one
+   was chosen because the spacing is a property of the two configs alone, like the area, and
+   needs no input.
