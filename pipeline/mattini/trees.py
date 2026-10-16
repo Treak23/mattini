@@ -29,8 +29,9 @@ finds the same trees (Hard Rule 5). `build_tree_chunks` is its entry; its steps,
    DTM slope of 60° or more (gx² + gy² ≥ 3 from the neighbours' differences).
 7. A tree: x and z through the world config's `to_local` in 64-bit, then float32; y the mean
    of the four vertices of the 0.5 m terrain grid around the centre (`terrain.resample`, the
-   heights minus `height_offset_m`), in 64-bit, rounded once to float32, whatever the
-   terrain config's spacing; height the chm at the top; crown radius clamp(min(d / 2,
+   heights minus `height_offset_m`), in 64-bit, rounded once to float32. That is
+   Terrain3D's ground only on a 0.5 m terrain, so a terrain config whose spacing is not 0.5 is
+   refused (`_spacing_refusal`); height the chm at the top; crown radius clamp(min(d / 2,
    height / 4), 1.0, 6.0) m, d the distance to the nearest other tree kept in the area
    (infinite when there is none), a correctly rounded square root, then float32.
 8. Chunks: the 1 km tile of (E, N); within a chunk the tops' raster order; a tile without a
@@ -45,7 +46,9 @@ anything (lesson 38). Those values hold only for the world config and the four l
 the area records as `computed_for` (brief M2-07, lesson 41).
 
 The checks run in this order, each before the next reads anything: the area (the terrain
-config's, which the trees config must name), the world (the owner's axes, `computed_for`), each
+config's, which the trees config must name), the terrain config's spacing (only 0.5: the trees
+take their heights from the 0.5 m grid, and at 1 m or 2 m they would float or sink; M3 R1 P-01),
+the world (the owner's axes, `computed_for`), each
 lock entry's fit to the datasets config and the area (a lock that does not fit is refused
 naming its lock command), the four entries against `computed_for`, then every dataset's
 provenance.json in sorted dataset order (a missing download is refused naming its download
@@ -96,10 +99,12 @@ from mattini.surfaces import (
 from mattini.terrain import (
     AREA_NAME,
     OWNER_AXES,
+    TERRAIN_CONFIG_NAME,
     check_computed_for,
     check_terrain_config,
     configured_area,
     resample,
+    spacing_key,
     world_refusal,
 )
 from mattini.world import REPO, World, parse_world, read_config_bytes
@@ -742,12 +747,14 @@ def build_trees(
     The area is the terrain config's one area, which the trees config must name. The checks
     run in the order of the module's docstring; every chunk's SHA-256, and the set of tiles,
     must equal the trees config's `expected_sha256`, compared before anything is written (a
-    difference is a TreesError naming the tile and both values, lesson 38). A missing
-    download is refused naming its command before anything is created under `out_dir` and
-    before any `progress` call.
+    difference is a TreesError naming the tile and both values, lesson 38). A terrain config
+    whose spacing is not 0.5 and a missing download are each refused, the spacing first
+    (before the lock and every input), naming `config/terrain.json` or the download command,
+    before anything is created under `out_dir` and before any `progress` call.
     """
     say = progress or (lambda message: None)
     area = _area(trees_config, terrain_config)
+    _spacing_refusal(area, terrain_config)
     settings = trees_config["areas"][area]
     if world.mapping != OWNER_AXES:
         raise TreesError(
@@ -831,6 +838,27 @@ def _area(trees_config: dict, terrain_config: dict) -> str:
     return area
 
 
+def _spacing_refusal(area: str, terrain_config: dict) -> None:
+    """Refuse a terrain config whose spacing is not 0.5 m: the trees would float or sink.
+
+    A tree's base height is the mean of the 0.5 m grid's four vertices around it (module
+    docstring, item 7), which is Terrain3D's ground only when the terrain is that grid. At
+    1 m or 2 m Terrain3D interpolates between vertices that are further apart, and the
+    placement lens measured 3'542 of the real area's 34'412 trees more than 5 cm off at 1 m and
+    18'932 at 2 m (M3 R1 P-01), with every command at exit 0. `_area` has already checked
+    the terrain config, so the spacing is one of its allowed three.
+    """
+    spacing = terrain_config["areas"][area]["spacing_m"]
+    if spacing != SOURCE_M:
+        raise TreesError(
+            f"{TERRAIN_CONFIG_NAME}: area {area!r} has spacing_m {spacing_key(spacing)}, but "
+            f"the trees take their base heights from the {spacing_key(SOURCE_M)} m terrain "
+            f"grid (docs/SPEC.md §8, trees, item 7) and stand off the ground at any other "
+            f"spacing; set spacing_m to {spacing_key(SOURCE_M)} (softening the terrain first needs "
+            f"the trees step to take its heights at that spacing, docs/SPEC.md §7)"
+        )
+
+
 def _compare_with_expected(area: str, chunks: list[dict], expected: dict[str, str]) -> None:
     """Refuse chunks whose tiles or SHA-256s are not the trees config's (lesson 38)."""
     built = {chunk["tile"]: hashlib.sha256(chunk["data"]).hexdigest() for chunk in chunks}
@@ -866,13 +894,17 @@ def built_trees_block(
     parameters, a source that is exactly what the configs and the lock give, and every chunk:
     its tile among the config's, its file's size (20 bytes a tree) and SHA-256, which must be
     the description's and the config's. `lock` is the lock (a dict) or the path of the lock
-    file; it is read only when trees are built.
+    file; it is read only when trees are built. When they are built, a terrain config whose
+    spacing is not 0.5 is refused first, naming `config/terrain.json` (the trees were built
+    at 0.5 m and would float or sink on another terrain); with none built there is nothing to
+    float and the answer is None at any spacing.
     """
     area = _area(trees_config, terrain_config)
     settings = trees_config["areas"][area]
     description = Path(out_dir) / "trees" / f"{area}.json"
     if not description.exists():
         return None
+    _spacing_refusal(area, terrain_config)
 
     def fail(message: str) -> TreesError:
         return TreesError(f"{description}: {message}; `{TREES_COMMAND}` rebuilds the trees")
