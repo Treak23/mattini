@@ -24,6 +24,19 @@
 # exist). Every output is read with the ANSI codes and a CR at the end of a line removed, so
 # a CR LF run (a Windows console) reads as an LF one (V1-G-07).
 #
+# The render step runs last (SPEC §12, §13 row 38; brief M3-R1-fix-3): two SceneTree scripts
+# under game/tests/render/ render a synthetic world (Compatibility renderer on Mesa's llvmpipe,
+# under xvfb-run) and measure, by number, where the photo, the surface classes and the crowns'
+# colour land, so that a flipped, shifted or swapped placement in a shader or a loader fails the
+# gate with the check's own result line ("RENDER <check>: FAIL ..."). It proves where those land,
+# never the look, Forward+, the colour encoding or the owner's GPU. The step passes only when
+# every check prints its "RENDER <check>: PASS" line and none a FAIL line, besides the scans and
+# the exit status every Godot step has (a timeout kills a script that hangs: brain.md H25). Where
+# xvfb-run is missing it fails, naming it and MATTINI_SKIP_RENDER=1; with that variable set it
+# prints a SKIPPED line, in the log and on the terminal, and passes. The variable excuses only a
+# machine that has no xvfb-run (the owner's Windows): where xvfb-run is found the step runs
+# whatever the variable says. No brief, builder or review in a container sets it.
+#
 # An error line known to be benign may be excepted in tools/gate_allowlist.txt, one entry
 # per line; blank lines and lines starting with # are ignored. Two kinds (M1 review G-03):
 #   <text the error line contains> # <reason>
@@ -351,6 +364,56 @@ gut_run() {
 	return "$status"
 }
 
+# The render step's two scripts and the checks each prints; the timeout, in seconds, kills a
+# script that hangs (a SceneTree script that fails in _initialize can run on with no output,
+# brain.md H25), 10 s later by force.
+RENDER_TIMEOUT=180
+RENDER_SKIP_LINE="== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the classes and the crowns' colour land is not checked"
+
+# One render script ($1, a res:// path) under xvfb-run, its output scanned for engine errors as
+# the other Godot steps are (the allowlist's global entries apply); then each check named in the
+# rest of the arguments must have printed "RENDER <check>: PASS", and no line may read
+# "RENDER <check>: FAIL". A script that fails an assertion exits 1, which run_scanned refuses
+# too; the lines are what name the check. user:// is in this run's scratch folder (run_godot's
+# reason), and the audio driver is the dummy one because a container has no sound card and
+# Godot's own probing of one prints an ERROR line.
+render_script() {
+	local script="$1" check status=0
+	shift
+	run_scanned '^(ERROR|SCRIPT ERROR)' "" \
+		env XDG_DATA_HOME="$SCRATCH/data" xvfb-run -a timeout --kill-after=10 "$RENDER_TIMEOUT" \
+		"$GODOT" --path game --audio-driver Dummy --rendering-method gl_compatibility \
+		--resolution 1280x720 -s "$script" || return 1
+	for check in "$@"; do
+		if ! grep -a -q -E "^RENDER $check: PASS( |\$)" "$SCRATCH/out.log"; then
+			echo "== gate: $script did not print a 'RENDER $check: PASS' line: the check did not run to its end"
+			status=1
+		fi
+	done
+	if grep -a -E '^RENDER [^:]+: FAIL' "$SCRATCH/out.log"; then
+		echo "== gate: a render check failed (the lines above name it and its numbers)"
+		status=1
+	fi
+	return "$status"
+}
+
+render_step() {
+	if ! command -v xvfb-run > /dev/null; then
+		if [ "${MATTINI_SKIP_RENDER:-}" = "1" ]; then
+			echo "$RENDER_SKIP_LINE"
+			echo "$RENDER_SKIP_LINE" >&2
+			return 0
+		fi
+		echo "== gate: xvfb-run is missing, so the render step cannot run: install it (the xvfb package), or on a machine that cannot render set MATTINI_SKIP_RENDER=1, which skips the step and says so in this log"
+		return 1
+	fi
+	if [ -n "${MATTINI_SKIP_RENDER:-}" ]; then
+		echo "== render: MATTINI_SKIP_RENDER=$MATTINI_SKIP_RENDER is set but xvfb-run is here, so the step runs: the variable excuses only a machine without xvfb-run"
+	fi
+	render_script res://tests/render/render_photo.gd photo classes || return 1
+	render_script res://tests/render/render_trees.gd trees
+}
+
 step "uv lock --check" uv lock --check --project pipeline
 step "pytest" "${UV_RUN[@]}" pytest pipeline/tests
 step "ruff check" "${UV_RUN[@]}" ruff check pipeline
@@ -363,5 +426,6 @@ step "godot parse check" parse_check
 step "gut" gut_run
 step "gdlint" "${UV_RUN[@]}" gdlint "${GD_FILES[@]}"
 step "gdformat --check" "${UV_RUN[@]}" gdformat --check "${GD_FILES[@]}"
+step "render" render_step
 
 echo "== gate: all steps passed"

@@ -13,6 +13,11 @@ arguments in `calls.txt` and print what the test gave them:
 - `uv`: `uv run ... python -c ...` runs this Python with the rest of the arguments; every
   other command (lock --check, pytest, ruff, the manifest, gdlint, gdformat) exits 0 at
   once, so no pipeline step and no gate runs inside the test.
+- `xvfb-run` (brief M3-R1-fix-3): records its call, drops its `-a` and runs the rest; a test
+  that hides it from PATH (`xvfb=False`) gets a PATH holding every executable of the real one
+  but `xvfb-run`. The render scripts (`godot ... -s res://tests/render/<name>.gd`) print the
+  test's lines for them (`render=`, by script name; by default each check's PASS line) and
+  exit with its status.
 - `uname` and `curl`, only where a test puts them first on PATH: `uname` prints the
   system the test names, `curl` records the call and fails.
 So the scripts' own logic runs as it does for the owner, on output the test controls.
@@ -77,6 +82,11 @@ for ((i = 0; i < ${#args[@]}; i++)); do
 			cat "$FAKE_GUT_OUTPUT"
 			exit "${FAKE_GUT_EXIT:-0}"
 			;;
+		res://tests/render/*.gd)
+			name="${args[$i]##*/}"
+			cat "$FAKE_RENDER_DIR/${name%.gd}.txt"
+			exit "${FAKE_RENDER_EXIT:-0}"
+			;;
 		--export-release)
 			preset="${args[$((i + 1))]}"
 			out="${args[$((i + 2))]}"
@@ -114,6 +124,13 @@ fi
 exit 0
 """
 
+FAKE_XVFB = r"""#!/usr/bin/env bash
+# A stand-in for xvfb-run (pipeline/tests/fake_tools.py): no display, the command runs.
+printf 'xvfb-run %s\n' "$*" >> "$FAKE_CALLS"
+[ "${1:-}" = "-a" ] && shift
+exec "$@"
+"""
+
 FAKE_UNAME = r"""#!/usr/bin/env bash
 echo "$FAKE_UNAME"
 """
@@ -122,6 +139,33 @@ FAKE_CURL = r"""#!/usr/bin/env bash
 printf 'curl %s\n' "$*" >> "$FAKE_CALLS"
 exit 22
 """
+
+
+# ---------------------------------------------------------------------- the render scripts
+
+RENDER_PASSING = {
+    "render_photo": [
+        (
+            "RENDER photo: PASS correlation 0.9761 north-south-mirrored 0.0547 "
+            "east-west-mirrored -0.2240 over 34772 pixels"
+        ),
+        (
+            "RENDER classes: PASS agreement 83091 of 83427, mirrored 70472, water "
+            '{ "both": 8678, "render_only": 333, "data_only": 3, "neither": 74413 }'
+        ),
+    ],
+    "render_trees": [
+        (
+            "RENDER trees: PASS correlation 0.9380 over 20 trees; with the photo read x and z "
+            "exchanged -0.2014, mirrored north-south 0.2324, mirrored east-west -0.0031"
+        )
+    ],
+}
+
+
+def render_text(lines: list[str]) -> str:
+    """A render script's output: Godot's banner, then `lines`."""
+    return "\n".join([f"Godot Engine v{GODOT_VERSION} - https://godotengine.org", "", *lines, ""])
 
 
 # ---------------------------------------------------------------------- the packs
@@ -258,21 +302,40 @@ def _executable(path: Path, text: str) -> None:
     path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def _stand_ins(tmp_path: Path, *, system: str | None = None) -> Path:
+def _stand_ins(tmp_path: Path, *, system: str | None = None, xvfb: bool = True) -> Path:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir(exist_ok=True)
     _executable(bin_dir / "godot", FAKE_GODOT)
     _executable(bin_dir / "uv", FAKE_UV)
+    if xvfb:
+        _executable(bin_dir / "xvfb-run", FAKE_XVFB)
     if system is not None:
         _executable(bin_dir / "uname", FAKE_UNAME)
         _executable(bin_dir / "curl", FAKE_CURL)
     return bin_dir
 
 
-def _env(tmp_path: Path, bin_dir: Path, **extra) -> dict:
+def _path_without(tmp_path: Path, name: str) -> str:
+    """A PATH holding a symlink to every executable of this process's PATH (the first of each
+    name, as a shell finds it) but `name`: the tool is hidden, everything else stays."""
+    farm = tmp_path / f"path-without-{name}"
+    farm.mkdir(exist_ok=True)
+    seen = {name}
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if not directory or not Path(directory).is_dir():
+            continue
+        for entry in Path(directory).iterdir():
+            if entry.name not in seen and entry.is_file() and os.access(entry, os.X_OK):
+                seen.add(entry.name)
+                (farm / entry.name).symlink_to(entry)
+    return str(farm)
+
+
+def _env(tmp_path: Path, bin_dir: Path, *, path: str | None = None, **extra) -> dict:
     env = dict(os.environ)
+    env.pop("MATTINI_SKIP_RENDER", None)  # only a test that sets it has it
     env.update(
-        PATH=f"{bin_dir}{os.pathsep}{env.get('PATH', '')}",
+        PATH=f"{bin_dir}{os.pathsep}{path if path is not None else env.get('PATH', '')}",
         GODOT=str(bin_dir / "godot"),
         FAKE_TOOLS=str(Path(__file__).resolve()),
         FAKE_GODOT_VERSION=GODOT_VERSION,
@@ -308,16 +371,42 @@ def gate_tree(tmp_path: Path, tests: list[str], allowlist: str = "") -> Path:
     return root
 
 
-def run_gate(tmp_path: Path, root: Path, output: str, *, status: int = 0):
+def run_gate(
+    tmp_path: Path,
+    root: Path,
+    output: str,
+    *,
+    status: int = 0,
+    xvfb: bool = True,
+    render: dict[str, list[str]] | None = None,
+    render_status: int = 0,
+    env: dict | None = None,
+):
     """tools/gate.sh in `root`, its GUT run printing `output` (bytes as given) and exiting
-    `status`. Returns the CompletedProcess (stdout and stderr together in stdout)."""
-    bin_dir = _stand_ins(tmp_path)
+    `status`. Its render scripts print their PASS lines (RENDER_PASSING) or, for a script named
+    in `render` ("render_photo", "render_trees"), the lines given, and exit `render_status`;
+    `xvfb=False` hides xvfb-run from PATH; `env` adds variables (MATTINI_SKIP_RENDER).
+    Returns the CompletedProcess (stdout and stderr together in stdout)."""
+    bin_dir = _stand_ins(tmp_path, xvfb=xvfb)
     gut = tmp_path / "gut-output.txt"
     gut.write_bytes(output.encode("utf-8"))
+    printed = tmp_path / "render-output"
+    printed.mkdir(exist_ok=True)
+    for name, lines in {**RENDER_PASSING, **(render or {})}.items():
+        (printed / f"{name}.txt").write_text(render_text(lines), encoding="utf-8")
     return subprocess.run(  # the caller checks the status
         [BASH, str(root / "tools" / "gate.sh")],
         cwd=tmp_path,
-        env=_env(tmp_path, bin_dir, FAKE_GUT_OUTPUT=gut, FAKE_GUT_EXIT=status),
+        env=_env(
+            tmp_path,
+            bin_dir,
+            path=None if xvfb else _path_without(tmp_path, "xvfb-run"),
+            FAKE_GUT_OUTPUT=gut,
+            FAKE_GUT_EXIT=status,
+            FAKE_RENDER_DIR=printed,
+            FAKE_RENDER_EXIT=render_status,
+            **(env or {}),
+        ),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
