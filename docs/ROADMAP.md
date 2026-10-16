@@ -14,6 +14,9 @@ colours, LiDAR trees, data packs). The owner's answers are SPEC §13 rows 29–3
 **State (2026-10-15):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1, fix-4, fix-5 DONE, V1 clean (`docs/reviews/M3-V1.md`). Design answered Q1 (P-01 → b) and Q2 (P-03 → a) with the owner, and I-01 itself (RULINGS 2026-10-15). **Running:** the fix wave, three lanes at once (`M3-R1-fix-2` trees refuse a terrain spacing other than 0.5; `M3-R1-fix-3` the render step in the gate; `M3-R1-fix-6` the surfaces PNG's bytes), then round R2 (placement, Tier 1, until clean; fix-6's verification), the standard gate from clean, release 0.3.0 (plan §Fix wave).
 
 Orchestrator: session_014eNuBxx5mk19Z9zHYQKUiD · M3 · since 2026-10-16T00:41Z
+Builder: M3-R1-fix-2 · pending · since 2026-10-16T00:43Z
+Builder: M3-R1-fix-3 · pending · since 2026-10-16T00:43Z
+Builder: M3-R1-fix-6 · pending · since 2026-10-16T00:43Z
 
 **Waiting on the owner:** the first look at 0.2.0's Windows build (FB-001 reported Linux
 all OK).
