@@ -11,7 +11,7 @@ Open items only. Shipped and answered items live in `docs/history/` and
 swisstopo data (the photo at 0.2 m, roads, paths, water and rock from swissTLM3D, roof
 colours, LiDAR trees, data packs). The owner's answers are SPEC §13 rows 29–34 and 37–38 (rows 35–36, 39–40 are design's).
 
-**State (2026-10-16):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1 to fix-6 DONE and integrated (fix wave head `fd5febd`: the full gate exit 0 with the render step run, the real village gives the manifest `3ca0445c…`; plan §Fix wave integration record), V1 clean (`docs/reviews/M3-V1.md`). **Running:** round R2 (placement, Tier 1, until clean; fix-6's verification), then the standard gate from clean and release 0.3.0 (plan §Fix wave).
+**State (2026-10-16):** all fourteen briefs DONE and integrated; round R1 adjudicated (`docs/reviews/M3-round1.md`), its fixes fix-1 to fix-6 DONE and integrated (fix wave head `fd5febd`: the full gate exit 0 with the render step run, the real village gives the manifest `3ca0445c…`; plan §Fix wave integration record), V1 clean (`docs/reviews/M3-V1.md`). **Running (2026-10-16):** round R2 on the head `a6779f3`: lens placement `session_013bTDzVieFee8zAD2fRmbFw` (Tier 1, until clean), lens surfaces (fix-6's verification) `session_01D4QkAjK7dhF4Vn6RScTuNj`; reports `docs/reviews/M3-R2-placement.md` and `M3-R2-surfaces.md`. Then the standard gate from clean and release 0.3.0 (plan §Fix wave).
 
 Orchestrator: session_014eNuBxx5mk19Z9zHYQKUiD · M3 · since 2026-10-16T00:41Z
 
