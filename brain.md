@@ -1,11 +1,11 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-10-16 — version 0.2.0 is on the `dist`
-branch (M2, Buildings: the village terrain at 0.5 m in Terrain3D with its 1'486 buildings as
-a white model, a free-fly camera, a pause screen with the credits). Version 0.3.0 (M3,
-Surfaces and trees: the realistic look made from the data) is built, reviewed (R1, V1, R2:
-no P2 or above open), checked from clean and recorded in `docs/releases/v0.3.0.md`; its push
-to `dist` waits for the owner's word ("push dist", as for 0.2.0)**
+Orientation for any session. Current as of **2026-10-16 — version 0.3.0 (M3, Surfaces and
+trees: the village in a realistic look made from the data: the 0.2 m aerial photo, roads, paths,
+water and rock, 34'412 conifers, a colour per roof, plaster walls, the sun and light of the photo,
+data packs) is on the `dist` branch (commit `5f08379`, built from `main` `697a154`, recorded in
+`docs/releases/v0.3.0.md`; no P2 or above open after rounds R1, V1, R2). 0.2.0 (M2, Buildings: the
+white model) stays on `dist` as `mattini-0.2.0/`, the rollback**
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -41,13 +41,12 @@ tests, 9760 asserts; the gate's render step passes.
 
 ## 5. HISTORY
 Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
-0.2.0, 2026-09-26; 0.3.0 recorded 2026-10-16, not yet on `dist`).
+0.2.0, 2026-09-26; 0.3.0, 2026-10-16, `dist` `5f08379`).
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-The owner's word "push dist" publishes 0.3.0 (a build session rebuilds from `697a154`, compares
-with the record's file table, and follows `docs/RELEASE.md` §C). The owner's first looks at 0.2.0
-(Windows) and 0.3.0 come back through `feedback` (FB-001 is the one 0.3.0 answers). Then M4, the
+The owner's first looks at 0.3.0 (Linux, then Windows, never started anywhere) and at 0.2.0's
+Windows build come back through `feedback` (FB-001 is the one 0.3.0 answers). Then M4, the
 sun cycle (design cuts it; the photo's baked shadows are its known cost), M5 scale-up, M6 weather
 and walking. The board is the live version.
 
@@ -196,7 +195,13 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   is 99'405'400 bytes, 5'452'200 under the limit (the terrain 96 MB, the buildings 3.1 MiB),
   and the started build peaks at 875 MiB resident, headless. The release template
   ignores `--script`, so a probe cannot run inside an export (the R1 game lens). Exports are
-  not byte-reproducible: the `.pck` differs between exports at the same size. The first
+  not byte-reproducible: the `.pck` differs between exports at the same size. Measured at the 0.3.0
+  release (2026-10-16): of `mattini.pck`'s 119 entries exactly one varies between fresh clones, the
+  exported binary form of the main scene (`.godot/exported/…/export-…-main.scn`, same size, other
+  bytes: three clones, three hashes); a re-export inside one clone reuses Godot's cache and gives the
+  same file, so "two exports in a row" proves nothing (lesson 33). The data packs, the executables and
+  the libraries were byte-identical in every build, and a record that lists a `.pck` hash lists the
+  one that was pushed. The first
   import of a fresh checkout may print `WARNING: Canceling suspended execution of
   "_enter_tree" due to a script reload.`, a warning line. The started build logs to
   `user://logs/godot.log` (Linux `~/.local/share/godot/app_userdata/mattini/logs/`).

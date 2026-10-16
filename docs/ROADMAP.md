@@ -6,10 +6,10 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**M3 Surfaces and trees — closed 2026-10-16: version 0.3.0 is built, checked from clean and recorded (`docs/releases/v0.3.0.md`); its push to `dist` waits for the owner's word.** The plan is
-`docs/briefs/M3-plan.md` (status DONE); the close in full is `docs/history/ARCS.md` §M3. All fourteen briefs and the six review fixes are DONE; rounds R1, V1 and R2 are adjudicated (`docs/reviews/M3-round1.md`, `M3-V1.md`, `M3-round2.md`): no P0, P1 or P2 is open, and the P3 and the Tier 2 P2 are on the residue list below. The standard gate from a fresh clone of `main` `697a154` is exit 0 (pytest 2228, GUT 47 scripts, 261 tests, 9760 asserts, the render step run); the real village rebuilt from the pinned inputs gives the manifest `3ca0445c…`; the ten files of the export are under 100 MiB and the Linux build starts with all eight startup lines.
+**M3 Surfaces and trees — closed 2026-10-16: version 0.3.0 is shipped on `dist` (commit `5f08379`, on the owner's word "push dist") and recorded (`docs/releases/v0.3.0.md`).** The plan is
+`docs/briefs/M3-plan.md` (status DONE); the close in full is `docs/history/ARCS.md` §M3. All fourteen briefs and the six review fixes are DONE; rounds R1, V1 and R2 are adjudicated (`docs/reviews/M3-round1.md`, `M3-V1.md`, `M3-round2.md`): no P0, P1 or P2 is open, and the P3 and the Tier 2 P2 are on the residue list below. The standard gate from a fresh clone of `main` `697a154` is exit 0 (pytest 2228, GUT 47 scripts, 261 tests, 9760 asserts, the render step run); the real village rebuilt from the pinned inputs gives the manifest `3ca0445c…`; the ten files are under 100 MiB; a fresh clone of `dist` verifies against the README and its Linux build starts with all eight startup lines.
 
-**Waiting on the owner:** (1) **"push dist"** to publish 0.3.0: a build session rebuilds from `697a154`, checks the ten files against the record's table and pushes plain; it puts the three new pack files, 167'548'344 bytes, into the repository's history for good, which is why it waits (0.2.0's went "on the owner's word", RULINGS 2026-10-14). (2) The first look at 0.2.0's Windows build (FB-001 reported Linux all OK) and then 0.3.0's: FB-001 stays Open until that look says whether the realistic look answers "too white".
+**Waiting on the owner:** the first look at 0.3.0 (Linux, then Windows, which has never been started anywhere) and at 0.2.0's Windows build. FB-001 stays Open until that look says whether the realistic look answers "too white". The list of what to look at is in the release record.
 
 **Decisions for design to audit:** (the M3 list of ten was audited and kept, RULINGS 2026-10-15; these are the fix wave's.)
 1. fix-3, the trees check's estimator: `render_trees.gd` averages the crown over a 0.4 m disc and keeps the threshold 0.6; the review's 5 × 5 apex-pixel estimator reads 0.5824 on a clean tree since fix-4 (0.7513 before), so keeping it would have needed a threshold under 0.58. The alternative: that estimator and a lower threshold, by changing `CROWN_READ_M` and `TREES_MIN_CORR` (brief Findings 3).
@@ -18,11 +18,11 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 (Round R2's placement lens judged 1 and 2 right: the disc reads 0.8915 to 0.9360 on five other photos against worst wrong places of 0.1876 to 0.3432, and the variable excuses only a machine without `xvfb-run`; the margin is a property of the shipped layout and photo, so whoever changes either re-measures.)
 
-**Last shipped:** 0.2.0, 2026-09-26: the village with its 1'486 buildings
-(`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`). **Built, not shipped:** 0.3.0
-(`docs/releases/v0.3.0.md`, source `697a154`).
+**Last shipped:** 0.3.0, 2026-10-16: the village in a realistic look made from the data
+(`docs/releases/v0.3.0.md`; `dist` `5f08379`, built from `main` `697a154`). Before it: 0.2.0, 2026-09-26, the village with its
+1'486 buildings (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`), kept on `dist` as `mattini-0.2.0/`, the rollback.
 
-Arc M3 — Surfaces and trees: closed 2026-10-16, 0.3.0 built and recorded; the close in full is `docs/history/ARCS.md` §M3. Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
+Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in full is `docs/history/ARCS.md` §M3. Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 `docs/history/ARCS.md` §M2. Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0 (ARCS §M1).
 
 **Parked questions:** none.
@@ -39,7 +39,7 @@ Arc M3 — Surfaces and trees: closed 2026-10-16, 0.3.0 built and recorded; the 
 ## Next, in order (confirmed by the owner, 2026-09-24)
 
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0 to M3
-are closed (M3's release waits for "push dist").
+are closed.
 
 1. M4 Sun cycle — ARC (design cuts it; the photo's baked shadows are its known cost)
 2. M5 Scale up — ARC

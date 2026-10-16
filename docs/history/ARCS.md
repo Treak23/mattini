@@ -538,7 +538,7 @@ on design's pinned tests, was finished and mutation-checked by design itself), t
 lenses and fifteen skeptic votes, two V1 lenses, eleven measurement agents at planning
 (two independent implementations of each expected value) and one reader for the close. M1, for comparison: $102.87 over twenty sessions.
 
-## M3 — Surfaces and trees · closed 2026-10-16 · version 0.3.0 (built, checked and recorded; the `dist` push awaits the owner's word)
+## M3 — Surfaces and trees · closed 2026-10-16 · version 0.3.0 (`dist` `5f08379`)
 
 The report-back is the release record, `docs/releases/v0.3.0.md`; this is the close in full.
 Arc: planned by the design realm (`docs/briefs/M3-plan.md`, GO 2026-10-14, the owner), built by two
@@ -567,10 +567,13 @@ round R2 closed `cbab677`, the version `697a154`.
   design for the first ten, 2026-10-15): the fix wave's three (fix-3's 0.4 m disc estimator with the threshold
   unchanged, `MATTINI_SKIP_RENDER` excusing only a machine without `xvfb-run`, the class-agreement floor 0.98) stay
   for design to audit; round R2's placement lens judged the first two right.
-- **D34 · Delivery:** the ten files are built from `697a154` and checked; the push to `dist` is not made. 0.2.0's went
-  "on the owner's word" (RULINGS 2026-10-14) and the push is the one step that cannot be undone (167'548'344 bytes of
-  new pack files in the history for good), so it waits for the same word. Two exports gave the same bytes, so a later
-  session rebuilds from `697a154` and checks against the record's table.
+- **D34 · Delivery:** `dist` `5f08379`, pushed 2026-10-16 on the owner's word ("push dist", RULINGS 2026-10-16) as a plain
+  fast-forward from `5ce4888`; until the word the push waited, because it cannot be undone (167'548'344 bytes of new pack
+  files in the history for good) and 0.2.0's had gone the same way. The first build's container was gone when the word came,
+  so the files were rebuilt from `697a154` and compared with the record: eight of the ten rows matched (every file but the two copies of
+  `mattini.pck`), and `mattini.pck` did not, because one of its 119 entries (the exported main scene) varies between fresh clones (three clones,
+  three hashes; a re-export in one clone reuses Godot's cache and matches, which is why "two exports in a row" looked
+  reproducible: lesson 33). The record, the README and the commit carry the hashes of the files on `dist`.
 - **D35 · Two honesty items stated, not fixed** (R2 P-01, P-03): the render step's PASS line counts the trees in its
   world, and the docs call its class check "the surface classes" where it reads water. The release record says so;
   the wording of CLAUDE.md and SPEC §12 is design's.
@@ -593,8 +596,9 @@ First work of M4 is design's to cut (the sun cycle needs the photo's baked shado
 - §C. In that clone: the five `download` commands verified every file; the seven steps compared their outputs with
   design's values before writing; `manifest.json` 324'359 bytes, SHA-256 `3ca0445c…`, compared by command (output in the
   record); `tools/export.sh` exit 0 in 39 s, no `ERROR` line, every file under 100 MiB; the Linux build started and printed
-  its eight lines. **Not done: the `dist` commit and its push** (D34); the README for it is the record's file table plus
-  0.2.0's README text.
+  its eight lines. The `dist` commit `5f08379` (D34): an independent reviewer audited it before the push (one wrong number in its
+  message, fixed); a fresh clone of the branch verified all twenty README checksum lines and started the Linux build with its
+  eight lines.
 - §D. The release record was committed before the chat message; the board is updated and the arc's narrative moved
   here; no Routine is enabled on the account (the five check-ins fired or were deleted).
 
