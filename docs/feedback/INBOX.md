@@ -6,6 +6,17 @@ sequential across both files. Pull --rebase before every commit.
 
 ## Open
 
+### FB-007 · 2026-10-17 · bug · Performance / GPU runs flat out, also while paused (no frame cap)
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
+Build: 0.3.0 (dist 5f08379)
+Impact: degraded
+Owner's words: not stated (the owner said "fluid"; the GPU load is the tester's measurement)
+What happened: MEASURED over ~15 min (432 samples every 2 s): GPU utilisation 94 % on average, 100 % at peak, also while paused in the Esc menu; 87 C and 111 W at peak. The display runs at 300 Hz and project.godot sets no frame cap, so the GPU renders flat out all the time: heat and fan noise on a laptop. No frame rate was measured (no counter in the game, no MangoHud installed).
+Expected: not stated.
+Repro / where exactly: 0.3.0 dist build on the laptop, windowed, any view including the Esc menu. Samples: /home/reto/mattini-test-0.3.0/resources.csv on the owner's laptop.
+Screenshots: none
+Possibly same as: FB-004 (item 10)
+
 ### FB-006 · 2026-10-17 · bug · Log / output held back until the game exits
 Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
 Build: 0.3.0 (dist 5f08379)
