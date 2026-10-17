@@ -77,8 +77,11 @@ Terrain3D from the Asset Store.
 1.3.2021 (published 26 August 2022): the data may be used, distributed, made accessible,
 enriched, processed and used commercially; a reference to the source is mandatory
 (`©swisstopo` or "Federal Office of Topography swisstopo" among the accepted wordings).
-Different wording is required only for swissALTIRegio and swissEO, which mattini does not
-use. The credits carry `© swisstopo` (CLAUDE.md Hard Rule 3).
+Different wording is required only for swissALTIRegio and swissEO. mattini uses swissALTIRegio
+from M4 (the mountains around the area, for the sun; SPEC §13 row 42): its own source text, which
+names swisstopo and the foreign height models it includes, is printed whole in the credits
+(`docs/briefs/sketches/m4-design.md` §1a; brief M4-01). The credits carry `© swisstopo` for the
+other datasets (CLAUDE.md Hard Rule 3).
 
 Access: the STAC API at `https://data.geo.admin.ch/api/stac/v1/` (STAC 1.0.0, no key).
 Items are addressed by id; assets carry `file:checksum` as a multihash (`1220` + SHA-256).
