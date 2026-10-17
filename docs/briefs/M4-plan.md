@@ -1,6 +1,6 @@
 # M4 — The sun cycle: the arc plan
 
-Status: DRAFT — design is still writing M4-09 and M4-10 (not READY)
+Status: READY — waiting for the owner's GO (and the two answers that go with it: the softened shadows kept or not, the star catalogue (a) or (b))
 
 **Base:** the commit that sets this status line to GO (its message starts `docs: M4 GO`;
 `git log --grep '^docs: M4 GO' -1`). It is the base of the integration notes and of the
@@ -58,7 +58,19 @@ re-runs the gate and says so in Findings.
 | Lane | Briefs | Files |
 |---|---|---|
 | H · the pipeline wired | M4-09 the new steps wired | `__main__.py`, `manifest.py`, `lock.py`, the steps' fit checks onto `lock.fit_problem`, the fixture manifests the brief names, `docs/RELEASE.md` §C's manifest line, their tests |
-| I · the main scene | M4-10 the main scene: the clock, the sky, the keys | `main.gd`, `main.tscn`, `project.godot` (the time actions), the main-scene tests, `tools/export.sh` step 6 (the startup lines), named tests |
+| I · the main scene | M4-10 the main scene: the clock, the sky, the keys | `main.gd`, `main.tscn`, `project.godot` (the six time actions), `sky_site.gd` (new), the hint lines of `surroundings_grid.gd` and `shadow_grid.gd`, `tools/export.sh`, `tools/gate_allowlist.txt` (three lines), the main-scene tests and the replacements M4-10 names (`complete_world.gd`, `render_photo.gd`, `fake_tools.py`, `test_export_startup_lines.py`, `test_m4_08_release_hints.gd`, …) |
+
+Lanes H and I share no file (checked from both Scopes). Design's integration rehearsal ran all ten
+briefs' pins on throwaway implementations in one tree, in this plan's order: the gate green after
+wave 1 (pytest 2502, GUT 58 scripts, 358 tests, four RENDER checks) and after wave 2 (pytest 2608, GUT
+61 scripts, 393 tests, 16'571 asserts); the real village from the command line gave the manifest
+`a0e2ec92…` (327'265 bytes), `tools/export.sh` exit 0, and the exported Linux build printed its two
+pack lines and eight startup lines with no ERROR line. Its two seams are fixed in the pins (M4-08's
+census, two exceptions; M4-10's `render_photo.gd` sets `shadow_lift` 1).
+
+**Section S (the stars)** of M4-05, and the catalogue's credit line in M4-10, are built only if
+the owner chose (a) at the GO (m4-design §10); the plan's status line says which. Without it every
+pin still passes (measured: M4-10's stars switch is the file `res://sky/stars.csv`).
 
 **Hints for every lane** (from design's rehearsals of every brief, 2026-10-17):
 
@@ -71,6 +83,13 @@ re-runs the gate and says so in Findings.
 - Name your own new test files `test_m4_<nn>_*`, so no two lanes add the same file.
 - Every brief's Scope also covers its own brief file (Status, Findings) and its screenshots,
   `docs/briefs/shots/<brief id>-*.jpg`.
+- `--check-only` (the gate's parse step) does not know autoloads: `main.gd` reaches DataPacks by
+  `preload("res://scripts/data_packs.gd")`, never by its autoload name (M4-10's rehearsal: GUT
+  alone passed).
+- MSAA 4× (M4-08) crashed software Forward+ (lavapipe, signal 11) at the first frame of the real
+  village; the small test world renders with it. Software Forward+ probes of the real village set
+  the root viewport's `msaa_3d` to 0 and say so. Whether it is lavapipe's alone is the owner's PC's
+  to show (the release record says so).
 - Uniform defaults of a shader cannot be read headless (null for every one, H25): the pins
   read the declarations' text; their "does NOT prove" says so.
 
@@ -98,8 +117,9 @@ the render step run):
    `RENDER trees`).
 5. **The allowlist** holds M4-06's and M4-07's lines once each, and no `Ignoring script` or
    `Failed to load script` entry (M3-02).
-6. **The readers' hints:** M4-08's census names `surroundings_grid.gd` as its one exception
-   (M4-07's reader, moved onto `ReleaseBuild.file_hint` by M4-10).
+6. **The readers' hints:** M4-08's census names `surroundings_grid.gd` and `shadow_grid.gd` as
+   its two exceptions (M4-07's and M4-06's readers, moved onto `ReleaseBuild.file_hint` by M4-10;
+   found by design's integration rehearsal: without the second the wave-1 gate fails).
 7. **What wave 2 relies on:** `SkyClock` and `SkyRig` exist with their pinned APIs;
    `TerrainLoader.create` takes the mask; `SurroundingsLoader.create`; `ReleaseBuild`;
    `DataPacks.EXPECTED_PACKS`; each new reader refuses with one `push_error("<Reader>: <path>:
@@ -176,7 +196,8 @@ these" list must name, for the owner's PC:
 - the river: colour, ripples, the bank;
 - the moon by its phase, and the stars (if the owner chose the catalogue);
 - the GPU now capped (60 fps, 15 paused): heat and fan against 0.3.0's 94 %;
-- the log appearing while the game runs; the anti-aliased edges;
+- the log appearing while the game runs; the anti-aliased edges, and whether the game starts at
+  all with MSAA 4× (it crashed software Forward+ on the real village; 0.3.0 on `dist` is the rollback);
 - what it does NOT prove: that it renders or looks right; Compatibility draws no far-mountain shadow.
 
 FB-003, FB-005, FB-006 and FB-007 are the feedback it closes, or closes in part: its record says

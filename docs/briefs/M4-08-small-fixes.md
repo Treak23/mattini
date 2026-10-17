@@ -69,8 +69,9 @@ error panel (main.gd's).
    - BuildingRoofs reads no file of its own (its block is in the manifest): no site.
    - The "not built" and "another world" refusals keep naming the pipeline: a release ships a
      manifest whose blocks are built for its world (tools/export.sh steps 1 and 2).
-   - SurroundingsGrid (M4-07, same wave) keeps the pipeline's hint; the pinned census names it
-     as its one exception until M4-10.
+   - SurroundingsGrid (M4-07, same wave) and CaptureShadowGrid (M4-06, before this brief in lane
+     F) keep the pipeline's hint; the pinned census names both as its exceptions until M4-10
+     (the second added by design after the integration rehearsal, 2026-10-17).
 4. **DataPacks** (`game/scripts/data_packs.gd`):
    - `const EXPECTED_PACKS := ["mattini-photo.pck", "mattini-terrain.pck"]`, on one line
      (tools/export.sh reads it with a regular expression);
@@ -132,8 +133,8 @@ M4-06, in the same lane (F), before it: both change `pipeline/tests/fake_tools.p
 render step's `render_lift` lines, this brief the packs). Design's pinned copy here holds both
 changes (design, 2026-10-17), so copying it into place after M4-06 has landed keeps M4-06's lines;
 M4-06's own `cmp` gate holds until it is DONE (WORKFLOW §Brief lifecycle). M4-07 runs beside this
-lane and shares no file; the census in `test_m4_08_release_hints.gd` names M4-07's reader as its
-exception, whichever lands first.
+lane and shares no file; the census in `test_m4_08_release_hints.gd` names M4-07's and M4-06's readers as its
+exceptions, whichever lands first.
 
 ## Done when (gates)
 

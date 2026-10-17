@@ -17,8 +17,9 @@ extends GutTest
 ## push_error, so this script prints no ERROR line.
 ##
 ## The census at the end is text only: no script under res://scripts but release_build.gd
-## spells "rebuilds it" itself. One exception is named, until brief M4-10 moves it onto the
-## seam: SurroundingsGrid (brief M4-07, built in the same wave without this seam).
+## spells "rebuilds it" itself. Two exceptions are named, until brief M4-10 moves them onto the
+## seam: SurroundingsGrid (brief M4-07) and CaptureShadowGrid (brief M4-06), built in the same
+## wave without this seam (design, 2026-10-17, from the integration rehearsal).
 ##
 ## Does NOT prove: that an exported build shows these messages (the release template ignores
 ## --script; the brief's export run starts the build with a pack moved aside); the error
@@ -193,8 +194,10 @@ func _scripts(dir: String) -> PackedStringArray:
 func test_no_script_spells_the_pipeline_hint_itself() -> void:
 	# Text only (lesson 5): the tests above prove the behaviour of each site they reach.
 	var allowed := ["res://scripts/world/release_build.gd"]
-	# Built in wave 1 beside this brief, without the seam; brief M4-10 moves it onto file_hint.
-	var until_m4_10 := ["res://scripts/terrain/surroundings_grid.gd"]
+	# Built in wave 1 beside this brief, without the seam; brief M4-10 moves them onto file_hint.
+	var until_m4_10 := [
+		"res://scripts/terrain/surroundings_grid.gd", "res://scripts/terrain/shadow_grid.gd"
+	]
 	var scripts := _scripts("res://scripts")
 	assert_gt(scripts.size(), 10, "the census reads the game's scripts")
 	var spelled := []
