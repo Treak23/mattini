@@ -6,6 +6,17 @@ sequential across both files. Pull --rebase before every commit.
 
 ## Open
 
+### FB-006 · 2026-10-17 · bug · Log / output held back until the game exits
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
+Build: 0.3.0 (dist 5f08379)
+Impact: degraded
+Owner's words: not stated (tester's observation)
+What happened: During ~3 minutes of running, godot.log and stdout showed only the first 2 "mattini" lines (the two data pack lines); the other 6 appeared only when the game quit. A crash would likely lose them, the moment they are needed. The tester notes Godot's project setting application/run/flush_stdout_on_print is off by default in release builds, likely relevant (the tester's guess).
+Expected: not stated.
+Repro / where exactly: 0.3.0 dist build on Linux; watch godot.log or stdout while the game runs.
+Screenshots: none
+Possibly same as: FB-004 (other observations)
+
 ### FB-005 · 2026-10-17 · bug · Errors / missing photo pack message names the pipeline, not the pack
 Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
 Build: 0.3.0 (dist 5f08379)
