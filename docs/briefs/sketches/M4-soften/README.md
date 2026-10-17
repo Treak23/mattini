@@ -34,3 +34,15 @@ fixed world direction across the channel.
 shadow marched on 1 m cells, written at 0.5 m with the inset at 0.5 m; sun 184.67° grid, 50.1°)
 over the photo, E 2624000–2624500, N 1096500–1097000, at 0.5 m: photo | mask in blue. 20.4 % of
 the crop is in the mask.
+
+`water-bank.jpg`, `water-against-the-sun.jpg` (brief M4-06's design rehearsal, 2026-10-17): m4-design §8's
+water in a throwaway implementation, software Forward+ (Mesa lavapipe, brain.md H12), the main scene's sun
+(183°, 52°) and light, 1280 × 720 scaled to 640 × 360. A SYNTHETIC scene, not the village: the complete test
+world made flat, its "photo" Poly Haven's `rocky_trail_diff_1k.jpg` (CC0, `game/textures/`) stretched over
+20 m × 11.5 m, and a meandering 3.2 m channel of water drawn at 0.2 m. Looking east along the channel from
+3.5 m (`water-bank`): the water is the ground × 0.9 with ripples at 2 m and 3.4 m, its edge eased over 1 m,
+hardly visible on gravel (over the photo the river's own colour shows the river). Looking south, towards
+the sun, from 6 m (`water-against-the-sun`): the sun's highlight on roughness 0.3, broken by the ripples
+into a patch of glints where the reflection meets the channel (the measurement above found M3's roughness
+0.05 mirroring the sun near the camera, FB-003's patch; M3's water was not rendered here for comparison).
+Not the owner's GPU or look.
