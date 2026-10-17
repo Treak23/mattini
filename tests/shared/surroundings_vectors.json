@@ -1,0 +1,227 @@
+{
+  "about": "The surroundings' shared vectors (brief M4-02, m4-design §2; the game's reader comes in a later brief): tests/shared/surroundings_fixture/ is a synthetic world (origin E 2618250 / N 1101750, height_offset_m 1250.25, the owner's axes, area 'fixture' E 2616000-2625000, N 1095000-1107000: 9 km x 12 km) and nine synthetic swissALTIRegio tiles at a 1000 m cell (source.json; invented heights, no swisstopo data). surroundings.json grows the area by margin_m 3000 at spacing_m 3000: the box E 2613000-2628000, N 1092000-1110000, 6 columns x 7 rows, rows north to south, columns west to east; vertex (row r, column c) is LV95 (e_min + 3000 c, n_max - 3000 r), local x = E - 2618250, z = -(N - 1101750). Its height is the largest sample whose position lies in [E - 1500, E + 1500) x [N - 1500, N + 1500), minus 1250.25, rounded once to float32; a vertex strictly inside the area box is NaN (the quiet NaN 0x7FC00000, bytes 00 00 c0 7f). The 1000 m cells put samples on the squares' edges, which the live 10 m data at 100 m never does: the half-open rule is decided here. Computed by design two independent ways (numpy; plain Python in whole centimetres), identical bytes. local_y is the float32 value written as a decimal exactly.",
+  "area": "fixture",
+  "columns": 6,
+  "cut_box": {
+    "e_max": 2625000.0,
+    "e_min": 2616000.0,
+    "n_max": 1107000.0,
+    "n_min": 1095000.0
+  },
+  "height_offset_m": 1250.25,
+  "lv95_box": {
+    "e_max": 2628000.0,
+    "e_min": 2613000.0,
+    "n_max": 1110000.0,
+    "n_min": 1092000.0
+  },
+  "nan_bytes_hex": "0000c07f",
+  "nan_count": 6,
+  "rows": 7,
+  "sha256": "f07106285a79517adca87e6d712f73e42ade869f306b36c4519f11f811526c6d",
+  "spacing_m": 3000,
+  "vertices": [
+    {
+      "column": 0,
+      "e": 2613000.0,
+      "highest_sample": {
+        "e": 2611500,
+        "n": 1109500,
+        "z": "4300.01"
+      },
+      "local_x": -5250.0,
+      "local_y": 3049.760009765625,
+      "local_z": -8250.0,
+      "n": 1110000.0,
+      "note": "north-west corner. Its highest sample is on its square's west edge (x = E - 1500, included); the higher ones on its east edge (x = E + 1500, column 1's) and its north edge (y = N + 1500, no vertex's) are not its own",
+      "row": 0
+    },
+    {
+      "column": 1,
+      "e": 2616000.0,
+      "highest_sample": {
+        "e": 2614500,
+        "n": 1108500,
+        "z": "4400"
+      },
+      "local_x": -2250.0,
+      "local_y": 3149.75,
+      "local_z": -8250.0,
+      "n": 1110000.0,
+      "note": "takes the sample on its west edge x = E - 1500 (440000 cm), which a square closed on the east would give column 0",
+      "row": 0
+    },
+    {
+      "column": 5,
+      "e": 2628000.0,
+      "highest_sample": {
+        "e": 2627500,
+        "n": 1110500,
+        "z": "3967.42"
+      },
+      "local_x": 9750.0,
+      "local_y": 2717.169921875,
+      "local_z": -8250.0,
+      "n": 1110000.0,
+      "note": "north-east corner",
+      "row": 0
+    },
+    {
+      "column": 1,
+      "e": 2616000.0,
+      "highest_sample": {
+        "e": 2614500,
+        "n": 1107500,
+        "z": "3953.5"
+      },
+      "local_x": -2250.0,
+      "local_y": 2703.25,
+      "local_z": -5250.0,
+      "n": 1107000.0,
+      "note": "the area's north-west corner: kept",
+      "row": 1
+    },
+    {
+      "column": 3,
+      "e": 2622000.0,
+      "highest_sample": {
+        "e": 2621500,
+        "n": 1105500,
+        "z": "3824.3"
+      },
+      "local_x": 3750.0,
+      "local_y": 2574.050048828125,
+      "local_z": -5250.0,
+      "n": 1107000.0,
+      "note": "on the area's north edge (N = n_max): kept",
+      "row": 1
+    },
+    {
+      "column": 2,
+      "e": 2619000.0,
+      "highest_sample": null,
+      "local_x": 750.0,
+      "local_y": null,
+      "local_z": -2250.0,
+      "n": 1104000.0,
+      "note": "strictly inside the area: NaN (its square holds the highest sample of all, 444444 cm, which must not show)",
+      "row": 2
+    },
+    {
+      "column": 0,
+      "e": 2613000.0,
+      "highest_sample": {
+        "e": 2612500,
+        "n": 1101500,
+        "z": "2902"
+      },
+      "local_x": -5250.0,
+      "local_y": 1651.75,
+      "local_z": 750.0,
+      "n": 1101000.0,
+      "note": "west edge of the surroundings, mid-row",
+      "row": 3
+    },
+    {
+      "column": 1,
+      "e": 2616000.0,
+      "highest_sample": {
+        "e": 2615500,
+        "n": 1099500,
+        "z": "3945.75"
+      },
+      "local_x": -2250.0,
+      "local_y": 2695.5,
+      "local_z": 750.0,
+      "n": 1101000.0,
+      "note": "on the area's west edge (E = e_min): kept",
+      "row": 3
+    },
+    {
+      "column": 4,
+      "e": 2625000.0,
+      "highest_sample": {
+        "e": 2624500,
+        "n": 1100500,
+        "z": "4100.2"
+      },
+      "local_x": 6750.0,
+      "local_y": 2849.949951171875,
+      "local_z": 750.0,
+      "n": 1101000.0,
+      "note": "on the area's east edge (E = e_max): kept, not cut",
+      "row": 3
+    },
+    {
+      "column": 3,
+      "e": 2622000.0,
+      "highest_sample": null,
+      "local_x": 3750.0,
+      "local_y": null,
+      "local_z": 3750.0,
+      "n": 1098000.0,
+      "note": "strictly inside the area: NaN",
+      "row": 4
+    },
+    {
+      "column": 2,
+      "e": 2619000.0,
+      "highest_sample": {
+        "e": 2618500,
+        "n": 1093500,
+        "z": "3755"
+      },
+      "local_x": 750.0,
+      "local_y": 2504.75,
+      "local_z": 6750.0,
+      "n": 1095000.0,
+      "note": "on the area's south edge (N = n_min): kept",
+      "row": 5
+    },
+    {
+      "column": 5,
+      "e": 2628000.0,
+      "highest_sample": {
+        "e": 2628500,
+        "n": 1093500,
+        "z": "4250.5"
+      },
+      "local_x": 9750.0,
+      "local_y": 3000.25,
+      "local_z": 6750.0,
+      "n": 1095000.0,
+      "note": "takes the sample on its south edge y = N - 1500 (425050 cm), which a square closed on the north would give row 6",
+      "row": 5
+    },
+    {
+      "column": 0,
+      "e": 2613000.0,
+      "highest_sample": {
+        "e": 2612500,
+        "n": 1091500,
+        "z": "3739.66"
+      },
+      "local_x": -5250.0,
+      "local_y": 2489.409912109375,
+      "local_z": 9750.0,
+      "n": 1092000.0,
+      "note": "south-west corner",
+      "row": 6
+    },
+    {
+      "column": 5,
+      "e": 2628000.0,
+      "highest_sample": {
+        "e": 2627500,
+        "n": 1090500,
+        "z": "4200"
+      },
+      "local_x": 9750.0,
+      "local_y": 2949.75,
+      "local_z": 9750.0,
+      "n": 1092000.0,
+      "note": "south-east corner. Its highest sample is on its square's south edge (y = N - 1500, included); the higher one on its north edge (y = N + 1500) is row 5's",
+      "row": 6
+    }
+  ]
+}

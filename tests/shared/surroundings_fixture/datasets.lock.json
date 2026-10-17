@@ -1,0 +1,48 @@
+{
+  "datasets": {
+    "swissaltiregio": {
+      "collection": "ch.swisstopo.swissaltiregio",
+      "edition": "2026-06",
+      "resolution_m": 1000,
+      "tiles": {
+        "2605-1084": {
+          "file": "swissaltiregio_2605-1084_2056_5728.xyz.zip",
+          "sha256": "159723ffad67c209c1b811b95239e514c2c7e1721d2a67b4dbfad648d5e642ad"
+        },
+        "2605-1094": {
+          "file": "swissaltiregio_2605-1094_2056_5728.xyz.zip",
+          "sha256": "548056dba9b8b854ab768040f0c3bec959e0cf25287009ba2a8f5e107ee75ad4"
+        },
+        "2605-1104": {
+          "file": "swissaltiregio_2605-1104_2056_5728.xyz.zip",
+          "sha256": "c07136884af47bb30c4152316c3cbb7e3b75e736233dcfd457d9087b2a76c604"
+        },
+        "2615-1084": {
+          "file": "swissaltiregio_2615-1084_2056_5728.xyz.zip",
+          "sha256": "89752a3230bb6a73440c19d3ba2385775691eb368ee477152d142b80f6b288cf"
+        },
+        "2615-1094": {
+          "file": "swissaltiregio_2615-1094_2056_5728.xyz.zip",
+          "sha256": "3eb084a9d6af6bc27c5797c553cf3cfc6f1b178d6de4416098b6c4addfb2c9cb"
+        },
+        "2615-1104": {
+          "file": "swissaltiregio_2615-1104_2056_5728.xyz.zip",
+          "sha256": "65d315ec6ba19940be4208a194224f494a2443c773c2f0620f95766d54cb480e"
+        },
+        "2625-1084": {
+          "file": "swissaltiregio_2625-1084_2056_5728.xyz.zip",
+          "sha256": "cc0c6f00bcd619b7fe59f31d895359a3172d8910b7883555091fde63b9b3305b"
+        },
+        "2625-1094": {
+          "file": "swissaltiregio_2625-1094_2056_5728.xyz.zip",
+          "sha256": "f7867dae8cc6f96a037d70f0ba5f60c5bbd54b48ee33b049f7b9d5660d0591a1"
+        },
+        "2625-1104": {
+          "file": "swissaltiregio_2625-1104_2056_5728.xyz.zip",
+          "sha256": "3f8ab9ff82cae4bb1d5a38d4db721a9ecc59edcc308fa65ed385365515edc0fe"
+        }
+      }
+    }
+  },
+  "schema": 1
+}

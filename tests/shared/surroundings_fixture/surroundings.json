@@ -1,0 +1,22 @@
+{
+  "areas": {
+    "fixture": {
+      "computed_for": {
+        "inputs_sha256": "3457f1c20b2c1d9182be02743b6ddac32dd7910dc6f4ab977f2d36ce203dff84",
+        "world_sha256": "24bb18b6b076740d83111e08f8d1303ee763106694a1d8e3954e9fed31279cbf"
+      },
+      "expected_columns": 6,
+      "expected_lv95_box": {
+        "e_max": 2628000.0,
+        "e_min": 2613000.0,
+        "n_max": 1110000.0,
+        "n_min": 1092000.0
+      },
+      "expected_rows": 7,
+      "expected_sha256": "f07106285a79517adca87e6d712f73e42ade869f306b36c4519f11f811526c6d",
+      "margin_m": 3000,
+      "spacing_m": 3000
+    }
+  },
+  "schema": 1
+}
