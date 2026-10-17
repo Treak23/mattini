@@ -9,7 +9,9 @@ The owner's answers: SPEC §13 rows 41–46. The measurements behind every numbe
 - **The flight's sun.** NOAA (Meeus) with refraction, cross-checked against pvlib SPA (agree
   within 0.01°), 46.02 N 7.749 E 1610 m: 2023-09-06 11:25/11:40/11:55 UTC → azimuth (true)
   179.0/184.9/190.7, elevation 50.4/50.3/50.0; 09-07 the same within 0.4°. Mean 184.9°, 50.1°.
-  LV95 grid vs true north at the village: +0.226° (pyproj). M3's sun (183°, 52°, measured from
+  LV95 grid north lies 0.226° east of true north at the village (pyproj, PROJ's
+  meridian_convergence, swisstopo's approximate formulas): a grid azimuth is the true azimuth
+  minus 0.226 (corrected 2026-10-17 by M4-03's rehearsal; design's first notes added it). M3's sun (183°, 52°, measured from
   the photo's shadows) agrees within the shadows' measuring error.
 - **Shadow extent.** At capture 32.3 % of the box is in shadow in the photo. Under the game's
   sun on the same day: 25–32 % of the box is dark in the photo and shaded by the game
@@ -104,9 +106,9 @@ The heights of the mountains around the area, for a shadows-only mesh (§7).
 
 Where the photo was in shadow when it was flown, for the terrain shader's lift (§6).
 
-- `config/shadows.json` (design data): `cell_m` 1; `sun` {azimuth_grid_deg 185.13,
+- `config/shadows.json` (design data): `cell_m` 1; `sun` {azimuth_grid_deg 184.67,
   elevation_deg 50.1, note: the flight's mean sun, 2023-09-06/07 11:25–11:55 UTC, true azimuth
-  184.9 + 0.226 grid convergence}; `threshold_m` 0.05; per area expected `pixels_sha256` and
+  184.9 + true_to_grid −0.2258}; `threshold_m` 0.05; per area expected `pixels_sha256` and
   `png_sha256` and `computed_for` {inputs_sha256 (the `swisssurface3d` lock entry),
   world_sha256}.
 - **The surface:** swissSURFACE3D's 0.5 m tiles over the area, mosaicked; each 1 m cell (aligned
@@ -118,10 +120,11 @@ Where the photo was in shadow when it was flown, for the terrain shader's lift (
   K = ceil((max − min) / tan e) over the area's cells.
 - **Own shadow:** the normal from central differences (one-sided at the edges); a cell whose
   normal · sun ≤ 0 is in shadow.
-- **Inset:** a shadow cell stays 255 only if its four neighbours inside the grid are shadow too;
-  every other cell 0 (the feather is the shader's bilinear filter, which then stays inside the
+- **Inset, at 0.5 m** (ruled after M4-03's rehearsal: a 1 m inset kept 20 % of 32 %): each 1 m
+  cell becomes its 2 × 2 cells of 0.5 m (`cell_m` 0.5, `march_cell_m` 1); a 0.5 m shadow cell stays
+  255 only if its four neighbours inside the grid are shadow too; every other cell 0 (the feather is the shader's bilinear filter, which then stays inside the
   shadow: a centred feather lit the ground beside it by 1.53×, measured).
-- **Files:** `shadows/<area>.png` (8-bit grey, rows north to south, the surfaces' PNG writer and
+- **Files:** `shadows/<area>.png` (8-bit grey, 4000 × 6000 for the village, rows north to south, the surfaces' PNG writer and
   its zlib rule, `expected_png_sha256`, brain.md H27), `shadows/<area>.png.import` holding exactly
   `[remap]\n\nimporter="keep"\n` (H24), `shadows/<area>.json` {area, cell_m, columns, file,
   format "png-l8", lv95_box, pixels_sha256, rows, sha256, source {…}, sun {…}, world_sha256}.
@@ -131,7 +134,7 @@ Where the photo was in shadow when it was flown, for the terrain shader's lift (
 
 - `config/sky.json`: per area `latitude_deg`, `longitude_deg` (WGS84 of the area box's centre)
   and `true_to_grid_deg` (added to an azimuth from true north it gives the azimuth from LV95
-  grid north at the centre: +0.226 for the village), with `computed_for` {world_sha256}.
+  grid north at the centre: −0.2258 for the village), with `computed_for` {world_sha256}.
   Computed by design with pyproj; a pipeline test recomputes them with swisstopo's published
   approximate LV95→WGS84 formulas (no new dependency): latitude and longitude within 1e-4°, the
   convergence within 0.01°.
@@ -216,7 +219,7 @@ Turns the clock's angles into the scene's light. Directions arrive as local unit
   "6 Sep 2023 13:40 CEST · 1×", shown 4 s after a time key and always while paused.
 - Every frame: sun and moon from the clock and the manifest's `sky` block; azimuth true →
   grid (+ `true_to_grid_deg`) → local through WorldConfig's east, north and up (as M3's sun);
-  the rig applies them. At the start view the sun stands at grid azimuth 185.13°, 50.1°.
+  the rig applies them. At the start view the sun stands at grid azimuth about 184.7°, 50.1°.
 - Pause: time stops; `Engine.max_fps` 15 while the pause screen is open, the project's 60 when
   it closes.
 - "Surroundings" and the capture mask from their readers; refusals on the error panel ("the
