@@ -1,0 +1,5205 @@
+{
+ "schema": 1,
+ "description": "Design data for brief M4-04 (the sky clock), m4-design §5: instants from 2020 to 2035 at the village with the sun's and the moon's place, the local mean sidereal time, Zurich's UTC offset and the clock's text. Computed once by design (2026-10-17) with a throwaway script outside the repository; nothing in the repository recomputes it.",
+ "site": {
+  "latitude_deg": 46.02,
+  "longitude_deg": 7.749,
+  "height_m": 1610.0,
+  "note": "The village centre, approximate (m4-design §0). config/sky.json (brief M4-09) holds the area box's centre; design substitutes it here if they differ by more than 1e-3 degrees. The tests pass these values to SkyClock, not config/sky.json's."
+ },
+ "sources": {
+  "sun": "pvlib 0.16.1 solarposition.spa_python (NREL SPA), altitude 1610 m, pressure 101325 Pa, temperature 12 C, delta_t computed by pvlib. sun_azimuth_deg: SPA's azimuth, true, clockwise from north. sun_elevation_deg (the expected value): SPA's topocentric true elevation plus NOAA's refraction (the game's model, m4-design §5: 58.1/tan e - 0.07/tan^3 e + 0.000086/tan^5 e above 5 degrees, 1735 - 518.2 e + 103.4 e^2 - 12.79 e^3 + 0.711 e^4 above -0.575, -20.772/tan e below, arcseconds, none above 85). sun_true_elevation_deg and sun_spa_apparent_elevation_deg (SPA's own refraction, applied only above -0.83 degrees) are for reference: below -0.83 SPA adds no refraction where NOAA adds up to 0.47 degrees, more than the band's 0.3 tolerance.",
+  "moon": "skyfield 1.55 with JPL DE421 (de421.bsp, SHA-256 a20a7139da04cbc462454634918e9a9ca69127044e2cc9d4f9c16e238d2deedc, public domain): topocentric apparent position from the site (WGS84, 1610 m; light time and aberration), no refraction; azimuth true, clockwise from north. moon_illuminated_fraction: as seen from the site.",
+  "sidereal": "skyfield 1.55 Time.gmst at UT1 = UTC (the game knows only UTC; the true UT1 - UTC is under 0.9 s, 0.004 degrees), times 15, plus the east longitude, in [0, 360).",
+  "local": "Python 3.13 zoneinfo Europe/Zurich: utcoffset and the text 'D Mon YYYY HH:MM CET|CEST' (minutes truncated, not rounded)."
+ },
+ "tolerances_deg": {
+  "sun_above_2": 0.05,
+  "sun_at_or_below_2": 0.3,
+  "moon": 0.5,
+  "moon_fraction": 0.03,
+  "sidereal": 0.01,
+  "note": "m4-design §5; the moon's azimuth error is weighted by cos(elevation)."
+ },
+ "start": {
+  "utc": "2023-09-06T11:40:00Z",
+  "unix": 1694000400,
+  "local_text": "6 Sep 2023 13:40 CEST"
+ },
+ "vectors": [
+  {
+   "utc": "2020-01-27T22:55:59Z",
+   "unix": 1580165759,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Jan 2020 23:55 CET",
+   "sun_azimuth_deg": 337.3085,
+   "sun_elevation_deg": -60.8048,
+   "sun_true_elevation_deg": -60.808,
+   "sun_spa_apparent_elevation_deg": -60.808,
+   "moon_azimuth_deg": 296.0606,
+   "moon_elevation_deg": -38.4509,
+   "moon_illuminated_fraction": 0.0854,
+   "sidereal_deg": 118.4353,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2020-02-29T09:00:00Z",
+   "unix": 1582966800,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Feb 2020 10:00 CET",
+   "sun_azimuth_deg": 134.77,
+   "sun_elevation_deg": 25.341,
+   "sun_true_elevation_deg": 25.307,
+   "sun_spa_apparent_elevation_deg": 25.3423,
+   "moon_azimuth_deg": 74.6127,
+   "moon_elevation_deg": 0.6745,
+   "moon_illuminated_fraction": 0.2736,
+   "sidereal_deg": 301.39362,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2020-03-18T16:01:22Z",
+   "unix": 1584547282,
+   "zurich_offset_s": 3600,
+   "local_text": "18 Mar 2020 17:01 CET",
+   "sun_azimuth_deg": 251.9253,
+   "sun_elevation_deg": 15.9361,
+   "sun_true_elevation_deg": 15.8802,
+   "sun_spa_apparent_elevation_deg": 15.9378,
+   "moon_azimuth_deg": 280.1846,
+   "moon_elevation_deg": -42.4752,
+   "moon_illuminated_fraction": 0.2811,
+   "sidereal_deg": 64.76536,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2020-03-20T04:14:43Z",
+   "unix": 1584677683,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 05:14 CET",
+   "sun_azimuth_deg": 74.9906,
+   "sun_elevation_deg": -14.0017,
+   "sun_true_elevation_deg": -14.0248,
+   "sun_spa_apparent_elevation_deg": -14.0248,
+   "moon_azimuth_deg": 119.502,
+   "moon_elevation_deg": -0.5704,
+   "moon_illuminated_fraction": 0.1536,
+   "sidereal_deg": 249.59047,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T04:44:05Z",
+   "unix": 1584679445,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 05:44 CET",
+   "sun_azimuth_deg": 80.4935,
+   "sun_elevation_deg": -9.0014,
+   "sun_true_elevation_deg": -9.0376,
+   "sun_spa_apparent_elevation_deg": -9.0376,
+   "moon_azimuth_deg": 124.6953,
+   "moon_elevation_deg": 3.6548,
+   "moon_illuminated_fraction": 0.1525,
+   "sidereal_deg": 256.95223,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T05:07:07Z",
+   "unix": 1584680827,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 06:07 CET",
+   "sun_azimuth_deg": 84.699,
+   "sun_elevation_deg": -5.0027,
+   "sun_true_elevation_deg": -5.0678,
+   "sun_spa_apparent_elevation_deg": -5.0678,
+   "moon_azimuth_deg": 128.9301,
+   "moon_elevation_deg": 6.7936,
+   "moon_illuminated_fraction": 0.1516,
+   "sidereal_deg": 262.72633,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T05:18:25Z",
+   "unix": 1584681505,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 06:18 CET",
+   "sun_azimuth_deg": 86.7407,
+   "sun_elevation_deg": -3.0028,
+   "sun_true_elevation_deg": -3.109,
+   "sun_spa_apparent_elevation_deg": -3.109,
+   "moon_azimuth_deg": 131.0663,
+   "moon_elevation_deg": 8.2693,
+   "moon_illuminated_fraction": 0.1512,
+   "sidereal_deg": 265.55907,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T05:29:03Z",
+   "unix": 1584682143,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 06:29 CET",
+   "sun_azimuth_deg": 88.6549,
+   "sun_elevation_deg": -1.0003,
+   "sun_true_elevation_deg": -1.2622,
+   "sun_spa_apparent_elevation_deg": -1.2622,
+   "moon_azimuth_deg": 133.1143,
+   "moon_elevation_deg": 9.6158,
+   "moon_illuminated_fraction": 0.1508,
+   "sidereal_deg": 268.22468,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T05:33:00Z",
+   "unix": 1584682380,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 06:33 CET",
+   "sun_azimuth_deg": 89.3651,
+   "sun_elevation_deg": -0.0013,
+   "sun_true_elevation_deg": -0.5756,
+   "sun_spa_apparent_elevation_deg": -0.0037,
+   "moon_azimuth_deg": 133.8847,
+   "moon_elevation_deg": 10.1051,
+   "moon_illuminated_fraction": 0.1506,
+   "sidereal_deg": 269.21488,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T05:39:43Z",
+   "unix": 1584682783,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 06:39 CET",
+   "sun_azimuth_deg": 90.5724,
+   "sun_elevation_deg": 0.998,
+   "sun_true_elevation_deg": 0.5919,
+   "sun_spa_apparent_elevation_deg": 0.9963,
+   "moon_azimuth_deg": 135.2071,
+   "moon_elevation_deg": 10.923,
+   "moon_illuminated_fraction": 0.1504,
+   "sidereal_deg": 270.89865,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T05:49:08Z",
+   "unix": 1584683348,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 06:49 CET",
+   "sun_azimuth_deg": 92.2661,
+   "sun_elevation_deg": 2.4977,
+   "sun_true_elevation_deg": 2.2283,
+   "sun_spa_apparent_elevation_deg": 2.4951,
+   "moon_azimuth_deg": 137.0877,
+   "moon_elevation_deg": 12.0386,
+   "moon_illuminated_fraction": 0.1501,
+   "sidereal_deg": 273.25926,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T06:04:10Z",
+   "unix": 1584684250,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 07:04 CET",
+   "sun_azimuth_deg": 94.9789,
+   "sun_elevation_deg": 4.9999,
+   "sun_true_elevation_deg": 4.8362,
+   "sun_spa_apparent_elevation_deg": 5.0009,
+   "moon_azimuth_deg": 140.156,
+   "moon_elevation_deg": 13.7403,
+   "moon_illuminated_fraction": 0.1496,
+   "sidereal_deg": 277.02788,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2020-03-20T17:09:17Z",
+   "unix": 1584724157,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 18:09 CET",
+   "sun_azimuth_deg": 265.2856,
+   "sun_elevation_deg": 5.0002,
+   "sun_true_elevation_deg": 4.8364,
+   "sun_spa_apparent_elevation_deg": 5.0011,
+   "moon_azimuth_deg": 278.6,
+   "moon_elevation_deg": -34.308,
+   "moon_illuminated_fraction": 0.1239,
+   "sidereal_deg": 83.76231,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T17:24:20Z",
+   "unix": 1584725060,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 18:24 CET",
+   "sun_azimuth_deg": 268.0064,
+   "sun_elevation_deg": 2.5001,
+   "sun_true_elevation_deg": 2.2309,
+   "sun_spa_apparent_elevation_deg": 2.4975,
+   "moon_azimuth_deg": 281.5601,
+   "moon_elevation_deg": -36.7539,
+   "moon_illuminated_fraction": 0.1231,
+   "sidereal_deg": 87.53511,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T17:33:46Z",
+   "unix": 1584725626,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 18:33 CET",
+   "sun_azimuth_deg": 269.7065,
+   "sun_elevation_deg": 1.0009,
+   "sun_true_elevation_deg": 0.5952,
+   "sun_spa_apparent_elevation_deg": 0.9991,
+   "moon_azimuth_deg": 283.48,
+   "moon_elevation_deg": -38.2731,
+   "moon_illuminated_fraction": 0.1226,
+   "sidereal_deg": 89.8999,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T17:40:30Z",
+   "unix": 1584726030,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 18:40 CET",
+   "sun_azimuth_deg": 270.9193,
+   "sun_elevation_deg": 0.0018,
+   "sun_true_elevation_deg": -0.5726,
+   "sun_spa_apparent_elevation_deg": -0.0012,
+   "moon_azimuth_deg": 284.8844,
+   "moon_elevation_deg": -39.3496,
+   "moon_illuminated_fraction": 0.1223,
+   "sidereal_deg": 91.58784,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T17:44:28Z",
+   "unix": 1584726268,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 18:44 CET",
+   "sun_azimuth_deg": 271.6341,
+   "sun_elevation_deg": -0.9982,
+   "sun_true_elevation_deg": -1.2604,
+   "sun_spa_apparent_elevation_deg": -1.2604,
+   "moon_azimuth_deg": 285.7261,
+   "moon_elevation_deg": -39.9804,
+   "moon_illuminated_fraction": 0.122,
+   "sidereal_deg": 92.58222,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T17:55:07Z",
+   "unix": 1584726907,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 18:55 CET",
+   "sun_azimuth_deg": 273.5557,
+   "sun_elevation_deg": -2.9992,
+   "sun_true_elevation_deg": -3.1056,
+   "sun_spa_apparent_elevation_deg": -3.1056,
+   "moon_azimuth_deg": 288.0424,
+   "moon_elevation_deg": -41.6597,
+   "moon_illuminated_fraction": 0.1215,
+   "sidereal_deg": 95.25201,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T18:06:27Z",
+   "unix": 1584727587,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 19:06 CET",
+   "sun_azimuth_deg": 275.6085,
+   "sun_elevation_deg": -4.9997,
+   "sun_true_elevation_deg": -5.0648,
+   "sun_spa_apparent_elevation_deg": -5.0648,
+   "moon_azimuth_deg": 290.6064,
+   "moon_elevation_deg": -43.421,
+   "moon_illuminated_fraction": 0.1209,
+   "sidereal_deg": 98.0931,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T18:29:33Z",
+   "unix": 1584728973,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 19:29 CET",
+   "sun_azimuth_deg": 279.8377,
+   "sun_elevation_deg": -8.9977,
+   "sun_true_elevation_deg": -9.034,
+   "sun_spa_apparent_elevation_deg": -9.034,
+   "moon_azimuth_deg": 296.2002,
+   "moon_elevation_deg": -46.9084,
+   "moon_illuminated_fraction": 0.1196,
+   "sidereal_deg": 103.88391,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-20T18:59:02Z",
+   "unix": 1584730742,
+   "zurich_offset_s": 3600,
+   "local_text": "20 Mar 2020 19:59 CET",
+   "sun_azimuth_deg": 285.3798,
+   "sun_elevation_deg": -13.9992,
+   "sun_true_elevation_deg": -14.0223,
+   "sun_spa_apparent_elevation_deg": -14.0223,
+   "moon_azimuth_deg": 304.2162,
+   "moon_elevation_deg": -51.0925,
+   "moon_illuminated_fraction": 0.118,
+   "sidereal_deg": 111.27493,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2020-03-29T00:30:00Z",
+   "unix": 1585441800,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Mar 2020 01:30 CET",
+   "sun_azimuth_deg": 18.1595,
+   "sun_elevation_deg": -38.9466,
+   "sun_true_elevation_deg": -38.9537,
+   "sun_spa_apparent_elevation_deg": -38.9537,
+   "moon_azimuth_deg": 323.9038,
+   "moon_elevation_deg": -19.7602,
+   "moon_illuminated_fraction": 0.1807,
+   "sidereal_deg": 202.12831,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2020-03-29T00:59:59Z",
+   "unix": 1585443599,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Mar 2020 01:59 CET",
+   "sun_azimuth_deg": 27.301,
+   "sun_elevation_deg": -36.9251,
+   "sun_true_elevation_deg": -36.9328,
+   "sun_spa_apparent_elevation_deg": -36.9328,
+   "moon_azimuth_deg": 330.7272,
+   "moon_elevation_deg": -22.4032,
+   "moon_illuminated_fraction": 0.1827,
+   "sidereal_deg": 209.64467,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2020-03-29T01:00:00Z",
+   "unix": 1585443600,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Mar 2020 03:00 CEST",
+   "sun_azimuth_deg": 27.306,
+   "sun_elevation_deg": -36.9238,
+   "sun_true_elevation_deg": -36.9314,
+   "sun_spa_apparent_elevation_deg": -36.9314,
+   "moon_azimuth_deg": 330.7311,
+   "moon_elevation_deg": -22.4045,
+   "moon_illuminated_fraction": 0.1827,
+   "sidereal_deg": 209.64885,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2020-03-29T02:00:00Z",
+   "unix": 1585447200,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Mar 2020 04:00 CEST",
+   "sun_azimuth_deg": 43.8255,
+   "sun_elevation_deg": -30.8379,
+   "sun_true_elevation_deg": -30.8475,
+   "sun_spa_apparent_elevation_deg": -30.8475,
+   "moon_azimuth_deg": 345.3078,
+   "moon_elevation_deg": -26.0263,
+   "moon_illuminated_fraction": 0.1868,
+   "sidereal_deg": 224.68992,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2020-07-07T11:34:28Z",
+   "unix": 1594121668,
+   "zurich_offset_s": 7200,
+   "local_text": "7 Jul 2020 13:34 CEST",
+   "sun_azimuth_deg": 180.2588,
+   "sun_elevation_deg": 66.4863,
+   "sun_true_elevation_deg": 66.4793,
+   "sun_spa_apparent_elevation_deg": 66.4866,
+   "moon_azimuth_deg": 306.1208,
+   "moon_elevation_deg": -54.8498,
+   "moon_illuminated_fraction": 0.9425,
+   "sidereal_deg": 107.26453,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2020-10-25T00:30:00Z",
+   "unix": 1603585800,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Oct 2020 02:30 CEST",
+   "sun_azimuth_deg": 31.8852,
+   "sun_elevation_deg": -52.4436,
+   "sun_true_elevation_deg": -52.4481,
+   "sun_spa_apparent_elevation_deg": -52.4481,
+   "moon_azimuth_deg": 253.7094,
+   "moon_elevation_deg": -11.91,
+   "moon_illuminated_fraction": 0.6416,
+   "sidereal_deg": 49.11426,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2020-10-25T00:59:59Z",
+   "unix": 1603587599,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Oct 2020 02:59 CEST",
+   "sun_azimuth_deg": 42.3934,
+   "sun_elevation_deg": -49.3035,
+   "sun_true_elevation_deg": -49.3084,
+   "sun_spa_apparent_elevation_deg": -49.3084,
+   "moon_azimuth_deg": 258.6966,
+   "moon_elevation_deg": -16.729,
+   "moon_illuminated_fraction": 0.6436,
+   "sidereal_deg": 56.63062,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2020-10-25T01:00:00Z",
+   "unix": 1603587600,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Oct 2020 02:00 CET",
+   "sun_azimuth_deg": 42.3989,
+   "sun_elevation_deg": -49.3015,
+   "sun_true_elevation_deg": -49.3065,
+   "sun_spa_apparent_elevation_deg": -49.3065,
+   "moon_azimuth_deg": 258.6994,
+   "moon_elevation_deg": -16.7317,
+   "moon_illuminated_fraction": 0.6436,
+   "sidereal_deg": 56.63479,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2020-10-25T02:00:00Z",
+   "unix": 1603591200,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Oct 2020 03:00 CET",
+   "sun_azimuth_deg": 59.8426,
+   "sun_elevation_deg": -41.1926,
+   "sun_true_elevation_deg": -41.1992,
+   "sun_spa_apparent_elevation_deg": -41.1992,
+   "moon_azimuth_deg": 268.8665,
+   "moon_elevation_deg": -26.5781,
+   "moon_illuminated_fraction": 0.648,
+   "sidereal_deg": 71.67586,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2021-03-13T16:54:02Z",
+   "unix": 1615654442,
+   "zurich_offset_s": 3600,
+   "local_text": "13 Mar 2021 17:54 CET",
+   "sun_azimuth_deg": 260.1494,
+   "sun_elevation_deg": 5.885,
+   "sun_true_elevation_deg": 5.7413,
+   "sun_spa_apparent_elevation_deg": 5.8856,
+   "moon_azimuth_deg": 254.3797,
+   "moon_elevation_deg": 5.7155,
+   "moon_illuminated_fraction": 0.0025,
+   "sidereal_deg": 72.80113,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2021-03-28T00:59:59Z",
+   "unix": 1616893199,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Mar 2021 01:59 CET",
+   "sun_azimuth_deg": 27.3889,
+   "sun_elevation_deg": -37.414,
+   "sun_true_elevation_deg": -37.4215,
+   "sun_spa_apparent_elevation_deg": -37.4215,
+   "moon_azimuth_deg": 220.7114,
+   "moon_elevation_deg": 41.6789,
+   "moon_illuminated_fraction": 0.9907,
+   "sidereal_deg": 208.42031,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2021-03-28T01:00:00Z",
+   "unix": 1616893200,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Mar 2021 03:00 CEST",
+   "sun_azimuth_deg": 27.3939,
+   "sun_elevation_deg": -37.4126,
+   "sun_true_elevation_deg": -37.4202,
+   "sun_spa_apparent_elevation_deg": -37.4202,
+   "moon_azimuth_deg": 220.7162,
+   "moon_elevation_deg": 41.677,
+   "moon_illuminated_fraction": 0.9907,
+   "sidereal_deg": 208.42449,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2021-06-07T19:34:33Z",
+   "unix": 1623094473,
+   "zurich_offset_s": 7200,
+   "local_text": "7 Jun 2021 21:34 CEST",
+   "sun_azimuth_deg": 308.1946,
+   "sun_elevation_deg": -3.1457,
+   "sun_true_elevation_deg": -3.2474,
+   "sun_spa_apparent_elevation_deg": -3.2474,
+   "moon_azimuth_deg": 329.5249,
+   "moon_elevation_deg": -24.0503,
+   "moon_illuminated_fraction": 0.0642,
+   "sidereal_deg": 197.80584,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2021-06-20T19:43:04Z",
+   "unix": 1624218184,
+   "zurich_offset_s": 7200,
+   "local_text": "20 Jun 2021 21:43 CEST",
+   "sun_azimuth_deg": 309.6312,
+   "sun_elevation_deg": -3.4417,
+   "sun_true_elevation_deg": -3.5351,
+   "sun_spa_apparent_elevation_deg": -3.5351,
+   "moon_azimuth_deg": 179.1486,
+   "moon_elevation_deg": 32.9827,
+   "moon_illuminated_fraction": 0.7893,
+   "sidereal_deg": 212.75425,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2021-07-14T22:00:00Z",
+   "unix": 1626300000,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Jul 2021 00:00 CEST",
+   "sun_azimuth_deg": 336.651,
+   "sun_elevation_deg": -19.0828,
+   "sun_true_elevation_deg": -19.0995,
+   "sun_spa_apparent_elevation_deg": -19.0995,
+   "moon_azimuth_deg": 280.999,
+   "moon_elevation_deg": 0.045,
+   "moon_illuminated_fraction": 0.2344,
+   "sidereal_deg": 270.73685,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2021-10-31T00:59:59Z",
+   "unix": 1635641999,
+   "zurich_offset_s": 7200,
+   "local_text": "31 Oct 2021 02:59 CEST",
+   "sun_azimuth_deg": 44.0111,
+   "sun_elevation_deg": -50.9268,
+   "sun_true_elevation_deg": -50.9314,
+   "sun_spa_apparent_elevation_deg": -50.9314,
+   "moon_azimuth_deg": 75.7406,
+   "moon_elevation_deg": 6.1946,
+   "moon_illuminated_fraction": 0.2765,
+   "sidereal_deg": 62.30579,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2021-10-31T01:00:00Z",
+   "unix": 1635642000,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Oct 2021 02:00 CET",
+   "sun_azimuth_deg": 44.0167,
+   "sun_elevation_deg": -50.9247,
+   "sun_true_elevation_deg": -50.9294,
+   "sun_spa_apparent_elevation_deg": -50.9294,
+   "moon_azimuth_deg": 75.7435,
+   "moon_elevation_deg": 6.1973,
+   "moon_illuminated_fraction": 0.2765,
+   "sidereal_deg": 62.30997,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2022-01-25T05:04:32Z",
+   "unix": 1643087072,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Jan 2022 06:04 CET",
+   "sun_azimuth_deg": 97.1597,
+   "sun_elevation_deg": -19.7763,
+   "sun_true_elevation_deg": -19.7923,
+   "sun_spa_apparent_elevation_deg": -19.7923,
+   "moon_azimuth_deg": 178.789,
+   "moon_elevation_deg": 33.7529,
+   "moon_illuminated_fraction": 0.5384,
+   "sidereal_deg": 208.37635,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2022-03-27T00:59:59Z",
+   "unix": 1648342799,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Mar 2022 01:59 CET",
+   "sun_azimuth_deg": 27.4784,
+   "sun_elevation_deg": -37.9048,
+   "sun_true_elevation_deg": -37.9122,
+   "sun_spa_apparent_elevation_deg": -37.9122,
+   "moon_azimuth_deg": 103.7328,
+   "moon_elevation_deg": -22.5313,
+   "moon_illuminated_fraction": 0.2968,
+   "sidereal_deg": 207.19595,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2022-03-27T01:00:00Z",
+   "unix": 1648342800,
+   "zurich_offset_s": 7200,
+   "local_text": "27 Mar 2022 03:00 CEST",
+   "sun_azimuth_deg": 27.4834,
+   "sun_elevation_deg": -37.9034,
+   "sun_true_elevation_deg": -37.9108,
+   "sun_spa_apparent_elevation_deg": -37.9108,
+   "moon_azimuth_deg": 103.7354,
+   "moon_elevation_deg": -22.5286,
+   "moon_illuminated_fraction": 0.2968,
+   "sidereal_deg": 207.20013,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2022-04-28T09:50:17Z",
+   "unix": 1651139417,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Apr 2022 11:50 CEST",
+   "sun_azimuth_deg": 139.7326,
+   "sun_elevation_deg": 52.3171,
+   "sun_true_elevation_deg": 52.3046,
+   "sun_spa_apparent_elevation_deg": 52.3176,
+   "moon_azimuth_deg": 182.0448,
+   "moon_elevation_deg": 43.7769,
+   "moon_illuminated_fraction": 0.0634,
+   "sidereal_deg": 11.67465,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2022-05-10T13:10:47Z",
+   "unix": 1652188247,
+   "zurich_offset_s": 7200,
+   "local_text": "10 May 2022 15:10 CEST",
+   "sun_azimuth_deg": 226.3522,
+   "sun_elevation_deg": 54.2709,
+   "sun_true_elevation_deg": 54.2593,
+   "sun_spa_apparent_elevation_deg": 54.2714,
+   "moon_azimuth_deg": 82.367,
+   "moon_elevation_deg": 10.5384,
+   "moon_illuminated_fraction": 0.6591,
+   "sidereal_deg": 73.76465,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2022-10-13T11:55:33Z",
+   "unix": 1665662133,
+   "zurich_offset_s": 7200,
+   "local_text": "13 Oct 2022 13:55 CEST",
+   "sun_azimuth_deg": 192.2713,
+   "sun_elevation_deg": 35.3847,
+   "sun_true_elevation_deg": 35.362,
+   "sun_spa_apparent_elevation_deg": 35.3856,
+   "moon_azimuth_deg": 329.0871,
+   "moon_elevation_deg": -16.1878,
+   "moon_illuminated_fraction": 0.8669,
+   "sidereal_deg": 208.66581,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2022-10-16T21:31:57Z",
+   "unix": 1665955917,
+   "zurich_offset_s": 7200,
+   "local_text": "16 Oct 2022 23:31 CEST",
+   "sun_azimuth_deg": 321.1595,
+   "sun_elevation_deg": -47.0728,
+   "sun_true_elevation_deg": -47.0782,
+   "sun_spa_apparent_elevation_deg": -47.0782,
+   "moon_azimuth_deg": 57.1268,
+   "moon_elevation_deg": 5.7221,
+   "moon_illuminated_fraction": 0.5731,
+   "sidereal_deg": 356.11729,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2022-10-30T00:59:59Z",
+   "unix": 1667091599,
+   "zurich_offset_s": 7200,
+   "local_text": "30 Oct 2022 02:59 CEST",
+   "sun_azimuth_deg": 43.6693,
+   "sun_elevation_deg": -50.5862,
+   "sun_true_elevation_deg": -50.5909,
+   "sun_spa_apparent_elevation_deg": -50.5909,
+   "moon_azimuth_deg": 289.7814,
+   "moon_elevation_deg": -56.2254,
+   "moon_illuminated_fraction": 0.2512,
+   "sidereal_deg": 61.08143,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2022-10-30T01:00:00Z",
+   "unix": 1667091600,
+   "zurich_offset_s": 3600,
+   "local_text": "30 Oct 2022 02:00 CET",
+   "sun_azimuth_deg": 43.6748,
+   "sun_elevation_deg": -50.5842,
+   "sun_true_elevation_deg": -50.5889,
+   "sun_spa_apparent_elevation_deg": -50.5889,
+   "moon_azimuth_deg": 289.7856,
+   "moon_elevation_deg": -56.228,
+   "moon_illuminated_fraction": 0.2512,
+   "sidereal_deg": 61.08561,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2022-12-31T13:28:15Z",
+   "unix": 1672493295,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Dec 2022 14:28 CET",
+   "sun_azimuth_deg": 207.7145,
+   "sun_elevation_deg": 16.0976,
+   "sun_true_elevation_deg": 16.0423,
+   "sun_spa_apparent_elevation_deg": 16.0994,
+   "moon_azimuth_deg": 92.7838,
+   "moon_elevation_deg": 15.2244,
+   "moon_illuminated_fraction": 0.6603,
+   "sidereal_deg": 309.77041,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2023-01-11T20:20:40Z",
+   "unix": 1673468440,
+   "zurich_offset_s": 3600,
+   "local_text": "11 Jan 2023 21:20 CET",
+   "sun_azimuth_deg": 284.437,
+   "sun_elevation_deg": -43.5628,
+   "sun_true_elevation_deg": -43.5688,
+   "sun_spa_apparent_elevation_deg": -43.5688,
+   "moon_azimuth_deg": 73.5045,
+   "moon_elevation_deg": -2.861,
+   "moon_illuminated_fraction": 0.7941,
+   "sidereal_deg": 63.99898,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2023-01-13T14:31:34Z",
+   "unix": 1673620294,
+   "zurich_offset_s": 3600,
+   "local_text": "13 Jan 2023 15:31 CET",
+   "sun_azimuth_deg": 220.8853,
+   "sun_elevation_deg": 11.9391,
+   "sun_true_elevation_deg": 11.8643,
+   "sun_spa_apparent_elevation_deg": 11.9409,
+   "moon_azimuth_deg": 323.5235,
+   "moon_elevation_deg": -38.2637,
+   "moon_illuminated_fraction": 0.649,
+   "sidereal_deg": 338.45633,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2023-02-09T10:24:19Z",
+   "unix": 1675938259,
+   "zurich_offset_s": 3600,
+   "local_text": "9 Feb 2023 11:24 CET",
+   "sun_azimuth_deg": 158.5782,
+   "sun_elevation_deg": 26.7659,
+   "sun_true_elevation_deg": 26.734,
+   "sun_spa_apparent_elevation_deg": 26.7672,
+   "moon_azimuth_deg": 295.1161,
+   "moon_elevation_deg": -20.0491,
+   "moon_illuminated_fraction": 0.8822,
+   "sidereal_deg": 303.08707,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2023-02-25T08:45:16Z",
+   "unix": 1677314716,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Feb 2023 09:45 CET",
+   "sun_azimuth_deg": 131.9898,
+   "sun_elevation_deg": 22.2002,
+   "sun_true_elevation_deg": 22.1609,
+   "sun_spa_apparent_elevation_deg": 22.2017,
+   "moon_azimuth_deg": 66.6505,
+   "moon_elevation_deg": -0.2235,
+   "moon_illuminated_fraction": 0.3086,
+   "sidereal_deg": 294.02713,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2023-03-26T00:30:00Z",
+   "unix": 1679790600,
+   "zurich_offset_s": 3600,
+   "local_text": "26 Mar 2023 01:30 CET",
+   "sun_azimuth_deg": 18.2248,
+   "sun_elevation_deg": -40.4313,
+   "sun_true_elevation_deg": -40.4381,
+   "sun_spa_apparent_elevation_deg": -40.4381,
+   "moon_azimuth_deg": 323.5315,
+   "moon_elevation_deg": -14.063,
+   "moon_illuminated_fraction": 0.2087,
+   "sidereal_deg": 198.45524,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2023-03-26T00:59:59Z",
+   "unix": 1679792399,
+   "zurich_offset_s": 3600,
+   "local_text": "26 Mar 2023 01:59 CET",
+   "sun_azimuth_deg": 27.5648,
+   "sun_elevation_deg": -38.3959,
+   "sun_true_elevation_deg": -38.4032,
+   "sun_spa_apparent_elevation_deg": -38.4032,
+   "moon_azimuth_deg": 329.8633,
+   "moon_elevation_deg": -16.7391,
+   "moon_illuminated_fraction": 0.2109,
+   "sidereal_deg": 205.9716,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2023-03-26T01:00:00Z",
+   "unix": 1679792400,
+   "zurich_offset_s": 7200,
+   "local_text": "26 Mar 2023 03:00 CEST",
+   "sun_azimuth_deg": 27.5699,
+   "sun_elevation_deg": -38.3945,
+   "sun_true_elevation_deg": -38.4018,
+   "sun_spa_apparent_elevation_deg": -38.4018,
+   "moon_azimuth_deg": 329.8669,
+   "moon_elevation_deg": -16.7405,
+   "moon_illuminated_fraction": 0.2109,
+   "sidereal_deg": 205.97577,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2023-03-26T02:00:00Z",
+   "unix": 1679796000,
+   "zurich_offset_s": 7200,
+   "local_text": "26 Mar 2023 04:00 CEST",
+   "sun_azimuth_deg": 44.3737,
+   "sun_elevation_deg": -32.248,
+   "sun_true_elevation_deg": -32.2571,
+   "sun_spa_apparent_elevation_deg": -32.2571,
+   "moon_azimuth_deg": 343.3262,
+   "moon_elevation_deg": -20.5693,
+   "moon_illuminated_fraction": 0.2154,
+   "sidereal_deg": 221.01684,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2023-09-05T21:59:59Z",
+   "unix": 1693951199,
+   "zurich_offset_s": 7200,
+   "local_text": "5 Sep 2023 23:59 CEST",
+   "sun_azimuth_deg": 333.4975,
+   "sun_elevation_deg": -33.8148,
+   "sun_true_elevation_deg": -33.8234,
+   "sun_spa_apparent_elevation_deg": -33.8234,
+   "moon_azimuth_deg": 69.562,
+   "moon_elevation_deg": 11.8292,
+   "moon_illuminated_fraction": 0.6013,
+   "sidereal_deg": 322.49456,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2023-09-05T22:00:00Z",
+   "unix": 1693951200,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 00:00 CEST",
+   "sun_azimuth_deg": 333.5022,
+   "sun_elevation_deg": -33.8161,
+   "sun_true_elevation_deg": -33.8247,
+   "sun_spa_apparent_elevation_deg": -33.8247,
+   "moon_azimuth_deg": 69.5647,
+   "moon_elevation_deg": 11.8319,
+   "moon_illuminated_fraction": 0.6013,
+   "sidereal_deg": 322.49874,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2023-09-06T03:35:20Z",
+   "unix": 1693971320,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 05:35 CEST",
+   "sun_azimuth_deg": 64.6373,
+   "sun_elevation_deg": -14.0,
+   "sun_true_elevation_deg": -14.0231,
+   "sun_spa_apparent_elevation_deg": -14.0231,
+   "moon_azimuth_deg": 146.3357,
+   "moon_elevation_deg": 64.6366,
+   "moon_illuminated_fraction": 0.5808,
+   "sidereal_deg": 46.5616,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T04:06:25Z",
+   "unix": 1693973185,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 06:06 CEST",
+   "sun_azimuth_deg": 70.6586,
+   "sun_elevation_deg": -9.0026,
+   "sun_true_elevation_deg": -9.0389,
+   "sun_spa_apparent_elevation_deg": -9.0389,
+   "moon_azimuth_deg": 162.3353,
+   "moon_elevation_deg": 67.0057,
+   "moon_illuminated_fraction": 0.5792,
+   "sidereal_deg": 54.35371,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T04:30:23Z",
+   "unix": 1693974623,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 06:30 CEST",
+   "sun_azimuth_deg": 75.1286,
+   "sun_elevation_deg": -5.0017,
+   "sun_true_elevation_deg": -5.0668,
+   "sun_spa_apparent_elevation_deg": -5.0668,
+   "moon_azimuth_deg": 176.1402,
+   "moon_elevation_deg": 67.8255,
+   "moon_illuminated_fraction": 0.5781,
+   "sidereal_deg": 60.36178,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T04:42:01Z",
+   "unix": 1693975321,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 06:42 CEST",
+   "sun_azimuth_deg": 77.2586,
+   "sun_elevation_deg": -3.0011,
+   "sun_true_elevation_deg": -3.1074,
+   "sun_spa_apparent_elevation_deg": -3.1074,
+   "moon_azimuth_deg": 183.0317,
+   "moon_elevation_deg": 67.8671,
+   "moon_illuminated_fraction": 0.5775,
+   "sidereal_deg": 63.27807,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T04:52:53Z",
+   "unix": 1693975973,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 06:52 CEST",
+   "sun_azimuth_deg": 79.2306,
+   "sun_elevation_deg": -1.0003,
+   "sun_true_elevation_deg": -1.2622,
+   "sun_spa_apparent_elevation_deg": -1.2622,
+   "moon_azimuth_deg": 189.4329,
+   "moon_elevation_deg": 67.6915,
+   "moon_illuminated_fraction": 0.577,
+   "sidereal_deg": 66.00218,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T04:56:54Z",
+   "unix": 1693976214,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 06:56 CEST",
+   "sun_azimuth_deg": 79.9561,
+   "sun_elevation_deg": -0.004,
+   "sun_true_elevation_deg": -0.577,
+   "sun_spa_apparent_elevation_deg": -0.0048,
+   "moon_azimuth_deg": 191.7692,
+   "moon_elevation_deg": 67.5751,
+   "moon_illuminated_fraction": 0.5768,
+   "sidereal_deg": 67.00909,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T05:03:44Z",
+   "unix": 1693976624,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 07:03 CEST",
+   "sun_azimuth_deg": 81.1869,
+   "sun_elevation_deg": 0.9983,
+   "sun_true_elevation_deg": 0.5923,
+   "sun_spa_apparent_elevation_deg": 0.9966,
+   "moon_azimuth_deg": 195.6878,
+   "moon_elevation_deg": 67.3149,
+   "moon_illuminated_fraction": 0.5765,
+   "sidereal_deg": 68.72211,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T05:13:16Z",
+   "unix": 1693977196,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 07:13 CEST",
+   "sun_azimuth_deg": 82.8985,
+   "sun_elevation_deg": 2.4992,
+   "sun_true_elevation_deg": 2.2299,
+   "sun_spa_apparent_elevation_deg": 2.4966,
+   "moon_azimuth_deg": 201.0037,
+   "moon_elevation_deg": 66.8258,
+   "moon_illuminated_fraction": 0.576,
+   "sidereal_deg": 71.11196,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T05:28:22Z",
+   "unix": 1693978102,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 07:28 CEST",
+   "sun_azimuth_deg": 85.6025,
+   "sun_elevation_deg": 4.9994,
+   "sun_true_elevation_deg": 4.8357,
+   "sun_spa_apparent_elevation_deg": 5.0003,
+   "moon_azimuth_deg": 208.9711,
+   "moon_elevation_deg": 65.7731,
+   "moon_illuminated_fraction": 0.5753,
+   "sidereal_deg": 74.8973,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2023-09-06T11:25:00Z",
+   "unix": 1693999500,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 13:25 CEST",
+   "sun_azimuth_deg": 179.0429,
+   "sun_elevation_deg": 50.4272,
+   "sun_true_elevation_deg": 50.4139,
+   "sun_spa_apparent_elevation_deg": 50.4278,
+   "moon_azimuth_deg": 293.5418,
+   "moon_elevation_deg": 11.4217,
+   "moon_illuminated_fraction": 0.5545,
+   "sidereal_deg": 164.29974,
+   "tags": [
+    "flight"
+   ]
+  },
+  {
+   "utc": "2023-09-06T11:40:00Z",
+   "unix": 1694000400,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 13:40 CEST",
+   "sun_azimuth_deg": 184.886,
+   "sun_elevation_deg": 50.3341,
+   "sun_true_elevation_deg": 50.3207,
+   "sun_spa_apparent_elevation_deg": 50.3346,
+   "moon_azimuth_deg": 295.9577,
+   "moon_elevation_deg": 9.1565,
+   "moon_illuminated_fraction": 0.5534,
+   "sidereal_deg": 168.06001,
+   "tags": [
+    "start"
+   ]
+  },
+  {
+   "utc": "2023-09-06T11:40:30Z",
+   "unix": 1694000430,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 13:40 CEST",
+   "sun_azimuth_deg": 185.0802,
+   "sun_elevation_deg": 50.3264,
+   "sun_true_elevation_deg": 50.313,
+   "sun_spa_apparent_elevation_deg": 50.327,
+   "moon_azimuth_deg": 296.0386,
+   "moon_elevation_deg": 9.0818,
+   "moon_illuminated_fraction": 0.5534,
+   "sidereal_deg": 168.18535,
+   "tags": [
+    "minute-floor"
+   ]
+  },
+  {
+   "utc": "2023-09-06T11:40:59Z",
+   "unix": 1694000459,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 13:40 CEST",
+   "sun_azimuth_deg": 185.2679,
+   "sun_elevation_deg": 50.3187,
+   "sun_true_elevation_deg": 50.3053,
+   "sun_spa_apparent_elevation_deg": 50.3193,
+   "moon_azimuth_deg": 296.1169,
+   "moon_elevation_deg": 9.0096,
+   "moon_illuminated_fraction": 0.5533,
+   "sidereal_deg": 168.30651,
+   "tags": [
+    "minute-floor"
+   ]
+  },
+  {
+   "utc": "2023-09-06T11:55:00Z",
+   "unix": 1694001300,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 13:55 CEST",
+   "sun_azimuth_deg": 190.6769,
+   "sun_elevation_deg": 49.9775,
+   "sun_true_elevation_deg": 49.964,
+   "sun_spa_apparent_elevation_deg": 49.9781,
+   "moon_azimuth_deg": 298.4,
+   "moon_elevation_deg": 6.9397,
+   "moon_illuminated_fraction": 0.5523,
+   "sidereal_deg": 171.82027,
+   "tags": [
+    "flight"
+   ]
+  },
+  {
+   "utc": "2023-09-06T17:25:46Z",
+   "unix": 1694021146,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 19:25 CEST",
+   "sun_azimuth_deg": 274.1291,
+   "sun_elevation_deg": 5.0006,
+   "sun_true_elevation_deg": 4.8369,
+   "sun_spa_apparent_elevation_deg": 5.0015,
+   "moon_azimuth_deg": 5.0871,
+   "moon_elevation_deg": -18.8755,
+   "moon_illuminated_fraction": 0.5229,
+   "sidereal_deg": 254.73834,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T17:40:49Z",
+   "unix": 1694022049,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 19:40 CEST",
+   "sun_azimuth_deg": 276.8195,
+   "sun_elevation_deg": 2.502,
+   "sun_true_elevation_deg": 2.2329,
+   "sun_spa_apparent_elevation_deg": 2.4994,
+   "moon_azimuth_deg": 8.5,
+   "moon_elevation_deg": -18.5523,
+   "moon_illuminated_fraction": 0.5214,
+   "sidereal_deg": 258.51114,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T17:50:19Z",
+   "unix": 1694022619,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 19:50 CEST",
+   "sun_azimuth_deg": 278.5218,
+   "sun_elevation_deg": 1.0019,
+   "sun_true_elevation_deg": 0.5963,
+   "sun_spa_apparent_elevation_deg": 1.0002,
+   "moon_azimuth_deg": 10.6407,
+   "moon_elevation_deg": -18.2725,
+   "moon_illuminated_fraction": 0.5205,
+   "sidereal_deg": 260.89265,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T17:57:08Z",
+   "unix": 1694023028,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 19:57 CEST",
+   "sun_azimuth_deg": 279.7472,
+   "sun_elevation_deg": 0.0011,
+   "sun_true_elevation_deg": -0.5736,
+   "sun_spa_apparent_elevation_deg": -0.0019,
+   "moon_azimuth_deg": 12.1688,
+   "moon_elevation_deg": -18.036,
+   "moon_illuminated_fraction": 0.5199,
+   "sidereal_deg": 262.60148,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T18:01:09Z",
+   "unix": 1694023269,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 20:01 CEST",
+   "sun_azimuth_deg": 280.4712,
+   "sun_elevation_deg": -0.9988,
+   "sun_true_elevation_deg": -1.261,
+   "sun_spa_apparent_elevation_deg": -1.261,
+   "moon_azimuth_deg": 13.0657,
+   "moon_elevation_deg": -17.8829,
+   "moon_illuminated_fraction": 0.5195,
+   "sidereal_deg": 263.6084,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T18:11:58Z",
+   "unix": 1694023918,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 20:11 CEST",
+   "sun_azimuth_deg": 282.43,
+   "sun_elevation_deg": -2.9974,
+   "sun_true_elevation_deg": -3.1038,
+   "sun_spa_apparent_elevation_deg": -3.1038,
+   "moon_azimuth_deg": 15.4667,
+   "moon_elevation_deg": -17.4202,
+   "moon_illuminated_fraction": 0.5185,
+   "sidereal_deg": 266.31997,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T18:23:34Z",
+   "unix": 1694024614,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 20:23 CEST",
+   "sun_azimuth_deg": 284.549,
+   "sun_elevation_deg": -4.9995,
+   "sun_true_elevation_deg": -5.0646,
+   "sun_spa_apparent_elevation_deg": -5.0646,
+   "moon_azimuth_deg": 18.0158,
+   "moon_elevation_deg": -16.8436,
+   "moon_illuminated_fraction": 0.5174,
+   "sidereal_deg": 269.22791,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T18:47:25Z",
+   "unix": 1694026045,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 20:47 CEST",
+   "sun_azimuth_deg": 288.9859,
+   "sun_elevation_deg": -8.9974,
+   "sun_true_elevation_deg": -9.0337,
+   "sun_spa_apparent_elevation_deg": -9.0337,
+   "moon_azimuth_deg": 23.1599,
+   "moon_elevation_deg": -15.4058,
+   "moon_illuminated_fraction": 0.5151,
+   "sidereal_deg": 275.20673,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T19:18:22Z",
+   "unix": 1694027902,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Sep 2023 21:18 CEST",
+   "sun_azimuth_deg": 294.964,
+   "sun_elevation_deg": -13.999,
+   "sun_true_elevation_deg": -14.0221,
+   "sun_spa_apparent_elevation_deg": -14.0221,
+   "moon_azimuth_deg": 29.6126,
+   "moon_elevation_deg": -13.0618,
+   "moon_illuminated_fraction": 0.5123,
+   "sidereal_deg": 282.96542,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2023-09-06T23:59:59Z",
+   "unix": 1694044799,
+   "zurich_offset_s": 7200,
+   "local_text": "7 Sep 2023 01:59 CEST",
+   "sun_azimuth_deg": 10.228,
+   "sun_elevation_deg": -37.2242,
+   "sun_true_elevation_deg": -37.2318,
+   "sun_spa_apparent_elevation_deg": -37.2318,
+   "moon_azimuth_deg": 77.611,
+   "moon_elevation_deg": 24.8127,
+   "moon_illuminated_fraction": 0.4893,
+   "sidereal_deg": 353.56234,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2023-09-07T00:00:00Z",
+   "unix": 1694044800,
+   "zurich_offset_s": 7200,
+   "local_text": "7 Sep 2023 02:00 CEST",
+   "sun_azimuth_deg": 10.2332,
+   "sun_elevation_deg": -37.2237,
+   "sun_true_elevation_deg": -37.2313,
+   "sun_spa_apparent_elevation_deg": -37.2313,
+   "moon_azimuth_deg": 77.6135,
+   "moon_elevation_deg": 24.8154,
+   "moon_illuminated_fraction": 0.4893,
+   "sidereal_deg": 353.56652,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2023-09-07T11:25:00Z",
+   "unix": 1694085900,
+   "zurich_offset_s": 7200,
+   "local_text": "7 Sep 2023 13:25 CEST",
+   "sun_azimuth_deg": 179.1813,
+   "sun_elevation_deg": 50.055,
+   "sun_true_elevation_deg": 50.0415,
+   "sun_spa_apparent_elevation_deg": 50.0556,
+   "moon_azimuth_deg": 286.9014,
+   "moon_elevation_deg": 21.4201,
+   "moon_illuminated_fraction": 0.4524,
+   "sidereal_deg": 165.28539,
+   "tags": [
+    "flight"
+   ]
+  },
+  {
+   "utc": "2023-09-07T11:55:00Z",
+   "unix": 1694087700,
+   "zurich_offset_s": 7200,
+   "local_text": "7 Sep 2023 13:55 CEST",
+   "sun_azimuth_deg": 190.7316,
+   "sun_elevation_deg": 49.5966,
+   "sun_true_elevation_deg": 49.5829,
+   "sun_spa_apparent_elevation_deg": 49.5972,
+   "moon_azimuth_deg": 291.5327,
+   "moon_elevation_deg": 16.6769,
+   "moon_illuminated_fraction": 0.4503,
+   "sidereal_deg": 172.80592,
+   "tags": [
+    "flight"
+   ]
+  },
+  {
+   "utc": "2023-10-29T00:30:00Z",
+   "unix": 1698539400,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Oct 2023 02:30 CEST",
+   "sun_azimuth_deg": 32.7025,
+   "sun_elevation_deg": -53.4403,
+   "sun_true_elevation_deg": -53.4445,
+   "sun_spa_apparent_elevation_deg": -53.4445,
+   "moon_azimuth_deg": 211.1171,
+   "moon_elevation_deg": 55.2473,
+   "moon_illuminated_fraction": 0.9997,
+   "sidereal_deg": 52.34072,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2023-10-29T00:59:59Z",
+   "unix": 1698541199,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Oct 2023 02:59 CEST",
+   "sun_azimuth_deg": 43.328,
+   "sun_elevation_deg": -50.2367,
+   "sun_true_elevation_deg": -50.2415,
+   "sun_spa_apparent_elevation_deg": -50.2415,
+   "moon_azimuth_deg": 222.0497,
+   "moon_elevation_deg": 52.3178,
+   "moon_illuminated_fraction": 0.9996,
+   "sidereal_deg": 59.85707,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2023-10-29T01:00:00Z",
+   "unix": 1698541200,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Oct 2023 02:00 CET",
+   "sun_azimuth_deg": 43.3336,
+   "sun_elevation_deg": -50.2347,
+   "sun_true_elevation_deg": -50.2395,
+   "sun_spa_apparent_elevation_deg": -50.2395,
+   "moon_azimuth_deg": 222.0554,
+   "moon_elevation_deg": 52.316,
+   "moon_illuminated_fraction": 0.9996,
+   "sidereal_deg": 59.86125,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2023-10-29T02:00:00Z",
+   "unix": 1698544800,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Oct 2023 03:00 CET",
+   "sun_azimuth_deg": 60.8393,
+   "sun_elevation_deg": -42.0165,
+   "sun_true_elevation_deg": -42.0229,
+   "sun_spa_apparent_elevation_deg": -42.0229,
+   "moon_azimuth_deg": 240.0216,
+   "moon_elevation_deg": 44.5859,
+   "moon_illuminated_fraction": 0.9995,
+   "sidereal_deg": 74.90232,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2024-02-04T05:11:51Z",
+   "unix": 1707023511,
+   "zurich_offset_s": 3600,
+   "local_text": "4 Feb 2024 06:11 CET",
+   "sun_azimuth_deg": 96.1725,
+   "sun_elevation_deg": -16.9965,
+   "sun_true_elevation_deg": -17.0154,
+   "sun_spa_apparent_elevation_deg": -17.0154,
+   "moon_azimuth_deg": 163.7587,
+   "moon_elevation_deg": 18.144,
+   "moon_illuminated_fraction": 0.3736,
+   "sidereal_deg": 219.58958,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2024-02-28T22:59:59Z",
+   "unix": 1709161199,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Feb 2024 23:59 CET",
+   "sun_azimuth_deg": 343.589,
+   "sun_elevation_deg": -50.8224,
+   "sun_true_elevation_deg": -50.8271,
+   "sun_spa_apparent_elevation_deg": -50.8271,
+   "moon_azimuth_deg": 124.6011,
+   "moon_elevation_deg": 13.4774,
+   "moon_illuminated_fraction": 0.8299,
+   "sidereal_deg": 151.00956,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2024-02-28T23:00:00Z",
+   "unix": 1709161200,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Feb 2024 00:00 CET",
+   "sun_azimuth_deg": 343.5954,
+   "sun_elevation_deg": -50.8232,
+   "sun_true_elevation_deg": -50.8279,
+   "sun_spa_apparent_elevation_deg": -50.8279,
+   "moon_azimuth_deg": 124.6044,
+   "moon_elevation_deg": 13.4797,
+   "moon_illuminated_fraction": 0.8299,
+   "sidereal_deg": 151.01374,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2024-02-29T12:00:00Z",
+   "unix": 1709208000,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Feb 2024 13:00 CET",
+   "sun_azimuth_deg": 185.7105,
+   "sun_elevation_deg": 36.1665,
+   "sun_true_elevation_deg": 36.1444,
+   "sun_spa_apparent_elevation_deg": 36.1674,
+   "moon_azimuth_deg": 294.8788,
+   "moon_elevation_deg": -41.6518,
+   "moon_illuminated_fraction": 0.796,
+   "sidereal_deg": 346.54763,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2024-02-29T22:59:59Z",
+   "unix": 1709247599,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Feb 2024 23:59 CET",
+   "sun_azimuth_deg": 343.7801,
+   "sun_elevation_deg": -50.4597,
+   "sun_true_elevation_deg": -50.4645,
+   "sun_spa_apparent_elevation_deg": -50.4645,
+   "moon_azimuth_deg": 119.6519,
+   "moon_elevation_deg": 3.3312,
+   "moon_illuminated_fraction": 0.7515,
+   "sidereal_deg": 151.99521,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2024-02-29T23:00:00Z",
+   "unix": 1709247600,
+   "zurich_offset_s": 3600,
+   "local_text": "1 Mar 2024 00:00 CET",
+   "sun_azimuth_deg": 343.7865,
+   "sun_elevation_deg": -50.4605,
+   "sun_true_elevation_deg": -50.4653,
+   "sun_spa_apparent_elevation_deg": -50.4653,
+   "moon_azimuth_deg": 119.6549,
+   "moon_elevation_deg": 3.3336,
+   "moon_illuminated_fraction": 0.7515,
+   "sidereal_deg": 151.99939,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2024-03-31T00:30:00Z",
+   "unix": 1711845000,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Mar 2024 01:30 CET",
+   "sun_azimuth_deg": 18.143,
+   "sun_elevation_deg": -38.1442,
+   "sun_true_elevation_deg": -38.1515,
+   "sun_spa_apparent_elevation_deg": -38.1515,
+   "moon_azimuth_deg": 137.5675,
+   "moon_elevation_deg": 3.4417,
+   "moon_illuminated_fraction": 0.7125,
+   "sidereal_deg": 204.13041,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2024-03-31T00:59:59Z",
+   "unix": 1711846799,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Mar 2024 01:59 CET",
+   "sun_azimuth_deg": 27.1797,
+   "sun_elevation_deg": -36.1286,
+   "sun_true_elevation_deg": -36.1365,
+   "sun_spa_apparent_elevation_deg": -36.1365,
+   "moon_azimuth_deg": 143.1918,
+   "moon_elevation_deg": 6.6068,
+   "moon_illuminated_fraction": 0.711,
+   "sidereal_deg": 211.64677,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2024-03-31T01:00:00Z",
+   "unix": 1711846800,
+   "zurich_offset_s": 7200,
+   "local_text": "31 Mar 2024 03:00 CEST",
+   "sun_azimuth_deg": 27.1846,
+   "sun_elevation_deg": -36.1272,
+   "sun_true_elevation_deg": -36.1351,
+   "sun_spa_apparent_elevation_deg": -36.1351,
+   "moon_azimuth_deg": 143.195,
+   "moon_elevation_deg": 6.6084,
+   "moon_illuminated_fraction": 0.711,
+   "sidereal_deg": 211.65095,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2024-03-31T02:00:00Z",
+   "unix": 1711850400,
+   "zurich_offset_s": 7200,
+   "local_text": "31 Mar 2024 04:00 CEST",
+   "sun_azimuth_deg": 43.5513,
+   "sun_elevation_deg": -30.071,
+   "sun_true_elevation_deg": -30.081,
+   "sun_spa_apparent_elevation_deg": -30.081,
+   "moon_azimuth_deg": 155.1862,
+   "moon_elevation_deg": 11.6866,
+   "moon_illuminated_fraction": 0.7081,
+   "sidereal_deg": 226.69202,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2024-04-19T21:33:00Z",
+   "unix": 1713562380,
+   "zurich_offset_s": 7200,
+   "local_text": "19 Apr 2024 23:33 CEST",
+   "sun_azimuth_deg": 328.1309,
+   "sun_elevation_deg": -26.8672,
+   "sun_true_elevation_deg": -26.8786,
+   "sun_spa_apparent_elevation_deg": -26.8786,
+   "moon_azimuth_deg": 198.7387,
+   "moon_elevation_deg": 50.2525,
+   "moon_illuminated_fraction": 0.8554,
+   "sidereal_deg": 179.47221,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2024-10-08T22:02:37Z",
+   "unix": 1728424957,
+   "zurich_offset_s": 7200,
+   "local_text": "9 Oct 2024 00:02 CEST",
+   "sun_azimuth_deg": 332.4495,
+   "sun_elevation_deg": -47.2404,
+   "sun_true_elevation_deg": -47.2457,
+   "sun_spa_apparent_elevation_deg": -47.2457,
+   "moon_azimuth_deg": 251.496,
+   "moon_elevation_deg": -23.0948,
+   "moon_illuminated_fraction": 0.308,
+   "sidereal_deg": 356.42799,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2024-10-27T00:30:00Z",
+   "unix": 1729989000,
+   "zurich_offset_s": 7200,
+   "local_text": "27 Oct 2024 02:30 CEST",
+   "sun_azimuth_deg": 32.4018,
+   "sun_elevation_deg": -53.0637,
+   "sun_true_elevation_deg": -53.068,
+   "sun_spa_apparent_elevation_deg": -53.068,
+   "moon_azimuth_deg": 69.7512,
+   "moon_elevation_deg": -2.7764,
+   "moon_illuminated_fraction": 0.2431,
+   "sidereal_deg": 51.11636,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2024-10-27T00:59:59Z",
+   "unix": 1729990799,
+   "zurich_offset_s": 7200,
+   "local_text": "27 Oct 2024 02:59 CEST",
+   "sun_azimuth_deg": 42.9821,
+   "sun_elevation_deg": -49.8834,
+   "sun_true_elevation_deg": -49.8883,
+   "sun_spa_apparent_elevation_deg": -49.8883,
+   "moon_azimuth_deg": 75.0588,
+   "moon_elevation_deg": 1.9646,
+   "moon_illuminated_fraction": 0.2413,
+   "sidereal_deg": 58.63272,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2024-10-27T01:00:00Z",
+   "unix": 1729990800,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Oct 2024 02:00 CET",
+   "sun_azimuth_deg": 42.9877,
+   "sun_elevation_deg": -49.8815,
+   "sun_true_elevation_deg": -49.8863,
+   "sun_spa_apparent_elevation_deg": -49.8863,
+   "moon_azimuth_deg": 75.0617,
+   "moon_elevation_deg": 1.9672,
+   "moon_illuminated_fraction": 0.2413,
+   "sidereal_deg": 58.63689,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2024-10-27T02:00:00Z",
+   "unix": 1729994400,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Oct 2024 03:00 CET",
+   "sun_azimuth_deg": 60.4692,
+   "sun_elevation_deg": -41.7036,
+   "sun_true_elevation_deg": -41.71,
+   "sun_spa_apparent_elevation_deg": -41.71,
+   "moon_azimuth_deg": 85.5036,
+   "moon_elevation_deg": 11.7966,
+   "moon_illuminated_fraction": 0.238,
+   "sidereal_deg": 73.67796,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2024-12-21T05:42:59Z",
+   "unix": 1734759779,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 06:42 CET",
+   "sun_azimuth_deg": 109.3671,
+   "sun_elevation_deg": -14.0007,
+   "sun_true_elevation_deg": -14.0238,
+   "sun_spa_apparent_elevation_deg": -14.0238,
+   "moon_azimuth_deg": 211.5978,
+   "moon_elevation_deg": 48.4614,
+   "moon_illuminated_fraction": 0.6601,
+   "sidereal_deg": 183.78703,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T06:13:58Z",
+   "unix": 1734761638,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 07:13 CET",
+   "sun_azimuth_deg": 114.5329,
+   "sun_elevation_deg": -9.0019,
+   "sun_true_elevation_deg": -9.0382,
+   "sun_spa_apparent_elevation_deg": -9.0382,
+   "moon_azimuth_deg": 221.5263,
+   "moon_elevation_deg": 45.1967,
+   "moon_illuminated_fraction": 0.6587,
+   "sidereal_deg": 191.55407,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T06:39:36Z",
+   "unix": 1734763176,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 07:39 CET",
+   "sun_azimuth_deg": 118.8976,
+   "sun_elevation_deg": -5.0002,
+   "sun_true_elevation_deg": -5.0653,
+   "sun_spa_apparent_elevation_deg": -5.0653,
+   "moon_azimuth_deg": 228.9144,
+   "moon_elevation_deg": 42.0034,
+   "moon_illuminated_fraction": 0.6575,
+   "sidereal_deg": 197.97995,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T06:52:38Z",
+   "unix": 1734763958,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 07:52 CET",
+   "sun_azimuth_deg": 121.161,
+   "sun_elevation_deg": -3.0008,
+   "sun_true_elevation_deg": -3.1071,
+   "sun_spa_apparent_elevation_deg": -3.1071,
+   "moon_azimuth_deg": 232.4052,
+   "moon_elevation_deg": 40.2411,
+   "moon_illuminated_fraction": 0.6569,
+   "sidereal_deg": 201.2472,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T07:05:12Z",
+   "unix": 1734764712,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 08:05 CET",
+   "sun_azimuth_deg": 123.3768,
+   "sun_elevation_deg": -1.0015,
+   "sun_true_elevation_deg": -1.2632,
+   "sun_spa_apparent_elevation_deg": -1.2632,
+   "moon_azimuth_deg": 235.6158,
+   "moon_elevation_deg": 38.4667,
+   "moon_illuminated_fraction": 0.6562,
+   "sidereal_deg": 204.39747,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T07:09:58Z",
+   "unix": 1734764998,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 08:09 CET",
+   "sun_azimuth_deg": 124.2266,
+   "sun_elevation_deg": -0.0016,
+   "sun_true_elevation_deg": -0.5758,
+   "sun_spa_apparent_elevation_deg": -0.0038,
+   "moon_azimuth_deg": 236.7962,
+   "moon_elevation_deg": 37.7763,
+   "moon_illuminated_fraction": 0.656,
+   "sidereal_deg": 205.5924,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T07:18:11Z",
+   "unix": 1734765491,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 08:18 CET",
+   "sun_azimuth_deg": 125.7045,
+   "sun_elevation_deg": 0.9988,
+   "sun_true_elevation_deg": 0.5928,
+   "sun_spa_apparent_elevation_deg": 0.997,
+   "moon_azimuth_deg": 238.7851,
+   "moon_elevation_deg": 36.5655,
+   "moon_illuminated_fraction": 0.6556,
+   "sidereal_deg": 207.65219,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T07:29:58Z",
+   "unix": 1734766198,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 08:29 CET",
+   "sun_azimuth_deg": 127.854,
+   "sun_elevation_deg": 2.4998,
+   "sun_true_elevation_deg": 2.2306,
+   "sun_spa_apparent_elevation_deg": 2.4973,
+   "moon_azimuth_deg": 241.5421,
+   "moon_elevation_deg": 34.7874,
+   "moon_illuminated_fraction": 0.655,
+   "sidereal_deg": 210.60609,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T07:49:28Z",
+   "unix": 1734767368,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 08:49 CET",
+   "sun_azimuth_deg": 131.4953,
+   "sun_elevation_deg": 4.9989,
+   "sun_true_elevation_deg": 4.8351,
+   "sun_spa_apparent_elevation_deg": 4.9998,
+   "moon_azimuth_deg": 245.8815,
+   "moon_elevation_deg": 31.7511,
+   "moon_illuminated_fraction": 0.654,
+   "sidereal_deg": 215.49444,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2024-12-21T15:05:05Z",
+   "unix": 1734793505,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 16:05 CET",
+   "sun_azimuth_deg": 228.5014,
+   "sun_elevation_deg": 5.0014,
+   "sun_true_elevation_deg": 4.8377,
+   "sun_spa_apparent_elevation_deg": 5.0023,
+   "moon_azimuth_deg": 332.3283,
+   "moon_elevation_deg": -34.0908,
+   "moon_illuminated_fraction": 0.6236,
+   "sidereal_deg": 324.69677,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T15:24:36Z",
+   "unix": 1734794676,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 16:24 CET",
+   "sun_azimuth_deg": 232.1458,
+   "sun_elevation_deg": 2.5002,
+   "sun_true_elevation_deg": 2.231,
+   "sun_spa_apparent_elevation_deg": 2.4976,
+   "moon_azimuth_deg": 337.7381,
+   "moon_elevation_deg": -35.5419,
+   "moon_illuminated_fraction": 0.6219,
+   "sidereal_deg": 329.5893,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T15:36:22Z",
+   "unix": 1734795382,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 16:36 CET",
+   "sun_azimuth_deg": 234.2923,
+   "sun_elevation_deg": 1.0012,
+   "sun_true_elevation_deg": 0.5955,
+   "sun_spa_apparent_elevation_deg": 0.9995,
+   "moon_azimuth_deg": 341.0945,
+   "moon_elevation_deg": -36.2782,
+   "moon_illuminated_fraction": 0.6209,
+   "sidereal_deg": 332.53902,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T15:44:35Z",
+   "unix": 1734795875,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 16:44 CET",
+   "sun_azimuth_deg": 235.7702,
+   "sun_elevation_deg": 0.0016,
+   "sun_true_elevation_deg": -0.5729,
+   "sun_spa_apparent_elevation_deg": -0.0014,
+   "moon_azimuth_deg": 343.4763,
+   "moon_elevation_deg": -36.7276,
+   "moon_illuminated_fraction": 0.6202,
+   "sidereal_deg": 334.59881,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T15:49:21Z",
+   "unix": 1734796161,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 16:49 CET",
+   "sun_azimuth_deg": 236.6201,
+   "sun_elevation_deg": -0.998,
+   "sun_true_elevation_deg": -1.2603,
+   "sun_spa_apparent_elevation_deg": -1.2603,
+   "moon_azimuth_deg": 344.8712,
+   "moon_elevation_deg": -36.9632,
+   "moon_illuminated_fraction": 0.6198,
+   "sidereal_deg": 335.79374,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T16:01:55Z",
+   "unix": 1734796915,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 17:01 CET",
+   "sun_azimuth_deg": 238.836,
+   "sun_elevation_deg": -2.9978,
+   "sun_true_elevation_deg": -3.1042,
+   "sun_spa_apparent_elevation_deg": -3.1042,
+   "moon_azimuth_deg": 348.5895,
+   "moon_elevation_deg": -37.4937,
+   "moon_illuminated_fraction": 0.6187,
+   "sidereal_deg": 338.94401,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T16:14:58Z",
+   "unix": 1734797698,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 17:14 CET",
+   "sun_azimuth_deg": 241.1022,
+   "sun_elevation_deg": -4.9997,
+   "sun_true_elevation_deg": -5.0648,
+   "sun_spa_apparent_elevation_deg": -5.0648,
+   "moon_azimuth_deg": 352.5031,
+   "moon_elevation_deg": -37.9025,
+   "moon_illuminated_fraction": 0.6176,
+   "sidereal_deg": 342.21544,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T16:40:35Z",
+   "unix": 1734799235,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 17:40 CET",
+   "sun_azimuth_deg": 245.4642,
+   "sun_elevation_deg": -8.9987,
+   "sun_true_elevation_deg": -9.035,
+   "sun_spa_apparent_elevation_deg": -9.035,
+   "moon_azimuth_deg": 0.2812,
+   "moon_elevation_deg": -38.2714,
+   "moon_illuminated_fraction": 0.6154,
+   "sidereal_deg": 348.63714,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-21T17:11:34Z",
+   "unix": 1734801094,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2024 18:11 CET",
+   "sun_azimuth_deg": 250.6301,
+   "sun_elevation_deg": -13.9975,
+   "sun_true_elevation_deg": -14.0206,
+   "sun_spa_apparent_elevation_deg": -14.0206,
+   "moon_azimuth_deg": 9.7025,
+   "moon_elevation_deg": -37.9401,
+   "moon_illuminated_fraction": 0.6128,
+   "sidereal_deg": 356.40418,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2024-12-31T22:59:59Z",
+   "unix": 1735685999,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Dec 2024 23:59 CET",
+   "sun_azimuth_deg": 341.3322,
+   "sun_elevation_deg": -66.0605,
+   "sun_true_elevation_deg": -66.0631,
+   "sun_spa_apparent_elevation_deg": -66.0631,
+   "moon_azimuth_deg": 310.5207,
+   "moon_elevation_deg": -63.5558,
+   "moon_illuminated_fraction": 0.0133,
+   "sidereal_deg": 93.60331,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2024-12-31T23:00:00Z",
+   "unix": 1735686000,
+   "zurich_offset_s": 3600,
+   "local_text": "1 Jan 2025 00:00 CET",
+   "sun_azimuth_deg": 341.3414,
+   "sun_elevation_deg": -66.0614,
+   "sun_true_elevation_deg": -66.064,
+   "sun_spa_apparent_elevation_deg": -66.064,
+   "moon_azimuth_deg": 310.5272,
+   "moon_elevation_deg": -63.5579,
+   "moon_illuminated_fraction": 0.0133,
+   "sidereal_deg": 93.60748,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2025-02-21T17:40:33Z",
+   "unix": 1740159633,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Feb 2025 18:40 CET",
+   "sun_azimuth_deg": 262.4753,
+   "sun_elevation_deg": -6.9977,
+   "sun_true_elevation_deg": -7.0444,
+   "sun_spa_apparent_elevation_deg": -7.0444,
+   "moon_azimuth_deg": 338.6423,
+   "moon_elevation_deg": -70.8859,
+   "moon_illuminated_fraction": 0.4046,
+   "sidereal_deg": 64.77999,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-03-29T12:42:33Z",
+   "unix": 1743252153,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Mar 2025 13:42 CET",
+   "sun_azimuth_deg": 204.7035,
+   "sun_elevation_deg": 45.0138,
+   "sun_true_elevation_deg": 44.9977,
+   "sun_spa_apparent_elevation_deg": 45.0145,
+   "moon_azimuth_deg": 204.6524,
+   "moon_elevation_deg": 45.8419,
+   "moon_illuminated_fraction": 0.0001,
+   "sidereal_deg": 25.55932,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-03-30T00:59:59Z",
+   "unix": 1743296399,
+   "zurich_offset_s": 3600,
+   "local_text": "30 Mar 2025 01:59 CET",
+   "sun_azimuth_deg": 27.2621,
+   "sun_elevation_deg": -36.614,
+   "sun_true_elevation_deg": -36.6218,
+   "sun_spa_apparent_elevation_deg": -36.6218,
+   "moon_azimuth_deg": 17.5252,
+   "moon_elevation_deg": -34.5517,
+   "moon_illuminated_fraction": 0.0051,
+   "sidereal_deg": 210.42241,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2025-03-30T01:00:00Z",
+   "unix": 1743296400,
+   "zurich_offset_s": 7200,
+   "local_text": "30 Mar 2025 03:00 CEST",
+   "sun_azimuth_deg": 27.267,
+   "sun_elevation_deg": -36.6127,
+   "sun_true_elevation_deg": -36.6205,
+   "sun_spa_apparent_elevation_deg": -36.6205,
+   "moon_azimuth_deg": 17.5299,
+   "moon_elevation_deg": -34.5508,
+   "moon_illuminated_fraction": 0.0051,
+   "sidereal_deg": 210.42659,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2025-05-11T00:10:23Z",
+   "unix": 1746922223,
+   "zurich_offset_s": 7200,
+   "local_text": "11 May 2025 02:10 CEST",
+   "sun_azimuth_deg": 11.8506,
+   "sun_elevation_deg": -25.2696,
+   "sun_true_elevation_deg": -25.2818,
+   "sun_spa_apparent_elevation_deg": -25.2818,
+   "moon_azimuth_deg": 212.2587,
+   "moon_elevation_deg": 22.2064,
+   "moon_illuminated_fraction": 0.9731,
+   "sidereal_deg": 239.38565,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-06-17T12:17:19Z",
+   "unix": 1750162639,
+   "zurich_offset_s": 7200,
+   "local_text": "17 Jun 2025 14:17 CEST",
+   "sun_azimuth_deg": 206.915,
+   "sun_elevation_deg": 65.4417,
+   "sun_true_elevation_deg": 65.4343,
+   "sun_spa_apparent_elevation_deg": 65.442,
+   "moon_azimuth_deg": 283.0862,
+   "moon_elevation_deg": -25.1177,
+   "moon_illuminated_fraction": 0.6492,
+   "sidereal_deg": 98.08551,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-06-27T16:12:06Z",
+   "unix": 1751040726,
+   "zurich_offset_s": 7200,
+   "local_text": "27 Jun 2025 18:12 CEST",
+   "sun_azimuth_deg": 273.2009,
+   "sun_elevation_deg": 30.2173,
+   "sun_true_elevation_deg": 30.1896,
+   "sun_spa_apparent_elevation_deg": 30.2184,
+   "moon_azimuth_deg": 244.9899,
+   "moon_elevation_deg": 50.8003,
+   "moon_illuminated_fraction": 0.0647,
+   "sidereal_deg": 166.79852,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-07-02T02:30:49Z",
+   "unix": 1751423449,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Jul 2025 04:30 CEST",
+   "sun_azimuth_deg": 40.8768,
+   "sun_elevation_deg": -10.0421,
+   "sun_true_elevation_deg": -10.0746,
+   "sun_spa_apparent_elevation_deg": -10.0746,
+   "moon_azimuth_deg": 313.3253,
+   "moon_elevation_deg": -36.5467,
+   "moon_illuminated_fraction": 0.4323,
+   "sidereal_deg": 325.84377,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-07-24T02:43:51Z",
+   "unix": 1753325031,
+   "zurich_offset_s": 7200,
+   "local_text": "24 Jul 2025 04:43 CEST",
+   "sun_azimuth_deg": 44.6804,
+   "sun_elevation_deg": -11.5572,
+   "sun_true_elevation_deg": -11.5854,
+   "sun_spa_apparent_elevation_deg": -11.5854,
+   "moon_azimuth_deg": 48.0477,
+   "moon_elevation_deg": -3.2979,
+   "moon_illuminated_fraction": 0.0061,
+   "sidereal_deg": 350.79527,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-08-11T08:10:08Z",
+   "unix": 1754899808,
+   "zurich_offset_s": 7200,
+   "local_text": "11 Aug 2025 10:10 CEST",
+   "sun_azimuth_deg": 108.7995,
+   "sun_elevation_deg": 37.5857,
+   "sun_true_elevation_deg": 37.5648,
+   "sun_spa_apparent_elevation_deg": 37.5866,
+   "moon_azimuth_deg": 275.95,
+   "moon_elevation_deg": -15.5061,
+   "moon_illuminated_fraction": 0.9541,
+   "sidereal_deg": 90.33109,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2025-10-26T00:59:59Z",
+   "unix": 1761440399,
+   "zurich_offset_s": 7200,
+   "local_text": "26 Oct 2025 02:59 CEST",
+   "sun_azimuth_deg": 42.6198,
+   "sun_elevation_deg": -49.5353,
+   "sun_true_elevation_deg": -49.5402,
+   "sun_spa_apparent_elevation_deg": -49.5402,
+   "moon_azimuth_deg": 305.4397,
+   "moon_elevation_deg": -64.7086,
+   "moon_illuminated_fraction": 0.1741,
+   "sidereal_deg": 57.40836,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2025-10-26T01:00:00Z",
+   "unix": 1761440400,
+   "zurich_offset_s": 3600,
+   "local_text": "26 Oct 2025 02:00 CET",
+   "sun_azimuth_deg": 42.6253,
+   "sun_elevation_deg": -49.5333,
+   "sun_true_elevation_deg": -49.5383,
+   "sun_spa_apparent_elevation_deg": -49.5383,
+   "moon_azimuth_deg": 305.446,
+   "moon_elevation_deg": -64.7109,
+   "moon_illuminated_fraction": 0.1741,
+   "sidereal_deg": 57.41254,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2025-10-29T07:04:55Z",
+   "unix": 1761721495,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Oct 2025 08:04 CET",
+   "sun_azimuth_deg": 119.8185,
+   "sun_elevation_deg": 8.6504,
+   "sun_true_elevation_deg": 8.5485,
+   "sun_spa_apparent_elevation_deg": 8.6518,
+   "moon_azimuth_deg": 53.1678,
+   "moon_elevation_deg": -59.0072,
+   "moon_illuminated_fraction": 0.4641,
+   "sidereal_deg": 151.84842,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-01-01T05:52:29Z",
+   "unix": 1767246749,
+   "zurich_offset_s": 3600,
+   "local_text": "1 Jan 2026 06:52 CET",
+   "sun_azimuth_deg": 109.7436,
+   "sun_elevation_deg": -12.9995,
+   "sun_true_elevation_deg": -13.0245,
+   "sun_spa_apparent_elevation_deg": -13.0245,
+   "moon_azimuth_deg": 315.9379,
+   "moon_elevation_deg": -4.5027,
+   "moon_illuminated_fraction": 0.9272,
+   "sidereal_deg": 196.77194,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-02-18T05:54:29Z",
+   "unix": 1771394069,
+   "zurich_offset_s": 3600,
+   "local_text": "18 Feb 2026 06:54 CET",
+   "sun_azimuth_deg": 100.169,
+   "sun_elevation_deg": -6.2971,
+   "sun_true_elevation_deg": -6.3489,
+   "sun_spa_apparent_elevation_deg": -6.3489,
+   "moon_azimuth_deg": 91.6917,
+   "moon_elevation_deg": -10.9016,
+   "moon_illuminated_fraction": 0.0069,
+   "sidereal_deg": 244.58439,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-03-24T02:20:56Z",
+   "unix": 1774318856,
+   "zurich_offset_s": 3600,
+   "local_text": "24 Mar 2026 03:20 CET",
+   "sun_azimuth_deg": 49.9135,
+   "sun_elevation_deg": -30.2266,
+   "sun_true_elevation_deg": -30.2365,
+   "sun_spa_apparent_elevation_deg": -30.2365,
+   "moon_azimuth_deg": 338.2778,
+   "moon_elevation_deg": -14.5621,
+   "moon_illuminated_fraction": 0.306,
+   "sidereal_deg": 224.56273,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-03-29T00:30:00Z",
+   "unix": 1774744200,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Mar 2026 01:30 CET",
+   "sun_azimuth_deg": 18.179,
+   "sun_elevation_deg": -39.1254,
+   "sun_true_elevation_deg": -39.1325,
+   "sun_spa_apparent_elevation_deg": -39.1325,
+   "moon_azimuth_deg": 259.469,
+   "moon_elevation_deg": 32.277,
+   "moon_illuminated_fraction": 0.8267,
+   "sidereal_deg": 201.6817,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2026-03-29T00:59:59Z",
+   "unix": 1774745999,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Mar 2026 01:59 CET",
+   "sun_azimuth_deg": 27.3437,
+   "sun_elevation_deg": -37.1013,
+   "sun_true_elevation_deg": -37.1089,
+   "sun_spa_apparent_elevation_deg": -37.1089,
+   "moon_azimuth_deg": 264.997,
+   "moon_elevation_deg": 27.172,
+   "moon_illuminated_fraction": 0.8282,
+   "sidereal_deg": 209.19805,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2026-03-29T01:00:00Z",
+   "unix": 1774746000,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Mar 2026 03:00 CEST",
+   "sun_azimuth_deg": 27.3487,
+   "sun_elevation_deg": -37.1,
+   "sun_true_elevation_deg": -37.1076,
+   "sun_spa_apparent_elevation_deg": -37.1076,
+   "moon_azimuth_deg": 265.0,
+   "moon_elevation_deg": 27.1692,
+   "moon_illuminated_fraction": 0.8282,
+   "sidereal_deg": 209.20223,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2026-03-29T02:00:00Z",
+   "unix": 1774749600,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Mar 2026 04:00 CEST",
+   "sun_azimuth_deg": 43.901,
+   "sun_elevation_deg": -31.0052,
+   "sun_true_elevation_deg": -31.0148,
+   "sun_spa_apparent_elevation_deg": -31.0148,
+   "moon_azimuth_deg": 275.2786,
+   "moon_elevation_deg": 16.8918,
+   "moon_illuminated_fraction": 0.8315,
+   "sidereal_deg": 224.2433,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2026-06-14T02:46:51Z",
+   "unix": 1781405211,
+   "zurich_offset_s": 7200,
+   "local_text": "14 Jun 2026 04:46 CEST",
+   "sun_azimuth_deg": 44.7271,
+   "sun_elevation_deg": -7.4837,
+   "sun_true_elevation_deg": -7.5274,
+   "sun_spa_apparent_elevation_deg": -7.5274,
+   "moon_azimuth_deg": 54.779,
+   "moon_elevation_deg": 2.9368,
+   "moon_illuminated_fraction": 0.016,
+   "sidereal_deg": 311.88272,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-06-21T02:34:24Z",
+   "unix": 1782009264,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 04:34 CEST",
+   "sun_azimuth_deg": 41.8616,
+   "sun_elevation_deg": -9.0007,
+   "sun_true_elevation_deg": -9.037,
+   "sun_spa_apparent_elevation_deg": -9.037,
+   "moon_azimuth_deg": 317.5956,
+   "moon_elevation_deg": -33.4833,
+   "moon_illuminated_fraction": 0.4167,
+   "sidereal_deg": 315.66123,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T03:06:45Z",
+   "unix": 1782011205,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 05:06 CEST",
+   "sun_azimuth_deg": 48.1759,
+   "sun_elevation_deg": -5.0002,
+   "sun_true_elevation_deg": -5.0653,
+   "sun_spa_apparent_elevation_deg": -5.0653,
+   "moon_azimuth_deg": 326.1158,
+   "moon_elevation_deg": -36.9423,
+   "moon_illuminated_fraction": 0.4197,
+   "sidereal_deg": 323.77087,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T03:21:34Z",
+   "unix": 1782012094,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 05:21 CEST",
+   "sun_azimuth_deg": 50.9605,
+   "sun_elevation_deg": -3.0014,
+   "sun_true_elevation_deg": -3.1077,
+   "sun_spa_apparent_elevation_deg": -3.1077,
+   "moon_azimuth_deg": 330.2651,
+   "moon_elevation_deg": -38.3033,
+   "moon_illuminated_fraction": 0.4211,
+   "sidereal_deg": 327.48518,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T03:35:01Z",
+   "unix": 1782012901,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 05:35 CEST",
+   "sun_azimuth_deg": 53.4346,
+   "sun_elevation_deg": -1.0014,
+   "sun_true_elevation_deg": -1.2631,
+   "sun_spa_apparent_elevation_deg": -1.2631,
+   "moon_azimuth_deg": 334.1627,
+   "moon_elevation_deg": -39.4025,
+   "moon_illuminated_fraction": 0.4223,
+   "sidereal_deg": 330.85688,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T03:39:55Z",
+   "unix": 1782013195,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 05:39 CEST",
+   "sun_azimuth_deg": 54.324,
+   "sun_elevation_deg": -0.0022,
+   "sun_true_elevation_deg": -0.5761,
+   "sun_spa_apparent_elevation_deg": -0.004,
+   "moon_azimuth_deg": 335.6124,
+   "moon_elevation_deg": -39.769,
+   "moon_illuminated_fraction": 0.4228,
+   "sidereal_deg": 332.08524,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T03:48:08Z",
+   "unix": 1782013688,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 05:48 CEST",
+   "sun_azimuth_deg": 55.8019,
+   "sun_elevation_deg": 0.9991,
+   "sun_true_elevation_deg": 0.5931,
+   "sun_spa_apparent_elevation_deg": 0.9973,
+   "moon_azimuth_deg": 338.0775,
+   "moon_elevation_deg": -40.3409,
+   "moon_illuminated_fraction": 0.4235,
+   "sidereal_deg": 334.14503,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T03:59:24Z",
+   "unix": 1782014364,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 05:59 CEST",
+   "sun_azimuth_deg": 57.8021,
+   "sun_elevation_deg": 2.4988,
+   "sun_true_elevation_deg": 2.2295,
+   "sun_spa_apparent_elevation_deg": 2.4962,
+   "moon_azimuth_deg": 341.5229,
+   "moon_elevation_deg": -41.0356,
+   "moon_illuminated_fraction": 0.4246,
+   "sidereal_deg": 336.96941,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T04:16:51Z",
+   "unix": 1782015411,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 06:16 CEST",
+   "sun_azimuth_deg": 60.8461,
+   "sun_elevation_deg": 4.9982,
+   "sun_true_elevation_deg": 4.8344,
+   "sun_spa_apparent_elevation_deg": 4.9991,
+   "moon_azimuth_deg": 346.9907,
+   "moon_elevation_deg": -41.8971,
+   "moon_illuminated_fraction": 0.4262,
+   "sidereal_deg": 341.34385,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T05:00:00Z",
+   "unix": 1782018000,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 07:00 CEST",
+   "sun_azimuth_deg": 68.1526,
+   "sun_elevation_deg": 11.6678,
+   "sun_true_elevation_deg": 11.5913,
+   "sun_spa_apparent_elevation_deg": 11.6695,
+   "moon_azimuth_deg": 0.9577,
+   "moon_elevation_deg": -42.8354,
+   "moon_illuminated_fraction": 0.4303,
+   "sidereal_deg": 352.16089,
+   "tags": [
+    "solstice"
+   ]
+  },
+  {
+   "utc": "2026-06-21T11:20:00Z",
+   "unix": 1782040800,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 13:20 CEST",
+   "sun_azimuth_deg": 173.557,
+   "sun_elevation_deg": 67.3181,
+   "sun_true_elevation_deg": 67.3114,
+   "sun_spa_apparent_elevation_deg": 67.3184,
+   "moon_azimuth_deg": 91.9551,
+   "moon_elevation_deg": 1.2469,
+   "moon_illuminated_fraction": 0.463,
+   "sidereal_deg": 87.42099,
+   "tags": [
+    "solstice"
+   ]
+  },
+  {
+   "utc": "2026-06-21T11:59:59Z",
+   "unix": 1782043199,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 13:59 CEST",
+   "sun_azimuth_deg": 197.0909,
+   "sun_elevation_deg": 66.6674,
+   "sun_true_elevation_deg": 66.6604,
+   "sun_spa_apparent_elevation_deg": 66.6677,
+   "moon_azimuth_deg": 99.1268,
+   "moon_elevation_deg": 7.837,
+   "moon_illuminated_fraction": 0.4658,
+   "sidereal_deg": 97.44419,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2026-06-21T18:30:00Z",
+   "unix": 1782066600,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 20:30 CEST",
+   "sun_azimuth_deg": 296.6194,
+   "sun_elevation_deg": 7.2224,
+   "sun_true_elevation_deg": 7.1021,
+   "sun_spa_apparent_elevation_deg": 7.2235,
+   "moon_azimuth_deg": 202.8525,
+   "moon_elevation_deg": 39.2626,
+   "moon_illuminated_fraction": 0.4873,
+   "sidereal_deg": 195.21531,
+   "tags": [
+    "solstice"
+   ]
+  },
+  {
+   "utc": "2026-06-21T18:44:46Z",
+   "unix": 1782067486,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 20:44 CEST",
+   "sun_azimuth_deg": 299.1505,
+   "sun_elevation_deg": 5.0004,
+   "sun_true_elevation_deg": 4.8367,
+   "sun_spa_apparent_elevation_deg": 5.0013,
+   "moon_azimuth_deg": 207.2642,
+   "moon_elevation_deg": 38.1373,
+   "moon_illuminated_fraction": 0.4881,
+   "sidereal_deg": 198.91709,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T19:02:13Z",
+   "unix": 1782068533,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 21:02 CEST",
+   "sun_azimuth_deg": 302.1944,
+   "sun_elevation_deg": 2.5008,
+   "sun_true_elevation_deg": 2.2317,
+   "sun_spa_apparent_elevation_deg": 2.4983,
+   "moon_azimuth_deg": 212.2852,
+   "moon_elevation_deg": 36.5921,
+   "moon_illuminated_fraction": 0.489,
+   "sidereal_deg": 203.29153,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T19:13:29Z",
+   "unix": 1782069209,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 21:13 CEST",
+   "sun_azimuth_deg": 304.1946,
+   "sun_elevation_deg": 1.0009,
+   "sun_true_elevation_deg": 0.5952,
+   "sun_spa_apparent_elevation_deg": 0.9992,
+   "moon_azimuth_deg": 215.4111,
+   "moon_elevation_deg": 35.4797,
+   "moon_illuminated_fraction": 0.4896,
+   "sidereal_deg": 206.11591,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T19:21:42Z",
+   "unix": 1782069702,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 21:21 CEST",
+   "sun_azimuth_deg": 305.6724,
+   "sun_elevation_deg": 0.0007,
+   "sun_true_elevation_deg": -0.574,
+   "sun_spa_apparent_elevation_deg": -0.0023,
+   "moon_azimuth_deg": 217.6327,
+   "moon_elevation_deg": 34.6158,
+   "moon_illuminated_fraction": 0.49,
+   "sidereal_deg": 208.1757,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T19:26:36Z",
+   "unix": 1782069996,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 21:26 CEST",
+   "sun_azimuth_deg": 306.5618,
+   "sun_elevation_deg": -0.999,
+   "sun_true_elevation_deg": -1.2611,
+   "sun_spa_apparent_elevation_deg": -1.2611,
+   "moon_azimuth_deg": 218.9343,
+   "moon_elevation_deg": 34.0805,
+   "moon_illuminated_fraction": 0.4902,
+   "sidereal_deg": 209.40405,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T19:40:03Z",
+   "unix": 1782070803,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 21:40 CEST",
+   "sun_azimuth_deg": 309.0358,
+   "sun_elevation_deg": -2.9995,
+   "sun_true_elevation_deg": -3.1058,
+   "sun_spa_apparent_elevation_deg": -3.1058,
+   "moon_azimuth_deg": 222.418,
+   "moon_elevation_deg": 32.5384,
+   "moon_illuminated_fraction": 0.491,
+   "sidereal_deg": 212.77576,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T19:54:52Z",
+   "unix": 1782071692,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 21:54 CEST",
+   "sun_azimuth_deg": 311.8203,
+   "sun_elevation_deg": -4.9984,
+   "sun_true_elevation_deg": -5.0635,
+   "sun_spa_apparent_elevation_deg": -5.0635,
+   "moon_azimuth_deg": 226.1084,
+   "moon_elevation_deg": 30.7249,
+   "moon_illuminated_fraction": 0.4918,
+   "sidereal_deg": 216.49007,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T20:27:13Z",
+   "unix": 1782073633,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 22:27 CEST",
+   "sun_azimuth_deg": 318.1345,
+   "sun_elevation_deg": -8.9993,
+   "sun_true_elevation_deg": -9.0356,
+   "sun_spa_apparent_elevation_deg": -9.0356,
+   "moon_azimuth_deg": 233.6626,
+   "moon_elevation_deg": 26.405,
+   "moon_illuminated_fraction": 0.4935,
+   "sidereal_deg": 224.59971,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-21T21:15:05Z",
+   "unix": 1782076505,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2026 23:15 CEST",
+   "sun_azimuth_deg": 328.1158,
+   "sun_elevation_deg": -13.9994,
+   "sun_true_elevation_deg": -14.0225,
+   "sun_spa_apparent_elevation_deg": -14.0225,
+   "moon_azimuth_deg": 243.7535,
+   "moon_elevation_deg": 19.3045,
+   "moon_illuminated_fraction": 0.4963,
+   "sidereal_deg": 236.59914,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2026-06-29T03:39:23Z",
+   "unix": 1782704363,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Jun 2026 05:39 CEST",
+   "sun_azimuth_deg": 54.0488,
+   "sun_elevation_deg": -0.7409,
+   "sun_true_elevation_deg": -1.0544,
+   "sun_spa_apparent_elevation_deg": -1.0544,
+   "moon_azimuth_deg": 238.0709,
+   "moon_elevation_deg": -9.3144,
+   "moon_illuminated_fraction": 0.9907,
+   "sidereal_deg": 339.83672,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-10-02T00:33:22Z",
+   "unix": 1790901202,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Oct 2026 02:33 CEST",
+   "sun_azimuth_deg": 26.668,
+   "sun_elevation_deg": -44.4591,
+   "sun_true_elevation_deg": -44.465,
+   "sun_spa_apparent_elevation_deg": -44.465,
+   "moon_azimuth_deg": 97.0099,
+   "moon_elevation_deg": 46.1013,
+   "moon_illuminated_fraction": 0.6703,
+   "sidereal_deg": 26.84173,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-10-25T00:30:00Z",
+   "unix": 1792888200,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Oct 2026 02:30 CEST",
+   "sun_azimuth_deg": 31.7689,
+   "sun_elevation_deg": -52.3075,
+   "sun_true_elevation_deg": -52.312,
+   "sun_spa_apparent_elevation_deg": -52.312,
+   "moon_azimuth_deg": 230.8657,
+   "moon_elevation_deg": 42.45,
+   "moon_illuminated_fraction": 0.9803,
+   "sidereal_deg": 48.66765,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2026-10-25T00:59:59Z",
+   "unix": 1792889999,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Oct 2026 02:59 CEST",
+   "sun_azimuth_deg": 42.2615,
+   "sun_elevation_deg": -49.1764,
+   "sun_true_elevation_deg": -49.1814,
+   "sun_spa_apparent_elevation_deg": -49.1814,
+   "moon_azimuth_deg": 238.724,
+   "moon_elevation_deg": 38.395,
+   "moon_illuminated_fraction": 0.9807,
+   "sidereal_deg": 56.184,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2026-10-25T01:00:00Z",
+   "unix": 1792890000,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Oct 2026 02:00 CET",
+   "sun_azimuth_deg": 42.267,
+   "sun_elevation_deg": -49.1744,
+   "sun_true_elevation_deg": -49.1794,
+   "sun_spa_apparent_elevation_deg": -49.1794,
+   "moon_azimuth_deg": 238.7282,
+   "moon_elevation_deg": 38.3927,
+   "moon_illuminated_fraction": 0.9807,
+   "sidereal_deg": 56.18818,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2026-10-25T02:00:00Z",
+   "unix": 1792893600,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Oct 2026 03:00 CET",
+   "sun_azimuth_deg": 59.7027,
+   "sun_elevation_deg": -41.0811,
+   "sun_true_elevation_deg": -41.0877,
+   "sun_spa_apparent_elevation_deg": -41.0877,
+   "moon_azimuth_deg": 252.2884,
+   "moon_elevation_deg": 29.3401,
+   "moon_illuminated_fraction": 0.9817,
+   "sidereal_deg": 71.22925,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2026-10-27T01:30:18Z",
+   "unix": 1793064618,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Oct 2026 02:30 CET",
+   "sun_azimuth_deg": 52.2258,
+   "sun_elevation_deg": -45.871,
+   "sun_true_elevation_deg": -45.8766,
+   "sun_spa_apparent_elevation_deg": -45.8766,
+   "moon_azimuth_deg": 226.5769,
+   "moon_elevation_deg": 57.8278,
+   "moon_illuminated_fraction": 0.9883,
+   "sidereal_deg": 65.75521,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2026-12-21T11:30:00Z",
+   "unix": 1797852600,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Dec 2026 12:30 CET",
+   "sun_azimuth_deg": 180.7205,
+   "sun_elevation_deg": 20.5803,
+   "sun_true_elevation_deg": 20.5376,
+   "sun_spa_apparent_elevation_deg": 20.5819,
+   "moon_azimuth_deg": 37.6785,
+   "moon_elevation_deg": -12.1929,
+   "moon_illuminated_fraction": 0.9032,
+   "sidereal_deg": 270.3013,
+   "tags": [
+    "solstice"
+   ]
+  },
+  {
+   "utc": "2027-01-20T23:00:00Z",
+   "unix": 1800486000,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Jan 2027 00:00 CET",
+   "sun_azimuth_deg": 339.1074,
+   "sun_elevation_deg": -62.7153,
+   "sun_true_elevation_deg": -62.7183,
+   "sun_spa_apparent_elevation_deg": -62.7183,
+   "moon_azimuth_deg": 213.0634,
+   "moon_elevation_deg": 67.5964,
+   "moon_illuminated_fraction": 0.9624,
+   "sidereal_deg": 112.84301,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2027-03-28T00:59:59Z",
+   "unix": 1806195599,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Mar 2027 01:59 CET",
+   "sun_azimuth_deg": 27.4238,
+   "sun_elevation_deg": -37.5905,
+   "sun_true_elevation_deg": -37.598,
+   "sun_spa_apparent_elevation_deg": -37.598,
+   "moon_azimuth_deg": 140.5296,
+   "moon_elevation_deg": 5.132,
+   "moon_illuminated_fraction": 0.6833,
+   "sidereal_deg": 207.9737,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2027-03-28T01:00:00Z",
+   "unix": 1806195600,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Mar 2027 03:00 CEST",
+   "sun_azimuth_deg": 27.4288,
+   "sun_elevation_deg": -37.5892,
+   "sun_true_elevation_deg": -37.5966,
+   "sun_spa_apparent_elevation_deg": -37.5966,
+   "moon_azimuth_deg": 140.5327,
+   "moon_elevation_deg": 5.1338,
+   "moon_illuminated_fraction": 0.6833,
+   "sidereal_deg": 207.97787,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2027-04-20T21:02:18Z",
+   "unix": 1808254938,
+   "zurich_offset_s": 7200,
+   "local_text": "20 Apr 2027 23:02 CEST",
+   "sun_azimuth_deg": 320.6082,
+   "sun_elevation_deg": -23.6848,
+   "sun_true_elevation_deg": -23.698,
+   "sun_spa_apparent_elevation_deg": -23.698,
+   "moon_azimuth_deg": 144.8931,
+   "moon_elevation_deg": 20.0278,
+   "moon_illuminated_fraction": 0.9978,
+   "sidereal_deg": 172.04571,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2027-06-13T17:13:47Z",
+   "unix": 1812906827,
+   "zurich_offset_s": 7200,
+   "local_text": "13 Jun 2027 19:13 CEST",
+   "sun_azimuth_deg": 284.0614,
+   "sun_elevation_deg": 19.0928,
+   "sun_true_elevation_deg": 19.0465,
+   "sun_spa_apparent_elevation_deg": 19.0944,
+   "moon_azimuth_deg": 147.9111,
+   "moon_elevation_deg": 24.9595,
+   "moon_illuminated_fraction": 0.7411,
+   "sidereal_deg": 167.98509,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2027-08-24T18:20:56Z",
+   "unix": 1819131656,
+   "zurich_offset_s": 7200,
+   "local_text": "24 Aug 2027 20:20 CEST",
+   "sun_azimuth_deg": 286.4966,
+   "sun_elevation_deg": 0.0392,
+   "sun_true_elevation_deg": -0.5272,
+   "sun_spa_apparent_elevation_deg": 0.0367,
+   "moon_azimuth_deg": 21.0483,
+   "moon_elevation_deg": -17.6237,
+   "moon_illuminated_fraction": 0.5377,
+   "sidereal_deg": 255.78516,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2027-10-31T00:59:59Z",
+   "unix": 1824944399,
+   "zurich_offset_s": 7200,
+   "local_text": "31 Oct 2027 02:59 CEST",
+   "sun_azimuth_deg": 43.8876,
+   "sun_elevation_deg": -50.8056,
+   "sun_true_elevation_deg": -50.8103,
+   "sun_spa_apparent_elevation_deg": -50.8103,
+   "moon_azimuth_deg": 22.2647,
+   "moon_elevation_deg": -66.8894,
+   "moon_illuminated_fraction": 0.0284,
+   "sidereal_deg": 61.85918,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2027-10-31T01:00:00Z",
+   "unix": 1824944400,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Oct 2027 02:00 CET",
+   "sun_azimuth_deg": 43.8932,
+   "sun_elevation_deg": -50.8036,
+   "sun_true_elevation_deg": -50.8083,
+   "sun_spa_apparent_elevation_deg": -50.8083,
+   "moon_azimuth_deg": 22.2736,
+   "moon_elevation_deg": -66.8883,
+   "moon_illuminated_fraction": 0.0284,
+   "sidereal_deg": 61.86335,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2028-02-15T19:26:06Z",
+   "unix": 1834255566,
+   "zurich_offset_s": 3600,
+   "local_text": "15 Feb 2028 20:26 CET",
+   "sun_azimuth_deg": 279.887,
+   "sun_elevation_deg": -26.8509,
+   "sun_true_elevation_deg": -26.8623,
+   "sun_spa_apparent_elevation_deg": -26.8623,
+   "moon_azimuth_deg": 74.6715,
+   "moon_elevation_deg": -41.0715,
+   "moon_illuminated_fraction": 0.657,
+   "sidereal_deg": 84.60972,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2028-02-29T05:30:00Z",
+   "unix": 1835415000,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Feb 2028 06:30 CET",
+   "sun_azimuth_deg": 93.3624,
+   "sun_elevation_deg": -7.5169,
+   "sun_true_elevation_deg": -7.5604,
+   "sun_spa_apparent_elevation_deg": -7.5604,
+   "moon_azimuth_deg": 51.3608,
+   "moon_elevation_deg": -16.1966,
+   "moon_illuminated_fraction": 0.1285,
+   "sidereal_deg": 248.81149,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2028-03-26T00:59:59Z",
+   "unix": 1837645199,
+   "zurich_offset_s": 3600,
+   "local_text": "26 Mar 2028 01:59 CET",
+   "sun_azimuth_deg": 27.5083,
+   "sun_elevation_deg": -38.0808,
+   "sun_true_elevation_deg": -38.0882,
+   "sun_spa_apparent_elevation_deg": -38.0882,
+   "moon_azimuth_deg": 29.892,
+   "moon_elevation_deg": -34.4133,
+   "moon_illuminated_fraction": 0.0013,
+   "sidereal_deg": 206.74934,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2028-03-26T01:00:00Z",
+   "unix": 1837645200,
+   "zurich_offset_s": 7200,
+   "local_text": "26 Mar 2028 03:00 CEST",
+   "sun_azimuth_deg": 27.5133,
+   "sun_elevation_deg": -38.0795,
+   "sun_true_elevation_deg": -38.0868,
+   "sun_spa_apparent_elevation_deg": -38.0868,
+   "moon_azimuth_deg": 29.8965,
+   "moon_elevation_deg": -34.4119,
+   "moon_illuminated_fraction": 0.0013,
+   "sidereal_deg": 206.75352,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2028-03-29T14:51:21Z",
+   "unix": 1837954281,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Mar 2028 16:51 CEST",
+   "sun_azimuth_deg": 240.9262,
+   "sun_elevation_deg": 29.8583,
+   "sun_true_elevation_deg": 29.8303,
+   "sun_spa_apparent_elevation_deg": 29.8595,
+   "moon_azimuth_deg": 208.9552,
+   "moon_elevation_deg": 63.1037,
+   "moon_illuminated_fraction": 0.1122,
+   "sidereal_deg": 58.117,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2028-06-03T05:30:23Z",
+   "unix": 1843623023,
+   "zurich_offset_s": 7200,
+   "local_text": "3 Jun 2028 07:30 CEST",
+   "sun_azimuth_deg": 74.5701,
+   "sun_elevation_deg": 16.4787,
+   "sun_true_elevation_deg": 16.4247,
+   "sun_spa_apparent_elevation_deg": 16.4804,
+   "moon_azimuth_deg": 306.0652,
+   "moon_elevation_deg": -46.3127,
+   "moon_illuminated_fraction": 0.8092,
+   "sidereal_deg": 342.54409,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2028-08-27T01:08:05Z",
+   "unix": 1850951285,
+   "zurich_offset_s": 7200,
+   "local_text": "27 Aug 2028 03:08 CEST",
+   "sun_azimuth_deg": 27.994,
+   "sun_elevation_deg": -29.9168,
+   "sun_true_elevation_deg": -29.9269,
+   "sun_spa_apparent_elevation_deg": -29.9269,
+   "moon_azimuth_deg": 272.0905,
+   "moon_elevation_deg": -38.3342,
+   "moon_illuminated_fraction": 0.495,
+   "sidereal_deg": 0.56958,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2028-09-22T14:41:40Z",
+   "unix": 1853246500,
+   "zurich_offset_s": 7200,
+   "local_text": "22 Sep 2028 16:41 CEST",
+   "sun_azimuth_deg": 238.8833,
+   "sun_elevation_deg": 26.4761,
+   "sun_true_elevation_deg": 26.4439,
+   "sun_spa_apparent_elevation_deg": 26.4774,
+   "moon_azimuth_deg": 180.0742,
+   "moon_elevation_deg": 20.2916,
+   "moon_illuminated_fraction": 0.2061,
+   "sidereal_deg": 230.14912,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2028-10-29T00:59:59Z",
+   "unix": 1856393999,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Oct 2028 02:59 CEST",
+   "sun_azimuth_deg": 43.5437,
+   "sun_elevation_deg": -50.4617,
+   "sun_true_elevation_deg": -50.4664,
+   "sun_spa_apparent_elevation_deg": -50.4664,
+   "moon_azimuth_deg": 257.3378,
+   "moon_elevation_deg": 10.2472,
+   "moon_illuminated_fraction": 0.8296,
+   "sidereal_deg": 60.63482,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2028-10-29T01:00:00Z",
+   "unix": 1856394000,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Oct 2028 02:00 CET",
+   "sun_azimuth_deg": 43.5492,
+   "sun_elevation_deg": -50.4597,
+   "sun_true_elevation_deg": -50.4644,
+   "sun_spa_apparent_elevation_deg": -50.4644,
+   "moon_azimuth_deg": 257.3409,
+   "moon_elevation_deg": 10.2445,
+   "moon_illuminated_fraction": 0.8296,
+   "sidereal_deg": 60.639,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2028-11-14T21:34:00Z",
+   "unix": 1857850440,
+   "zurich_offset_s": 3600,
+   "local_text": "14 Nov 2028 22:34 CET",
+   "sun_azimuth_deg": 314.9304,
+   "sun_elevation_deg": -55.6808,
+   "sun_true_elevation_deg": -55.6848,
+   "sun_spa_apparent_elevation_deg": -55.6848,
+   "moon_azimuth_deg": 358.4437,
+   "moon_elevation_deg": -60.697,
+   "moon_illuminated_fraction": 0.04,
+   "sidereal_deg": 25.754,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2028-11-27T00:58:41Z",
+   "unix": 1858899521,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Nov 2028 01:58 CET",
+   "sun_azimuth_deg": 48.5523,
+   "sun_elevation_deg": -57.6051,
+   "sun_true_elevation_deg": -57.6088,
+   "sun_spa_apparent_elevation_deg": -57.6088,
+   "moon_azimuth_deg": 270.8192,
+   "moon_elevation_deg": 9.4533,
+   "moon_illuminated_fraction": 0.7658,
+   "sidereal_deg": 88.8927,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-01-09T12:30:45Z",
+   "unix": 1862656245,
+   "zurich_offset_s": 3600,
+   "local_text": "9 Jan 2029 13:30 CET",
+   "sun_azimuth_deg": 193.5174,
+   "sun_elevation_deg": 20.8904,
+   "sun_true_elevation_deg": 20.8484,
+   "sun_spa_apparent_elevation_deg": 20.892,
+   "moon_azimuth_deg": 250.9771,
+   "moon_elevation_deg": -11.41,
+   "moon_illuminated_fraction": 0.2899,
+   "sidereal_deg": 304.76591,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-03-25T00:30:00Z",
+   "unix": 1869093000,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Mar 2029 01:30 CET",
+   "sun_azimuth_deg": 18.2298,
+   "sun_elevation_deg": -40.6097,
+   "sun_true_elevation_deg": -40.6165,
+   "sun_spa_apparent_elevation_deg": -40.6165,
+   "moon_azimuth_deg": 277.8668,
+   "moon_elevation_deg": 19.307,
+   "moon_illuminated_fraction": 0.6731,
+   "sidereal_deg": 198.00863,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2029-03-25T00:59:59Z",
+   "unix": 1869094799,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Mar 2029 01:59 CET",
+   "sun_azimuth_deg": 27.5944,
+   "sun_elevation_deg": -38.5729,
+   "sun_true_elevation_deg": -38.5801,
+   "sun_spa_apparent_elevation_deg": -38.5801,
+   "moon_azimuth_deg": 282.7272,
+   "moon_elevation_deg": 14.2945,
+   "moon_illuminated_fraction": 0.6752,
+   "sidereal_deg": 205.52498,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2029-03-25T01:00:00Z",
+   "unix": 1869094800,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Mar 2029 03:00 CEST",
+   "sun_azimuth_deg": 27.5994,
+   "sun_elevation_deg": -38.5715,
+   "sun_true_elevation_deg": -38.5788,
+   "sun_spa_apparent_elevation_deg": -38.5788,
+   "moon_azimuth_deg": 282.7299,
+   "moon_elevation_deg": 14.2918,
+   "moon_illuminated_fraction": 0.6752,
+   "sidereal_deg": 205.52916,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2029-03-25T02:00:00Z",
+   "unix": 1869098400,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Mar 2029 04:00 CEST",
+   "sun_azimuth_deg": 44.4382,
+   "sun_elevation_deg": -32.418,
+   "sun_true_elevation_deg": -32.427,
+   "sun_spa_apparent_elevation_deg": -32.427,
+   "moon_azimuth_deg": 292.498,
+   "moon_elevation_deg": 4.5951,
+   "moon_illuminated_fraction": 0.6797,
+   "sidereal_deg": 220.57023,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2029-05-10T07:03:19Z",
+   "unix": 1873090999,
+   "zurich_offset_s": 7200,
+   "local_text": "10 May 2029 09:03 CEST",
+   "sun_azimuth_deg": 94.7946,
+   "sun_elevation_deg": 29.5684,
+   "sun_true_elevation_deg": 29.54,
+   "sun_spa_apparent_elevation_deg": 29.5695,
+   "moon_azimuth_deg": 136.3005,
+   "moon_elevation_deg": 45.8862,
+   "moon_illuminated_fraction": 0.0967,
+   "sidereal_deg": 341.94679,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-05-31T16:48:13Z",
+   "unix": 1874940493,
+   "zurich_offset_s": 7200,
+   "local_text": "31 May 2029 18:48 CEST",
+   "sun_azimuth_deg": 279.24,
+   "sun_elevation_deg": 22.2206,
+   "sun_true_elevation_deg": 22.1813,
+   "sun_spa_apparent_elevation_deg": 22.222,
+   "moon_azimuth_deg": 45.7715,
+   "moon_elevation_deg": -54.7897,
+   "moon_illuminated_fraction": 0.814,
+   "sidereal_deg": 149.27073,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-06-11T02:22:48Z",
+   "unix": 1875838968,
+   "zurich_offset_s": 7200,
+   "local_text": "11 Jun 2029 04:22 CEST",
+   "sun_azimuth_deg": 40.1107,
+   "sun_elevation_deg": -10.3874,
+   "sun_true_elevation_deg": -10.4188,
+   "sun_spa_apparent_elevation_deg": -10.4188,
+   "moon_azimuth_deg": 50.1455,
+   "moon_elevation_deg": -3.9173,
+   "moon_illuminated_fraction": 0.0108,
+   "sidereal_deg": 303.16633,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-06-11T06:14:06Z",
+   "unix": 1875852846,
+   "zurich_offset_s": 7200,
+   "local_text": "11 Jun 2029 08:14 CEST",
+   "sun_azimuth_deg": 81.041,
+   "sun_elevation_deg": 24.1211,
+   "sun_true_elevation_deg": 24.0852,
+   "sun_spa_apparent_elevation_deg": 24.1225,
+   "moon_azimuth_deg": 88.0293,
+   "moon_elevation_deg": 31.9363,
+   "moon_illuminated_fraction": 0.0076,
+   "sidereal_deg": 1.14965,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-08-02T03:37:28Z",
+   "unix": 1880336248,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Aug 2029 05:37 CEST",
+   "sun_azimuth_deg": 56.5429,
+   "sun_elevation_deg": -6.0634,
+   "sun_true_elevation_deg": -6.1173,
+   "sun_spa_apparent_elevation_deg": -6.1173,
+   "moon_azimuth_deg": 143.388,
+   "moon_elevation_deg": 56.979,
+   "moon_illuminated_fraction": 0.5311,
+   "sidereal_deg": 13.13777,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-08-10T07:14:03Z",
+   "unix": 1881040443,
+   "zurich_offset_s": 7200,
+   "local_text": "10 Aug 2029 09:14 CEST",
+   "sun_azimuth_deg": 97.0008,
+   "sun_elevation_deg": 28.3032,
+   "sun_true_elevation_deg": 28.2733,
+   "sun_spa_apparent_elevation_deg": 28.3044,
+   "moon_azimuth_deg": 99.2593,
+   "moon_elevation_deg": 23.0855,
+   "moon_illuminated_fraction": 0.0024,
+   "sidereal_deg": 75.31703,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2029-10-15T04:29:34Z",
+   "unix": 1886732974,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 06:29 CEST",
+   "sun_azimuth_deg": 87.9029,
+   "sun_elevation_deg": -14.002,
+   "sun_true_elevation_deg": -14.0251,
+   "sun_spa_apparent_elevation_deg": -14.0251,
+   "moon_azimuth_deg": 318.3335,
+   "moon_elevation_deg": -55.8692,
+   "moon_illuminated_fraction": 0.5743,
+   "sidereal_deg": 99.13633,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T04:58:20Z",
+   "unix": 1886734700,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 06:58 CEST",
+   "sun_azimuth_deg": 93.0785,
+   "sun_elevation_deg": -9.0013,
+   "sun_true_elevation_deg": -9.0376,
+   "sun_spa_apparent_elevation_deg": -9.0376,
+   "moon_azimuth_deg": 329.339,
+   "moon_elevation_deg": -58.6155,
+   "moon_illuminated_fraction": 0.577,
+   "sidereal_deg": 106.34769,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T05:21:20Z",
+   "unix": 1886736080,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 07:21 CEST",
+   "sun_azimuth_deg": 97.1784,
+   "sun_elevation_deg": -5.0001,
+   "sun_true_elevation_deg": -5.0652,
+   "sun_spa_apparent_elevation_deg": -5.0652,
+   "moon_azimuth_deg": 339.1487,
+   "moon_elevation_deg": -60.2151,
+   "moon_illuminated_fraction": 0.5792,
+   "sidereal_deg": 112.11343,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T05:32:44Z",
+   "unix": 1886736764,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 07:32 CEST",
+   "sun_azimuth_deg": 99.2117,
+   "sun_elevation_deg": -3.002,
+   "sun_true_elevation_deg": -3.1083,
+   "sun_spa_apparent_elevation_deg": -3.1083,
+   "moon_azimuth_deg": 344.2949,
+   "moon_elevation_deg": -60.7782,
+   "moon_illuminated_fraction": 0.5803,
+   "sidereal_deg": 114.97124,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T05:43:32Z",
+   "unix": 1886737412,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 07:43 CEST",
+   "sun_azimuth_deg": 101.1443,
+   "sun_elevation_deg": -1.0033,
+   "sun_true_elevation_deg": -1.2647,
+   "sun_spa_apparent_elevation_deg": -1.2647,
+   "moon_azimuth_deg": 349.3024,
+   "moon_elevation_deg": -61.1588,
+   "moon_illuminated_fraction": 0.5813,
+   "sidereal_deg": 117.67863,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T05:47:35Z",
+   "unix": 1886737655,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 07:47 CEST",
+   "sun_azimuth_deg": 101.8714,
+   "sun_elevation_deg": -0.0028,
+   "sun_true_elevation_deg": -0.5764,
+   "sun_spa_apparent_elevation_deg": -0.0043,
+   "moon_azimuth_deg": 351.2055,
+   "moon_elevation_deg": -61.2619,
+   "moon_illuminated_fraction": 0.5817,
+   "sidereal_deg": 118.6939,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T05:54:29Z",
+   "unix": 1886738069,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 07:54 CEST",
+   "sun_azimuth_deg": 103.1142,
+   "sun_elevation_deg": 0.9981,
+   "sun_true_elevation_deg": 0.592,
+   "sun_spa_apparent_elevation_deg": 0.9963,
+   "moon_azimuth_deg": 354.4701,
+   "moon_elevation_deg": -61.3865,
+   "moon_illuminated_fraction": 0.5823,
+   "sidereal_deg": 120.42362,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T06:04:13Z",
+   "unix": 1886738653,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 08:04 CEST",
+   "sun_azimuth_deg": 104.8774,
+   "sun_elevation_deg": 2.4992,
+   "sun_true_elevation_deg": 2.2299,
+   "sun_spa_apparent_elevation_deg": 2.4966,
+   "moon_azimuth_deg": 359.103,
+   "moon_elevation_deg": -61.4516,
+   "moon_illuminated_fraction": 0.5832,
+   "sidereal_deg": 122.86362,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T06:19:52Z",
+   "unix": 1886739592,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 08:19 CEST",
+   "sun_azimuth_deg": 107.7436,
+   "sun_elevation_deg": 4.9985,
+   "sun_true_elevation_deg": 4.8347,
+   "sun_spa_apparent_elevation_deg": 4.9994,
+   "moon_azimuth_deg": 6.5387,
+   "moon_elevation_deg": -61.2836,
+   "moon_illuminated_fraction": 0.5847,
+   "sidereal_deg": 126.78683,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2029-10-15T16:08:53Z",
+   "unix": 1886774933,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 18:08 CEST",
+   "sun_azimuth_deg": 252.0276,
+   "sun_elevation_deg": 5.0007,
+   "sun_true_elevation_deg": 4.8369,
+   "sun_spa_apparent_elevation_deg": 5.0016,
+   "moon_azimuth_deg": 144.3779,
+   "moon_elevation_deg": 20.3724,
+   "moon_illuminated_fraction": 0.6281,
+   "sidereal_deg": 274.44417,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T16:24:31Z",
+   "unix": 1886775871,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 18:24 CEST",
+   "sun_azimuth_deg": 254.886,
+   "sun_elevation_deg": 2.5013,
+   "sun_true_elevation_deg": 2.2322,
+   "sun_spa_apparent_elevation_deg": 2.4987,
+   "moon_azimuth_deg": 147.9624,
+   "moon_elevation_deg": 21.8839,
+   "moon_illuminated_fraction": 0.6289,
+   "sidereal_deg": 278.3632,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T16:34:14Z",
+   "unix": 1886776454,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 18:34 CEST",
+   "sun_azimuth_deg": 256.6429,
+   "sun_elevation_deg": 1.0008,
+   "sun_true_elevation_deg": 0.5951,
+   "sun_spa_apparent_elevation_deg": 0.9991,
+   "moon_azimuth_deg": 150.2429,
+   "moon_elevation_deg": 22.753,
+   "moon_illuminated_fraction": 0.6293,
+   "sidereal_deg": 280.79902,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T16:41:08Z",
+   "unix": 1886776868,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 18:41 CEST",
+   "sun_azimuth_deg": 257.8833,
+   "sun_elevation_deg": 0.0001,
+   "sun_true_elevation_deg": -0.5747,
+   "sun_spa_apparent_elevation_deg": -0.0029,
+   "moon_azimuth_deg": 151.8864,
+   "moon_elevation_deg": 23.3359,
+   "moon_illuminated_fraction": 0.6297,
+   "sidereal_deg": 282.52874,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T16:45:10Z",
+   "unix": 1886777110,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 18:45 CEST",
+   "sun_azimuth_deg": 258.606,
+   "sun_elevation_deg": -0.9989,
+   "sun_true_elevation_deg": -1.2611,
+   "sun_spa_apparent_elevation_deg": -1.2611,
+   "moon_azimuth_deg": 152.8562,
+   "moon_elevation_deg": 23.663,
+   "moon_illuminated_fraction": 0.6299,
+   "sidereal_deg": 283.53984,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T16:55:57Z",
+   "unix": 1886777757,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 18:55 CEST",
+   "sun_azimuth_deg": 260.5315,
+   "sun_elevation_deg": -2.9979,
+   "sun_true_elevation_deg": -3.1043,
+   "sun_spa_apparent_elevation_deg": -3.1043,
+   "moon_azimuth_deg": 155.4811,
+   "moon_elevation_deg": 24.4868,
+   "moon_illuminated_fraction": 0.6304,
+   "sidereal_deg": 286.24305,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T17:07:21Z",
+   "unix": 1886778441,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 19:07 CEST",
+   "sun_azimuth_deg": 262.56,
+   "sun_elevation_deg": -4.999,
+   "sun_true_elevation_deg": -5.0642,
+   "sun_spa_apparent_elevation_deg": -5.0642,
+   "moon_azimuth_deg": 158.3048,
+   "moon_elevation_deg": 25.2749,
+   "moon_illuminated_fraction": 0.6309,
+   "sidereal_deg": 289.10085,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T17:30:18Z",
+   "unix": 1886779818,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 19:30 CEST",
+   "sun_azimuth_deg": 266.6404,
+   "sun_elevation_deg": -8.9983,
+   "sun_true_elevation_deg": -9.0346,
+   "sun_spa_apparent_elevation_deg": -9.0346,
+   "moon_azimuth_deg": 164.1273,
+   "moon_elevation_deg": 26.5896,
+   "moon_illuminated_fraction": 0.632,
+   "sidereal_deg": 294.85406,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-15T17:59:00Z",
+   "unix": 1886781540,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Oct 2029 19:59 CEST",
+   "sun_azimuth_deg": 271.7882,
+   "sun_elevation_deg": -13.9976,
+   "sun_true_elevation_deg": -14.0207,
+   "sun_spa_apparent_elevation_deg": -14.0207,
+   "moon_azimuth_deg": 171.618,
+   "moon_elevation_deg": 27.6922,
+   "moon_illuminated_fraction": 0.6333,
+   "sidereal_deg": 302.04871,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2029-10-28T00:30:00Z",
+   "unix": 1887841800,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Oct 2029 02:30 CEST",
+   "sun_azimuth_deg": 32.594,
+   "sun_elevation_deg": -53.3033,
+   "sun_true_elevation_deg": -53.3076,
+   "sun_spa_apparent_elevation_deg": -53.3076,
+   "moon_azimuth_deg": 107.4663,
+   "moon_elevation_deg": 46.1197,
+   "moon_illuminated_fraction": 0.736,
+   "sidereal_deg": 51.89411,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2029-10-28T00:59:59Z",
+   "unix": 1887843599,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Oct 2029 02:59 CEST",
+   "sun_azimuth_deg": 43.203,
+   "sun_elevation_deg": -50.1081,
+   "sun_true_elevation_deg": -50.113,
+   "sun_spa_apparent_elevation_deg": -50.113,
+   "moon_azimuth_deg": 114.8123,
+   "moon_elevation_deg": 50.8417,
+   "moon_illuminated_fraction": 0.7347,
+   "sidereal_deg": 59.41046,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2029-10-28T01:00:00Z",
+   "unix": 1887843600,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Oct 2029 02:00 CET",
+   "sun_azimuth_deg": 43.2085,
+   "sun_elevation_deg": -50.1062,
+   "sun_true_elevation_deg": -50.111,
+   "sun_spa_apparent_elevation_deg": -50.111,
+   "moon_azimuth_deg": 114.8167,
+   "moon_elevation_deg": 50.8443,
+   "moon_illuminated_fraction": 0.7347,
+   "sidereal_deg": 59.41464,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2029-10-28T02:00:00Z",
+   "unix": 1887847200,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Oct 2029 03:00 CET",
+   "sun_azimuth_deg": 60.7054,
+   "sun_elevation_deg": -41.9025,
+   "sun_true_elevation_deg": -41.9089,
+   "sun_spa_apparent_elevation_deg": -41.9089,
+   "moon_azimuth_deg": 133.623,
+   "moon_elevation_deg": 59.2371,
+   "moon_illuminated_fraction": 0.7321,
+   "sidereal_deg": 74.45571,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2029-12-27T06:15:52Z",
+   "unix": 1893046552,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Dec 2029 07:15 CET",
+   "sun_azimuth_deg": 114.2784,
+   "sun_elevation_deg": -9.0631,
+   "sun_true_elevation_deg": -9.0991,
+   "sun_spa_apparent_elevation_deg": -9.0991,
+   "moon_azimuth_deg": 215.8114,
+   "moon_elevation_deg": 35.8361,
+   "moon_illuminated_fraction": 0.6275,
+   "sidereal_deg": 197.73635,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2030-03-31T00:59:59Z",
+   "unix": 1901149199,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Mar 2030 01:59 CET",
+   "sun_azimuth_deg": 27.2059,
+   "sun_elevation_deg": -36.3035,
+   "sun_true_elevation_deg": -36.3114,
+   "sun_spa_apparent_elevation_deg": -36.3114,
+   "moon_azimuth_deg": 65.4617,
+   "moon_elevation_deg": -28.1801,
+   "moon_illuminated_fraction": 0.0817,
+   "sidereal_deg": 211.20016,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2030-03-31T01:00:00Z",
+   "unix": 1901149200,
+   "zurich_offset_s": 7200,
+   "local_text": "31 Mar 2030 03:00 CEST",
+   "sun_azimuth_deg": 27.2108,
+   "sun_elevation_deg": -36.3022,
+   "sun_true_elevation_deg": -36.3101,
+   "sun_spa_apparent_elevation_deg": -36.3101,
+   "moon_azimuth_deg": 65.4651,
+   "moon_elevation_deg": -28.1775,
+   "moon_illuminated_fraction": 0.0817,
+   "sidereal_deg": 211.20433,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2030-10-27T00:59:59Z",
+   "unix": 1919293199,
+   "zurich_offset_s": 7200,
+   "local_text": "27 Oct 2030 02:59 CEST",
+   "sun_azimuth_deg": 42.8509,
+   "sun_elevation_deg": -49.7553,
+   "sun_true_elevation_deg": -49.7601,
+   "sun_spa_apparent_elevation_deg": -49.7601,
+   "moon_azimuth_deg": 43.2799,
+   "moon_elevation_deg": -54.1625,
+   "moon_illuminated_fraction": 0.0015,
+   "sidereal_deg": 58.1861,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2030-10-27T01:00:00Z",
+   "unix": 1919293200,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Oct 2030 02:00 CET",
+   "sun_azimuth_deg": 42.8564,
+   "sun_elevation_deg": -49.7533,
+   "sun_true_elevation_deg": -49.7582,
+   "sun_spa_apparent_elevation_deg": -49.7582,
+   "moon_azimuth_deg": 43.2856,
+   "moon_elevation_deg": -54.1606,
+   "moon_illuminated_fraction": 0.0015,
+   "sidereal_deg": 58.19028,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2030-12-31T23:30:00Z",
+   "unix": 1924990200,
+   "zurich_offset_s": 3600,
+   "local_text": "1 Jan 2031 00:30 CET",
+   "sun_azimuth_deg": 358.693,
+   "sun_elevation_deg": -67.0058,
+   "sun_true_elevation_deg": -67.0083,
+   "sun_spa_apparent_elevation_deg": -67.0083,
+   "moon_azimuth_deg": 275.6421,
+   "moon_elevation_deg": 7.203,
+   "moon_illuminated_fraction": 0.5355,
+   "sidereal_deg": 100.68141,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2031-03-30T00:59:59Z",
+   "unix": 1932598799,
+   "zurich_offset_s": 3600,
+   "local_text": "30 Mar 2031 01:59 CET",
+   "sun_azimuth_deg": 27.2831,
+   "sun_elevation_deg": -36.7905,
+   "sun_true_elevation_deg": -36.7983,
+   "sun_spa_apparent_elevation_deg": -36.7983,
+   "moon_azimuth_deg": 307.0006,
+   "moon_elevation_deg": -5.6458,
+   "moon_illuminated_fraction": 0.4045,
+   "sidereal_deg": 209.9758,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2031-03-30T01:00:00Z",
+   "unix": 1932598800,
+   "zurich_offset_s": 7200,
+   "local_text": "30 Mar 2031 03:00 CEST",
+   "sun_azimuth_deg": 27.288,
+   "sun_elevation_deg": -36.7892,
+   "sun_true_elevation_deg": -36.7969,
+   "sun_spa_apparent_elevation_deg": -36.7969,
+   "moon_azimuth_deg": 307.0036,
+   "moon_elevation_deg": -5.648,
+   "moon_illuminated_fraction": 0.4045,
+   "sidereal_deg": 209.97998,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2031-04-15T16:53:54Z",
+   "unix": 1934038434,
+   "zurich_offset_s": 7200,
+   "local_text": "15 Apr 2031 18:53 CEST",
+   "sun_azimuth_deg": 270.6337,
+   "sun_elevation_deg": 13.2342,
+   "sun_true_elevation_deg": 13.1667,
+   "sun_spa_apparent_elevation_deg": 13.236,
+   "moon_azimuth_deg": 316.9029,
+   "moon_elevation_deg": -50.3201,
+   "moon_illuminated_fraction": 0.374,
+   "sidereal_deg": 104.87826,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2031-06-21T11:30:00Z",
+   "unix": 1939807800,
+   "zurich_offset_s": 7200,
+   "local_text": "21 Jun 2031 13:30 CEST",
+   "sun_azimuth_deg": 179.5245,
+   "sun_elevation_deg": 67.4188,
+   "sun_true_elevation_deg": 67.4121,
+   "sun_spa_apparent_elevation_deg": 67.4191,
+   "moon_azimuth_deg": 145.7824,
+   "moon_elevation_deg": 58.2738,
+   "moon_illuminated_fraction": 0.0235,
+   "sidereal_deg": 89.71993,
+   "tags": [
+    "solstice"
+   ]
+  },
+  {
+   "utc": "2031-10-26T00:59:59Z",
+   "unix": 1950742799,
+   "zurich_offset_s": 7200,
+   "local_text": "26 Oct 2031 02:59 CEST",
+   "sun_azimuth_deg": 42.4943,
+   "sun_elevation_deg": -49.3981,
+   "sun_true_elevation_deg": -49.4031,
+   "sun_spa_apparent_elevation_deg": -49.4031,
+   "moon_azimuth_deg": 259.3191,
+   "moon_elevation_deg": 3.8856,
+   "moon_illuminated_fraction": 0.7864,
+   "sidereal_deg": 56.96175,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2031-10-26T01:00:00Z",
+   "unix": 1950742800,
+   "zurich_offset_s": 3600,
+   "local_text": "26 Oct 2031 02:00 CET",
+   "sun_azimuth_deg": 42.4998,
+   "sun_elevation_deg": -49.3962,
+   "sun_true_elevation_deg": -49.4011,
+   "sun_spa_apparent_elevation_deg": -49.4011,
+   "moon_azimuth_deg": 259.3221,
+   "moon_elevation_deg": 3.8829,
+   "moon_illuminated_fraction": 0.7864,
+   "sidereal_deg": 56.96593,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2032-01-23T20:09:43Z",
+   "unix": 1958501383,
+   "zurich_offset_s": 3600,
+   "local_text": "23 Jan 2032 21:09 CET",
+   "sun_azimuth_deg": 283.4805,
+   "sun_elevation_deg": -39.4332,
+   "sun_true_elevation_deg": -39.4402,
+   "sun_spa_apparent_elevation_deg": -39.4402,
+   "moon_azimuth_deg": 159.6624,
+   "moon_elevation_deg": 62.5826,
+   "moon_illuminated_fraction": 0.8815,
+   "sidereal_deg": 72.90466,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2032-01-24T23:32:23Z",
+   "unix": 1958599943,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Jan 2032 00:32 CET",
+   "sun_azimuth_deg": 355.4654,
+   "sun_elevation_deg": -63.0414,
+   "sun_true_elevation_deg": -63.0443,
+   "sun_spa_apparent_elevation_deg": -63.0443,
+   "moon_azimuth_deg": 229.6406,
+   "moon_elevation_deg": 54.4884,
+   "moon_illuminated_fraction": 0.9401,
+   "sidereal_deg": 124.6957,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2032-02-29T17:45:00Z",
+   "unix": 1961689500,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Feb 2032 18:45 CET",
+   "sun_azimuth_deg": 265.3899,
+   "sun_elevation_deg": -6.006,
+   "sun_true_elevation_deg": -6.0603,
+   "sun_spa_apparent_elevation_deg": -6.0603,
+   "moon_azimuth_deg": 71.033,
+   "moon_elevation_deg": -30.4569,
+   "moon_illuminated_fraction": 0.889,
+   "sidereal_deg": 73.09539,
+   "tags": [
+    "midnight-or-leap"
+   ]
+  },
+  {
+   "utc": "2032-03-28T00:59:59Z",
+   "unix": 1964048399,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Mar 2032 01:59 CET",
+   "sun_azimuth_deg": 27.3645,
+   "sun_elevation_deg": -37.2794,
+   "sun_true_elevation_deg": -37.287,
+   "sun_spa_apparent_elevation_deg": -37.287,
+   "moon_azimuth_deg": 193.5869,
+   "moon_elevation_deg": 32.95,
+   "moon_illuminated_fraction": 0.989,
+   "sidereal_deg": 208.75144,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2032-03-28T01:00:00Z",
+   "unix": 1964048400,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Mar 2032 03:00 CEST",
+   "sun_azimuth_deg": 27.3694,
+   "sun_elevation_deg": -37.2781,
+   "sun_true_elevation_deg": -37.2857,
+   "sun_spa_apparent_elevation_deg": -37.2857,
+   "moon_azimuth_deg": 193.5916,
+   "moon_elevation_deg": 32.9493,
+   "moon_illuminated_fraction": 0.989,
+   "sidereal_deg": 208.75562,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2032-10-25T12:49:27Z",
+   "unix": 1982321367,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Oct 2032 14:49 CEST",
+   "sun_azimuth_deg": 206.7876,
+   "sun_elevation_deg": 27.713,
+   "sun_true_elevation_deg": 27.6824,
+   "sun_spa_apparent_elevation_deg": 27.7143,
+   "moon_azimuth_deg": 300.5811,
+   "moon_elevation_deg": -7.3296,
+   "moon_illuminated_fraction": 0.5601,
+   "sidereal_deg": 234.57532,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2032-10-31T00:59:59Z",
+   "unix": 1982797199,
+   "zurich_offset_s": 7200,
+   "local_text": "31 Oct 2032 02:59 CEST",
+   "sun_azimuth_deg": 44.1049,
+   "sun_elevation_deg": -51.0155,
+   "sun_true_elevation_deg": -51.0201,
+   "sun_spa_apparent_elevation_deg": -51.0201,
+   "moon_azimuth_deg": 71.0598,
+   "moon_elevation_deg": -22.3803,
+   "moon_illuminated_fraction": 0.0933,
+   "sidereal_deg": 62.63692,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2032-10-31T01:00:00Z",
+   "unix": 1982797200,
+   "zurich_offset_s": 3600,
+   "local_text": "31 Oct 2032 02:00 CET",
+   "sun_azimuth_deg": 44.1105,
+   "sun_elevation_deg": -51.0135,
+   "sun_true_elevation_deg": -51.0181,
+   "sun_spa_apparent_elevation_deg": -51.0181,
+   "moon_azimuth_deg": 71.0631,
+   "moon_elevation_deg": -22.3776,
+   "moon_illuminated_fraction": 0.0933,
+   "sidereal_deg": 62.6411,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2032-12-27T11:13:57Z",
+   "unix": 1987758837,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Dec 2032 12:13 CET",
+   "sun_azimuth_deg": 175.9997,
+   "sun_elevation_deg": 20.6365,
+   "sun_true_elevation_deg": 20.5939,
+   "sun_spa_apparent_elevation_deg": 20.638,
+   "moon_azimuth_deg": 239.0227,
+   "moon_elevation_deg": 9.7125,
+   "moon_illuminated_fraction": 0.2621,
+   "sidereal_deg": 272.73074,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2033-01-21T16:11:38Z",
+   "unix": 1989936698,
+   "zurich_offset_s": 3600,
+   "local_text": "21 Jan 2033 17:11 CET",
+   "sun_azimuth_deg": 240.6469,
+   "sun_elevation_deg": 0.6794,
+   "sun_true_elevation_deg": 0.2289,
+   "sun_spa_apparent_elevation_deg": 0.6783,
+   "moon_azimuth_deg": 5.9411,
+   "moon_elevation_deg": -49.3883,
+   "moon_illuminated_fraction": 0.6908,
+   "sidereal_deg": 11.99651,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2033-03-27T00:59:59Z",
+   "unix": 1995497999,
+   "zurich_offset_s": 3600,
+   "local_text": "27 Mar 2033 01:59 CET",
+   "sun_azimuth_deg": 27.4545,
+   "sun_elevation_deg": -37.7703,
+   "sun_true_elevation_deg": -37.7777,
+   "sun_spa_apparent_elevation_deg": -37.7777,
+   "moon_azimuth_deg": 85.0583,
+   "moon_elevation_deg": -22.0424,
+   "moon_illuminated_fraction": 0.1896,
+   "sidereal_deg": 207.52709,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2033-03-27T01:00:00Z",
+   "unix": 1995498000,
+   "zurich_offset_s": 7200,
+   "local_text": "27 Mar 2033 03:00 CEST",
+   "sun_azimuth_deg": 27.4595,
+   "sun_elevation_deg": -37.7689,
+   "sun_true_elevation_deg": -37.7764,
+   "sun_spa_apparent_elevation_deg": -37.7764,
+   "moon_azimuth_deg": 85.0612,
+   "moon_elevation_deg": -22.0397,
+   "moon_illuminated_fraction": 0.1896,
+   "sidereal_deg": 207.53126,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2033-04-19T23:17:46Z",
+   "unix": 1997565466,
+   "zurich_offset_s": 7200,
+   "local_text": "20 Apr 2033 01:17 CEST",
+   "sun_azimuth_deg": 357.0415,
+   "sun_elevation_deg": -32.3858,
+   "sun_true_elevation_deg": -32.3949,
+   "sun_spa_apparent_elevation_deg": -32.3949,
+   "moon_azimuth_deg": 121.7209,
+   "moon_elevation_deg": 2.7738,
+   "moon_illuminated_fraction": 0.7539,
+   "sidereal_deg": 205.55849,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2033-06-29T10:11:00Z",
+   "unix": 2003652660,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Jun 2033 12:11 CEST",
+   "sun_azimuth_deg": 137.2478,
+   "sun_elevation_deg": 61.8495,
+   "sun_true_elevation_deg": 61.8409,
+   "sun_spa_apparent_elevation_deg": 61.8499,
+   "moon_azimuth_deg": 109.4861,
+   "moon_elevation_deg": 35.0634,
+   "moon_illuminated_fraction": 0.0762,
+   "sidereal_deg": 78.30926,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2033-08-03T19:31:53Z",
+   "unix": 2006710313,
+   "zurich_offset_s": 7200,
+   "local_text": "3 Aug 2033 21:31 CEST",
+   "sun_azimuth_deg": 302.9718,
+   "sun_elevation_deg": -6.2592,
+   "sun_true_elevation_deg": -6.3114,
+   "sun_spa_apparent_elevation_deg": -6.3114,
+   "moon_azimuth_deg": 211.2186,
+   "moon_elevation_deg": 23.6178,
+   "moon_illuminated_fraction": 0.5372,
+   "sidereal_deg": 253.41167,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2033-08-06T21:19:57Z",
+   "unix": 2006975997,
+   "zurich_offset_s": 7200,
+   "local_text": "6 Aug 2033 23:19 CEST",
+   "sun_azimuth_deg": 325.3389,
+   "sun_elevation_deg": -20.5161,
+   "sun_true_elevation_deg": -20.5315,
+   "sun_spa_apparent_elevation_deg": -20.5315,
+   "moon_azimuth_deg": 199.77,
+   "moon_elevation_deg": 22.2908,
+   "moon_illuminated_fraction": 0.8192,
+   "sidereal_deg": 283.45925,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2033-10-30T00:59:59Z",
+   "unix": 2014246799,
+   "zurich_offset_s": 7200,
+   "local_text": "30 Oct 2033 02:59 CEST",
+   "sun_azimuth_deg": 43.7596,
+   "sun_elevation_deg": -50.677,
+   "sun_true_elevation_deg": -50.6817,
+   "sun_spa_apparent_elevation_deg": -50.6817,
+   "moon_azimuth_deg": 286.5603,
+   "moon_elevation_deg": -38.3736,
+   "moon_illuminated_fraction": 0.3746,
+   "sidereal_deg": 61.41257,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2033-10-30T01:00:00Z",
+   "unix": 2014246800,
+   "zurich_offset_s": 3600,
+   "local_text": "30 Oct 2033 02:00 CET",
+   "sun_azimuth_deg": 43.7651,
+   "sun_elevation_deg": -50.675,
+   "sun_true_elevation_deg": -50.6797,
+   "sun_spa_apparent_elevation_deg": -50.6797,
+   "moon_azimuth_deg": 286.5638,
+   "moon_elevation_deg": -38.3763,
+   "moon_illuminated_fraction": 0.3746,
+   "sidereal_deg": 61.41674,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2034-03-26T00:59:59Z",
+   "unix": 2026947599,
+   "zurich_offset_s": 3600,
+   "local_text": "26 Mar 2034 01:59 CET",
+   "sun_azimuth_deg": 27.5414,
+   "sun_elevation_deg": -38.2625,
+   "sun_true_elevation_deg": -38.2698,
+   "sun_spa_apparent_elevation_deg": -38.2698,
+   "moon_azimuth_deg": 307.3315,
+   "moon_elevation_deg": -9.5247,
+   "moon_illuminated_fraction": 0.3841,
+   "sidereal_deg": 206.30273,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2034-03-26T01:00:00Z",
+   "unix": 2026947600,
+   "zurich_offset_s": 7200,
+   "local_text": "26 Mar 2034 03:00 CEST",
+   "sun_azimuth_deg": 27.5464,
+   "sun_elevation_deg": -38.2612,
+   "sun_true_elevation_deg": -38.2685,
+   "sun_spa_apparent_elevation_deg": -38.2685,
+   "moon_azimuth_deg": 307.3346,
+   "moon_elevation_deg": -9.5269,
+   "moon_illuminated_fraction": 0.3841,
+   "sidereal_deg": 206.30691,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2034-04-02T03:48:19Z",
+   "unix": 2027562499,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 05:48 CEST",
+   "sun_azimuth_deg": 67.2701,
+   "sun_elevation_deg": -14.0022,
+   "sun_true_elevation_deg": -14.0253,
+   "sun_spa_apparent_elevation_deg": -14.0253,
+   "moon_azimuth_deg": 264.4901,
+   "moon_elevation_deg": 6.4784,
+   "moon_illuminated_fraction": 0.9742,
+   "sidereal_deg": 255.40081,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T04:18:49Z",
+   "unix": 2027564329,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 06:18 CEST",
+   "sun_azimuth_deg": 73.1226,
+   "sun_elevation_deg": -9.0016,
+   "sun_true_elevation_deg": -9.0379,
+   "sun_spa_apparent_elevation_deg": -9.0379,
+   "moon_azimuth_deg": 269.7852,
+   "moon_elevation_deg": 1.2842,
+   "moon_illuminated_fraction": 0.9748,
+   "sidereal_deg": 263.04669,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T04:42:26Z",
+   "unix": 2027565746,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 06:42 CEST",
+   "sun_azimuth_deg": 77.4982,
+   "sun_elevation_deg": -5.0023,
+   "sun_true_elevation_deg": -5.0673,
+   "sun_spa_apparent_elevation_deg": -5.0673,
+   "moon_azimuth_deg": 273.8673,
+   "moon_elevation_deg": -2.7362,
+   "moon_illuminated_fraction": 0.9753,
+   "sidereal_deg": 268.96702,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T04:53:56Z",
+   "unix": 2027566436,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 06:53 CEST",
+   "sun_azimuth_deg": 79.5938,
+   "sun_elevation_deg": -3.0019,
+   "sun_true_elevation_deg": -3.1081,
+   "sun_spa_apparent_elevation_deg": -3.1081,
+   "moon_azimuth_deg": 275.8627,
+   "moon_elevation_deg": -4.6866,
+   "moon_illuminated_fraction": 0.9756,
+   "sidereal_deg": 271.84989,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T05:04:41Z",
+   "unix": 2027567081,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 07:04 CEST",
+   "sun_azimuth_deg": 81.538,
+   "sun_elevation_deg": -1.0034,
+   "sun_true_elevation_deg": -1.2648,
+   "sun_spa_apparent_elevation_deg": -1.2648,
+   "moon_azimuth_deg": 277.7381,
+   "moon_elevation_deg": -6.5028,
+   "moon_illuminated_fraction": 0.9758,
+   "sidereal_deg": 274.54475,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T05:08:41Z",
+   "unix": 2027567321,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 07:08 CEST",
+   "sun_azimuth_deg": 82.2585,
+   "sun_elevation_deg": -0.0029,
+   "sun_true_elevation_deg": -0.5764,
+   "sun_spa_apparent_elevation_deg": -0.0043,
+   "moon_azimuth_deg": 278.4392,
+   "moon_elevation_deg": -7.1765,
+   "moon_illuminated_fraction": 0.9759,
+   "sidereal_deg": 275.54749,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T05:15:28Z",
+   "unix": 2027567728,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 07:15 CEST",
+   "sun_azimuth_deg": 83.4778,
+   "sun_elevation_deg": 0.9995,
+   "sun_true_elevation_deg": 0.5936,
+   "sun_spa_apparent_elevation_deg": 0.9978,
+   "moon_azimuth_deg": 279.6329,
+   "moon_elevation_deg": -8.3158,
+   "moon_illuminated_fraction": 0.976,
+   "sidereal_deg": 277.24797,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T05:24:55Z",
+   "unix": 2027568295,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 07:24 CEST",
+   "sun_azimuth_deg": 85.1726,
+   "sun_elevation_deg": 2.4976,
+   "sun_true_elevation_deg": 2.2282,
+   "sun_spa_apparent_elevation_deg": 2.495,
+   "moon_azimuth_deg": 281.3078,
+   "moon_elevation_deg": -9.8957,
+   "moon_illuminated_fraction": 0.9763,
+   "sidereal_deg": 279.61693,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T05:39:56Z",
+   "unix": 2027569196,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 07:39 CEST",
+   "sun_azimuth_deg": 87.8625,
+   "sun_elevation_deg": 4.9973,
+   "sun_true_elevation_deg": 4.8335,
+   "sun_spa_apparent_elevation_deg": 4.9982,
+   "moon_azimuth_deg": 284.0035,
+   "moon_elevation_deg": -12.3857,
+   "moon_illuminated_fraction": 0.9766,
+   "sidereal_deg": 283.38138,
+   "tags": [
+    "sunrise"
+   ]
+  },
+  {
+   "utc": "2034-04-02T17:25:55Z",
+   "unix": 2027611555,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 19:25 CEST",
+   "sun_azimuth_deg": 272.4054,
+   "sun_elevation_deg": 5.0005,
+   "sun_true_elevation_deg": 4.8368,
+   "sun_spa_apparent_elevation_deg": 5.0014,
+   "moon_azimuth_deg": 97.1853,
+   "moon_elevation_deg": 5.1059,
+   "moon_illuminated_fraction": 0.9908,
+   "sidereal_deg": 100.36044,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T17:40:58Z",
+   "unix": 2027612458,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 19:40 CEST",
+   "sun_azimuth_deg": 275.106,
+   "sun_elevation_deg": 2.5014,
+   "sun_true_elevation_deg": 2.2323,
+   "sun_spa_apparent_elevation_deg": 2.4988,
+   "moon_azimuth_deg": 99.8893,
+   "moon_elevation_deg": 7.5899,
+   "moon_illuminated_fraction": 0.991,
+   "sidereal_deg": 104.13324,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T17:50:27Z",
+   "unix": 2027613027,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 19:50 CEST",
+   "sun_azimuth_deg": 276.81,
+   "sun_elevation_deg": 1.002,
+   "sun_true_elevation_deg": 0.5964,
+   "sun_spa_apparent_elevation_deg": 1.0002,
+   "moon_azimuth_deg": 101.6115,
+   "moon_elevation_deg": 9.1456,
+   "moon_illuminated_fraction": 0.9911,
+   "sidereal_deg": 106.51057,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T17:57:15Z",
+   "unix": 2027613435,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 19:57 CEST",
+   "sun_azimuth_deg": 278.0348,
+   "sun_elevation_deg": 0.0014,
+   "sun_true_elevation_deg": -0.5731,
+   "sun_spa_apparent_elevation_deg": -0.0016,
+   "moon_azimuth_deg": 102.8569,
+   "moon_elevation_deg": 10.2556,
+   "moon_illuminated_fraction": 0.9912,
+   "sidereal_deg": 108.21522,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T18:01:15Z",
+   "unix": 2027613675,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 20:01 CEST",
+   "sun_azimuth_deg": 278.7569,
+   "sun_elevation_deg": -0.997,
+   "sun_true_elevation_deg": -1.2595,
+   "sun_spa_apparent_elevation_deg": -1.2595,
+   "moon_azimuth_deg": 103.594,
+   "moon_elevation_deg": 10.9061,
+   "moon_illuminated_fraction": 0.9912,
+   "sidereal_deg": 109.21796,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T18:12:03Z",
+   "unix": 2027614323,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 20:12 CEST",
+   "sun_azimuth_deg": 280.7144,
+   "sun_elevation_deg": -2.9992,
+   "sun_true_elevation_deg": -3.1056,
+   "sun_spa_apparent_elevation_deg": -3.1056,
+   "moon_azimuth_deg": 105.6029,
+   "moon_elevation_deg": 12.6523,
+   "moon_illuminated_fraction": 0.9913,
+   "sidereal_deg": 111.92535,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T18:23:35Z",
+   "unix": 2027615015,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 20:23 CEST",
+   "sun_azimuth_deg": 282.8211,
+   "sun_elevation_deg": -4.9986,
+   "sun_true_elevation_deg": -5.0637,
+   "sun_spa_apparent_elevation_deg": -5.0637,
+   "moon_azimuth_deg": 107.7821,
+   "moon_elevation_deg": 14.4986,
+   "moon_illuminated_fraction": 0.9915,
+   "sidereal_deg": 114.81658,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T18:47:18Z",
+   "unix": 2027616438,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 20:47 CEST",
+   "sun_azimuth_deg": 287.2266,
+   "sun_elevation_deg": -8.9993,
+   "sun_true_elevation_deg": -9.0356,
+   "sun_spa_apparent_elevation_deg": -9.0356,
+   "moon_azimuth_deg": 112.3942,
+   "moon_elevation_deg": 18.2218,
+   "moon_illuminated_fraction": 0.9917,
+   "sidereal_deg": 120.76198,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-04-02T19:17:56Z",
+   "unix": 2027618276,
+   "zurich_offset_s": 7200,
+   "local_text": "2 Apr 2034 21:17 CEST",
+   "sun_azimuth_deg": 293.1221,
+   "sun_elevation_deg": -13.9975,
+   "sun_true_elevation_deg": -14.0206,
+   "sun_spa_apparent_elevation_deg": -14.0206,
+   "moon_azimuth_deg": 118.6735,
+   "moon_elevation_deg": 22.843,
+   "moon_illuminated_fraction": 0.992,
+   "sidereal_deg": 128.44128,
+   "tags": [
+    "sunset"
+   ]
+  },
+  {
+   "utc": "2034-06-13T21:18:35Z",
+   "unix": 2033846315,
+   "zurich_offset_s": 7200,
+   "local_text": "13 Jun 2034 23:18 CEST",
+   "sun_azimuth_deg": 329.1677,
+   "sun_elevation_deg": -14.647,
+   "sun_true_elevation_deg": -14.669,
+   "sun_spa_apparent_elevation_deg": -14.669,
+   "moon_azimuth_deg": 4.2903,
+   "moon_elevation_deg": -31.3569,
+   "moon_illuminated_fraction": 0.0967,
+   "sidereal_deg": 229.65298,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2034-07-22T17:38:32Z",
+   "unix": 2037202712,
+   "zurich_offset_s": 7200,
+   "local_text": "22 Jul 2034 19:38 CEST",
+   "sun_azimuth_deg": 284.7965,
+   "sun_elevation_deg": 13.9068,
+   "sun_true_elevation_deg": 13.8425,
+   "sun_spa_apparent_elevation_deg": 13.9086,
+   "moon_azimuth_deg": 192.2647,
+   "moon_elevation_deg": 35.5103,
+   "moon_illuminated_fraction": 0.4492,
+   "sidereal_deg": 212.9301,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2034-10-29T00:59:59Z",
+   "unix": 2045696399,
+   "zurich_offset_s": 7200,
+   "local_text": "29 Oct 2034 02:59 CEST",
+   "sun_azimuth_deg": 43.4196,
+   "sun_elevation_deg": -50.3278,
+   "sun_true_elevation_deg": -50.3326,
+   "sun_spa_apparent_elevation_deg": -50.3326,
+   "moon_azimuth_deg": 187.9143,
+   "moon_elevation_deg": 58.2508,
+   "moon_illuminated_fraction": 0.9642,
+   "sidereal_deg": 60.18821,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2034-10-29T01:00:00Z",
+   "unix": 2045696400,
+   "zurich_offset_s": 3600,
+   "local_text": "29 Oct 2034 02:00 CET",
+   "sun_azimuth_deg": 43.4251,
+   "sun_elevation_deg": -50.3258,
+   "sun_true_elevation_deg": -50.3306,
+   "sun_spa_apparent_elevation_deg": -50.3306,
+   "moon_azimuth_deg": 187.9217,
+   "moon_elevation_deg": 58.2504,
+   "moon_illuminated_fraction": 0.9642,
+   "sidereal_deg": 60.19239,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2035-03-07T01:35:44Z",
+   "unix": 2056844144,
+   "zurich_offset_s": 3600,
+   "local_text": "7 Mar 2035 02:35 CET",
+   "sun_azimuth_deg": 40.5803,
+   "sun_elevation_deg": -42.2921,
+   "sun_true_elevation_deg": -42.2984,
+   "sun_spa_apparent_elevation_deg": -42.2984,
+   "moon_azimuth_deg": 80.9911,
+   "moon_elevation_deg": -29.6436,
+   "moon_illuminated_fraction": 0.0893,
+   "sidereal_deg": 196.29869,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2035-03-25T00:30:00Z",
+   "unix": 2058395400,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Mar 2035 01:30 CET",
+   "sun_azimuth_deg": 18.2384,
+   "sun_elevation_deg": -40.7938,
+   "sun_true_elevation_deg": -40.8005,
+   "sun_spa_apparent_elevation_deg": -40.8005,
+   "moon_azimuth_deg": 181.1508,
+   "moon_elevation_deg": 39.2061,
+   "moon_illuminated_fraction": 0.9869,
+   "sidereal_deg": 197.56202,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2035-03-25T00:59:59Z",
+   "unix": 2058397199,
+   "zurich_offset_s": 3600,
+   "local_text": "25 Mar 2035 01:59 CET",
+   "sun_azimuth_deg": 27.6283,
+   "sun_elevation_deg": -38.7551,
+   "sun_true_elevation_deg": -38.7623,
+   "sun_spa_apparent_elevation_deg": -38.7623,
+   "moon_azimuth_deg": 190.5316,
+   "moon_elevation_deg": 38.6045,
+   "moon_illuminated_fraction": 0.9866,
+   "sidereal_deg": 205.07837,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2035-03-25T01:00:00Z",
+   "unix": 2058397200,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Mar 2035 03:00 CEST",
+   "sun_azimuth_deg": 27.6333,
+   "sun_elevation_deg": -38.7537,
+   "sun_true_elevation_deg": -38.7609,
+   "sun_spa_apparent_elevation_deg": -38.7609,
+   "moon_azimuth_deg": 190.5367,
+   "moon_elevation_deg": 38.604,
+   "moon_illuminated_fraction": 0.9866,
+   "sidereal_deg": 205.08255,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2035-03-25T02:00:00Z",
+   "unix": 2058400800,
+   "zurich_offset_s": 7200,
+   "local_text": "25 Mar 2035 04:00 CEST",
+   "sun_azimuth_deg": 44.5078,
+   "sun_elevation_deg": -32.5925,
+   "sun_true_elevation_deg": -32.6015,
+   "sun_spa_apparent_elevation_deg": -32.6015,
+   "moon_azimuth_deg": 208.3126,
+   "moon_elevation_deg": 35.043,
+   "moon_illuminated_fraction": 0.9859,
+   "sidereal_deg": 220.12362,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2035-04-23T08:34:36Z",
+   "unix": 2060930076,
+   "zurich_offset_s": 7200,
+   "local_text": "23 Apr 2035 10:34 CEST",
+   "sun_azimuth_deg": 118.4121,
+   "sun_elevation_deg": 40.5715,
+   "sun_true_elevation_deg": 40.5527,
+   "sun_spa_apparent_elevation_deg": 40.5723,
+   "moon_azimuth_deg": 289.8663,
+   "moon_elevation_deg": -33.9219,
+   "moon_illuminated_fraction": 0.9932,
+   "sidereal_deg": 347.62749,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2035-05-21T13:00:35Z",
+   "unix": 2063365235,
+   "zurich_offset_s": 7200,
+   "local_text": "21 May 2035 15:00 CEST",
+   "sun_azimuth_deg": 224.9639,
+   "sun_elevation_deg": 57.6976,
+   "sun_true_elevation_deg": 57.6874,
+   "sun_spa_apparent_elevation_deg": 57.6981,
+   "moon_azimuth_deg": 47.7702,
+   "moon_elevation_deg": -49.8868,
+   "moon_illuminated_fraction": 0.9952,
+   "sidereal_deg": 81.90351,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2035-09-28T05:53:35Z",
+   "unix": 2074571615,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Sep 2035 07:53 CEST",
+   "sun_azimuth_deg": 97.4634,
+   "sun_elevation_deg": 4.6054,
+   "sun_true_elevation_deg": 4.4303,
+   "sun_spa_apparent_elevation_deg": 4.6059,
+   "moon_azimuth_deg": 119.5887,
+   "moon_elevation_deg": 40.9286,
+   "moon_illuminated_fraction": 0.1264,
+   "sidereal_deg": 102.99539,
+   "tags": [
+    "random"
+   ]
+  },
+  {
+   "utc": "2035-10-28T00:30:00Z",
+   "unix": 2077144200,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Oct 2035 02:30 CEST",
+   "sun_azimuth_deg": 32.4828,
+   "sun_elevation_deg": -53.1611,
+   "sun_true_elevation_deg": -53.1654,
+   "sun_spa_apparent_elevation_deg": -53.1654,
+   "moon_azimuth_deg": 59.8369,
+   "moon_elevation_deg": -22.9786,
+   "moon_illuminated_fraction": 0.0992,
+   "sidereal_deg": 51.4475,
+   "tags": [
+    "dst-local-0100-twin"
+   ]
+  },
+  {
+   "utc": "2035-10-28T00:59:59Z",
+   "unix": 2077145999,
+   "zurich_offset_s": 7200,
+   "local_text": "28 Oct 2035 02:59 CEST",
+   "sun_azimuth_deg": 43.0746,
+   "sun_elevation_deg": -49.9746,
+   "sun_true_elevation_deg": -49.9794,
+   "sun_spa_apparent_elevation_deg": -49.9794,
+   "moon_azimuth_deg": 65.9486,
+   "moon_elevation_deg": -18.5926,
+   "moon_illuminated_fraction": 0.0976,
+   "sidereal_deg": 58.96385,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2035-10-28T01:00:00Z",
+   "unix": 2077146000,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Oct 2035 02:00 CET",
+   "sun_azimuth_deg": 43.0801,
+   "sun_elevation_deg": -49.9726,
+   "sun_true_elevation_deg": -49.9774,
+   "sun_spa_apparent_elevation_deg": -49.9774,
+   "moon_azimuth_deg": 65.9519,
+   "moon_elevation_deg": -18.5901,
+   "moon_illuminated_fraction": 0.0976,
+   "sidereal_deg": 58.96803,
+   "tags": [
+    "dst-edge"
+   ]
+  },
+  {
+   "utc": "2035-10-28T02:00:00Z",
+   "unix": 2077149600,
+   "zurich_offset_s": 3600,
+   "local_text": "28 Oct 2035 03:00 CET",
+   "sun_azimuth_deg": 60.5674,
+   "sun_elevation_deg": -41.7839,
+   "sun_true_elevation_deg": -41.7904,
+   "sun_spa_apparent_elevation_deg": -41.7904,
+   "moon_azimuth_deg": 77.2771,
+   "moon_elevation_deg": -9.2092,
+   "moon_illuminated_fraction": 0.0947,
+   "sidereal_deg": 74.0091,
+   "tags": [
+    "dst-after"
+   ]
+  },
+  {
+   "utc": "2035-12-24T21:22:12Z",
+   "unix": 2082144132,
+   "zurich_offset_s": 3600,
+   "local_text": "24 Dec 2035 22:22 CET",
+   "sun_azimuth_deg": 300.7966,
+   "sun_elevation_deg": -55.9489,
+   "sun_true_elevation_deg": -55.9528,
+   "sun_spa_apparent_elevation_deg": -55.9528,
+   "moon_azimuth_deg": 34.3616,
+   "moon_elevation_deg": -50.4403,
+   "moon_illuminated_fraction": 0.1926,
+   "sidereal_deg": 61.5365,
+   "tags": [
+    "random"
+   ]
+  }
+ ],
+ "other_sites_note": "Other places (the same sources, sea level), so that a site written into the clock or latitude and longitude swapped fail: southern hemisphere, west of Greenwich, far east.",
+ "other_sites": [
+  {
+   "site": "cape_town",
+   "latitude_deg": -33.92,
+   "longitude_deg": 18.42,
+   "utc": "2021-03-03T08:15:00Z",
+   "unix": 1614759300,
+   "sun_azimuth_deg": 63.5517,
+   "sun_elevation_deg": 43.5552,
+   "moon_azimuth_deg": 262.1265,
+   "moon_elevation_deg": 6.8927,
+   "moon_illuminated_fraction": 0.8006,
+   "sidereal_deg": 303.50205
+  },
+  {
+   "site": "cape_town",
+   "latitude_deg": -33.92,
+   "longitude_deg": 18.42,
+   "utc": "2025-07-19T15:40:00Z",
+   "unix": 1752939600,
+   "sun_azimuth_deg": 297.177,
+   "sun_elevation_deg": 2.8083,
+   "moon_azimuth_deg": 256.5307,
+   "moon_elevation_deg": -58.2532,
+   "moon_illuminated_fraction": 0.3207,
+   "sidereal_deg": 191.10679
+  },
+  {
+   "site": "cape_town",
+   "latitude_deg": -33.92,
+   "longitude_deg": 18.42,
+   "utc": "2033-11-27T21:05:00Z",
+   "unix": 2016738300,
+   "sun_azimuth_deg": 204.3036,
+   "sun_elevation_deg": -30.8438,
+   "moon_azimuth_deg": 261.3363,
+   "moon_elevation_deg": 8.7722,
+   "moon_illuminated_fraction": 0.3093,
+   "sidereal_deg": 41.76067
+  },
+  {
+   "site": "cape_town",
+   "latitude_deg": -33.92,
+   "longitude_deg": 18.42,
+   "utc": "2023-09-06T11:40:00Z",
+   "unix": 1694000400,
+   "sun_azimuth_deg": 339.4156,
+   "sun_elevation_deg": 47.5927,
+   "moon_azimuth_deg": 280.7126,
+   "moon_elevation_deg": -32.596,
+   "moon_illuminated_fraction": 0.5526,
+   "sidereal_deg": 178.73101
+  },
+  {
+   "site": "reykjavik",
+   "latitude_deg": 64.15,
+   "longitude_deg": -21.94,
+   "utc": "2021-03-03T08:15:00Z",
+   "unix": 1614759300,
+   "sun_azimuth_deg": 100.8494,
+   "sun_elevation_deg": -2.0481,
+   "moon_azimuth_deg": 226.7394,
+   "moon_elevation_deg": 5.8762,
+   "moon_illuminated_fraction": 0.7942,
+   "sidereal_deg": 263.14205
+  },
+  {
+   "site": "reykjavik",
+   "latitude_deg": 64.15,
+   "longitude_deg": -21.94,
+   "utc": "2025-07-19T15:40:00Z",
+   "unix": 1752939600,
+   "sun_azimuth_deg": 220.8986,
+   "sun_elevation_deg": 41.7878,
+   "moon_azimuth_deg": 293.3826,
+   "moon_elevation_deg": 11.8727,
+   "moon_illuminated_fraction": 0.3227,
+   "sidereal_deg": 150.74679
+  },
+  {
+   "site": "reykjavik",
+   "latitude_deg": 64.15,
+   "longitude_deg": -21.94,
+   "utc": "2033-11-27T21:05:00Z",
+   "unix": 2016738300,
+   "sun_azimuth_deg": 285.3379,
+   "sun_elevation_deg": -30.8858,
+   "moon_azimuth_deg": 225.1455,
+   "moon_elevation_deg": 4.7043,
+   "moon_illuminated_fraction": 0.3096,
+   "sidereal_deg": 1.40067
+  },
+  {
+   "site": "reykjavik",
+   "latitude_deg": 64.15,
+   "longitude_deg": -21.94,
+   "utc": "2023-09-06T11:40:00Z",
+   "unix": 1694000400,
+   "sun_azimuth_deg": 149.3998,
+   "sun_elevation_deg": 29.2644,
+   "moon_azimuth_deg": 265.902,
+   "moon_elevation_deg": 29.3444,
+   "moon_illuminated_fraction": 0.5514,
+   "sidereal_deg": 138.37101
+  },
+  {
+   "site": "tokyo",
+   "latitude_deg": 35.68,
+   "longitude_deg": 139.77,
+   "utc": "2021-03-03T08:15:00Z",
+   "unix": 1614759300,
+   "sun_azimuth_deg": 259.0371,
+   "sun_elevation_deg": 3.8992,
+   "moon_azimuth_deg": 54.0369,
+   "moon_elevation_deg": -54.389,
+   "moon_illuminated_fraction": 0.7904,
+   "sidereal_deg": 64.85205
+  },
+  {
+   "site": "tokyo",
+   "latitude_deg": 35.68,
+   "longitude_deg": 139.77,
+   "utc": "2025-07-19T15:40:00Z",
+   "unix": 1752939600,
+   "sun_azimuth_deg": 14.6039,
+   "sun_elevation_deg": -32.2326,
+   "moon_azimuth_deg": 70.7542,
+   "moon_elevation_deg": 9.434,
+   "moon_illuminated_fraction": 0.3124,
+   "sidereal_deg": 312.45679
+  },
+  {
+   "site": "tokyo",
+   "latitude_deg": 35.68,
+   "longitude_deg": 139.77,
+   "utc": "2033-11-27T21:05:00Z",
+   "unix": 2016738300,
+   "sun_azimuth_deg": 112.4701,
+   "sun_elevation_deg": -5.2499,
+   "moon_azimuth_deg": 54.5424,
+   "moon_elevation_deg": -56.3113,
+   "moon_illuminated_fraction": 0.3159,
+   "sidereal_deg": 163.11067
+  },
+  {
+   "site": "tokyo",
+   "latitude_deg": 35.68,
+   "longitude_deg": 139.77,
+   "utc": "2023-09-06T11:40:00Z",
+   "unix": 1694000400,
+   "sun_azimuth_deg": 305.6182,
+   "sun_elevation_deg": -30.4537,
+   "moon_azimuth_deg": 48.1818,
+   "moon_elevation_deg": -11.5065,
+   "moon_illuminated_fraction": 0.5426,
+   "sidereal_deg": 300.08101
+  }
+ ]
+}
