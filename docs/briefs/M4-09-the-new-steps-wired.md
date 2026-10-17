@@ -187,7 +187,12 @@ writes design's values, and the manifest is 327'265 bytes, SHA-256
   `test_m4_09_manifest.py`, `test_m4_09_manifest_checks.py`, `test_m4_09_commands.py`,
   `test_m4_09_one_home.py`, `test_m4_09_sky_step.py` (`test_m4_09_sky_config.py` is already
   in place); the nine fixture manifests, the two fixtures' `sky.json` and
-  `generated/sky/fixture.json`;
+  `generated/sky/fixture.json`; and `test_m4_07_surroundings_manifest.py`, design's replacement
+  of M4-07's file (added by design after the rehearsal, 2026-10-17: M4-07 pinned the surroundings
+  fixture's manifest with `"sky": null` and its SHA-256 `a42c5a91…`; this brief's manifest holds
+  the fixture's sky block, `8fa084a5…`; only that block, a docstring paragraph and the SHA-256
+  change; measured: the replacement passes on this brief's fixture, M4-07's original fails 2 of
+  3);
 - the existing tests the twelve-key manifest changes (measured in design's rehearsal: 16
   failures in 7 files, and `test_repo_tracked` until the new files are staged; each edit a key
   set, a list or a SHA-256):
