@@ -1,0 +1,197 @@
+{
+  "about": "Named cells of tests/shared/shadows_fixture/generated/shadows/fixture.png (design data, brief M4-03): row 0 is the northern row, column 0 the western column; a cell's centre is E = e_min + 0.5 + column, N = n_max - 0.5 - row (lv95); local x = E - origin e, z = -(N - origin n) by the fixture's world.json (the owner's axes); value is the PNG's pixel (255 shadow, 0 not); cast and own are the rule's two shadows before the inset.",
+  "area": "fixture",
+  "cell_m": 1.0,
+  "cells": [
+    {
+      "name": "behind the block",
+      "row": 20,
+      "column": 5,
+      "lv95": [
+        2650991.5,
+        1150005.5
+      ],
+      "local_xz": [
+        979.5,
+        -17.5
+      ],
+      "value": 255,
+      "cast": true,
+      "own": false,
+      "why": "4 m north of the 10 m block: cast shadow, kept by the inset"
+    },
+    {
+      "name": "the block's shadow leans east",
+      "row": 17,
+      "column": 4,
+      "lv95": [
+        2650990.5,
+        1150008.5
+      ],
+      "local_xz": [
+        978.5,
+        -20.5
+      ],
+      "value": 0,
+      "cast": true,
+      "own": false,
+      "why": "near the shadow's far end: in cast shadow, but its western neighbour is lit, so the inset removes it; three rows south, (20, 4) is kept"
+    },
+    {
+      "name": "near the block's west side",
+      "row": 20,
+      "column": 4,
+      "lv95": [
+        2650990.5,
+        1150005.5
+      ],
+      "local_xz": [
+        978.5,
+        -17.5
+      ],
+      "value": 255,
+      "cast": true,
+      "own": false,
+      "why": "the block's shadow, kept: compare (17, 4)"
+    },
+    {
+      "name": "south of the block",
+      "row": 29,
+      "column": 5,
+      "lv95": [
+        2650991.5,
+        1149996.5
+      ],
+      "local_xz": [
+        979.5,
+        -8.5
+      ],
+      "value": 0,
+      "cast": false,
+      "own": false,
+      "why": "the sun stands south: nothing is cast towards it"
+    },
+    {
+      "name": "the block's roof",
+      "row": 26,
+      "column": 5,
+      "lv95": [
+        2650991.5,
+        1149999.5
+      ],
+      "local_xz": [
+        979.5,
+        -11.5
+      ],
+      "value": 0,
+      "cast": false,
+      "own": false,
+      "why": "flat and lit"
+    },
+    {
+      "name": "the thin wall's shadow",
+      "row": 31,
+      "column": 16,
+      "lv95": [
+        2651002.5,
+        1149994.5
+      ],
+      "local_xz": [
+        990.5,
+        -6.5
+      ],
+      "value": 255,
+      "cast": true,
+      "own": false,
+      "why": "a 6 m wall one 0.5 m pixel thick: its cell takes the largest pixel, so it casts 4 rows and the inset keeps two"
+    },
+    {
+      "name": "the ridge at the east edge",
+      "row": 6,
+      "column": 31,
+      "lv95": [
+        2651017.5,
+        1150019.5
+      ],
+      "local_xz": [
+        1005.5,
+        -31.5
+      ],
+      "value": 255,
+      "cast": true,
+      "own": true,
+      "why": "in shadow; its neighbour outside the grid does not count, so the edge cell stays"
+    },
+    {
+      "name": "the ridge's lit south face",
+      "row": 11,
+      "column": 26,
+      "lv95": [
+        2651012.5,
+        1150014.5
+      ],
+      "local_xz": [
+        1000.5,
+        -26.5
+      ],
+      "value": 0,
+      "cast": false,
+      "own": false,
+      "why": "a slope of 0.5 facing the sun"
+    },
+    {
+      "name": "the slope's last row",
+      "row": 47,
+      "column": 25,
+      "lv95": [
+        2651011.5,
+        1149978.5
+      ],
+      "local_xz": [
+        999.5,
+        9.5
+      ],
+      "value": 255,
+      "cast": false,
+      "own": true,
+      "why": "the grid's southern edge: no point towards the sun is inside the grid, so only its own shadow (one-sided normal, 2 m per m facing away) makes it shadow"
+    },
+    {
+      "name": "the slope's western edge",
+      "row": 47,
+      "column": 22,
+      "lv95": [
+        2651008.5,
+        1149978.5
+      ],
+      "local_xz": [
+        996.5,
+        9.5
+      ],
+      "value": 0,
+      "cast": false,
+      "own": true,
+      "why": "in its own shadow, but its western neighbour is lit: removed by the inset"
+    },
+    {
+      "name": "open ground",
+      "row": 2,
+      "column": 2,
+      "lv95": [
+        2650988.5,
+        1150023.5
+      ],
+      "local_xz": [
+        976.5,
+        -35.5
+      ],
+      "value": 0,
+      "cast": false,
+      "own": false,
+      "why": "lit"
+    }
+  ],
+  "columns": 32,
+  "rows": 48,
+  "shadow_cells": 84
+}

@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "cell_m": 1,
+  "sun": {
+    "azimuth_grid_deg": 184.67,
+    "elevation_deg": 50.1,
+    "note": "the flight's mean sun, 2023-09-06/07 11:25-11:55 UTC (m4-design §0): true azimuth 184.9 deg, minus 0.226 deg because LV95 grid north lies 0.226 deg east of true north at the village (config/sky.json true_to_grid_deg -0.2258); elevation 50.1 deg"
+  },
+  "threshold_m": 0.05,
+  "areas": {
+    "village": {
+      "computed_for": {
+        "inputs_sha256": "f73033b19c5ff89a1cff469d2777e9a9b4f91226eada171669017bf7c030f748",
+        "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b"
+      },
+      "expected_pixels_sha256": "6f958c41f34ebc58847baefe9a386e19c6b4edf3835327bb5c11eb69526b7aa6",
+      "expected_png_sha256": "5fff6e5833156bcdfc1d45060aa83ee86e9a1cf336d861d57f9c773fc7fa4df3"
+    }
+  }
+}

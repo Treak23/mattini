@@ -1,0 +1,31 @@
+{
+  "datasets": {
+    "swisssurface3d": {
+      "collection": "ch.swisstopo.swisssurface3d-raster",
+      "resolution_m": 0.5,
+      "tiles": {
+        "2650-1149": {
+          "edition": "2022",
+          "file": "dsm.f32",
+          "sha256": "96763ff04aa4c3854e6d39c4b2b3a5a802a4a2b01007ec15dbfe95a074ed8fcc"
+        },
+        "2650-1150": {
+          "edition": "2021",
+          "file": "dsm.f32",
+          "sha256": "96763ff04aa4c3854e6d39c4b2b3a5a802a4a2b01007ec15dbfe95a074ed8fcc"
+        },
+        "2651-1149": {
+          "edition": "2021",
+          "file": "dsm.f32",
+          "sha256": "96763ff04aa4c3854e6d39c4b2b3a5a802a4a2b01007ec15dbfe95a074ed8fcc"
+        },
+        "2651-1150": {
+          "edition": "2022",
+          "file": "dsm.f32",
+          "sha256": "96763ff04aa4c3854e6d39c4b2b3a5a802a4a2b01007ec15dbfe95a074ed8fcc"
+        }
+      }
+    }
+  },
+  "schema": 1
+}

@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "areas": {
+    "village": {
+      "computed_for": {
+        "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b"
+      },
+      "latitude_deg": 46.0196233,
+      "longitude_deg": 7.7485397,
+      "true_to_grid_deg": -0.2258
+    }
+  }
+}
