@@ -106,7 +106,8 @@ error panel (main.gd's).
    `load_from`, not the new check).
 8. **No allowlist line:** the pinned tests call the readers' `_read` (which returns the problem
    without a push_error) and `missing_pack_errors` (which pushes none), so they print no ERROR
-   line. `tools/gate_allowlist.txt` is M4-07's in wave 1.
+   line. `tools/gate_allowlist.txt` is append-only and written by M4-06 and M4-07 in wave 1; this brief
+adds no line.
 
 ## Scope — files you may touch
 

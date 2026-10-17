@@ -203,8 +203,9 @@ the error panel and its startup line.
 - your own new `game/tests/test_*.gd`; `docs/briefs/shots/M4-06-*.jpg`.
 
 Wave 1's shared files: `complete_world.gd`, `render_photo.gd`, `fake_tools.py`,
-`test_gate_render.py`, `tools/gate.sh` and the allowlist. Design checked that no other wave-1
-brief written before this one pins any of them; if another lane's landing changed one, rebase,
+`test_gate_render.py`, `tools/gate.sh` and the allowlist. Design checked them against the other wave-1 briefs (2026-10-17): M4-08, after this brief
+in lane F, replaces `fake_tools.py` with a copy that keeps this brief's lines, and M4-07 appends
+its own allowlist line; if another lane's landing changed one, rebase,
 keep both changes and re-run the gate (the allowlist: append, keep every line).
 
 ## Depends on
