@@ -127,8 +127,12 @@ Not `main.gd`, `main.tscn`, `terrain_loader.gd`, `terrain_photo.gdshader`, any s
 
 ## Depends on
 
-None. M4-07 runs beside it and shares no file; the census in
-`test_m4_08_release_hints.gd` names M4-07's reader as its exception, whichever lands first.
+M4-06, in the same lane (F), before it: both change `pipeline/tests/fake_tools.py` (M4-06 the
+render step's `render_lift` lines, this brief the packs). Design's pinned copy here holds both
+changes (design, 2026-10-17), so copying it into place after M4-06 has landed keeps M4-06's lines;
+M4-06's own `cmp` gate holds until it is DONE (WORKFLOW §Brief lifecycle). M4-07 runs beside this
+lane and shares no file; the census in `test_m4_08_release_hints.gd` names M4-07's reader as its
+exception, whichever lands first.
 
 ## Done when (gates)
 

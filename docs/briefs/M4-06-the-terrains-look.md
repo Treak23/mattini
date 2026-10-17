@@ -209,7 +209,8 @@ keep both changes and re-run the gate (the allowlist: append, keep every line).
 
 ## Depends on
 
-None: the shadows fixture is on `main` (brief M4-03's plan commit). M4-09 (wave 2) writes the
+None: the shadows fixture is on `main` (brief M4-03's plan commit). M4-08 follows in the same
+lane (F): it replaces `pipeline/tests/fake_tools.py` with a copy that keeps this brief's lines. M4-09 (wave 2) writes the
 manifest's `shadows` block in this brief's form; M4-10 (wave 2) wires the mask in the main scene.
 
 ## Done when (gates)
