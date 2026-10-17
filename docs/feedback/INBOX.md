@@ -6,6 +6,17 @@ sequential across both files. Pull --rebase before every commit.
 
 ## Open
 
+### FB-005 · 2026-10-17 · bug · Errors / missing photo pack message names the pipeline, not the pack
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
+Build: 0.3.0 (dist 5f08379)
+Impact: degraded
+Owner's words: not stated (the owner declined this test: "no i dont want to do that. if there are real errors i will screenshot them, i wont fabricate them"; found by the tester, MEASURED)
+What happened: With mattini-photo.pck moved aside, the game did not crash and kept running; the log carries "ERROR: PhotoGrid: res://assets/generated/manifest.json: the photo res://assets/generated/photo/village.jpg is missing; python -m mattini photo rebuilds it". The message gives a developer hint (run the pipeline) and never names mattini-photo.pck, which is what a player of the shipped build would be missing. Whether an error panel appeared on screen: unknown (nobody looked; the tester closed the game after ~30 s). The pack was restored, checksum OK.
+Expected: not stated.
+Repro / where exactly: 0.3.0 dist build, start with mattini-photo.pck removed from the game folder. Log: /home/reto/mattini-test-0.3.0/mattini-0.3.0-no-photo.log on the owner's laptop.
+Screenshots: none
+Possibly same as: FB-004 (item 9)
+
 ### FB-004 · 2026-10-17 · design · Whole game / 0.3.0 owner test results (the M3 release's test list)
 Machine: linux (the owner's laptop, not the RTX 4090 PC: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run, Vulkan 1.4.341, Forward+; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 15 GB RAM, 1920x1080 at 300 Hz, windowed, on AC, performance profile)
 Build: 0.3.0 (dist 5f08379, all 10 files match the README's SHA-256 block; pause screen shows "mattini 0.3.0")
