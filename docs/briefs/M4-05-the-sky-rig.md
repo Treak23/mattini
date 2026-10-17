@@ -11,7 +11,8 @@ The scene's light follows the sun and the moon wherever they stand.
 - **`SkyRig`** (`game/scripts/sky/sky_rig.gd`) takes the directions towards the sun and the
   moon, as local unit vectors, and sets the sun light, a moon light, the exposure and the sky.
 - **The sky** is Godot's physical sky converted to a sky shader
-  (`game/shaders/sky_physical.gdshader`) whose night sky fades in after dusk.
+  (`game/shaders/sky_physical.gdshader`), with a twilight towards the sun from +6° to −12°, a
+  faint glow of the night sky, the sun's disk, and a night sky that fades in after dusk.
 - **The stars** (section S, only with the owner's catalogue answer, m4-design §10 option (a)):
   the Yale Bright Star Catalogue's stars to magnitude 6, drawn at their real places for the
   time and the latitude.
@@ -40,7 +41,9 @@ converts the clock's azimuths and elevations into local vectors through WorldCon
    - `static func create(sun: DirectionalLight3D, moon: DirectionalLight3D, environment:
      Environment, frame: Basis, latitude_deg: float, stars: Image = null) -> SkyRig`. `frame`'s
      columns are the scene's local east, north and up (main: `Basis(_east, _north, _up)`). It
-     sets what never changes: the sun's shadows on, `directional_shadow_max_distance` 3000;
+     sets what never changes: the sun's shadows on, `directional_shadow_max_distance` 3000,
+     `light_angular_distance` 0.5 (design's ruling of 2026-10-17: the physical sky draws the
+     disk from it; the real sun is 0.53°; see decision 4c for what it does to shadows);
      the moon's shadows on, `sky_mode` `SKY_MODE_LIGHT_ONLY` (so the sun stays the sky's
      `LIGHT0`), colour (0.80, 0.85, 1.0); the environment's background the sky, a `Sky` whose
      material is a `ShaderMaterial` of `res://shaders/sky_physical.gdshader` (property
@@ -49,14 +52,22 @@ converts the clock's azimuths and elevations into local vectors through WorldCon
    - `func apply(to_sun: Vector3, to_moon: Vector3, moon_fraction: float, sidereal_deg:
      float) -> void`, every frame. Each elevation is `asin(direction · up)` of the frame's up,
      never the scene's y. Each light's basis is `Basis.looking_at(-direction, up)` (it shines
-     along its −z, as M3's sun).
+     along its −z, as M3's sun). It sets the sky material's `stars_strength`, `sun_direction`
+     (`to_sun` normalised, every frame, also while the sun light is hidden),
+     `twilight_colour` (decision 4b) and (section S) `celestial_basis`.
 2. **The curves** (m4-design §6), all against the elevation in degrees:
    - sun energy `smoothstep(-1, 10, e)`; hidden below −1; colour white at 10 and above,
      mixed linearly to (1.0, 0.72, 0.50) at 0, kept below 0;
    - moon energy `0.03 × fraction × smoothstep(0, 5, e)`; hidden below 0;
    - exposure 0.70 at a sun elevation of 10 and above, 4.0 at −12 and below,
      `exp(lerp(ln 0.70, ln 4.0, (10 − e) / 22))` between;
-   - `stars_strength` `1 − smoothstep(-12, -6, e)` of the sun.
+   - `stars_strength` `1 − smoothstep(-12, -6, e)` of the sun;
+   - `twilight_colour` (a `Vector3`) = t(e) × colour(e) of the sun, t = `smoothstep(-12, -4,
+     e) × (1 − smoothstep(0, 6, e))`, colour (1.00, 0.55, 0.30) at 0 and above, linear to
+     (0.35, 0.30, 0.55) at −6, linear to (0.05, 0.06, 0.12) at −12 (design's ruling of
+     2026-10-17). Computed by the rig in GDScript and passed as a uniform, so the pinned test
+     reads the real function, not a mirror of shader code: 0.5 × sunset at +3°, (0.675,
+     0.425, 0.425) at −3°, 0.84375 × (0.35, 0.30, 0.55) at −6°, 0 at +6° and −12°.
 3. **The day exposure is 0.70, not m4-design §6's 0.54** (design's rehearsal, 2026-10-17). §6
    asks that flat sunlit ground at the photo's sun render at the photo's brightness within
    ±10 % in software Forward+; measured with this rig (flat ground of albedo sRGB 128,
@@ -83,12 +94,66 @@ converts the clock's azimuths and elevations into local vectors through WorldCon
      `SKY_COORDS`: `c = celestial_basis * EYEDIR`, `uv = (fract(atan(c.y, c.x) / TAU),
      acos(clamp(c.z, -1, 1)) / PI)` (u = right ascension / 360, v = (90° − declination) /
      180°). Without section S the two lines keep `SKY_COORDS`.
+   - twilight and glow (design's rulings of 2026-10-17), four uniforms declared exactly
+     `uniform vec3 sun_direction = vec3(0.0, 1.0, 0.0);`, `uniform vec3 twilight_colour =
+     vec3(0.0);`, `uniform float twilight_energy : hint_range(0, 16) = 0.3;`, `uniform vec3
+     skyglow = vec3(0.004, 0.005, 0.009);`; a function before `sky()`, exactly:
+     ```glsl
+     vec3 twilight_and_glow(vec3 dir) {
+     	vec2 eye_h = dir.xz;
+     	vec2 sun_h = sun_direction.xz;
+     	float facing = 0.0;
+     	if (length(eye_h) > 1e-5 && length(sun_h) > 1e-5) {
+     		facing = max(0.0, dot(normalize(eye_h), normalize(sun_h)));
+     	}
+     	float eye_elevation = degrees(asin(clamp(dir.y, -1.0, 1.0)));
+     	float shape = (0.3 + 0.7 * pow(facing, 3.0)) * exp(-max(0.0, eye_elevation) / 12.0);
+     	return twilight_colour * twilight_energy * shape + skyglow;
+     }
+     ```
+     and `COLOR += twilight_and_glow(EYEDIR);` as the line just before each of Godot's two
+     `COLOR *= exposure;` (the sun's branch and the night's). "Horizontal" and "elevation"
+     use the shader's y as up, as Godot's own `UP` does.
    The first comment line stays Godot's ("Shader automatically converted from Godot Engine
    4.6.3.stable's PhysicalSkyMaterial"); Godot's licence is in the credits already (MIT).
+4a. **Why `sun_direction` is a uniform** (measured 2026-10-17 in Forward+ and Compatibility,
+   a sky shader painting `LIGHT0_ENABLED` and the sign of `LIGHT0_DIRECTION.y`): a visible sun
+   10° below the horizon is the sky's LIGHT0 with its direction; a hidden one is not
+   (`LIGHT0_ENABLED` false); a visible one of energy 0 still is. The rig hides the sun below
+   −1°, so the twilight from −1° to −12° needs the direction from the rig.
+4b. **What design measured** (software Forward+, lavapipe, the rig's exposure):
+   - `twilight_energy` 0.3: sun at −3° (exposure 1.96), view 5° above the horizon towards the
+     sun sRGB (184, 150, 158), 15° up (127, 101, 109), 30° up (60, 64, 58); away from the sun
+     at 5° (114, 84, 100). 0.2 gave (158, 125, 136) and 0.4 (202, 169, 175), close to washing
+     out at the horizon. Continuous across the sun light's hiding: 5° up towards the sun
+     (192, 151, 130) at −0.5°, (189, 151, 141) at −1.5°; (153, 123, 107) at +3°; at −9°
+     (92, 71, 120).
+   - The night: flat ground of albedo sRGB 128, sun −30°, moon −20°, exposure 4.0, stars
+     unbound: rendered at 0.0057 of its albedo's linear luminance, sRGB (3, 4, 8): dark but
+     not zero; the ambient comes from `skyglow` alone.
+   - The day calibration does not move: 1.0012 (decision 3) with the glow and the disk.
+4c. **The sun's disk and the shadows** (measured, Forward+, lavapipe; a 20 × 20 × 200 m box,
+   the photo's sun; the 10 %–90 % width of its shadow's side edge where the edge is cast
+   from 144 m up; the real 0.5° penumbra there is about 1.6 m):
+   | camera, looking straight down | angular 0 | angular 0.5° |
+   |---|---|---|
+   | 100 m up, fov 10° (0.034 m/px) | edge 0.34 m, shadow 0.054 (lit 0.502) | edge 0.44 m, **shadow interior 0.306** |
+   | 2000 m up, fov 10° (0.68 m/px) | edge 0.68 m (one pixel) | **edge 11.6 m** |
+   | 2900 m up, fov 10° (0.99 m/px) | shadow nearly faded (0.485) | the same, edge about 6 m |
+   Godot's soft directional shadows over-soften at this scale: near the camera the 20 m
+   wide shadow lets about half the light through; at 2 km its edge is seven times the real
+   penumbra. At 2.9 km both settings have almost no shadow: Godot fades directional shadows
+   from `directional_shadow_fade_start` (0.8) of the 3000 m distance. A probe note: with a
+   narrow view that does not hold the caster, no shadow was drawn beyond the first cascade
+   (camera 300 m up and more), with either setting; not understood, not this brief's.
 5. **Testing headless:** the curves through the nodes after `apply`; the shader's
    declarations through `Shader.get_shader_uniform_list()` (H25); the material's parameters
    through `get_shader_parameter`; Godot's code by a census of its lines, in order
-   (`test_the_sky_shader_keeps_godots_code`: it proves the text, not what draws).
+   (`test_the_sky_shader_keeps_godots_code`: it proves the text, not what draws). The
+   uniforms' defaults cannot be read headless (`RenderingServer.shader_get_parameter_default`
+   and an unset `get_shader_parameter` return null for every uniform, measured), so the
+   twilight's declarations and function are a census of their exact text
+   (`test_the_sky_shader_adds_twilight_and_glow_before_each_exposure`).
 
 ### Section S — the stars (option (a) of m4-design §10; drop the whole section for (b))
 
@@ -170,7 +235,10 @@ None. The tests pass directions and a sidereal time directly; the rig never call
 - [ ] Mutations, each applied alone, each failing a named pinned test, recorded with the harm
       it reproduces: the elevation from the scene's y; the exposure interpolated linearly; the
       sun never hidden; the moon's sky mode left as default; `stars_strength` not inverted;
-      the sun's colour mix reversed; `stars_strength` dropped from the night branch; section S:
+      the sun's colour mix reversed; `stars_strength` dropped from the night branch;
+      `sun_direction` set only while the sun is shown; the twilight not faded above the
+      horizon; its −6° to 0° segment reversed; the glow missing from the sun's branch; no
+      angular distance; section S:
       the basis not transposed; one texel per star; the night sky sampled at `SKY_COORDS`.
       - does NOT prove: what the sky looks like.
 - [ ] **The calibration, measured in software Forward+** (H12: `VK_ICD_FILENAMES=/usr/share/
@@ -185,6 +253,11 @@ None. The tests pass directions and a sidereal time directly; the rig never call
       0.2159 is within 0.90 to 1.10. Record the number in Findings (design: 1.0012).
       - does NOT prove: the look on the owner's GPU, the photo's own brightness (a flat grey
         stands in for it), or any other sun height.
+- [ ] The same recipe, recorded in Findings beside design's numbers (decision 4b): the sun at
+      −3° (grid azimuth 270), a camera 10 m up, fov 60, looking towards the sun 15° up: the
+      sky 5° above the horizon towards the sun brighter than away from it, and visibly
+      coloured; the night ground (sun −30°, moon −20°) above zero.
+      - does NOT prove: that the twilight looks right; it is a look value the owner judges.
 - [ ] Optional (section S), the same recipe: night (sun −30°), a 10° camera aimed at Polaris
       through the rig's basis; the brightest pixel within 3 px of the centre; none above the
       background with `stars_strength` 0. Record it.
@@ -196,6 +269,8 @@ None. The tests pass directions and a sidereal time directly; the rig never call
 ## Forbidden
 
 Touching the main scene or `project.godot`; changing Godot's sky code beyond decision 4;
+another angular distance or shadow setting than decision 1's (the over-softening of 4c is
+design's question, not the build's);
 auto exposure (m4-design §0: Forward+ only, and it turned the night into day); another star
 catalogue (Hipparcos and HYG: m4-design §10); committing `catalog.gz`; a new dependency; editing
 a pinned file.

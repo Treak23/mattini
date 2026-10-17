@@ -25,6 +25,22 @@ extends GutTest
 ##   PhysicalSkyMaterial converted (debanding and the night sky on) with its code kept, plus
 ##   `uniform float stars_strength`: 0 at a sun elevation of -6 degrees and above, 1 at -12 and
 ##   below, smoothstep between (0.5 at -9), multiplying both lines that add the night sky.
+## - Twilight and the night sky's glow (design's rulings of 2026-10-17): the shader adds
+##   twilight_and_glow(EYEDIR) to COLOR just before each `COLOR *= exposure;`:
+##   twilight_colour * twilight_energy * (0.3 + 0.7 * max(0, dot of the horizontal eye and sun
+##   directions)^3) * exp(-max(0, eye elevation in degrees) / 12) + skyglow. The rig sets
+##   `sun_direction` (the unit vector towards the sun) every frame, also while the sun light is
+##   hidden: measured in Forward+ and Compatibility, a hidden DirectionalLight3D is not the sky's
+##   LIGHT0 (LIGHT0_ENABLED false), a visible one below the horizon is. The rig computes
+##   `twilight_colour` = t(e) * colour(e) in GDScript (so it is tested here, not a mirror of
+##   shader code): t = smoothstep(-12, -4, e) * (1 - smoothstep(0, 6, e)); colour (1.00, 0.55,
+##   0.30) at 0 and above, linear to (0.35, 0.30, 0.55) at -6, linear to (0.05, 0.06, 0.12) at
+##   -12. Defaults in the shader: twilight_energy 0.3 (measured in Forward+ at a sun of -3
+##   degrees and the rig's exposure 1.96: 5 degrees above the horizon towards the sun sRGB
+##   (184, 150, 158), away from it (114, 84, 100)), skyglow (0.004, 0.005, 0.009). Godot's
+##   dummy renderer returns no uniform defaults headless (measured: null for every one), so the
+##   declarations' text is the census of the defaults.
+## - The sun light's light_angular_distance is 0.5 degrees, so the physical sky draws its disk.
 ## The frame here is turned off every axis (no vector of it lies on x, y or z), so a rig that
 ## reads the scene's y as up or builds the light from fixed axes fails.
 ##
@@ -106,6 +122,42 @@ const UNIFORMS := {
 	"exposure": TYPE_FLOAT,
 	"night_sky": TYPE_OBJECT,
 	"stars_strength": TYPE_FLOAT,
+	"sun_direction": TYPE_VECTOR3,
+	"twilight_colour": TYPE_VECTOR3,
+	"twilight_energy": TYPE_FLOAT,
+	"skyglow": TYPE_VECTOR3,
+}
+## The declarations of the twilight and the glow, with their defaults, exactly.
+const TWILIGHT_DECLARATIONS: Array[String] = [
+	"uniform vec3 sun_direction = vec3(0.0, 1.0, 0.0);",
+	"uniform vec3 twilight_colour = vec3(0.0);",
+	"uniform float twilight_energy : hint_range(0, 16) = 0.3;",
+	"uniform vec3 skyglow = vec3(0.004, 0.005, 0.009);",
+]
+## The function's lines, exactly (the brief's decision 4).
+const TWILIGHT_LINES: Array[String] = [
+	"vec3 twilight_and_glow(vec3 dir) {",
+	"vec2 eye_h = dir.xz;",
+	"vec2 sun_h = sun_direction.xz;",
+	"float facing = 0.0;",
+	"if (length(eye_h) > 1e-5 && length(sun_h) > 1e-5) {",
+	"facing = max(0.0, dot(normalize(eye_h), normalize(sun_h)));",
+	"float eye_elevation = degrees(asin(clamp(dir.y, -1.0, 1.0)));",
+	"float shape = (0.3 + 0.7 * pow(facing, 3.0)) * exp(-max(0.0, eye_elevation) / 12.0);",
+	"return twilight_colour * twilight_energy * shape + skyglow;",
+]
+## t(e) * colour(e) of the twilight at a sun elevation (design's values).
+const TWILIGHT := {
+	10.0: Vector3(0.0, 0.0, 0.0),
+	6.0: Vector3(0.0, 0.0, 0.0),
+	3.0: Vector3(0.5, 0.275, 0.15),
+	0.0: Vector3(1.0, 0.55, 0.3),
+	-3.0: Vector3(0.675, 0.425, 0.425),
+	-4.0: Vector3(0.56667, 0.38333, 0.46667),
+	-6.0: Vector3(0.29531, 0.25312, 0.46406),
+	-9.0: Vector3(0.06328, 0.05695, 0.106),
+	-12.0: Vector3(0.0, 0.0, 0.0),
+	-20.0: Vector3(0.0, 0.0, 0.0),
 }
 
 var _root: Node3D
@@ -186,6 +238,23 @@ func test_the_sun_light_at_its_pinned_points() -> void:
 		var want: Color = colours[el]
 		for c in 3:
 			assert_almost_eq(got[c], want[c], 0.0001, "sun colour at %.1f, channel %d" % [el, c])
+
+
+func test_the_sun_draws_its_disk() -> void:
+	assert_almost_eq(_sun.light_angular_distance, 0.5, EPS, "0.5 degrees, as the real sun")
+
+
+func test_the_twilight_follows_the_sun() -> void:
+	for el in TWILIGHT:
+		_apply(el)
+		var got: Vector3 = _rig.sky_material.get_shader_parameter("twilight_colour")
+		var want: Vector3 = TWILIGHT[el]
+		for c in 3:
+			assert_almost_eq(got[c], want[c], 0.0001, "twilight at %.1f, channel %d" % [el, c])
+		var direction: Vector3 = _rig.sky_material.get_shader_parameter("sun_direction")
+		assert_almost_eq(
+			direction.distance_to(_towards(140.0, el)), 0.0, 0.00001, "sun_direction at %.1f" % el
+		)
 
 
 func test_the_lights_hide_below_their_horizons() -> void:
@@ -306,3 +375,24 @@ func test_the_sky_shader_keeps_godots_code() -> void:
 		night[1].begins_with("COLOR = texture(night_sky,") if night.size() == 2 else false,
 		"the night's branch"
 	)
+
+
+func test_the_sky_shader_adds_twilight_and_glow_before_each_exposure() -> void:
+	var shader: Shader = load(SHADER_PATH)
+	var lines: Array[String] = []
+	for line in shader.code.split("\n"):
+		lines.append(line.get_slice("//", 0).strip_edges())
+	for want in TWILIGHT_DECLARATIONS:
+		assert_true(lines.has(want), "declared with its default: %s" % want)
+	var at := 0
+	for want in TWILIGHT_LINES:
+		var found := lines.find(want, at)
+		assert_true(found >= 0, "the twilight's line, in order: %s" % want)
+		if found >= 0:
+			at = found + 1
+	var exposures := 0
+	for i in lines.size():
+		if lines[i] == "COLOR *= exposure;":
+			exposures += 1
+			assert_eq(lines[i - 1], "COLOR += twilight_and_glow(EYEDIR);", "added before exposure")
+	assert_eq(exposures, 2, "both branches: the sun's and the night's")
