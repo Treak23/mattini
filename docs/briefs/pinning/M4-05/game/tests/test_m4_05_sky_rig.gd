@@ -40,7 +40,13 @@ extends GutTest
 ##   (184, 150, 158), away from it (114, 84, 100)), skyglow (0.004, 0.005, 0.009). Godot's
 ##   dummy renderer returns no uniform defaults headless (measured: null for every one), so the
 ##   declarations' text is the census of the defaults.
-## - The sun light's light_angular_distance is 0.5 degrees, so the physical sky draws its disk.
+## - The sun's disk (design's ruling of 2026-10-17, reversing an angular distance of 0.5): the
+##   sun light keeps light_angular_distance 0, so its shadows stay sharp (measured in Forward+:
+##   0.5 degrees lifted a 20 m wide box's shadow from 0.054 to 0.306 near the camera and
+##   widened its edge from 0.68 m to 11.6 m at 2 km). The shader draws the disk from its own
+##   `uniform float sun_disk_deg : hint_range(0, 5) = 0.53;` in place of Godot's LIGHT0_SIZE,
+##   at sun_direction in place of cos_theta: Godot's three disk lines are replaced by
+##   DISK_LINES, and LIGHT0_SIZE appears nowhere.
 ## The frame here is turned off every axis (no vector of it lies on x, y or z), so a rig that
 ## reads the scene's y as up or builds the light from fixed axes fails.
 ##
@@ -51,8 +57,9 @@ extends GutTest
 const SHADER_PATH := "res://shaders/sky_physical.gdshader"
 const EPS := 0.0001
 ## Godot 4.6.3's PhysicalSkyMaterial shader (scene/resources/3d/sky_material.cpp:735-819),
-## every line but the comment naming the version and the three lines its code fills in
-## (render_mode, the two night sky lines), stripped: each must appear in this order.
+## every line but the comment naming the version, the three lines its code fills in
+## (render_mode, the two night sky lines) and its three lines of the sun's disk (replaced: see
+## DISK_LINES), stripped: each must appear in this order.
 const GODOT_LINES: Array[String] = [
 	"shader_type sky;",
 	"uniform float rayleigh : hint_range(0, 64) = 2.0;",
@@ -99,9 +106,6 @@ const GODOT_LINES: Array[String] = [
 		+ " 1.0));"
 	),
 	"Lin  *= mix(ground_color.rgb, vec3(1.0), smoothstep(-0.1, 0.1, dot(UP, EYEDIR)));",
-	"float sunAngularDiameterCos = cos(LIGHT0_SIZE * sun_disk_scale);",
-	"float sunAngularDiameterCos2 = cos(LIGHT0_SIZE * sun_disk_scale * 0.5);",
-	"float sundisk = smoothstep(sunAngularDiameterCos, sunAngularDiameterCos2, cos_theta);",
 	"vec3 L0 = (sun_energy * extinction) * sundisk * LIGHT0_COLOR;",
 	"vec3 color = Lin + L0;",
 	"COLOR = pow(color, vec3(1.0 / (1.2 + (1.2 * sun_fade))));",
@@ -126,9 +130,21 @@ const UNIFORMS := {
 	"twilight_colour": TYPE_VECTOR3,
 	"twilight_energy": TYPE_FLOAT,
 	"skyglow": TYPE_VECTOR3,
+	"sun_disk_deg": TYPE_FLOAT,
 }
-## The declarations of the twilight and the glow, with their defaults, exactly.
+## The sun's disk, in place of Godot's three lines (which read LIGHT0_SIZE and cos_theta).
+const DISK_LINES: Array[String] = [
+	"float sunAngularDiameterCos = cos(radians(sun_disk_deg) * sun_disk_scale);",
+	"float sunAngularDiameterCos2 = cos(radians(sun_disk_deg) * sun_disk_scale * 0.5);",
+	(
+		"float sundisk = smoothstep(sunAngularDiameterCos, sunAngularDiameterCos2,"
+		+ " dot(EYEDIR, normalize(sun_direction)));"
+	),
+	"vec3 L0 = (sun_energy * extinction) * sundisk * LIGHT0_COLOR;",
+]
+## The declarations of the twilight, the glow and the disk, with their defaults, exactly.
 const TWILIGHT_DECLARATIONS: Array[String] = [
+	"uniform float sun_disk_deg : hint_range(0, 5) = 0.53;",
 	"uniform vec3 sun_direction = vec3(0.0, 1.0, 0.0);",
 	"uniform vec3 twilight_colour = vec3(0.0);",
 	"uniform float twilight_energy : hint_range(0, 16) = 0.3;",
@@ -240,8 +256,20 @@ func test_the_sun_light_at_its_pinned_points() -> void:
 			assert_almost_eq(got[c], want[c], 0.0001, "sun colour at %.1f, channel %d" % [el, c])
 
 
-func test_the_sun_draws_its_disk() -> void:
-	assert_almost_eq(_sun.light_angular_distance, 0.5, EPS, "0.5 degrees, as the real sun")
+func test_the_sky_draws_the_disk_and_the_shadows_stay_sharp() -> void:
+	assert_eq(_sun.light_angular_distance, 0.0, "the sun light's angular distance 0: sharp")
+	var shader: Shader = load(SHADER_PATH)
+	var lines: Array[String] = []
+	for line in shader.code.split("\n"):
+		lines.append(line.get_slice("//", 0).strip_edges())
+	var at := 0
+	for want in DISK_LINES:
+		var found := lines.find(want, at)
+		assert_true(found >= 0, "the disk's line, in order: %s" % want)
+		if found >= 0:
+			at = found + 1
+	for line in lines:
+		assert_false(line.contains("LIGHT0_SIZE"), "no LIGHT0_SIZE: %s" % line)
 
 
 func test_the_twilight_follows_the_sun() -> void:

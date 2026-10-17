@@ -42,8 +42,8 @@ converts the clock's azimuths and elevations into local vectors through WorldCon
      Environment, frame: Basis, latitude_deg: float, stars: Image = null) -> SkyRig`. `frame`'s
      columns are the scene's local east, north and up (main: `Basis(_east, _north, _up)`). It
      sets what never changes: the sun's shadows on, `directional_shadow_max_distance` 3000,
-     `light_angular_distance` 0.5 (design's ruling of 2026-10-17: the physical sky draws the
-     disk from it; the real sun is 0.53°; see decision 4c for what it does to shadows);
+     `light_angular_distance` 0 (sharp shadows, as today; design's ruling of 2026-10-17, for
+     the reason measured in decision 4c: the sky draws the sun's disk from its own uniform);
      the moon's shadows on, `sky_mode` `SKY_MODE_LIGHT_ONLY` (so the sun stays the sky's
      `LIGHT0`), colour (0.80, 0.85, 1.0); the environment's background the sky, a `Sky` whose
      material is a `ShaderMaterial` of `res://shaders/sky_physical.gdshader` (property
@@ -114,6 +114,17 @@ converts the clock's azimuths and elevations into local vectors through WorldCon
      and `COLOR += twilight_and_glow(EYEDIR);` as the line just before each of Godot's two
      `COLOR *= exposure;` (the sun's branch and the night's). "Horizontal" and "elevation"
      use the shader's y as up, as Godot's own `UP` does.
+   - the sun's disk (design's ruling of 2026-10-17): `uniform float sun_disk_deg :
+     hint_range(0, 5) = 0.53;` declared after `skyglow`, and Godot's three disk lines
+     replaced, exactly:
+     ```glsl
+     float sunAngularDiameterCos = cos(radians(sun_disk_deg) * sun_disk_scale);
+     float sunAngularDiameterCos2 = cos(radians(sun_disk_deg) * sun_disk_scale * 0.5);
+     float sundisk = smoothstep(sunAngularDiameterCos, sunAngularDiameterCos2, dot(EYEDIR, normalize(sun_direction)));
+     ```
+     (Godot's read `LIGHT0_SIZE`, which is 0 with the light's angular distance 0, so no disk,
+     and `cos_theta`). `LIGHT0_SIZE` then appears nowhere in the shader. The disk is drawn only
+     in Godot's lit branch, so only while the sun light is shown (from −1°).
    The first comment line stays Godot's ("Shader automatically converted from Godot Engine
    4.6.3.stable's PhysicalSkyMaterial"); Godot's licence is in the credits already (MIT).
 4a. **Why `sun_direction` is a uniform** (measured 2026-10-17 in Forward+ and Compatibility,
@@ -132,7 +143,12 @@ converts the clock's azimuths and elevations into local vectors through WorldCon
      unbound: rendered at 0.0057 of its albedo's linear luminance, sRGB (3, 4, 8): dark but
      not zero; the ambient comes from `skyglow` alone.
    - The day calibration does not move: 1.0012 (decision 3) with the glow and the disk.
-4c. **The sun's disk and the shadows** (measured, Forward+, lavapipe; a 20 × 20 × 200 m box,
+4c. **Why the disk is the sky's, not the light's** (design first ruled `light_angular_distance`
+   0.5 and reversed it on this measurement, 2026-10-17). Measured with the disk as built (the
+   light at 0, `sun_disk_deg` 0.53): the box's shadow at 100 m is 0.054 with a 0.34 m edge,
+   the 0° values below; the sun at +10° (azimuth 270, a view 15° up, fov 60) peaks at sRGB
+   (174, 162, 141) where `sun_disk_deg` 0 gives (142, 139, 134), the sky 20 px aside
+   (137, 137, 131). The measurement that decided it (Forward+, lavapipe; a 20 × 20 × 200 m box,
    the photo's sun; the 10 %–90 % width of its shadow's side edge where the edge is cast
    from 144 m up; the real 0.5° penumbra there is about 1.6 m):
    | camera, looking straight down | angular 0 | angular 0.5° |
@@ -143,9 +159,15 @@ converts the clock's azimuths and elevations into local vectors through WorldCon
    Godot's soft directional shadows over-soften at this scale: near the camera the 20 m
    wide shadow lets about half the light through; at 2 km its edge is seven times the real
    penumbra. At 2.9 km both settings have almost no shadow: Godot fades directional shadows
-   from `directional_shadow_fade_start` (0.8) of the 3000 m distance. A probe note: with a
-   narrow view that does not hold the caster, no shadow was drawn beyond the first cascade
-   (camera 300 m up and more), with either setting; not understood, not this brief's.
+   from `directional_shadow_fade_start` (0.8) of the 3000 m distance.
+4d. **Risk, carried to M4-10 by design:** in the shadow probe, a camera looking straight down
+   with a narrow view (fov 10° or less) that does not hold the caster drew no shadow at all
+   once it was 300 m up or more (from 300 m to 2900 m, with either angular distance), while at
+   100 m and 200 m it did; with a view that holds the caster (fov 10° at 2000 m and 2900 m,
+   30° at 1000 m) the shadow is there. Not understood; plausibly the caster culled for the
+   cascades beyond the first. Harm if it holds in the game: shadows of things out of view
+   (the far mountains of M4-07 at the edge of a narrow view) missing. Not this brief's to
+   fix; M4-10's render check should look at it.
 5. **Testing headless:** the curves through the nodes after `apply`; the shader's
    declarations through `Shader.get_shader_uniform_list()` (H25); the material's parameters
    through `get_shader_parameter`; Godot's code by a census of its lines, in order
@@ -237,8 +259,8 @@ None. The tests pass directions and a sidereal time directly; the rig never call
       sun never hidden; the moon's sky mode left as default; `stars_strength` not inverted;
       the sun's colour mix reversed; `stars_strength` dropped from the night branch;
       `sun_direction` set only while the sun is shown; the twilight not faded above the
-      horizon; its −6° to 0° segment reversed; the glow missing from the sun's branch; no
-      angular distance; section S:
+      horizon; its −6° to 0° segment reversed; the glow missing from the sun's branch; the
+      light's angular distance set to 0.5; the disk left at `LIGHT0_SIZE`; section S:
       the basis not transposed; one texel per star; the night sky sampled at `SKY_COORDS`.
       - does NOT prove: what the sky looks like.
 - [ ] **The calibration, measured in software Forward+** (H12: `VK_ICD_FILENAMES=/usr/share/
@@ -256,7 +278,9 @@ None. The tests pass directions and a sidereal time directly; the rig never call
 - [ ] The same recipe, recorded in Findings beside design's numbers (decision 4b): the sun at
       −3° (grid azimuth 270), a camera 10 m up, fov 60, looking towards the sun 15° up: the
       sky 5° above the horizon towards the sun brighter than away from it, and visibly
-      coloured; the night ground (sun −30°, moon −20°) above zero.
+      coloured; the night ground (sun −30°, moon −20°) above zero; the sun at +10° shows a
+      disk brighter than the sky beside it (and than with `sun_disk_deg` 0); decision 4c's box
+      shadow at 100 m at the 0° value (0.054).
       - does NOT prove: that the twilight looks right; it is a look value the owner judges.
 - [ ] Optional (section S), the same recipe: night (sun −30°), a 10° camera aimed at Polaris
       through the rig's basis; the brightest pixel within 3 px of the centre; none above the
@@ -269,8 +293,8 @@ None. The tests pass directions and a sidereal time directly; the rig never call
 ## Forbidden
 
 Touching the main scene or `project.godot`; changing Godot's sky code beyond decision 4;
-another angular distance or shadow setting than decision 1's (the over-softening of 4c is
-design's question, not the build's);
+an angular distance on the sun light other than 0, or another shadow setting than decision
+1's (decision 4c);
 auto exposure (m4-design §0: Forward+ only, and it turned the night into day); another star
 catalogue (Hipparcos and HYG: m4-design §10); committing `catalog.gz`; a new dependency; editing
 a pinned file.
