@@ -755,6 +755,22 @@ Tier 2 elsewhere.
   area across both tile and 250 m cell boundaries; computed two ways; 53 of 54 likely
   wrong implementations change its bytes (the one left cannot differ by construction).
 
+**The surroundings, the capture shadows and the sky (M4; designed at M4 planning, 2026-10-17;
+§13 rows 41–43; briefs M4-01 to M4-03, M4-09).** Three steps, each with design's expected values
+and `computed_for` like every step above; their rules in full are `docs/briefs/sketches/m4-design.md`
+§1 to §4 and the briefs' Decisions:
+- `surroundings`: swissALTIRegio's 10 km XYZ tiles (30 for the village, edition 2026-06, locked by
+  `lock regio`, fetched by `download regio`) to a 100 m grid of local heights over the area grown by
+  20 km, each vertex the highest sample of its square, the area box cut out as NaN;
+  `surroundings/<area>.f32` and `.json` (`config/surroundings.json`).
+- `shadows`: where the photo was in shadow when flown (the flight's sun, grid azimuth 184.67°,
+  elevation 50.1°), marched over swissSURFACE3D on a 1 m grid, written at 0.5 m with a 0.5 m inset;
+  `shadows/<area>.png` (8-bit, the surfaces' zlib rule) and `.json` (`config/shadows.json`).
+- `sky`: the area's latitude, longitude and true-to-grid angle (−0.2258° for the village: a grid
+  azimuth is the true azimuth minus 0.2258) from `config/sky.json`, for the game's sun;
+  `sky/<area>.json`.
+The manifest gains the `surroundings`, `shadows` and `sky` blocks (twelve keys at the top).
+
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same
 inputs gives identical bytes, and tests say so.
@@ -891,6 +907,29 @@ M3-12, M3-14):**
   owner's PC's to measure.
 - *Not in M3:* close-range detail for meadows, scree and forest floor (option b), façades,
   species, railways, cable cars, names; the moving sun (M4); walking (M6).
+
+**M4's game (planned 2026-10-17; §13 rows 41–46; briefs M4-04 to M4-08, M4-10; the details are
+`docs/briefs/sketches/m4-design.md` §5 to §9):**
+
+- *Time:* the game starts at the photo's moment, 6 September 2023, 13:40 CEST, running at 1×.
+  Comma and period move it 15 minutes, [ and ] a day, T cycles 1×, 60×, 600× and stopped, N sets
+  the computer's clock; a label shows the date and time after a key and while paused. Swiss time
+  (CET, CEST by the EU rule). Pausing stops the time.
+- *Sun, moon, stars:* the sun by NOAA's solar position, the moon by Paul Schlyter's method with its
+  phase, the local sidereal time, all for the manifest's `sky` site; directions turned from true to
+  grid north and through the world config's axes (Hard Rule 4). The stars (the owner's catalogue
+  answer) turn with the sky.
+- *Light:* Godot's physical sky as a sky shader with a twilight, a night-sky glow and the sun's
+  disk; the sun light fades below 10° and hides below −1°, sharp shadows; a moon light by phase;
+  exposure 0.70 by day (measured in software Forward+), 4.0 at night, between them by the sun's
+  height. No auto exposure.
+- *The far mountains:* a shadows-only mesh from the `surroundings` block casts the mountains'
+  shadows (Forward+; Compatibility draws none); nothing of it is visible until M5.
+- *The photo's baked shadows* lifted 3× inside the capture mask (§13 row 41); *the water* in the
+  photo's colour × 0.9, roughness 0.3, turbulent ripples, a soft bank.
+- *The machine:* a frame cap of 60 (15 while paused), the log flushed per line, MSAA 4×; in an
+  export a missing data pack is named, and the readers say to download the release folder again.
+- *Not in M4:* the far mountains drawn (M5), weather and snow (M6), lit windows, bridges.
 
 ## 11. Delivery (owner, day one: option b)
 
