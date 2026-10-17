@@ -351,7 +351,7 @@ def test_built_files_that_are_not_design_s_are_refused_naming_the_step(case, dam
     case.build()
     folder = case.out / "shadows"
     if damage == "png":
-        mask = np.zeros((48, 32), dtype=np.uint8)
+        mask = np.zeros((96, 64), dtype=np.uint8)
         (folder / "fixture.png").write_bytes(shadows.png_mask(mask))
     elif damage == "import":
         (folder / "fixture.png.import").write_bytes(b'[remap]\n\nimporter="texture"\n')

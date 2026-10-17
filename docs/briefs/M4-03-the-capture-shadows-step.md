@@ -8,13 +8,15 @@ Written in the design realm; executed by one fresh builder session under
 
 `pipeline/mattini/shadows.py` computes where the photo (SWISSIMAGE 2023) lay in shadow when it
 was flown, from the swissSURFACE3D 0.5 m tiles that `download surface` already fetches, and
-writes it as a 1 m mask: `shadows/<area>.png` (0 lit, 255 shadow), its `.png.import` and its
-description `shadows/<area>.json`. The terrain shader (M4-06) lifts the photo inside the mask so
+writes it as a 0.5 m mask: `shadows/<area>.png` (0 lit, 255 shadow), its `.png.import` and
+its description `shadows/<area>.json`. The terrain shader (M4-06) lifts the photo inside the mask so
 that the moving sun's shadows read and the photo's do not darken a second time (SPEC §13 row
 41).
 
-- **The rule:** cast shadow by a march towards the flight's sun on the 1 m cells, own shadow from
-  the cells' normals, then an inset that keeps a shadow cell only inside the shadow.
+- **The rule:** cast shadow by a march towards the flight's sun on 1 m cells, own shadow from
+  the cells' normals; then each 1 m cell's shadow on its 2 × 2 cells of 0.5 m, and an inset at
+  0.5 m that keeps a shadow cell only inside the shadow (half a metre off every edge, as the
+  prototype the owner judged).
 - **The output** is compared with design's expected mask and PNG bytes before anything is
   written, as the surfaces step does (lesson 38, brain.md H27).
 - The command line (`python -m mattini shadows`) and the manifest's `shadows` block come in wave
@@ -59,10 +61,17 @@ that the moving sun's shadows read and the photo's do not darken a second time (
      divided by 2, one-sided and not halved on the grid's edges; with (ux, uy, uz) = (cos e·sin A,
      cos e·cos A, sin e), the cell is in its own shadow when ((−gx)·ux − gy·uy) + uz ≤ 0.
    - **Ties:** strict `>` for the cast, `≤ 0` for the normal, as m4-design §3 writes them.
-   - **The inset:** a cell in cast or own shadow is 255 only when its four neighbours inside the
-     grid are in shadow too (a neighbour outside the grid does not count); every other cell 0.
+   - **The mask at 0.5 m** (design's ruling of 2026-10-17, amending m4-design §3, which wrote
+     the inset at 1 m): the march's result, cast or own shadow per 1 m cell, becomes the 2 × 2
+     cells of 0.5 m of each 1 m cell (rows 2r and 2r + 1, columns 2c and 2c + 1). Then the
+     inset runs on the 0.5 m grid: a 0.5 m cell in shadow is 255 only when its four neighbours
+     inside the grid are in shadow too (a neighbour outside the grid does not count); every
+     other cell 0. The mask has twice the 1 m grid's rows and columns; its cell (r, c) has its
+     centre at E = e_min + 0.25 + 0.5·c, N = n_max − 0.25 − 0.5·r. Why: an inset at 1 m eroded
+     a whole metre (32 % raw shadow became 20 % kept); the owner judged the prototype's 0.5 m
+     erosion (`M4-soften/README.md`).
 2. **The sun** (config/shadows.json, design data): grid azimuth **184.67°**, elevation 50.1°,
-   threshold 0.05 m, cell 1 m. m4-design §3 wrote 185.13° (184.9 + 0.226); design's rehearsal
+   threshold 0.05 m, the march on 1 m cells, the mask in 0.5 m cells. m4-design §3 wrote 185.13° (184.9 + 0.226); design's rehearsal
    found the sign of the grid convergence reversed: at the village LV95 grid north lies 0.226°
    east of true north, so an azimuth from true north turns into one from grid north by
    **subtracting** 0.226° (pyproj, a step along the true meridian projected to EPSG:2056:
@@ -75,8 +84,9 @@ that the moving sun's shadows read and the photo's do not darken a second time (
      `check_shadows_config(data, where)`;
    - the rule: `cell_heights(surface)` (float32 0.5 m → float64 1 m), `march_steps(heights,
      elevation_deg)`, `cast_shadow(heights, azimuth_grid_deg, elevation_deg, threshold_m)`,
-     `own_shadow(heights, azimuth_grid_deg, elevation_deg)` (bool grids), `inset(shadow)`
-     (uint8 0/255), `capture_mask(surface, azimuth_grid_deg, elevation_deg, threshold_m)`;
+     `own_shadow(heights, azimuth_grid_deg, elevation_deg)` (bool 1 m grids), `inset(shadow)`
+     (any bool grid → uint8 0/255, the same shape), `capture_mask(surface, azimuth_grid_deg,
+     elevation_deg, threshold_m)` (the 0.5 m mask, the surface's own shape);
    - `png_mask(pixels)`; `write_shadows(out_dir, area, mask, box, world_sha256, source, sun, *,
      png=None)`;
    - `build_shadows(world, datasets, lock, shadows_config, raw_root, out_dir, *, progress=None)`;
@@ -105,39 +115,43 @@ that the moving sun's shadows read and the photo's do not darken a second time (
 6. **The files:** `shadows/<area>.png.import` holding exactly `[remap]\n\nimporter="keep"\n`
    (H24), then `shadows/<area>.png`, then `shadows/<area>.json`, each through a `.part`
    rename; after a write no `*.part` stays in `shadows/` (another folder's are not touched).
-7. **The description** is exactly {area, cell_m (1.0), columns, file, format "png-l8",
+7. **The description** is exactly {area, cell_m (0.5), columns, file, format "png-l8",
    lv95_box, pixels_sha256, rows, sha256 (the PNG's), source, sun, world_sha256}, written as
    the surfaces' (`indent=2, sort_keys=True, ensure_ascii=False`, a newline). `source` is
    {attribution, collection, dataset "swisssurface3d", editions, entry_sha256} (m4-design §2's
    form, with `editions` since swissSURFACE3D has one edition per tile; design's decision);
    `sun` is the config's `sun` object as it stands.
-8. **The config** is exactly {schema 1, cell_m 1, sun {azimuth_grid_deg, elevation_deg, note},
+8. **The config** is exactly {schema 1, cell_m 0.5 (the mask), march_cell_m 1 (the march), sun
+   {azimuth_grid_deg, elevation_deg, note},
    threshold_m, areas: {<one area>: {computed_for {inputs_sha256, world_sha256},
    expected_pixels_sha256, expected_png_sha256}}}; the area names are the surfaces' rule. The
    step reads the sun and the threshold from it; the code holds neither.
-9. **Design's values** (the village, computed two independent ways, a slice shift-march and a
-   fancy-index gather with an active set, `np.gradient` and a padded inset; identical; and cell
-   by cell in Python on 47'408 cells, no difference; 2026-10-17):
-   - `expected_pixels_sha256` `6f958c41f34ebc58847baefe9a386e19c6b4edf3835327bb5c11eb69526b7aa6`;
-   - `expected_png_sha256` `5fff6e5833156bcdfc1d45060aa83ee86e9a1cf336d861d57f9c773fc7fa4df3`
-     (319'479 bytes, zlib 1.3, one IDAT chunk);
+9. **Design's values** (the village, computed two independent ways, a slice shift-march with
+   a sliced inset and a fancy-index gather with an active set, `np.gradient`, `np.kron` and a
+   padded inset; identical; and the march cell by cell in Python on 47'408 cells, no
+   difference; 2026-10-17):
+   - `expected_pixels_sha256` `203cae731087b45c2d65c7790a21efa24daa49ccfe5c9683a84790b34d7d1d7b`;
+   - `expected_png_sha256` `918dfdf6abfa56fcc8b046de4b6194cf7db44370c9a758ffca339b63cdd221b0`
+     (854'622 bytes, 4000 × 6000; one IDAT chunk, as the stream stays under 1 MiB; zlib 1.3 on
+     the system Pythons 3.13.16 and 3.12.3 and zlib 1.3.2 on uv's managed 3.13.14 write the
+     same bytes);
    - computed_for: inputs `f73033b1…` (the `swisssurface3d` lock entry), world `d2607d13…`.
 
-   2000 × 3000 cells, heights 1566.05 to 2619.18 m, K = 881; 32.05 % of the cells in cast or
-   own shadow (the 0.5 m measurement of m4-design §0: 32.3 %), 29.07 % cast, 2.98 % own only;
-   20.45 % kept by the inset. Design's slice march took 145 s and 630 MB on the container;
-   design's throwaway step end to end on the real tiles: 157.6 s, peak 533 MB resident,
-   the step's own comparisons passing. zlib 1.3 (system 3.13.16, 3.12.3) and 1.3.2 (uv's
-   managed 3.13.14) write the same PNG bytes. A faster march that gives the same bits is
-   welcome (e.g. skipping cells whose ray is above the area's highest cell).
-   The mask over the photo: `docs/briefs/sketches/M4-soften/mask-1m.jpg`.
-11. **Design's rehearsal** (a throwaway `shadows.py` in a scratch clone, never committed): the
-    four pinned files pass with it and fail without it (collection error); the full pytest,
-    `ruff check` and `ruff format --check` green in the live layout. Each mutation of the gate
-    list above failed a named pinned test, and so did "the tile's SHA-256 not checked", "no
-    expected-pixels check" and "`computed_for`'s inputs not checked".
+   2000 × 3000 march cells, heights 1566.05 to 2619.18 m, K = 881; 32.05 % of the cells in cast
+   or own shadow (the 0.5 m measurement of m4-design §0: 32.3 %), 29.07 % cast, 2.98 % own
+   only; the mask keeps 24.48 % at 0.5 m (an inset at 1 m kept 20.45 %). Design's slice march
+   took 155 s and 722 MB; design's throwaway step end to end on the real tiles: 164.8 s, peak
+   542 MB resident, the step's own comparisons passing. A faster march that gives the same
+   bits is welcome (e.g. skipping cells whose ray is above the area's highest cell). The mask
+   over the photo: `docs/briefs/sketches/M4-soften/mask-capture.jpg`.
 10. **The area's name** stays out of `pipeline/mattini/` (M2-01's census); the step takes it
     from the config.
+11. **Design's rehearsal** (a throwaway `shadows.py` in a scratch clone, never committed): the
+    four pinned files pass with it and fail without it (collection error); the full pytest
+    (2378 passed), `ruff check` and `ruff format --check` green in the live layout. Each
+    mutation of the gate list below failed a named pinned test, and so did "the tile's SHA-256
+    not checked", "no expected-pixels check" and "`computed_for`'s inputs not checked"; the
+    fixture file alone kills no inset, the inset at 1 m, the mask at 1 m and a half-cell shift.
 
 ## Scope — files you may touch
 
@@ -158,15 +172,16 @@ generated folder.
       byte-identical (`cmp`); they pass.
       - does NOT prove: that they are the right tests.
 - [ ] With the real tiles (`python -m mattini download surface --out <scratch>`, 6 tiles, about
-      96 MB), `build_shadows` with the committed configs writes design's `6f958c41…` and
-      `5fff6e58…`, the step's own comparisons passing; record the time and the peak memory.
+      96 MB), `build_shadows` with the committed configs writes design's `203cae73…` and
+      `918dfdf6…`, the step's own comparisons passing; record the time and the peak memory.
       - does NOT prove: that the mask lies on the photo's shadows (the surface model is from
         2021/22, the photo from 2023: crowns and new buildings differ; the owner's eyes).
 - [ ] Mutations, each failing a named pinned test, recorded with the owner-visible harm: the
       sun mirrored east-west; the sun 180° off; the nearest sample for the bilinear one; the
       mean of the 2 × 2 pixels; no threshold; K without the division by tan e; a point outside
       the grid clamped to its edge; no own shadow; the edge normal halved; no inset; the inset
-      counting outside cells as lit; zlib level 6; no `.png.import`; the expected-value check
+      counting outside cells as lit; the inset at 1 m; the mask left at 1 m; the mask shifted
+      by half a metre; zlib level 6; no `.png.import`; the expected-value check
       after the write; the output folder made before the download check; `computed_for`'s
       inputs checked after the provenance.
       - does NOT prove: the game's reading (M4-06), the manifest's (M4-09).

@@ -30,6 +30,7 @@ camera" (FB-003) is therefore the shading, not the class: roughness 0.05 mirrors
 camera, elsewhere the water is the photo × 0.6; the ripples (4–6 m features) drift at about 0.25 m/s in a
 fixed world direction across the channel.
 
-`mask-1m.jpg` (brief M4-03's design rehearsal, 2026-10-17): the step's 1 m mask (cast and own
-shadow, inset; sun 184.67° grid, 50.1°) over the photo, E 2624000–2624500, N 1096500–1097000, at
-0.5 m: photo | mask in blue. 16.9 % of the crop is in the mask.
+`mask-capture.jpg` (brief M4-03's design rehearsal, 2026-10-17): the step's mask (cast and own
+shadow marched on 1 m cells, written at 0.5 m with the inset at 0.5 m; sun 184.67° grid, 50.1°)
+over the photo, E 2624000–2624500, N 1096500–1097000, at 0.5 m: photo | mask in blue. 20.4 % of
+the crop is in the mask.

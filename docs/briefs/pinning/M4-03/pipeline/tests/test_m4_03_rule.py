@@ -17,8 +17,11 @@ Pinned decisions (m4-design §3 and the brief's Decisions 1-6):
   neighbours divided by 2, one-sided (not halved) on the grid's edges; with the sun's unit
   vector (cos e sin A, cos e cos A, sin e) = (ux, uy, uz), the cell is in its own shadow when
   ((-gx) * ux - gy * uy) + uz <= 0.
-- The mask (`inset`, `capture_mask`): a cell in cast or own shadow stays 255 only when its
-  four neighbours inside the grid are in shadow too; every other cell is 0; uint8.
+- The mask (`capture_mask`, at 0.5 m; the ruling of 2026-10-17 on m4-design §3): the march
+  stays on the 1 m cells; each 1 m cell in cast or own shadow becomes its 2 x 2 cells of 0.5 m
+  (row 2r and 2r + 1, column 2c and 2c + 1), and then the inset (`inset`) runs on the 0.5 m
+  grid: a 0.5 m cell in shadow stays 255 only when its four neighbours inside the grid are in
+  shadow too; every other cell is 0; uint8, twice the 1 m grid's rows and columns.
 The oracle below is written here from those words, cell by cell in Python floats, and it
 marches until the point leaves the grid instead of to K, so a K too small fails it too.
 
@@ -107,14 +110,20 @@ def _oracle_mask(surface, az, el, threshold):
         ]
         for r in range(rows)
     ]
-    out = np.zeros((rows, columns), dtype=np.uint8)
-    for r in range(rows):
-        for c in range(columns):
+    fine = [[shadow[r // 2][c // 2] for c in range(2 * columns)] for r in range(2 * rows)]
+    out = np.zeros((2 * rows, 2 * columns), dtype=np.uint8)
+    for r in range(2 * rows):
+        for c in range(2 * columns):
             near = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
-            inside = [(i, j) for i, j in near if 0 <= i < rows and 0 <= j < columns]
-            if shadow[r][c] and all(shadow[i][j] for i, j in inside):
+            inside = [(i, j) for i, j in near if 0 <= i < 2 * rows and 0 <= j < 2 * columns]
+            if fine[r][c] and all(fine[i][j] for i, j in inside):
                 out[r, c] = 255
     return out
+
+
+def _fine(cells: np.ndarray) -> np.ndarray:
+    """Each 1 m cell as its 2 x 2 cells of 0.5 m."""
+    return np.repeat(np.repeat(cells, 2, axis=0), 2, axis=1)
 
 
 def _random_surface(seed: int, rows: int, columns: int) -> np.ndarray:
@@ -165,7 +174,7 @@ def test_the_random_cases_hold_cast_own_and_kept_shadow(sun):
         cast += int(c.sum())
         own_only += int((o & ~c).sum())
         kept += int((m == 255).sum())
-        removed += int(((c | o) & (m == 0)).sum())
+        removed += int((_fine(c | o) & (m == 0)).sum())
     assert min(cast, own_only, kept, removed) > 0, (cast, own_only, kept, removed)
 
 
@@ -187,14 +196,15 @@ def test_a_cell_is_the_largest_of_its_four_pixels_in_float64():
 
 
 def test_a_wall_half_a_metre_thick_casts_its_full_height():
-    """One 0.5 m pixel row 6 m high (a wall): its cell takes 6 m and casts rows 11 to 14,
-    of which the inset keeps rows 12 and 13. A mean of the four pixels (3 m) casts rows 13
-    and 14 only, which the inset removes; a minimum or the north-west pixel casts nothing."""
+    """One 0.5 m pixel row 6 m high (a wall): its 1 m cell takes 6 m and casts the 1 m rows 11
+    to 14, which the 0.5 m inset keeps from 0.5 m row 23 to 28. A mean of the four pixels (3 m)
+    keeps 0.5 m rows 27 and 28 only; a minimum or the north-west pixel casts nothing."""
     surface = np.full((40, 16), np.float32(1600.0))
-    surface[31, :] += np.float32(6.0)  # the southern half of cell row 15
+    surface[31, :] += np.float32(6.0)  # the southern half of 1 m row 15
     mask = capture_mask(surface, SUN_AZ, SUN_EL, THRESHOLD)
-    assert (mask[12:14, 2:] == 255).all()
-    assert (mask[:12] == 0).all() and (mask[14:] == 0).all() and (mask[:, :2] == 0).all()
+    assert mask.shape == (40, 16)
+    assert (mask[23:29, 3:] == 255).all()
+    assert (mask[:23] == 0).all() and (mask[29:] == 0).all() and (mask[:, :2] == 0).all()
 
 
 # ------------------------------------------------------------------- cast shadow
@@ -322,8 +332,20 @@ def test_the_inset_ignores_neighbours_outside_the_grid():
     assert (inset(np.zeros((3, 4), dtype=bool)) == 0).all()
 
 
-def test_the_mask_is_cast_or_own_shadow_then_the_inset():
+def test_the_mask_is_the_1_m_shadow_at_0_5_m_then_the_inset():
     surface = _random_surface(11, 12, 10)
     h = cell_heights(surface)
     shadow = cast_shadow(h, SUN_AZ, SUN_EL, THRESHOLD) | own_shadow(h, SUN_AZ, SUN_EL)
-    assert np.array_equal(capture_mask(surface, SUN_AZ, SUN_EL, THRESHOLD), inset(shadow))
+    mask = capture_mask(surface, SUN_AZ, SUN_EL, THRESHOLD)
+    assert mask.shape == (24, 20) == surface.shape
+    assert np.array_equal(mask, inset(_fine(shadow)))
+    assert not np.array_equal(mask, _fine(inset(shadow))), "the inset runs at 0.5 m, not at 1 m"
+
+
+def test_the_inset_at_0_5_m_removes_half_a_metre():
+    """A shadow 3 x 3 m (1 m cells) keeps 2 x 2 m at 0.5 m: half a metre off every side."""
+    h = np.zeros((7, 7), dtype=bool)
+    h[2:5, 2:5] = True
+    mask = inset(_fine(h))
+    assert np.argwhere(mask == 255).min(axis=0).tolist() == [5, 5]
+    assert np.argwhere(mask == 255).max(axis=0).tolist() == [8, 8]

@@ -1,6 +1,7 @@
 {
   "schema": 1,
-  "cell_m": 1,
+  "cell_m": 0.5,
+  "march_cell_m": 1,
   "sun": {
     "azimuth_grid_deg": 184.67,
     "elevation_deg": 50.1,
@@ -13,8 +14,8 @@
         "inputs_sha256": "f73033b19c5ff89a1cff469d2777e9a9b4f91226eada171669017bf7c030f748",
         "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b"
       },
-      "expected_pixels_sha256": "6f958c41f34ebc58847baefe9a386e19c6b4edf3835327bb5c11eb69526b7aa6",
-      "expected_png_sha256": "5fff6e5833156bcdfc1d45060aa83ee86e9a1cf336d861d57f9c773fc7fa4df3"
+      "expected_pixels_sha256": "203cae731087b45c2d65c7790a21efa24daa49ccfe5c9683a84790b34d7d1d7b",
+      "expected_png_sha256": "918dfdf6abfa56fcc8b046de4b6194cf7db44370c9a758ffca339b63cdd221b0"
     }
   }
 }

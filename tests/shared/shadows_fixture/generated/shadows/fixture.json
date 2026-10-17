@@ -1,7 +1,7 @@
 {
   "area": "fixture",
-  "cell_m": 1.0,
-  "columns": 32,
+  "cell_m": 0.5,
+  "columns": 64,
   "file": "shadows/fixture.png",
   "format": "png-l8",
   "lv95_box": {
@@ -10,9 +10,9 @@
     "n_max": 1150026.0,
     "n_min": 1149978.0
   },
-  "pixels_sha256": "65884f4024e27f2ebc426a82a460bbd615da50e7e8dcf5d3463955b320cc5a9e",
-  "rows": 48,
-  "sha256": "e80d88f27e51a4f665d0c07b343b134d65980d2548799f14b7763c8740b809e0",
+  "pixels_sha256": "b7e9e94b6e49ee95bf652d4125cd302ddc87c48d0f9a8f2094b46070fdc6f6f7",
+  "rows": 96,
+  "sha256": "4387adbe8081862bd3310351ebf97b79fa83fed4c2a009e753c61420439b5a47",
   "source": {
     "attribution": "© swisstopo",
     "collection": "ch.swisstopo.swisssurface3d-raster",
