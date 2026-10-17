@@ -183,7 +183,9 @@ Turns the clock's angles into the scene's light. Directions arrive as local unit
   t(e) = smoothstep(−12, −4, e)·(1 − smoothstep(0, 6, e)), colour (1.00, 0.55, 0.30) at ≥ 0°,
   (0.35, 0.30, 0.55) at −6°, (0.05, 0.06, 0.12) at −12°, brightest towards the sun and at the
   horizon; a constant night-sky glow (0.004, 0.005, 0.009) so the sky's ambient never reaches
-  zero; the sun's `light_angular_distance` 0.5° (the real sun is 0.53°) so the disk is drawn.
+  zero; the sun's disk drawn by the sky shader from its own `sun_disk_deg` 0.53 (the light's
+  `light_angular_distance` stays 0: at 0.5° the shadows went soft, a 20 m shadow's interior lifted
+  from 0.054 to 0.306 of lit ground 0.502 at 100 m, measured in software Forward+).
 - **The sky:** Godot's PhysicalSkyMaterial converted to a sky shader (its code kept, MIT,
   Godot's licence already in the credits) with one change: the night sky's contribution times
   `stars_strength` = 0 at sun elevation ≥ −6°, 1 at ≤ −12°, smoothstep between.
