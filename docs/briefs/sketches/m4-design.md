@@ -174,16 +174,24 @@ Turns the clock's angles into the scene's light. Directions arrive as local unit
 - **Moon light** (a second DirectionalLight3D, `sky_mode` light only, shadows on): energy
   0.03 × illuminated fraction × smoothstep(0°, 5°, moon elevation); colour (0.80, 0.85, 1.0);
   hidden below 0°.
-- **Exposure:** 0.54 at sun elevation ≥ 10°, 4.0 at ≤ −12°, between them interpolated in log
+- **Exposure:** 0.70 at sun elevation ≥ 10° (ruled after M4-05's rehearsal: in software Forward+
+  M3's 0.54 renders flat sunlit ground at 0.766 of its albedo, 0.70 at 1.001; Compatibility 0.967;
+  so 0.3.0 likely showed the ground at about 0.81 of the photo: the owner's "dull"), 4.0 at ≤ −12°, between them interpolated in log
   space against elevation. Ambient: the sky, contribution 0.25 (M3's calibration).
+- **Twilight, skyglow, sun disk** (ruled after M4-05's rehearsal: the physical sky goes black
+  once the sun is down, so dusk was black with no stars): a twilight term between +6° and −12°,
+  t(e) = smoothstep(−12, −4, e)·(1 − smoothstep(0, 6, e)), colour (1.00, 0.55, 0.30) at ≥ 0°,
+  (0.35, 0.30, 0.55) at −6°, (0.05, 0.06, 0.12) at −12°, brightest towards the sun and at the
+  horizon; a constant night-sky glow (0.004, 0.005, 0.009) so the sky's ambient never reaches
+  zero; the sun's `light_angular_distance` 0.5° (the real sun is 0.53°) so the disk is drawn.
 - **The sky:** Godot's PhysicalSkyMaterial converted to a sky shader (its code kept, MIT,
   Godot's licence already in the credits) with one change: the night sky's contribution times
   `stars_strength` = 0 at sun elevation ≥ −6°, 1 at ≤ −12°, smoothstep between.
 - **Stars** (only with the owner's catalogue answer, §10): the star table's stars drawn into an
   equirectangular image in celestial coordinates; the sky shader turns EYEDIR into right
   ascension and declination with a `celestial_basis` from local sidereal time, the latitude and
-  the local east/north/up. Pinned: Polaris stands at the latitude's elevation (±0.5°) in the
-  north at any time.
+  the local east/north/up. Pinned: the celestial pole stands at the latitude's elevation in the north (0.001°),
+  Polaris at its hour-angle elevation (Polaris is 0.74° from the pole).
 - **Calibration kept:** at the photo's sun (start), flat sunlit ground renders at the photo's
   brightness within ±10 % in software Forward+ (H12; M3 measured 1.06× under Compatibility).
 
