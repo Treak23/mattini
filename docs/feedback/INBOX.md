@@ -16,6 +16,7 @@ Expected: not stated.
 Repro / where exactly: 0.3.0 dist build on the laptop, windowed, any view including the Esc menu. Samples: /home/reto/mattini-test-0.3.0/resources.csv on the owner's laptop.
 Screenshots: none
 Possibly same as: FB-004 (item 10)
+Disposition: → M4-08 (frame cap 60 in the project) and M4-10 (15 while the pause screen is open); SPEC §13 row 45. Design, 2026-10-17.
 
 ### FB-006 · 2026-10-17 · bug · Log / output held back until the game exits
 Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
@@ -27,6 +28,7 @@ Expected: not stated.
 Repro / where exactly: 0.3.0 dist build on Linux; watch godot.log or stdout while the game runs.
 Screenshots: none
 Possibly same as: FB-004 (other observations)
+Disposition: → M4-08 (`application/run/flush_stdout_on_print` true: release exports flush stdout and godot.log per line, measured in Godot's source); SPEC §13 row 45. Design, 2026-10-17.
 
 ### FB-005 · 2026-10-17 · bug · Errors / missing photo pack message names the pipeline, not the pack
 Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
@@ -38,6 +40,7 @@ Expected: not stated.
 Repro / where exactly: 0.3.0 dist build, start with mattini-photo.pck removed from the game folder. Log: /home/reto/mattini-test-0.3.0/mattini-0.3.0-no-photo.log on the owner's laptop.
 Screenshots: none
 Possibly same as: FB-004 (item 9)
+Disposition: → M4-08 (DataPacks names a missing pack, the folder and what it holds; in an export the readers' hint says to download the release folder again, not the pipeline) and M4-10 (DataPacks' errors on the error panel); SPEC §13 row 45. Design, 2026-10-17.
 
 ### FB-004 · 2026-10-17 · design · Whole game / 0.3.0 owner test results (the M3 release's test list)
 Machine: linux (the owner's laptop, not the RTX 4090 PC: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run, Vulkan 1.4.341, Forward+; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 15 GB RAM, 1920x1080 at 300 Hz, windowed, on AC, performance profile)
@@ -62,6 +65,7 @@ Expected: The 0.3.0 test list as handed over at the M3 close (not restated here)
 Repro / where exactly: The 0.3.0 dist build, run 2026-10-17, shots taken 11:45 to 11:49. Time of day and weather in game not stated.
 Screenshots: shots/FB-004-a.png (11:45:23, item 1 start view), shots/FB-004-b.png (11:46:10, item 2 at ~30 m, item 3), shots/FB-004-c.png (11:46:30, item 2 at ~60 m), shots/FB-004-d.png (11:47:04, item 2 at ~150 m, items 3 and 6), shots/FB-004-e.png (11:48:20, item 5 trees close), shots/FB-004-f.png (11:48:57: oblique aerial over the village, grey block buildings, dark cone trees, the river on the right, the church with a pale green nave roof in the centre; items 5 and 6), shots/FB-004-g.png (11:49:14: the Esc screen, "mattini 0.3.0", controls, credits with the five swisstopo datasets and the three Poly Haven textures, Resume and Quit; item 8). Items 4's shots are FB-003-a/-b. Mapping of shots to items is the tester's inference.
 Possibly same as: FB-001 (item 1 rechecks it)
+Disposition: the test report of 0.3.0, item by item (design, 2026-10-17): 1 and 7 ("looks not bad"; dull and grey) → M4-05/M4-10, the physical sky and exposure 0.70 (software Forward+ measured 0.3.0's ground at about 0.81 of the photo); 3 (baked shadows) → M4-03 and M4-06, softened (SPEC §13 row 41); 4 (water) is FB-003; 6 (the church's green roof) correct as built, the roof is green (the owner, SPEC §13 row 46); 9 is FB-005; 10 (GPU flat out) is FB-007; jagged edges → M4-08 (MSAA 4×); the photo stretched on steep walls, the bridge as a hump and the blur close to the ground are on M4's DEFERRED list (docs/briefs/M4-plan.md); Windows: deferred by the owner.
 
 ### FB-003 · 2026-10-17 · bug · Ground / river water effect (village, close up)
 Machine: linux (the owner's laptop, not the RTX 4090 PC: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run, Vulkan 1.4.341, Forward+; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 15 GB RAM, 1920x1080 at 300 Hz, windowed, on AC, performance profile)
@@ -73,17 +77,4 @@ Expected: not stated.
 Repro / where exactly: Low over the river (the Vispa, guess) in the village, looking upstream along it, close to the water. Time of day and weather not stated. Item 4 (ground) of the 0.3.0 test.
 Screenshots: shots/FB-003-a.png (11:47:45: low over the river, near-black water patch with white glints in the foreground, its jagged white rim at the bank; the river further up shows the flat photo; dark cone trees and pale block buildings either side), shots/FB-003-b.png (11:47:50, the same view 5 s later)
 Possibly same as: —
-
-### FB-001 · 2026-10-14 · design · Look / terrain and building colour (visual direction)
-Machine: linux (EndeavourOS, kernel 7.1.9, KDE Plasma on Wayland, RTX 4090, NVIDIA driver 610.57.04, Vulkan 1.4.341)
-Build: 0.2.0 (dist 5ce4888, all three files' SHA-256 equal to the README; pause screen shows 0.2.0)
-Impact: degraded
-Owner's words: "it's definitely too white." Owner's request, as relayed: buildings and terrain are nearly the same colour and the roofs barely differ from the walls; the owner now wants the realistic route instead of the stylised diorama look.
-What happened: In the start view everything is near-white or pale grey; the buildings and the ground read as one colour, and the roofs are hardly distinguishable from the walls. This reverses SPEC §10's look and the board's "Photorealism: not planned", so it is for M3 planning.
-Expected: Realistic colour (owner's direction, not a specified target).
-Options the tester listed to put to the owner: (a) real colours from swisstopo data: SWISSIMAGE on the terrain, roof colours sampled from it, trees from the surface model; (b) (a) plus textured materials; (c) full photorealism. The tester suggested (a) first.
-Repro / where exactly: Start view of the 0.2.0 build, looking up the valley with the village in the foreground. Time of day and weather not stated. Renderer was Forward+, as designed.
-Same test, results the owner reported as all OK: (1) it starts: log has both startup lines (terrain village loaded, 4001 x 6001 vertices at 0.5 m; buildings village loaded, 1486 buildings in 6 chunks, 178910 triangles), no ERROR line, only the known Terrain3D deprecation warning; while running about 1.0 GB RAM, 1.1 GB VRAM, GPU around 44%. (2) The pause screen shows 0.2.0, the credits list both datasets, and the credits scroll. (3) The buildings sit right on the terrain: none floating, sunk, holed or inside-out; shadows and contour lines render. (4) Flight is smooth, including at Shift speed. (5) The controls are good. Not tested yet: the Windows build.
-Screenshots: shots/FB-001-a.png (the start view: village houses in the foreground, the valley and a river or road running up the middle, steep slopes either side with contour lines; all pale grey-white, the sky pale blue-grey; the pause screen is not open)
-Possibly same as: —
-Disposition: → M3-04 to M3-07, M3-09 to M3-12 and M3-14 (arc M3, the realistic look the owner chose on 2026-10-14: SPEC §13 rows 29–33; docs/briefs/M3-plan.md). Design, 2026-10-14.
+Disposition: → M4-06 (measured: 94 % of the Vispa's channel carries the water class, so the "patch" is the shading: albedo × 0.9, roughness 0.3, turbulent ripples at 0.8 m/s, the bank eased over 1 m; docs/briefs/sketches/M4-soften/README.md); SPEC §13 row 45. Design, 2026-10-17.

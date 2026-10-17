@@ -9,14 +9,18 @@ Open items only. Shipped and answered items live in `docs/history/` and
 **M3 Surfaces and trees — closed 2026-10-16: version 0.3.0 is shipped on `dist` (commit `5f08379`, on the owner's word "push dist") and recorded (`docs/releases/v0.3.0.md`).** The plan is
 `docs/briefs/M3-plan.md` (status DONE); the close in full is `docs/history/ARCS.md` §M3. All fourteen briefs and the six review fixes are DONE; rounds R1, V1 and R2 are adjudicated (`docs/reviews/M3-round1.md`, `M3-V1.md`, `M3-round2.md`): no P0, P1 or P2 is open, and the P3 and the Tier 2 P2 are on the residue list below. The standard gate from a fresh clone of `main` `697a154` is exit 0 (pytest 2228, GUT 47 scripts, 261 tests, 9760 asserts, the render step run); the real village rebuilt from the pinned inputs gives the manifest `3ca0445c…`; the ten files are under 100 MiB; a fresh clone of `dist` verifies against the README and its Linux build starts with all eight startup lines.
 
-**Waiting on the owner:** the first look at 0.3.0 (Linux, then Windows, which has never been started anywhere) and at 0.2.0's Windows build. FB-001 stays Open until that look says whether the realistic look answers "too white". The list of what to look at is in the release record.
+**M4 Sun cycle — in design (2026-10-17).** The owner's answers are SPEC §13 rows 41–46; the plan is
+`docs/briefs/M4-plan.md` (ten briefs, M4-01 to M4-10, two waves), design's notes
+`docs/briefs/sketches/m4-design.md`.
 
-**Decisions for design to audit:** (the M3 list of ten was audited and kept, RULINGS 2026-10-15; these are the fix wave's.)
-1. fix-3, the trees check's estimator: `render_trees.gd` averages the crown over a 0.4 m disc and keeps the threshold 0.6; the review's 5 × 5 apex-pixel estimator reads 0.5824 on a clean tree since fix-4 (0.7513 before), so keeping it would have needed a threshold under 0.58. The alternative: that estimator and a lower threshold, by changing `CROWN_READ_M` and `TREES_MIN_CORR` (brief Findings 3).
-2. fix-3, `MATTINI_SKIP_RENDER=1` excuses only a machine without `xvfb-run`; where `xvfb-run` is found the step runs and says so. The alternative: the variable skips whenever set (one `if` in `render_step`; Findings 5).
-3. fix-3 added a class-agreement floor of 0.98 (clean 0.9960) that Decision 2 does not name, to catch an `xz.y` negation that draws no class at all, and touched `pipeline/tests/fake_tools.py` (compile-forced: a stand-in `xvfb-run` for the whole-gate stand-in tests). Keep or drop is design's.
+**Waiting on the owner:** the GO for M4; whether the softened photo shadows
+(`docs/briefs/sketches/M4-soften/`, G = 3) are kept (SPEC §13 row 41's experiment); the star
+catalogue (m4-design §10: (a) the Yale Bright Star Catalogue, licence unstated, cited; (b) no
+stars until a clean source is confirmed). The Windows build's first start stays deferred by the
+owner ("not a priority" until sharing).
 
-(Round R2's placement lens judged 1 and 2 right: the disc reads 0.8915 to 0.9360 on five other photos against worst wrong places of 0.1876 to 0.3432, and the variable excuses only a machine without `xvfb-run`; the margin is a property of the shipped layout and photo, so whoever changes either re-measures.)
+**Decisions for design to audit:** none. (M3 fix-3's three were audited and kept, RULINGS
+2026-10-17.)
 
 **Last shipped:** 0.3.0, 2026-10-16: the village in a realistic look made from the data
 (`docs/releases/v0.3.0.md`; `dist` `5f08379`, built from `main` `697a154`). Before it: 0.2.0, 2026-09-26, the village with its
@@ -41,14 +45,15 @@ Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in fu
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0 to M3
 are closed.
 
-1. M4 Sun cycle — ARC (design cuts it; the photo's baked shadows are its known cost)
+1. M4 Sun cycle — ARC (planned 2026-10-17, `docs/briefs/M4-plan.md`; waiting on the GO)
 2. M5 Scale up — ARC
 3. M6 Weather and walking — ARC
 
 ## DEFERRED, said out loud
 
-M3's list, with reasons and costs, is in `docs/briefs/M3-plan.md` §DEFERRED. The inbox's one
-Open entry, FB-001, is answered by 0.3.0 and stays Open until the owner's first look.
+M4's list, with reasons and costs, is in `docs/briefs/M4-plan.md` §DEFERRED (M3's in
+`docs/briefs/M3-plan.md`). Every Open inbox entry (FB-003 to FB-007) has its disposition into M4;
+FB-001 is closed (0.3.0, ARCHIVE).
 
 ## Residues and hazards
 
