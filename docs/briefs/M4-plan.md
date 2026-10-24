@@ -1,6 +1,6 @@
 # M4 — The sun cycle: the arc plan
 
-Status: READY — waiting for the owner's GO (and the two answers that go with it: the softened shadows kept or not, the star catalogue (a) or (b))
+Status: READY — waiting for the owner's GO. The two answers are in (2026-10-24, SPEC §13 rows 47, 48): the softened shadows kept (G = 3); the stars built, section S of M4-05 included (catalogue (a)). The owner will start the build in a new session after workflow changes.
 
 **Base:** the commit that sets this status line to GO (its message starts `docs: M4 GO`;
 `git log --grep '^docs: M4 GO' -1`). It is the base of the integration notes and of the

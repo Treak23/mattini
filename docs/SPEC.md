@@ -1060,6 +1060,8 @@ GPU.
 | 44 | Night (M4) | Stars and the moon at their real positions, the moon lighting the scene by its phase. No lit windows: no data says which windows are lit, so they would be invented | Owner (same answer) |
 | 45 | The 0.3.0 test's fixes (FB-003, FB-005 to FB-007) | All in M4: a frame cap (60, 15 while the pause screen is open), the log flushed line by line, the log naming the missing pack, anti-aliasing on, and the water reworked (the photo's own colour, less mirror, a visible flow, a soft bank edge) | Owner (same answer) |
 | 46 | The church's pale green nave roof (FB-004 item 6) | Correct: the roof is green in reality (the owner). The roofs step stays as built; no tree mask on roofs | Owner ("the churches roof is actually green", 2026-10-17) |
+| 47 | The softened photo shadows (row 41's experiment) | Kept: G = 3 with the inset feather, as design's comparisons showed (`docs/briefs/sketches/M4-soften/`); `shadow_lift` 3.0 in M4-06 | Owner ("1 ok g=3 seems fine", 2026-10-24) |
+| 48 | The star catalogue (m4-design §10) | (a) the Yale Bright Star Catalogue (BSC5, CDS V/50), with its citation (Hoffleit & Warren 1991): M4-05's section S and M4-10's credit line are built. Its licence is stated nowhere authoritative: the question is on the board, to settle before any commercial release. Not taken: (b) no stars until a clean source is confirmed | Owner ("2a", 2026-10-24) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not

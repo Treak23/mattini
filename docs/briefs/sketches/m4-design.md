@@ -246,3 +246,6 @@ NASA/ADC, CDS V/50) states no licence anywhere authoritative, cite Hoffleit & Wa
 HYG v4.4 is CC BY-SA 4.0 but built on Hipparcos. Options for the owner: (a) BSC5 with its
 citation, the licence question on the board before any commercial release; (b) no stars until a
 clean source is confirmed (night with the moon only).
+
+**Answered 2026-10-24 (SPEC §13 rows 47, 48):** (a), the BSC5 with its citation; and the soften
+experiment kept at G = 3.

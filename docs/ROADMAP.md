@@ -13,11 +13,13 @@ Open items only. Shipped and answered items live in `docs/history/` and
 `docs/briefs/M4-plan.md` (ten briefs, M4-01 to M4-10, two waves), design's notes
 `docs/briefs/sketches/m4-design.md`.
 
-**Waiting on the owner:** the GO for M4; whether the softened photo shadows
-(`docs/briefs/sketches/M4-soften/`, G = 3) are kept (SPEC §13 row 41's experiment); the star
-catalogue (m4-design §10: (a) the Yale Bright Star Catalogue, licence unstated, cited; (b) no
-stars until a clean source is confirmed). The Windows build's first start stays deferred by the
-owner ("not a priority" until sharing).
+**Waiting on the owner:** the GO for M4. The plan is READY; the owner's answers of 2026-10-24
+are in (the softened shadows kept at G = 3; the stars from the Yale Bright Star Catalogue): SPEC §13
+rows 47, 48. The owner will start the build in a new session after workflow changes ("dont go yet").
+The Windows build's first start stays deferred by the owner.
+
+**Open licence question:** the Yale Bright Star Catalogue (BSC5) states no licence anywhere
+authoritative; settle it (or swap the source) before any commercial release (SPEC §13 row 48).
 
 **Decisions for design to audit:** none. (M3 fix-3's three were audited and kept, RULINGS
 2026-10-17.)
