@@ -2,6 +2,15 @@
 
 Status: READY — waiting for the owner's GO. The two answers are in (2026-10-24, SPEC §13 rows 47, 48): the softened shadows kept (G = 3); the stars built, section S of M4-05 included (catalogue (a)). The owner will start the build in a new session after workflow changes.
 
+> **Process note, 2026-10-24.** This plan was written under the three-realm process (ten
+> arc-sized briefs in two waves for an `ultracode build` orchestrator), retired that day
+> (SPEC §13 row 49). Its decisions, data, briefs and pinned tests stand. The first
+> `ultracode design` session triages it: the owner's reported items (FB-003 to FB-007:
+> M4-06's water, M4-08) first, into releases of two days each, the briefs re-cut to batch size
+> where a brief is larger, each with a `Lane:` line; the owner names which of the rest comes
+> in. Where this plan says orchestrator, read the release session; where it says builder
+> session, read builder agent (`docs/roles/BUILD.md`).
+
 **Base:** the commit that sets this status line to GO (its message starts `docs: M4 GO`;
 `git log --grep '^docs: M4 GO' -1`). It is the base of the integration notes and of the
 review's diff range.

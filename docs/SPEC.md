@@ -1,7 +1,8 @@
-# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close, at M2 planning and at M2's review, 2026-09-25, and at M3 planning, 2026-10-14)
+# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close, at M2 planning and at M2's review, 2026-09-25, at M3 planning, 2026-10-14, and at the process change of 2026-10-24)
 
 Written by the design realm with the owner from `docs/start.md` Part 1 / 1A and the
-owner's day-one answers. Only the design realm edits this file. `CLAUDE.md` holds the
+owner's day-one answers. Only the release session or a `design` conversation edits this
+file (DESIGN.md standing rule 8). `CLAUDE.md` holds the
 rules; this file holds what is built and why. Markers: **OPEN** = not decided (asked,
 never picked silently); **PROPOSED** = suggested, not yet confirmed by the owner.
 
@@ -1062,6 +1063,7 @@ GPU.
 | 46 | The church's pale green nave roof (FB-004 item 6) | Correct: the roof is green in reality (the owner). The roofs step stays as built; no tree mask on roofs | Owner ("the churches roof is actually green", 2026-10-17) |
 | 47 | The softened photo shadows (row 41's experiment) | Kept: G = 3 with the inset feather, as design's comparisons showed (`docs/briefs/sketches/M4-soften/`); `shadow_lift` 3.0 in M4-06 | Owner ("1 ok g=3 seems fine", 2026-10-24) |
 | 48 | The star catalogue (m4-design §10) | (a) the Yale Bright Star Catalogue (BSC5, CDS V/50), with its citation (Hoffleit & Warren 1991): M4-05's section S and M4-10's credit line are built. Its licence is stated nowhere authoritative: the question is on the board, to settle before any commercial release. Not taken: (b) no stars until a clean source is confirmed | Owner ("2a", 2026-10-24) |
+| 49 | The process (2026-10-24; replaces row 28) | One session per release (`ultracode design`): two-list triage, a release of two days of build and about half a week's allowance with the owner's inbox first and the list frozen at the go, batch-sized briefs built by helper agents (one builder per brief, its own worktree), reviews by tier per batch and over the whole range, three gate levels, the record with the report-back; `design` is a conversation, `feedback` the clerk. No model or effort pinned anywhere; the helpers' model is one line of the go. Lanes are separate sessions, one build-running agent per container (`docs/WORKFLOW.md`; the source handoff `docs/history/WORKFLOW-SEED.md`) | Owner ("adapt yourself to it", 2026-10-24; RULINGS 2026-10-24) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not

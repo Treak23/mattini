@@ -1,5 +1,4 @@
 {
-  "effortLevel": "xhigh",
   "autoCompactWindow": "400k",
   "hooks": {
     "SessionStart": [
@@ -15,8 +14,14 @@
   },
   "permissions": {
     "allow": [
-      "Read", "Edit", "Write", "Glob", "Grep", "Bash",
-      "WebFetch", "WebSearch",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash",
+      "WebFetch",
+      "WebSearch",
       "mcp__Claude_Code_Remote",
       "mcp__github"
     ],

@@ -2,13 +2,16 @@
 
 Walk it top to bottom before any version bump.
 
-## A. Preconditions — every one, or the arc stays OPEN
+## A. Preconditions — every one, or the release stays unpublished
 
 - [ ] `git status --porcelain` is empty.
-- [ ] Every brief in the arc reads `Status: DONE (<commit sha>)`.
-- [ ] No production code in the arc was written by the design realm (DESIGN.md rule 5).
-- [ ] No brief carries an unfinished-review note; a truncated round is a round that did
-      not happen.
+- [ ] Every brief in the release reads `Status: DONE (<sha from origin/main>)`.
+- [ ] No production code in the release was written by the session's own hand (DESIGN.md
+      §Identity, lesson 15).
+- [ ] No truncated review round (a dead agent, a limit hit); a truncated round is a round
+      that did not happen, and the whole-range review ran (DESIGN.md §The release step 4).
+- [ ] No batch was started past 100 % of the go's budget (WORKFLOW §The release has a size);
+      the batches not built are on the next release's list.
 - [ ] No gate is a source census standing alone over code that runs at scene load,
       `_ready()`, autoload initialisation or pipeline start-up (BUILD.md 3b).
 - [ ] Every gate's "does NOT prove:" line is filled in. Read them as a set: they are the
@@ -19,7 +22,7 @@ Walk it top to bottom before any version bump.
       the third-party code the build ships: Godot and its components, Terrain3D, and
       godot-cpp, which is compiled into Terrain3D's library (all MIT; its notice since
       M2-02, `game/credits/godot-cpp-LICENSE.txt`; 0.1.0 lacked it, D17).
-- [ ] **No raw data or unmanaged binaries** entered git history in this arc, but the
+- [ ] **No raw data or unmanaged binaries** entered git history in this release, but the
       one real sample the owner allowed (SPEC §13 row 24), which `test_repo_hygiene.py`
       names with its SHA-256.
 
@@ -83,12 +86,17 @@ Walk it top to bottom before any version bump.
 
 - [ ] `docs/releases/v<version>.md` committed BEFORE the chat message: version, source sha,
       the FB ids it closes, what the review found, what this release does NOT prove (the
-      visual checks for the owner), and what to do if it will not start.
+      visual checks for the owner), *Questions for you* with the defaults taken, and what
+      to do if it will not start. Its numbers, beside the previous release's: the allowance at
+      go and at publish, the API-equivalent cost of every session, wall clock, commits, code and
+      test lines and tests added, and which model ran where (WORKFLOW §Models).
 - [ ] Report-back in chat as a copy of the record; owner-reported items separate from
       review-found ones; plain text.
-- [ ] The board updated (shipped line, OPEN list, DEFERRED list); the close's narrative
-      moved to `docs/history/`.
-- [ ] No Routine left running.
+- [ ] The board updated (shipped line, OPEN list, DEFERRED list, the residue); the inbox
+      drained (shipped entries to `ARCHIVE.md` with their disposition); `brain.md`'s header
+      current; the plan's `Status: DONE (<version>)`.
+- [ ] No Routine left running; nothing scheduled after the session. The owner archives the
+      session after reading the report-back.
 
 ## E. When the owner reports a broken build
 

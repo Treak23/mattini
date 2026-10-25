@@ -43,6 +43,12 @@ There is no never-happen rule (the owner chose none, 2026-09-24); the code that
 guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on both sides,
 the pipeline's determinism) MUST have tests, mutation-proved.
 
+**Three gate levels** (WORKFLOW §Gates): the standard gate is the commit gate, chained to
+every commit; the batch gate runs it once more from a clean worktree at the pushed head with
+the brief's own gates and mutation rows before a brief is DONE; the release gate is
+`docs/RELEASE.md` §B and §C from a fresh clone, once per release, solo. A gate is never
+polled.
+
 **What the gate cannot see:** containers have no GPU. Nothing here proves that anything
 looks right or renders on a GPU; the owner's PC is the visual test (brain.md §Hazards). From
 brief M3-R1-fix-3 on, the gate's render step (Compatibility renderer, Mesa llvmpipe under
@@ -84,7 +90,10 @@ tests/shared/        fixtures read by both pipeline and game tests (the seam)
 tools/gate.sh        the standard gate
 docs/SPEC.md         design of record
 docs/WORKFLOW.md     the process skeleton; docs/roles/ the role docs
-docs/briefs/         briefs (the unit of work), BLOCKED.md, shots/ (software screenshots)
+docs/briefs/RELEASE-WORKFLOW.js  the per-batch helper-agent script the release session runs
+docs/history/        answered questions, RULINGS.md (their index), the ledger, the arcs' records
+docs/briefs/         briefs (the unit of work, batch-sized), <release>-plan.md, BLOCKED.md,
+                     pinning/ (the pinned tests), shots/ (software screenshots)
 docs/feedback/       the inbox the clerk files into
 docs/releases/       one record per shipped version
 brain.md             compressed whole-project handoff
@@ -128,25 +137,30 @@ These bind the agents. The owner's explicit word overrides any of them except ru
   reported (what they said, what was wrong, what changed, which version), kept separate
   from what the review found. Plain text.
 
-## Process: three realms (`docs/WORKFLOW.md`)
+## Process: one session per release (`docs/WORKFLOW.md`)
 
-Design sessions do everything before the build (`docs/roles/DESIGN.md`): the arc plan,
-cut for speed into waves of briefs that can be built in parallel sessions, the briefs and
-their pinning tests in `docs/briefs/`, and the review plan. Build sessions run it under
-`docs/roles/BUILD.md`: one orchestrator spawns a builder session per lane, patches the
-landings together, runs the reviews the design wrote, fixes, and ships the release — no
-design authority, ambiguity goes to `docs/briefs/BLOCKED.md`, done = the brief's gates
-green. The clerk files feedback under `docs/roles/FEEDBACK.md`.
-If you have been pointed at a brief, you are an executor and BUILD.md binds you. A brief
-marked `Builder: owner` on the board is the owner's to implement; no agent takes it (the
-owner takes none today, 2026-09-24).
+Adopted 2026-10-24 on the owner's word. **The repo is the only memory.** One fresh session
+per release (`docs/roles/DESIGN.md`): it triages the open items into two lists (this
+release, two days of build and about half a week's allowance, the owner's reported items
+first; next release, with the DEFERRED list), gets one go, writes the batch-sized briefs and
+their pinning tests, builds each batch through a builder agent (`docs/roles/BUILD.md`,
+`docs/briefs/RELEASE-WORKFLOW.js`), reviews each by its tier, runs the whole-range review,
+the release gate and `docs/RELEASE.md`, writes the record and ends. The session judges and
+never writes production code; builders build and have no design authority; ambiguity goes
+to `docs/briefs/BLOCKED.md` and is answered by a commit; done = the brief's gates green.
+The clerk files feedback under `docs/roles/FEEDBACK.md`. If you have been pointed at a
+brief, you are a builder and BUILD.md binds you. A brief marked `Builder: owner` on the
+board is the owner's to implement; no agent takes it (the owner takes none today,
+2026-09-24).
 
 **Session roles (spawn words).** When the owner's first message is one of these words,
 first run `git fetch --unshallow origin main || git fetch origin main`, then
 `git checkout main && git pull --ff-only origin main` (brain.md H14), then read
-the role doc and follow it: `design` → `docs/roles/DESIGN.md` · `ultracode build` →
-`docs/roles/BUILD.md` · `feedback` → `docs/roles/FEEDBACK.md`. The model is the one the
-owner picks when starting the chat; spawns name none and inherit it (WORKFLOW §Models).
+the role doc and follow it: `ultracode design` → `docs/roles/DESIGN.md` §The release ·
+`design` → `docs/roles/DESIGN.md` §The conversation · `feedback` → `docs/roles/FEEDBACK.md`.
+`ultracode` is the owner's switch for multi-agent workflows: only their typed word turns it
+on. The model is the one the owner picks when starting the chat; the helpers' model is one
+line of the go; nothing in the repo pins a model or an effort (WORKFLOW §Models).
 
 **Rules about rules** (`docs/WORKFLOW.md`): rules bind the agents, never the owner; the
 owner's explicit word overrides any process rule except no-secrets and no unrecoverable

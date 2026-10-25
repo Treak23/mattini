@@ -2,11 +2,14 @@
 
 Seeded from start.md Part 5 (I1–I32, renumbered 1–32 in the same order); appended at every
 arc close with the date and the incident. Numbers are never reused or renumbered.
-Build reads `[build]` + `[all]`; design all. The `[build]` lessons were retagged
-`[build]` when the supervisor role was removed (owner, 2026-10-14): the orchestrating
-build session does that work now. Their incidents stay as written; where a lesson's
-mechanism (supervisor, waker, ticks, an hourly cron) disagrees with `docs/roles/BUILD.md`,
-BUILD.md wins, and the *Now:* line under the lesson says what holds.
+The release session reads all of them; a builder reads the card in `docs/roles/BUILD.md`,
+whose lines cite the `[build]` and `[all]` lessons they distil. The `[build]` lessons were
+retagged when the supervisor role was removed (owner, 2026-10-14); from 2026-10-24 the
+release session does the orchestrating work itself through helper agents. Their incidents
+stay as written; where a lesson's mechanism (supervisor, waker, ticks, an hourly cron,
+builder sessions per wave) disagrees with `docs/WORKFLOW.md` or `docs/roles/DESIGN.md`,
+those win, and the *Now:* line under the lesson says what holds. Lessons 46 to 49 come from
+the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.md` §2).
 
 1. `[all]` **Output that LOOKS done is the worst failure class.** Plausible placeholders, a
    comment claiming a protection nobody wired, a gate that cannot fail, a status line with
@@ -308,3 +311,30 @@ BUILD.md wins, and the *Now:* line under the lesson says what holds.
     clean tree. The fix-3 builder re-measured at the head, changed the estimator and not the threshold, and recorded
     both (M3-R1-fix-3 Findings 3, 2026-10-16; round R2 found the choice right on five other photos). A number a brief
     copies from a review is re-measured at the head it will gate, before anything is built on it (lessons 12, 25).
+
+46. `[design]` **A release without a size limit grows until the allowance stops it.** The
+    source project's v3.69 took eleven days and 3 to 4 times the cost of the release it was
+    modelled on: the owner said "recommend" to the whole backlog, nothing capped it, and the
+    weekly limit landed mid-gate with red tests on `main` for 61 hours. Its record reported
+    the overrun; a rule that only reports changes nothing. So: two days of build and about
+    half a week's allowance, fixed at the go; the list frozen there; at 100 % of either, no
+    new batch (WORKFLOW §The release has a size).
+
+47. `[all]` **A gate's cost is paid per commit; size the gate to the commit.** An 80-minute
+    full gate on every commit and after every rebase, in two build lanes fighting in one
+    container, and agents polling it (cache reads 228 times the output) made the gate the
+    release's main cost. Three levels: cheap per commit, real per batch, complete once per
+    release, solo; never polled (WORKFLOW §Gates). mattini's standard gate is a few minutes,
+    so it is the commit gate as it is; the rule binds whoever makes it slower.
+
+48. `[design]` **Paperwork agents write paperwork.** Seven agents per batch, with a recorder
+    among them, produced 127 docs commits of 229 in one release; a third of another's
+    commits were a supervisor's bookkeeping. One builder, one reviewer at tier 2, a fixer
+    only when a finding stands, and the session writes the one board line itself from the
+    agents' results (DESIGN.md §The release step 3).
+
+49. `[all]` **The owner's items first, the rest only by name.** A triage that recommends the
+    whole backlog gets "recommend" back and builds everything. The two lists: this release,
+    the owner's open inbox entries and nothing else unless the owner names it; next release,
+    everything else, ending in the DEFERRED list with its cost (DESIGN.md §The release
+    step 1).

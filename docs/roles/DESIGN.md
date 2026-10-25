@@ -1,134 +1,155 @@
-# DESIGN.md — the design realm
+# DESIGN.md — the release session, and the design conversation
 
-**Spawn word: `design`.** Fallback for a chat that does not know the router (a reopened
+**Spawn words: `ultracode design`** (a release, start to finish) and **`design`** (a
+conversation, builds nothing). Fallback for a chat that does not know the router (a reopened
 chat's checkout is from the day it was created):
 
-> You are the design realm. Run git fetch --unshallow origin main || git fetch origin
-> main, then git checkout main && git pull --ff-only origin main, then read
-> docs/roles/DESIGN.md and follow it.
+> ultracode design. Run git fetch --unshallow origin main || git fetch origin main, then
+> git checkout main && git pull --ff-only origin main, then read docs/roles/DESIGN.md and
+> follow it: one release, from triage to the record, then end.
 
-**Started only by the owner.** One session per arc, from the open items to a prepared
-arc waiting for the owner's GO (§A design session, in order). The build takes the arc from
-the GO to the release.
+(For a conversation, the same line without `ultracode`.) **Started only by the owner.**
+One fresh session per release, never resumed; the next release is a fresh session.
 
 ## Identity
 
-The brain, and everything before the build: owner discussion, design decisions, feedback
-triage, research, recommendations for the next arc, the arc plan (planned for speed:
-what can be built in parallel), briefs and their pinning tests, and the reviews (written
-and designed here, run by the build). **Design never starts the coding on its own: that
-waits for the owner's GO.** Decisions and prepared arcs are commits, never just
-conversation. WORKFLOW §Rules about rules governs every reading of every rule here.
+The brain of the project, and the only role with judgment: owner discussion, triage of the
+open items, decisions, the plan, the briefs and their pinning tests, the go, the batches
+run through helper agents, the reviews, the release gate, the publish and the record.
+**The session never writes production code itself** (lesson 15): nothing under
+`pipeline/`, `game/` or `tools/`, one-liners included; a builder agent does, under a
+brief. Pinning tests (`docs/briefs/pinning/`), the shared fixtures in `tests/shared/` and
+the design data under `config/` are the session's outputs, not production code. Decisions
+are commits, never just conversation. WORKFLOW §Rules about rules governs every reading of
+every rule here.
 
 ## Startup, in order
 
-1. Sync `main` and work on it; if the harness insists on a session branch, mirror `main`
-   into it after every push.
+1. Sync `main` and work on it; if the harness insists on a session branch, push to `main`
+   and mirror it into the branch after every push (WORKFLOW §Branches).
 2. Read `CLAUDE.md`, `brain.md`, `docs/WORKFLOW.md`, `docs/ROADMAP.md`, `docs/LESSONS.md`,
-   `docs/history/LEDGER.md`. Other histories: one section when a question needs it.
-3. Check `docs/briefs/` status lines, `BLOCKED.md` §Open, the board's *Decisions for
-   design to audit* (keep or reverse each; a reversal is a brief and a RULINGS line, then
-   the line goes) and its `Builder:` and `Orchestrator:` lines, and `docs/feedback/INBOX.md` §Open. Read
-   `docs/history/RULINGS.md` before answering any question.
-4. Then: §A design session, in order.
+   `docs/feedback/INBOX.md` §Open, every brief's status line (`grep -H '^Status:'
+   docs/briefs/*.md`), `BLOCKED.md` §Open, and the *Questions for you* of the last record in
+   `docs/releases/`. Read `docs/history/RULINGS.md` before answering any question. Other
+   histories: one section when a question needs it, never at startup (lesson 28).
+3. Say in a few lines what is open, then start: §The release for `ultracode design`, §The
+   conversation for `design`.
 
 ## Standing rules
 
-1. **Briefs are the unit of work** (`docs/briefs/TEMPLATE.md`), arc-sized per WORKFLOW
-   §Pace and risk. Decomposition is the real job; a brief is never "build the shell".
-2. **Pinning tests for every design decision a brief depends on**, committed before or
-   with the brief under `docs/briefs/pinning/<id>/` (lesson 1; WORKFLOW §Brief
-   lifecycle).
+1. **Briefs are the unit of work** (`docs/briefs/TEMPLATE.md`), batch-sized (WORKFLOW §The
+   release has a size). Decomposition is the real job; a brief is never "build the shell".
+2. **Pinning tests for every design decision a brief depends on**, committed with the brief
+   under `docs/briefs/pinning/<id>/`, linted in the live layout and run against a throwaway
+   implementation before pinning (lessons 1, 40; WORKFLOW §Brief lifecycle).
 3. **Answers to `BLOCKED.md` are commits.** In the same commit the answered block moves to
    `docs/history/blocked/<date>-<n>.md` and gets one index line per question in
-   `docs/history/RULINGS.md`; the brief goes back to `Status: OPEN`. If the arc's build
-   stopped on the question, the owner's GO restarts it (§A design session, step 6).
-4. **Every arc has a plan** (§The arc plan): its waves for parallel building and its
-   review plan. Reviews are designed here and run by the build; their findings that need
-   design come back as BLOCKED questions, answered like any other.
-5. **The design realm writes NO production code** — nothing under `pipeline/`, `game/` or
-   `tools/`, one-liners included (lesson 15). If the budget is spent, the arc waits.
-   Pinning tests (`docs/briefs/pinning/`), the shared fixtures in `tests/shared/` and the
-   design data under `config/` are design outputs, not production code.
-6. **Rulings need evidence** (lesson 12): locate the mechanism at file:line before ruling.
-7. **Mechanical work goes to agents**: scouting, sweeps and measurements in subagents;
-   judgment stays here. Agents that build or run tests work isolated (lesson 20).
-8. **OPEN and PROPOSED items from start.md Part 1 / 1A are asked, never assumed.** Present
-   the options with trade-offs; the owner chooses; the choice lands in the SPEC or
-   RULINGS.
-9. **Briefs the owner implements** (if Part 1 says so): marked `Builder: owner` on the
-    board; written with extra "why" for learning; reviewed like any other. None today:
-    the owner implements no briefs (2026-09-24).
+   `docs/history/RULINGS.md`; the brief goes back to `Status: OPEN`. Never answer a working
+   agent by message (WORKFLOW §Brief lifecycle).
+4. **Rulings need evidence** (lesson 12): locate the mechanism at file:line before ruling.
+5. **A status you did not verify is not a status** (lesson 30): a landing is a sha on
+   `origin/main` (`git log origin/main` after a fetch), never an agent's summary.
+6. **Mechanical work goes to agents**: scouting, sweeps, measurements, building, reviewing,
+   proving. Judgment stays here. Agents that build or run the gate work isolated (lesson 20;
+   WORKFLOW §Lanes).
+7. **OPEN and PROPOSED items in the SPEC are asked, never assumed.** Present the options
+   with trade-offs; the owner chooses; the choice lands in the SPEC and RULINGS.
+8. **Only this role edits `docs/SPEC.md`, the board, the inbox's dispositions and the
+   histories.** The clerk writes the inbox; builders write their brief's Findings and
+   Status.
 
-## Planning duties
+## How the session decides and asks
 
-- **The drain:** disposition every Open inbox entry (`→ <arc>-<nn>` or `declined:
-  <reason>`); move shipped ones to `docs/feedback/ARCHIVE.md`. Ask for screenshots when
-  the inbox is discussed — visual bugs need them.
-- **The DEFERRED list** on every tranche plan (WORKFLOW §Deferrals).
-- **End the preparing turn by asking for the GO** (§A design session, step 5); never
-  spawn a build before it.
+Before anything reaches the owner, in this order (lesson 29):
 
-## A design session, in order
+1. **Decide from the record.** A brief, the SPEC, a hard rule or a ruling answers it:
+   answer it, quote the deciding line, append *`<date> · release · <brief> · <question> →
+   <answer>, per <citation>`* to `RULINGS.md`.
+2. **Decide the reversible.** Two workable options inside a batch's Scope, touching no hard
+   rule, no `config/` data, nothing the owner will see or play: take the easier one to
+   undo, record both in the brief's Findings and one line under the board's *Decisions for
+   the owner to audit*.
+3. **Ask.** Everything else. Plain text, numbered, options with one recommended and one
+   line of consequence each. **A question never stops the work**: the batch that needs it
+   waits, the rest continues. Still open at release → the record's *Questions for you* with
+   the default taken, named as the default.
 
-1. **Check.** The board's open items and residue, `BLOCKED.md` §Open, the inbox
-   (`docs/feedback/INBOX.md` §Open, the drain below), the open decisions (SPEC §14) and
-   what the last release asked the owner to look at.
-2. **Research and think.** Measure before recommending (lesson 12): the data sources,
-   their licences and access routes, the tools and plugins, the size and cost of the
-   options; scouting and measurements go to agents (standing rule 7). Then weigh what the
-   next arc should be.
-3. **Recommend.** Give the owner the recommendations for the next arc in plain text: what
-   it delivers, each open decision with its options, trade-offs and your recommendation,
-   what it leaves out (the DEFERRED list), and a rough cut of the parallel waves. Then
-   stop and wait for the owner's answers. Nothing is briefed before them.
-4. **Prepare.** With the answers: record the decisions (SPEC, RULINGS), write the arc plan
-   (below), the briefs and their pinning tests, the review plan, and update the board.
-   Commit and push. The arc plan's status line reads `Status: READY — waiting for the
-   owner's GO`.
-5. **Ask for the GO.** Summarise the prepared arc (its waves and how many sessions run at
-   once, the review plan, the release it aims at, what it does NOT cover) and end the turn.
-   No production code, no build session, no Routine before the GO.
-6. **The GO.** The owner says GO here → set the plan's status line to `Status: GO
-   (<date>, the owner)`, commit, push, then spawn one orchestrator session
-   (`create_session`: the `ultracode build` fallback prompt from BUILD.md with no briefs
-   named, `source_revision` AND `outcome_branch` = `main`, `source_url` and `clone_depth`
-   passed explicitly, `permission_mode` = `auto`, no model, title `Build · <arc>`, tags
-   [`<arc>`]); check with `get_session` that it has the repository, and give the owner its
-   link. Without session tools, tell the owner to type `ultracode build` in a fresh
-   session. The owner typing `ultracode build` themselves is a GO as well.
+## The release (`ultracode design`), step by step
 
-## The arc plan
+1. **Triage.** Read-only helper agents check every open item (inbox §Open, `BLOCKED.md`,
+   the board's open items, the last record's questions) against the code. One proposal per
+   item: a fix, a decision (options, one recommended, one line of consequence each), or
+   declined with reason. Presented as **two lists**, plain text:
+   - **This release — two days of build.** By default the owner's open inbox entries and
+     nothing else. Board items, review leftovers and the session's own ideas come in only if
+     the owner names them. States the expected days and allowance.
+   - **Next release** — everything else, ending in the DEFERRED list (WORKFLOW §Deferrals).
+   Then wait for the go. Nothing is briefed or built before it.
+2. **The go.** Record the owner's decisions in `docs/history/blocked/<date>-<n>.md` (their
+   words, item by item) and one index line each in `RULINGS.md`, before building. The go
+   fixes three things, one line each: **the helpers' model** ("builders on Sonnet"), **the
+   budget** (two days, about half a week's allowance), **the lane count**. **The list is
+   frozen at the go** (WORKFLOW §The release has a size). Then write the plan
+   (`docs/briefs/<release>-plan.md`, §The plan), the briefs and their pinning tests, the
+   DEFERRED list, and update the board; commit and push. The plan's status line reads
+   `Status: GO (<date>, the owner)`.
+3. **Batches**, one after another per lane, each as one run of
+   `docs/briefs/RELEASE-WORKFLOW.js` (the Workflow tool, `args` = the brief id, its tier,
+   the helpers' model):
+   - **one builder** (the helpers' model) in its own worktree, under BUILD.md: the pinning
+     tests copied into place and red first, the change, green; the commit gate chained to
+     every commit; push after every commit; the batch gate once before `Status: DONE`;
+   - **tier 2**: ONE read-only reviewer over the batch's diff, both lenses, P0 to P2 only,
+     on the session's model;
+   - **tier 1**: two lens reviewers, a data-and-boundary reviewer (the coordinates and
+     determinism lens) and a mutation prover running the brief's proofs both ways;
+   - **a fixer only when warranted** (tier 2: a P0 or P1 stands; tier 1: any P0 to P2), who
+     verifies each finding against the code before changing anything; tier 1 adds a
+     read-only verifier of the fix diff;
+   - **no recorder agent**: the session writes one board line per batch from the agents'
+     results, and verifies the landing on `origin/main` (standing rule 5).
+   A builder's BLOCKED question is answered per §How the session decides (a commit); the
+   batch is re-run from the answer, the other lanes continue. Before every batch the
+   session reads its allowance status; after every third batch the owner gets one line:
+   allowance used, batches done, batches left.
+4. **The whole-range review.** Reviewers over the entire release diff (`<go sha>..HEAD`),
+   the same lenses plus **the seams between batches** (lesson 8), each report committed
+   alone as `docs/reviews/<release>-R1-<lens>.md`, adjudicated into
+   `docs/reviews/<release>-round1.md`. Its findings become **one** fix batch (a brief, a
+   builder run as in step 3) taking P0, P1 and owner-reported items only; P2 and P3 go to
+   the board's residue list. Tier-1 territory: rounds until clean, round 2 over the diff of
+   round 1's fixes (WORKFLOW §Review policy).
+5. **The release gate** (WORKFLOW §Gates): everything, from a fresh clone, solo, as a
+   tracked background task, never polled; counts compared with the last release's.
+6. **The release** per `docs/RELEASE.md`: the bump, the publish, the record with the
+   report-back list (owner-reported items separate from review-found ones, each traced to
+   its FB id), *Questions for you* with the defaults taken, the inbox drained (shipped
+   entries to `ARCHIVE.md`), the board and `brain.md` current, one `PushNotification`.
+7. **The end.** The session is done. Nothing is scheduled after; no Routine outlives the
+   release. The owner archives the session after reading the report-back.
 
-`docs/briefs/<arc>-plan.md`, written with the briefs and committed with them. Plan for
-speed: the build runs every brief of a wave at the same time in its own session, so the
-cut decides how fast the arc goes (WORKFLOW §Parallel by design).
+## The plan
 
-- **Cut for parallelism.** Split the arc along file and dependency boundaries so that as
-  much as possible can be built at once: separate pipeline steps from game readers, give
-  each a shared fixture (`tests/shared/`) and pinned interface so both sides can be built
-  against it before the other exists, and keep files that many briefs would touch (the
-  manifest, `main.gd`, `gate.sh`) in as few briefs as possible.
-- **Lanes and waves.** A lane is one builder session: one brief, or briefs that must run
-  in order on the same files. Wave 1 holds every lane that can start now; each later wave
-  holds the lanes that need an earlier wave landed. Between the lanes of one wave no two
-  briefs share a file in their Scope and none depends on another; check both from the
-  briefs' Scope and Depends on lines. Inside a lane, briefs may share files and depend on
-  each other in order.
-- **Owner briefs.** A `Builder: owner` brief says whether it blocks the close.
-- **Integration notes.** For each wave, the seams the orchestrator must check when the
-  lanes land (lesson 8): which outputs meet which readers, and the test that proves it.
-- **The review plan.** The rounds per WORKFLOW §Review policy: each area's tier, each
-  lens with its prompt, what it must prove and its "does NOT prove", the diff range, and
-  what counts as clean.
-- **The release** the arc ships, if any (version, what the record must say).
+`docs/briefs/<release>-plan.md`, written at the go with the briefs. It holds: what the
+release delivers and its version; the **hot files** with their batch order; the **lanes**
+(a table: lane, briefs in order, files), the briefs' `Lane:` lines agreeing with it; which
+lane this session runs and which a second session takes; the tier of each brief; the seams
+to check at the whole-range review (which outputs meet which readers, and the test that
+proves it); the DEFERRED list; the three lines of the go (the helpers' model, the budget,
+the lane count). Its status line: `Status: GO (<date>, the owner)` → `Status: DONE
+(<version>)`.
 
-Its status line is the GO's interface: `Status: READY — waiting for the owner's GO`, then
-`Status: GO (<date>, <the owner or the session that recorded it>)`, then `Status: DONE
-(<release or sha>)` when the build ships.
+## The conversation (`design`)
+
+Ideas, "this looks wrong", what comes next, a decision to record. Research and measure
+before recommending (lesson 12; scouting in read-only agents); give options with
+trade-offs and one recommendation; record what the owner decides (SPEC §13, RULINGS, the
+board) as commits. It writes no brief and spawns no builder: when the owner wants it built,
+they open a fresh session with `ultracode design`, whose triage reads what this one wrote.
 
 ## Interaction
 
-Work autonomously; ask only when input is genuinely needed, in plain text, never pickers
-or questionnaires. No emoji. Outcomes before mechanics; the owner is technical and learning
-game development, so explain the why when it helps. Metric units.
+Work autonomously; ask only when input is genuinely needed, in plain text, never pickers or
+questionnaires (lesson 13). No emoji. Outcomes before mechanics; the owner is technical and
+learning game development, so explain the why when it helps. Metric units. Reports say what
+changed for the owner, not for the build.
