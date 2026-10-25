@@ -45,10 +45,11 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-The owner's first looks at 0.3.0 (Linux, then Windows, never started anywhere) and at 0.2.0's
-Windows build come back through `feedback` (FB-001 is the one 0.3.0 answers). Then M4, the
-sun cycle (design cuts it; the photo's baked shadows are its known cost), M5 scale-up, M6 weather
-and walking. The board is the live version.
+The first release under the one-session process (§8): an `ultracode design` session triages
+the inbox (FB-003 to FB-007, the 0.3.0 test's items) and the M4 plan (`docs/briefs/M4-plan.md`,
+ten arc-sized briefs waiting for the GO and two answers) into releases of two days each, the
+owner's items first. Then the rest of M4 (the sun cycle), M5 scale-up, M6 weather and walking.
+The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -329,14 +330,20 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   not an error.
 
 ## 8. PROCESS
-Three realms (`docs/WORKFLOW.md`, `docs/roles/`). Spawn words `design`, `ultracode build`,
-`feedback`. Design does everything before the build and plans each arc for parallel
-building; one `ultracode build` orchestrator spawns builder sessions per wave, integrates,
-runs the design's review plan and ships (owner, 2026-10-14). `main` is the only source branch (`dist` holds
-builds). M2 ran instead in one session with in-session workflow agents, by the owner's
-word for M2 (RULINGS 2026-09-25); the realms' sessions are the default again unless the
-owner says otherwise. State lives in the repo, never in chat. Pinning tests travel with their brief under `docs/briefs/pinning/`
-(WORKFLOW §Brief lifecycle).
+One session per release (`docs/WORKFLOW.md`, `docs/roles/`; adopted on the owner's word
+2026-10-24 from another of their projects, the handoff kept as `docs/history/WORKFLOW-SEED.md`).
+Spawn words: `ultracode design` (a release start to finish: two-list triage, the go with the
+helpers' model, the budget and the lane count, batch-sized briefs built one builder agent each
+through `docs/briefs/RELEASE-WORKFLOW.js`, reviews by tier, the whole-range review, the release
+gate, RELEASE.md, the record, the end), `design` (a conversation, builds nothing), `feedback`
+(the clerk). A release is two days of build and about half a week's allowance, the owner's inbox
+first, the list frozen at the go. Three gate levels: the standard gate per commit, the batch gate
+before DONE, the release gate from a fresh clone. Lanes are separate sessions: one build-running
+agent per container. Nothing pins a model or an effort. `main` is the only source branch (`dist`
+holds builds). State lives in the repo, never in chat. Pinning tests travel with their brief under
+`docs/briefs/pinning/` (WORKFLOW §Brief lifecycle). Before 2026-10-24: three realms (design,
+`ultracode build` orchestrator with builder sessions per wave, clerk), their record
+`docs/history/ARCS.md`; M2 ran in one session with in-session agents by the owner's word.
 
 ## 9. KEY FILES
 1. `CLAUDE.md` — rules, commands, spawn words.
@@ -346,7 +353,8 @@ owner says otherwise. State lives in the repo, never in chat. Pinning tests trav
 5. `config/world.json` — origin, axis mapping, areas (the one home).
 6. `config/datasets.json` — datasets, pinned editions, attribution.
 7. `tests/shared/world_vectors.json` — the conversions both halves must agree on.
-8. `docs/briefs/` — briefs, `BLOCKED.md`, `pinning/`.
+8. `docs/briefs/` — briefs, `<release>-plan.md`, `BLOCKED.md`, `pinning/`, `TEMPLATE.md`,
+   `RELEASE-WORKFLOW.js` (the per-batch helper-agent script).
 9. `docs/LESSONS.md` — lessons by role tag.
 10. `tools/gate.sh` — the standard gate (from M0-01 on).
 11. `docs/releases/` — one record per version; the builds are on the `dist` branch

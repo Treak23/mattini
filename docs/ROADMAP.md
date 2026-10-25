@@ -9,17 +9,23 @@ Open items only. Shipped and answered items live in `docs/history/` and
 **M3 Surfaces and trees — closed 2026-10-16: version 0.3.0 is shipped on `dist` (commit `5f08379`, on the owner's word "push dist") and recorded (`docs/releases/v0.3.0.md`).** The plan is
 `docs/briefs/M3-plan.md` (status DONE); the close in full is `docs/history/ARCS.md` §M3. All fourteen briefs and the six review fixes are DONE; rounds R1, V1 and R2 are adjudicated (`docs/reviews/M3-round1.md`, `M3-V1.md`, `M3-round2.md`): no P0, P1 or P2 is open, and the P3 and the Tier 2 P2 are on the residue list below. The standard gate from a fresh clone of `main` `697a154` is exit 0 (pytest 2228, GUT 47 scripts, 261 tests, 9760 asserts, the render step run); the real village rebuilt from the pinned inputs gives the manifest `3ca0445c…`; the ten files are under 100 MiB; a fresh clone of `dist` verifies against the README and its Linux build starts with all eight startup lines.
 
-**M4 Sun cycle — in design (2026-10-17).** The owner's answers are SPEC §13 rows 41–46; the plan is
-`docs/briefs/M4-plan.md` (ten briefs, M4-01 to M4-10, two waves), design's notes
+**The process changed on 2026-10-24** (SPEC §13 row 47, RULINGS 2026-10-24): one session per
+release, `ultracode design`, two days of build each, the owner's inbox first (`docs/WORKFLOW.md`).
+The first such session triages the inbox and the M4 plan into releases of that size.
+
+**M4 Sun cycle — planned (2026-10-17), under the old process.** The owner's answers are SPEC §13
+rows 41–46; the plan is `docs/briefs/M4-plan.md` (ten arc-sized briefs, M4-01 to M4-10, two waves;
+its process note says how the first release session reads it), design's notes
 `docs/briefs/sketches/m4-design.md`.
 
-**Waiting on the owner:** the GO for M4; whether the softened photo shadows
+**Waiting on the owner:** the first `ultracode design` session (its triage proposes the first
+release's list; the go names the helpers' model, the budget and the lane count); whether the softened photo shadows
 (`docs/briefs/sketches/M4-soften/`, G = 3) are kept (SPEC §13 row 41's experiment); the star
 catalogue (m4-design §10: (a) the Yale Bright Star Catalogue, licence unstated, cited; (b) no
 stars until a clean source is confirmed). The Windows build's first start stays deferred by the
 owner ("not a priority" until sharing).
 
-**Decisions for design to audit:** none. (M3 fix-3's three were audited and kept, RULINGS
+**Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session decides 2): none. (M3 fix-3's three were audited and kept, RULINGS
 2026-10-17.)
 
 **Last shipped:** 0.3.0, 2026-10-16: the village in a realistic look made from the data
@@ -45,7 +51,7 @@ Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in fu
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0 to M3
 are closed.
 
-1. M4 Sun cycle — ARC (planned 2026-10-17, `docs/briefs/M4-plan.md`; waiting on the GO)
+1. M4 Sun cycle — planned 2026-10-17 (`docs/briefs/M4-plan.md`), to be cut into two-day releases by the first `ultracode design` session
 2. M5 Scale up — ARC
 3. M6 Weather and walking — ARC
 

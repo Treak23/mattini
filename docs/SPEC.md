@@ -1,7 +1,8 @@
-# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close, at M2 planning and at M2's review, 2026-09-25, and at M3 planning, 2026-10-14)
+# SPEC.md — mattini, design of record (v0, 2026-09-24; amended at the M0 close, at M1 planning, at the M1 close, at M2 planning and at M2's review, 2026-09-25, at M3 planning, 2026-10-14, and at the process change of 2026-10-24)
 
 Written by the design realm with the owner from `docs/start.md` Part 1 / 1A and the
-owner's day-one answers. Only the design realm edits this file. `CLAUDE.md` holds the
+owner's day-one answers. Only the release session or a `design` conversation edits this
+file (DESIGN.md standing rule 8). `CLAUDE.md` holds the
 rules; this file holds what is built and why. Markers: **OPEN** = not decided (asked,
 never picked silently); **PROPOSED** = suggested, not yet confirmed by the owner.
 
@@ -1060,6 +1061,7 @@ GPU.
 | 44 | Night (M4) | Stars and the moon at their real positions, the moon lighting the scene by its phase. No lit windows: no data says which windows are lit, so they would be invented | Owner (same answer) |
 | 45 | The 0.3.0 test's fixes (FB-003, FB-005 to FB-007) | All in M4: a frame cap (60, 15 while the pause screen is open), the log flushed line by line, the log naming the missing pack, anti-aliasing on, and the water reworked (the photo's own colour, less mirror, a visible flow, a soft bank edge) | Owner (same answer) |
 | 46 | The church's pale green nave roof (FB-004 item 6) | Correct: the roof is green in reality (the owner). The roofs step stays as built; no tree mask on roofs | Owner ("the churches roof is actually green", 2026-10-17) |
+| 47 | The process (2026-10-24; replaces row 28) | One session per release (`ultracode design`): two-list triage, a release of two days of build and about half a week's allowance with the owner's inbox first and the list frozen at the go, batch-sized briefs built by helper agents (one builder per brief, its own worktree), reviews by tier per batch and over the whole range, three gate levels, the record with the report-back; `design` is a conversation, `feedback` the clerk. No model or effort pinned anywhere; the helpers' model is one line of the go. Lanes are separate sessions, one build-running agent per container (`docs/WORKFLOW.md`; the source handoff `docs/history/WORKFLOW-SEED.md`) | Owner ("adapt yourself to it", 2026-10-24; RULINGS 2026-10-24) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not
