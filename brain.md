@@ -45,11 +45,11 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-The first release under the one-session process (§8): an `ultracode design` session triages
-the inbox (FB-003 to FB-007, the 0.3.0 test's items) and the M4 plan (`docs/briefs/M4-plan.md`,
-ten arc-sized briefs waiting for the GO and two answers) into releases of two days each, the
-owner's items first. Then the rest of M4 (the sun cycle), M5 scale-up, M6 weather and walking.
-The board is the live version.
+Release 0.3.1 (the first under the one-session process, §8; go 2026-10-25): the 0.3.0 test's
+items (FB-003 to FB-007) as five batches cut from M4-06, M4-08 and M4-10
+(`docs/briefs/v0.3.1-plan.md`). Then 0.4.0, the moving sun (the rest of M4,
+`docs/briefs/M4-plan.md`, its answers in: SPEC §13 rows 47, 48), the far mountains' and the
+softened photo shadows, M5 scale-up, M6 weather and walking. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -339,7 +339,7 @@ gate, RELEASE.md, the record, the end), `design` (a conversation, builds nothing
 (the clerk). A release is two days of build and about half a week's allowance, the owner's inbox
 first, the list frozen at the go. Three gate levels: the standard gate per commit, the batch gate
 before DONE, the release gate from a fresh clone. Lanes are separate sessions: one build-running
-agent per container. Nothing pins a model or an effort. `main` is the only source branch (`dist`
+agent per container. Nothing pins a model; the batch script sets the one effort. `main` is the only source branch (`dist`
 holds builds). State lives in the repo, never in chat. Pinning tests travel with their brief under
 `docs/briefs/pinning/` (WORKFLOW §Brief lifecycle). Before 2026-10-24: three realms (design,
 `ultracode build` orchestrator with builder sessions per wave, clerk), their record

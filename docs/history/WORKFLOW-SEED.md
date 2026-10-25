@@ -1,4 +1,4 @@
-<!-- The handoff the owner brought on 2026-10-24 from another of their projects ("Miko"), kept verbatim as the source of docs/WORKFLOW.md and the role docs (SPEC §13 row 47). Where a case is not covered by mattini's docs, this file is the one to open; mattini's docs win where they differ. -->
+<!-- The handoff the owner brought on 2026-10-24 from another of their projects ("Miko"), kept verbatim as the source of docs/WORKFLOW.md and the role docs (SPEC §13 row 49). Where a case is not covered by mattini's docs, this file is the one to open; mattini's docs win where they differ. -->
 
 # Workflow handoff — the one-session release process, made portable
 

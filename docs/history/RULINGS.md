@@ -1,16 +1,25 @@
 # RULINGS.md — the index of every answered question
 
 One line per ruling, newest first, full text under `docs/history/blocked/`. Checked BEFORE
-a question is filed; never startup reading. Formats:
-`<date> · design · <brief> · <question> → <answer>` ·
-`<date> · supervisor · <brief> · <question> → <answer>, per <citation>` ·
-`<date> · owner's word, in the waker session · <brief> · <question> → <answer>`
+a question is filed; never startup reading. Formats (from 2026-10-24, DESIGN.md §How the
+session decides):
+`<date> · release · <brief> · <question> → <answer>, per <citation>` ·
+`<date> · owner's word, in the release session · <brief> · <question> → <answer>` ·
+`<date> · owner's word, in a design conversation · <subject> · <question> → <answer>`.
+Older lines use the retired formats `design`, `supervisor`, `build` and `owner's word, in the
+waker session`.
 
 The M0 close's rulings (2026-09-24) have their full text in `docs/history/ARCS.md` §M0,
 numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-10-25 · owner's word, in the release session · 0.3.1 · the go's three lines? → "The rest recommended", "builders should be in sonnet": builders and fixers on Sonnet; two days of build and about half a week's allowance; one lane (docs/history/blocked/2026-10-25-1.md)
+2026-10-25 · owner's word, in the release session · 0.3.1 · the release's list? → "The rest recommended": five tier-2 batches, the 0.3.0 test's items (FB-003, FB-005, FB-006, FB-007, FB-004's edges), the process fixed before the first batch; the moving sun is the next release (docs/history/blocked/2026-10-25-1.md)
+2026-10-25 · owner's word, in the release session · 0.3.1 · exposure 0.70 now (FB-004 items 1, 7)? → "1b leave it as is for now, we can come back to it later": exposure stays 0.54 until the moving sun's release
+2026-10-25 · owner's word, in the release session · 0.3.1 · the river's flow, SPEC §13 row 45? → recommended (a): M4-06's water as pinned, two drifts at 0.8 m/s with no net direction
+2026-10-25 · owner's word, in the release session · 0.3.1 · keep the export script's pack check? → recommended (a): kept
+2026-10-25 · owner's word, in the release session · process · `.claude/settings.json`'s allow entry and refspec force pushes? → recommended (a): `mcp__claude-code-remote` allowed, `Bash(git push * +*)` denied
 2026-10-24 · owner's word · process · "ive worked out a workflow that works well in another project. can you have a look and adapt yourself to it?" (the handoff of 2026-10-24, kept as `docs/history/WORKFLOW-SEED.md`) → the one-session release process adopted: `ultracode design` runs a release start to finish through helper agents (`docs/briefs/RELEASE-WORKFLOW.js`), `design` is a conversation, `feedback` the clerk; the `ultracode build` orchestrator and builder sessions per wave are retired; a release is two days of build and about half a week's allowance, the owner's inbox first, the list frozen at the go; three gate levels; briefs batch-sized with a `Lane:` line; `effortLevel` removed from `.claude/settings.json` (nothing pins a model or an effort; replaces WORKFLOW §Models' effort defaults of 2026-09-24); the M4 plan is triaged by the first release session into releases of that size (WORKFLOW, DESIGN.md, BUILD.md, FEEDBACK.md, RELEASE.md, TEMPLATE.md, CLAUDE.md, SPEC §13 row 49)
 2026-10-24 · owner's word, in the M4 design session · M4 · the softened photo shadows (row 41's experiment)? → "1 ok g=3 seems fine": kept, shadow_lift 3.0 (SPEC §13 row 47)
 2026-10-24 · owner's word, in the M4 design session · M4 · the star catalogue? → "2a": the Yale Bright Star Catalogue with its citation; section S of M4-05 is built; the licence question goes on the board (SPEC §13 row 48)

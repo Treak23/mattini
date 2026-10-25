@@ -1,6 +1,6 @@
 # M4 — The sun cycle: the arc plan
 
-Status: READY — waiting for the owner's GO. The two answers are in (2026-10-24, SPEC §13 rows 47, 48): the softened shadows kept (G = 3); the stars built, section S of M4-05 included (catalogue (a)). The owner will start the build in a new session after workflow changes.
+Status: SUPERSEDED as a plan by the one-session process (2026-10-24); its decisions, data, briefs and pins stand and are cut into releases. The two answers are in (2026-10-24, SPEC §13 rows 47, 48): the softened shadows kept (G = 3); the stars built, section S of M4-05 included (catalogue (a)).
 
 > **Process note, 2026-10-24.** This plan was written under the three-realm process (ten
 > arc-sized briefs in two waves for an `ultracode build` orchestrator), retired that day
@@ -10,6 +10,21 @@ Status: READY — waiting for the owner's GO. The two answers are in (2026-10-24
 > where a brief is larger, each with a `Lane:` line; the owner names which of the rest comes
 > in. Where this plan says orchestrator, read the release session; where it says builder
 > session, read builder agent (`docs/roles/BUILD.md`).
+>
+> **What 0.3.1 took (the go of 2026-10-25, `docs/briefs/v0.3.1-plan.md`):** M4-06 decision 4
+> (the water), M4-08 whole, and M4-10 decision 2's pause cap and decision 5 (the packs on the
+> error panel), as batches v0.3.1-01 to -05 with their own pins. What that means for the rest,
+> for the session that cuts the next release:
+> - M4-06 is now the lift alone: its pinned `fake_tools.py` predates M4-08's stand-ins and must
+>   be rebuilt on the live file (copied as it is, it would undo v0.3.1-04); its full
+>   `test_m4_06_terrain_look.gd` replaces 0.3.1's water-only cut.
+> - M4-10's pins were written on top of M4-08 and M4-06; its decisions 2 (the cap) and 5 are
+>   built, and its tests of them stay as regression tests.
+> - **Base, integration notes, review plan:** none of this plan's apply. Each release's plan
+>   names its go sha (the review's range), its seams and its reviews (DESIGN.md §The release
+>   steps 3 and 4). Under WORKFLOW §Review policy the pipeline's determinism is tier 1, so the
+>   batches of M4-01, M4-02, M4-03 and M4-09 are tier 1 (this plan's review gave them tier 2).
+> - The briefs' own lane and wave lines are superseded by the re-cut briefs' `Lane:` lines.
 
 **Base:** the commit that sets this status line to GO (its message starts `docs: M4 GO`;
 `git log --grep '^docs: M4 GO' -1`). It is the base of the integration notes and of the

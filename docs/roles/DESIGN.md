@@ -30,7 +30,7 @@ every rule here.
 2. Read `CLAUDE.md`, `brain.md`, `docs/WORKFLOW.md`, `docs/ROADMAP.md`, `docs/LESSONS.md`,
    `docs/feedback/INBOX.md` §Open, every brief's status line (`grep -H '^Status:'
    docs/briefs/*.md`), `BLOCKED.md` §Open, and the *Questions for you* of the last record in
-   `docs/releases/`. Read `docs/history/RULINGS.md` before answering any question. Other
+   `docs/releases/` (records before 0.3.1 have none; read their "please look at these" list). Read `docs/history/RULINGS.md` before answering any question. Other
    histories: one section when a question needs it, never at startup (lesson 28).
 3. Say in a few lines what is open, then start: §The release for `ultracode design`, §The
    conversation for `design`.
@@ -48,7 +48,8 @@ every rule here.
    agent by message (WORKFLOW §Brief lifecycle).
 4. **Rulings need evidence** (lesson 12): locate the mechanism at file:line before ruling.
 5. **A status you did not verify is not a status** (lesson 30): a landing is a sha on
-   `origin/main` (`git log origin/main` after a fetch), never an agent's summary.
+   `origin/main` (`git log origin/main` after a fetch) that carries the brief's commits
+   (`git log --grep '(<brief id>)'`), never an agent's summary.
 6. **Mechanical work goes to agents**: scouting, sweeps, measurements, building, reviewing,
    proving. Judgment stays here. Agents that build or run the gate work isolated (lesson 20;
    WORKFLOW §Lanes).
@@ -57,6 +58,9 @@ every rule here.
 8. **Only this role edits `docs/SPEC.md`, the board, the inbox's dispositions and the
    histories.** The clerk writes the inbox; builders write their brief's Findings and
    Status.
+9. **The session's own commits are gated too** (lesson 18; WORKFLOW §Gates): chained to
+   `tools/gate.sh`, run only between batches, never while a helper's gate runs (one
+   build-running agent per container).
 
 ## How the session decides and asks
 
@@ -108,10 +112,17 @@ Before anything reaches the owner, in this order (lesson 29):
      read-only verifier of the fix diff;
    - **no recorder agent**: the session writes one board line per batch from the agents'
      results, and verifies the landing on `origin/main` (standing rule 5).
-   A builder's BLOCKED question is answered per §How the session decides (a commit); the
-   batch is re-run from the answer, the other lanes continue. Before every batch the
-   session reads its allowance status; after every third batch the owner gets one line:
-   allowance used, batches done, batches left.
+   What the script returns decides the next step: `DONE` → the board line; `BLOCKED` → the
+   session files the builder's question in `BLOCKED.md` with the brief `Status: BLOCKED` (a
+   commit), answers it per §How the session decides (a commit), and re-runs the batch;
+   `NOTHING_LANDED` → find where the builder's commits went before anything else;
+   `TRUNCATED` → the missing agent is run again (a truncated round is a round that did not
+   happen); `ROUND_OPEN` → the session runs the next round on the ids still standing (a
+   fixer, then at tier 1 a verifier), until clean. Before every batch the session reads
+   what it can of the allowance (`get_session`: the five-hour limit's status and the
+   session's API-equivalent cost; the weekly percentage is on the owner's usage page, which
+   no tool reads); after every third batch the owner gets one line: what was spent, batches
+   done, batches left.
 4. **The whole-range review.** Reviewers over the entire release diff (`<go sha>..HEAD`),
    the same lenses plus **the seams between batches** (lesson 8), each report committed
    alone as `docs/reviews/<release>-R1-<lens>.md`, adjudicated into

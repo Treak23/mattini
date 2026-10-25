@@ -25,7 +25,7 @@ name (e.g. on Windows). The Godot commands exist from brief M0-03 on.
 
 **The standard gate** is `tools/gate.sh` (runs everything above, exits non-zero on any
 failure), redirected to a log and chained to the commit by its own exit status
-(`docs/roles/BUILD.md` rule 3c). Godot's own exit status is not enough, so the gate also
+(`docs/roles/BUILD.md` card 1). Godot's own exit status is not enough, so the gate also
 scans its output: error lines at the import and the parse check, an import left
 `valid=false`, and in the GUT run any test script GUT skipped or could not load,
 `SCRIPT ERROR`, GUT's own `[ERROR]`, and every engine `ERROR` line, inside a test or
@@ -52,7 +52,7 @@ polled.
 **What the gate cannot see:** containers have no GPU. Nothing here proves that anything
 looks right or renders on a GPU; the owner's PC is the visual test (brain.md §Hazards). From
 brief M3-R1-fix-3 on, the gate's render step (Compatibility renderer, Mesa llvmpipe under
-Xvfb) proves one thing a render can: where the photo, the surface classes and the crowns'
+Xvfb) proves one thing a render can: where the photo, the water class and the crowns'
 colour land, a number, not a look (SPEC §12, §13 row 38). It refuses where `xvfb-run` is
 missing unless `MATTINI_SKIP_RENDER=1`, which it prints.
 
@@ -63,7 +63,7 @@ missing unless `MATTINI_SKIP_RENDER=1`, which it prints.
   `game/addons/gut/`). GDScript lint: gdtoolkit 4.5.0. Versions and sources: SPEC §Stack.
 - Python 3.13 via uv for `pipeline/`, lockfile `pipeline/uv.lock` committed; libraries
   (GDAL/rasterio, numpy, pyproj, shapely, trimesh, laspy; Pillow for the photo's JPEG
-  from M3-04) each confirmed by the design realm before it is added.
+  from M3-04) each confirmed by the release session before it is added.
 - **Forbidden:** Google Maps Platform content of any kind (its terms forbid storing,
   shipping or deriving assets from it); any geodata whose licence does not allow
   redistribution in a shipped game.
@@ -149,7 +149,7 @@ the release gate and `docs/RELEASE.md`, writes the record and ends. The session 
 never writes production code; builders build and have no design authority; ambiguity goes
 to `docs/briefs/BLOCKED.md` and is answered by a commit; done = the brief's gates green.
 The clerk files feedback under `docs/roles/FEEDBACK.md`. If you have been pointed at a
-brief, you are a builder and BUILD.md binds you. A brief marked `Builder: owner` on the
+brief as its builder, BUILD.md binds you. A brief marked `Builder: owner` on the
 board is the owner's to implement; no agent takes it (the owner takes none today,
 2026-09-24).
 
@@ -160,7 +160,8 @@ the role doc and follow it: `ultracode design` → `docs/roles/DESIGN.md` §The 
 `design` → `docs/roles/DESIGN.md` §The conversation · `feedback` → `docs/roles/FEEDBACK.md`.
 `ultracode` is the owner's switch for multi-agent workflows: only their typed word turns it
 on. The model is the one the owner picks when starting the chat; the helpers' model is one
-line of the go; nothing in the repo pins a model or an effort (WORKFLOW §Models).
+line of the go; nothing in the repo pins a model, and the one effort it sets is the batch
+script's, on the tier-1 lenses that earn it (WORKFLOW §Models).
 
 **Rules about rules** (`docs/WORKFLOW.md`): rules bind the agents, never the owner; the
 owner's explicit word overrides any process rule except no-secrets and no unrecoverable

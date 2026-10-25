@@ -85,8 +85,9 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     that was meant to fix it. What holds is structural: one hourly cron Routine armed at the
     arc's start and deleted at its end, nothing that has to be remembered per turn. (The
     chain itself was later retired for costing more than it caught — lesson 26.)
-    *Now:* the orchestrator keeps one `send_later` check-in armed while lanes run, and
-    every builder reports its landing (BUILD.md §The orchestrator 3).
+    *Now:* nothing waits on a clock: the release session runs each batch as one workflow
+    and acts on the status it returns (DESIGN.md §The release step 3); nothing is
+    scheduled after the release.
 
 15. `[design]` **The design realm writes no production code.** The one exception ever taken
     — a one-line fix, last in the arc, reviewed by nobody, with no commit-hash status —
@@ -127,7 +128,7 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     crashes on startup" sat for hours at equal weight with an export nicety, and the only
     clock in the process had disabled itself at the close. The `Impact:` field, the `!`
     commit prefix, the inbox read at the start of every session that plans (step 0 of
-    every tick then; design's check now, DESIGN.md §A design session). (A 24-hour post-release watch was
+    every tick then; the release session's triage now, DESIGN.md §The release step 1). (A 24-hour post-release watch was
     added then and retired by the owner within two weeks: breakage after a publish reaches
     the design chat as their own message, and no Routine outlives its arc.)
 
@@ -151,9 +152,9 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     context, each woken by an hourly cron AND a 30-minute chain, roughly fifty wakes apiece
     re-reading the whole conversation. The work itself (nineteen briefs, three review
     rounds) was cheap beside it. One tick per hour; a design session per phase; the arc run
-    by a supervisor, never the design chat; the ratio measured at every close. *Now:* a
-    design session per arc that ends at the owner's GO; the arc run by the build
-    orchestrator, never the design chat (WORKFLOW §Parallel by design).
+    by a supervisor, never the design chat; the ratio measured at every close. *Now:* one
+    fresh session per release that ends at the record; builders, reviewers and provers are
+    its helper agents, never sessions of their own (WORKFLOW §The idea in six lines).
 
 27. `[build]` **A rate-limited session is not dead, and a landing is a sha on GitHub.**
     Two watchdog errors in one day: a builder stopped on its usage limit was read as dead
@@ -185,10 +186,10 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     asks only for what is genuinely design — one push carrying the options, answerable with
     a word in its standing session (the waker's, since lesson 32), which is the ruling. What
     it still may never do: write production code, change a brief's shape, touch the owner's
-    data or schema, or rule from an unmeasured premise (lesson 12). *Now:* the build
-    orchestrator decides (BUILD.md §The orchestrator 5); it may write the seam fixes of
-    step 4 and nothing else outside a brief; questions go to the owner by one push each
-    and are answered in `design`.
+    data or schema, or rule from an unmeasured premise (lesson 12). *Now:* the release
+    session decides (DESIGN.md §How the session decides): from the record, then the
+    reversible, then a plain-text question that never stops the work; it writes no
+    production code, one-liners included (DESIGN.md §Identity).
 
 30. `[build]` **Silence is not a status.** Four times in one arc a supervisor reported
     the absence of a signal as a state: a builder dead on a permission prompt shown as
@@ -216,10 +217,10 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     together. A short leg of the same job had cost a fortieth of that: the mechanism is
     length, not the role. The structural fix: nothing that supervises lives for the arc
     except a waker that reads only status lines; the work runs in a fresh tick session per
-    due wake, and the board carries the arc between sessions. *Now:* the orchestrator
-    stays small (status lines, the board, reports by path), builders and reviewers run in
-    their own sessions, and it hands off to a successor when its context grows large
-    (BUILD.md §Hand-off).
+    due wake, and the board carries the arc between sessions. *Now:* the release
+    session stays small (status lines, the board, the agents' results read by path) and
+    lives for one release; the next release is a fresh session (DESIGN.md §The release
+    step 7).
 
 33. `[all]` **Two runs compared in one minute on one machine cannot see what changes by
     day or by machine.** Every Hard Rule 5 test of arc M0 wrote twice in one run and

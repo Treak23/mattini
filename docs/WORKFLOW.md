@@ -99,12 +99,15 @@ container colliding on Godot's `user://` (brain.md H9).
   Owner-reported items first in each lane; words-only batches last.
 - **A lane is a separate session in its own container**, never a second build lane in the
   same box: **one build-running agent per container.** The release session runs lane A's
-  batches itself as helper-agent workflows; a second lane is a second `ultracode design`
-  session the owner opens (or the first spawns, `permission_mode` `auto`, no model), given
-  the plan and its lane letter, which builds that lane's batches and ends. Parallelism comes
-  from more sessions, never from more lanes in one container.
+  batches itself as helper-agent workflows; a second lane would be a second session given
+  the plan and its lane letter, which builds that lane's batches and ends. That path is not
+  written yet (who starts it, how the release session learns it has finished, and whether a
+  session the first one spawns gets the `ultracode` switch at all): until it is, a release
+  runs one lane (the go of 2026-10-25). Parallelism comes from more sessions, never from
+  more lanes in one container.
 - Any agent that runs the gate works in its own `git worktree`, with its own
-  `XDG_DATA_HOME` (brain.md H9), leaves the tree clean and removes the worktree (lesson 20).
+  `XDG_DATA_HOME` (brain.md H9) and leaves the tree clean (lesson 20); the Workflow harness
+  removes an unchanged worktree, and keeps one that holds commits.
 
 ## Gates — three levels
 
@@ -127,15 +130,16 @@ never behaviour (lesson 5): it is never the sole gate for code that runs at scen
 
 ## Models, effort and budget
 
-- **Nothing pins a model or an effort**: no settings file, doc or script. Two models per
+- **Nothing pins a model**: no settings file, doc or script. Two models per
   release, both the owner's word: the session's (picked in the selector) and the helpers'
   (one line in the go, "builders on Sonnet"). The session names the helpers' model on every
   builder, fixer and sweep it spawns; reviewers, provers and scouts follow the session,
   because judgment is where a builder's miss is caught. The record says which model ran
   where.
 - **Effort** follows the same shape: the dropdown, never `CLAUDE_CODE_EFFORT_LEVEL` in the
-  environment or `effortLevel` in `.claude/settings.json` (removed 2026-10-24). High effort
-  only where it has earned it: the tier-1 lenses and the mutation prover.
+  environment or `effortLevel` in `.claude/settings.json` (removed 2026-10-24). The one effort
+  the repo sets is `docs/briefs/RELEASE-WORKFLOW.js`'s `high` on the tier-1 coordinates lens,
+  the mutation prover and the fix verifier: high effort only where it has earned it.
 - **The budget unit is the weekly allowance.** API-equivalent cost is recorded only to
   compare releases. The stop rule is §The release has a size.
 - **Every release record** states the allowance at go and publish, the API-equivalent cost
@@ -151,8 +155,11 @@ interrupted after the go.
    `create_session` passes `permission_mode` = `auto`.
 2. **`.claude/settings.json` allows every built-in tool, both web tools, and the session
    and GitHub servers**, so a session outside Auto is rarely asked anything.
-3. **History is never rewritten by an agent.** The settings deny force pushes and
-   push-deletions in every mode; Auto blocks force pushes by default.
+3. **History is never rewritten by an agent.** The settings deny force pushes (`--force`,
+   `-f`, `--force-with-lease`, a `+` refspec) and `--delete` pushes in every mode; Auto blocks
+   force pushes by default. A `:<branch>` deletion refspec has no deny rule (the CLI's rule
+   syntax cannot express it without also denying `HEAD:main`); Auto and the janitor's
+   ancestry rule are its guard.
 4. **Auto is not "never asks."** Three blocked actions in a row, or twenty in one
    session, and it falls back to prompting. Builders avoid the default blocks (force
    push, `git reset --hard`, `git checkout -- .`, `git restore .`, `git clean -fd`,
@@ -246,9 +253,11 @@ knowingly.
 ## Brief lifecycle
 
 `docs/briefs/<release>-<nn>-<slug>.md` per `docs/briefs/TEMPLATE.md` (`<release>` is the
-version it ships in, `v0.4.0-01`; M0 to M4's briefs keep their arc ids). The status line
-reads `Status: OPEN` → `Status: DONE (<sha from origin/main>)`, or `Status: BLOCKED` with
-the question in `BLOCKED.md` §Open. Done briefs stay in the tree as the execution record.
+version it ships in, `v0.4.0-01`; M0 to M4's briefs keep their arc ids). A brief cut out of
+another gets a new id, never another id plus `-` (the batch script finds a brief by
+`docs/briefs/<id>-*.md`). The status line reads `Status: OPEN` → `Status: DONE (<sha from
+origin/main>)`, or `Status: BLOCKED` with the question in `BLOCKED.md` §Open. Done briefs
+stay in the tree as the execution record.
 
 **Pinning tests travel with their brief.** The release session commits a brief's pinning
 tests under `docs/briefs/pinning/<brief id>/`, mirroring the paths they will have
@@ -256,7 +265,10 @@ tests under `docs/briefs/pinning/<brief id>/`, mirroring the paths they will hav
 `pipeline/tests/test_world.py`), linted in the live layout and run against a throwaway
 implementation first (lesson 40). The builder's first step copies them into place
 (`cp -r docs/briefs/pinning/<id>/. .`); for the whole brief the live copies stay
-byte-identical to the pinned ones (the brief's first gate checks it with `cmp`). Harm
+byte-identical to the pinned ones (the brief's first gate checks it: `(cd
+docs/briefs/pinning/<id> && find . -type f -print0 | xargs -0 -I{} cmp {} "$OLDPWD/{}")`;
+GNU cmp has no `-r`). A brief with nothing to pin (words only, a review's fix batch whose
+tests the fixer writes) has no pinning folder and says so in its gates. Harm
 prevented: the pinning tests of several OPEN briefs sitting in the live test tree would
 keep the standard gate red for every brief but the last, and a gate that is always red
 gets ignored (lesson 31). After the brief is DONE the live copies may evolve with later

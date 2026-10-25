@@ -1005,7 +1005,8 @@ line stays on every visual gate.
 number, not a look. From brief M3-R1-fix-3 on, `tools/gate.sh` renders the complete test
 world under the Compatibility renderer (Mesa llvmpipe under Xvfb) and asserts, by
 correlation against flipped and shifted alternatives, where the photo shader puts the photo
-and the surface classes and where the tree shader reads the crowns' colour. It refuses where
+and the water class (not rock, road or path: M3 round R2 P-03) and where the tree shader
+reads the crowns' colour. It refuses where
 `xvfb-run` is missing unless `MATTINI_SKIP_RENDER=1`, which it prints. It gates placement
 only: not the look, not the colour encoding (brain.md H21), not Forward+, not the owner's
 GPU.

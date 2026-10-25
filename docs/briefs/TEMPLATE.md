@@ -25,18 +25,19 @@ in <>. `Status` becomes `DONE (<sha from origin/main>)` or `BLOCKED`. `tier: 1` 
 
 ## Scope — files you may touch
 
-<Explicit list or narrow glob; nothing else. Shares no file with another brief of the same
-lane letter running at the same time (the plan's hot-file order decides). The brief's own
-file and its screenshots under `docs/briefs/shots/<id>-*` are always in Scope.>
+<Explicit list or narrow glob; nothing else. Shares no file with a brief of another lane;
+briefs of one lane that share a file run in the plan's hot-file order. The brief's own file
+and its screenshots under `docs/briefs/shots/<id>-*` are always in Scope.>
 
 ## Done when (gates)
 
 <Runnable checks, command plus expected result. The pinning tests already exist under
-`docs/briefs/pinning/<id>/` (WORKFLOW §Brief lifecycle); a missing one is a BLOCKED
-question, never skipped. Every gate carries a "does NOT prove" line; if it is hard to
+`docs/briefs/pinning/<id>/` (WORKFLOW §Brief lifecycle); a missing one is a question for the
+session (BUILD.md card 4), never skipped. Every gate carries a "does NOT prove" line; if it is hard to
 write, the gate is not understood yet.>
 
-- [ ] `cmp -r docs/briefs/pinning/<id>/. .` on the pinned paths: identical
+- [ ] The pinned copies are identical: `(cd docs/briefs/pinning/<id> && find . -type f -print0
+      | xargs -0 -I{} cmp {} "$OLDPWD/{}")` exits 0
       - does NOT prove: that the tests test the right thing
 - [ ] <gate: the pinning tests, red before the change, green after>
       - does NOT prove: <the claim this gate cannot settle>

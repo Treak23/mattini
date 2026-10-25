@@ -15,23 +15,28 @@ and its brief. The `[build]` lessons are the card's sources, opened when the car
 1. **Chain the commit to the gate's exit status with `&&`**: `tools/gate.sh > gate.log &&
    git commit …`. A pipe or `;` eats it. Docs commits too (lessons 7, 18).
 2. **Pinning tests first, red,** failing by the harm's name (copy them in with `cp -r
-   docs/briefs/pinning/<id>/. .`); then the change; then green. The live copies stay
-   byte-identical to the pinned ones for the whole brief (`cmp`).
-3. **Scope wins over the brief's own shape**; a contradiction is filed in `BLOCKED.md`,
-   never resolved by hand (lesson 31).
+   docs/briefs/pinning/<id>/. .` when the brief has a pinning folder); then the change; then
+   green. The live copies stay byte-identical to the pinned ones for the whole brief (the
+   brief's `cmp` gate).
+3. **Scope wins over the brief's own shape**; a contradiction is a question (card 4), never
+   resolved by hand (lesson 31).
 4. **Blocked is not improvise; untestable is not downgrade** (lesson 6). Genuine ambiguity,
-   or a gate weaker than the change's failure class → a plain-text question in
-   `docs/briefs/BLOCKED.md`, the brief `Status: BLOCKED`, stop. The one recorded exception:
+   or a gate weaker than the change's failure class → stop, commit nothing more, and return
+   the question in plain text with what you measured; the release session files it in
+   `docs/briefs/BLOCKED.md` and sets the brief `BLOCKED` (a commit with red pinned tests in
+   your tree could not pass the gate). The one recorded exception:
    "renders or looks right" cannot be gated without a GPU; for that claim alone the brief's
    `does NOT prove: that it renders or looks right` line is the accepted answer (WORKFLOW
    §Pace and risk).
 5. **Copy a red gate's report into Findings before any re-run** (the failing lines of
    `gate.log`, GUT's or pytest's); the re-run overwrites it.
 6. **Push after every commit** (`git pull --rebase origin main`, the gate again if the
-   rebase brought commits in, `git push origin main`); a rejected push means rebase and
-   push again, never force.
-7. **Read the status sha from `git log origin/main` after the push**, never from the local
-   log: `Status: DONE (<sha>)`.
+   rebase brought commits in, `git push origin HEAD:main`: your worktree sits on its own
+   branch, where `git push origin main` pushes nothing and still exits 0); a rejected push
+   means rebase and push again, never force.
+7. **Read the status sha from `git log origin/main` after `git fetch origin main`**, never
+   from the local log, and check that your work landed: `git merge-base --is-ancestor HEAD
+   origin/main` exits 0. Then `Status: DONE (<sha>)`.
 8. **A source scan proves text is arranged a certain way, never that code runs** (lesson 5);
    every gate carries its "does NOT prove" line, and a census is never the sole gate for
    code that runs at scene load, `_ready()`, autoload initialisation or pipeline start-up.
@@ -65,25 +70,27 @@ and its brief. The `[build]` lessons are the card's sources, opened when the car
 
 ## A builder's whole life
 
-1. In your worktree: `git merge --ff-only origin/main` (a worktree of an in-session agent
-   starts from the default branch, brain.md H19); check the head. Read the card, `brain.md`
+1. In your worktree: `git fetch origin main && git merge --ff-only origin/main` (a worktree
+   of an in-session agent starts from the default branch, brain.md H19); check the head. Read the card, `brain.md`
    §Hazards and §Key files, then your brief.
 2. Copy the pinning tests into place; run the named tests and see them red by the harm's
    name; copy the red report into Findings.
-3. Work the brief to green: its gates plus the standard gate, committing in small steps,
-   each chained to the gate, each pushed (card 1, 6).
+3. Work the brief to green: its gates plus the standard gate. The first commit comes when
+   the gate passes with the pinned tests in place; after it, commit in small steps, each
+   chained to the gate, each pushed (card 1, 6).
 4. The batch gate (WORKFLOW §Gates): the standard gate from a clean worktree at the pushed
    head, the brief's `Done when` boxes ticked with their results, the mutation rows run
    both ways where the brief asks. Fill Findings; set `Status: DONE (<sha>)` with the sha
    from `git log origin/main` after the push (card 7); commit and push the brief file.
 5. Return the brief id, the sha, and the Findings' gate table as your result. A question
-   you cannot settle → `BLOCKED.md` (card 4), the brief `BLOCKED`, return that. Never take
-   another brief.
+   you cannot settle → return it (card 4) with status `BLOCKED`, your work left uncommitted
+   in the worktree. Never take another brief.
 
 ## Commits and the gate
 
-- Conventional commits; the harness's attribution trailer on every commit (it is the
-  harness's, not a process rule); no model id anywhere else.
+- Conventional commits whose subject ends with the brief id in parentheses, `feat: … (v0.3.1-02)`:
+  the reviewers read the brief's commits by it. The harness's attribution trailer on every
+  commit (it is the harness's, not a process rule); no model id anywhere else.
 - Gate before every commit, redirected to a log, chained (card 1); rebase before every
   push, gate again after a rebase that brought commits in; never force-push. The gate is
   never polled: run it in the foreground redirected to a log, or as the shell tool's

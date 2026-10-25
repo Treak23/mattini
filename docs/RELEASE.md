@@ -13,7 +13,7 @@ Walk it top to bottom before any version bump.
 - [ ] No batch was started past 100 % of the go's budget (WORKFLOW §The release has a size);
       the batches not built are on the next release's list.
 - [ ] No gate is a source census standing alone over code that runs at scene load,
-      `_ready()`, autoload initialisation or pipeline start-up (BUILD.md 3b).
+      `_ready()`, autoload initialisation or pipeline start-up (BUILD.md card 8).
 - [ ] Every gate's "does NOT prove:" line is filled in. Read them as a set: they are the
       honest list of what this release has not been shown to do, and the report-back
       names the visual ones for the owner to look at.
@@ -47,10 +47,11 @@ Walk it top to bottom before any version bump.
       write, and `manifest` refuses any other file (M2-01, M2-04, M3-04 to M3-07, M3-13),
       so their exit 0 in the fresh checkout is the check.
 - [ ] The fresh checkout's `game/assets/generated/manifest.json` has the size and SHA-256
-      the arc plan names (M3: 324'359 bytes, `3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065`),
+      the release's plan names (M3: 324'359 bytes, `3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065`),
       compared by a command, its output in the release record:
       `test "$(wc -c < game/assets/generated/manifest.json)" -eq 324359 && echo "3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065  game/assets/generated/manifest.json" | sha256sum -c -`
-      (a later arc's plan names its own pair).
+      (each release's plan names its pair: the last release's when no batch changes a
+      generated file, else the pair measured at the go).
 - [ ] Windows and Linux exports built with the pinned Godot version's export templates,
       each with its data packs beside the executable (`tools/export.sh` steps 4–4b:
       `mattini-terrain.pck`, `mattini-photo.pck`; from M3-08, SPEC §11).
