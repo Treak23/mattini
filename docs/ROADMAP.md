@@ -14,7 +14,7 @@ FB-007): five tier-2 batches in one lane, builders on Sonnet, two days and about
 allowance (`docs/briefs/v0.3.1-plan.md`; the go: `docs/history/blocked/2026-10-25-1.md`). The
 process changed on 2026-10-24 (SPEC §13 row 49, `docs/WORKFLOW.md`); this is its first release.
 - v0.3.1-01 the river — DONE (`d568f5a`): pins red then green, 11 mutation rows killed, batch gate green (GUT 48 scripts, 262 tests); review: no P0–P2. Looking towards the sun the new water shows a broad soft glare where 0.3.0 had sharp glints and a jagged rim (`docs/briefs/shots/v0.3.1-01-sun-*.jpg`): for the owner's look
-- v0.3.1-02 frame cap, log, edges — OPEN
+- v0.3.1-02 frame cap, log, edges — DONE (`b784d96`): three settings in `project.godot`, 8 mutation rows killed, batch gate green (GUT 49 scripts, 265 tests); render numbers under 4× MSAA as rehearsed (trees 0.9380 → 0.9387); review: no P0–P2, and a scratch project showed the flush writes while the game runs
 - v0.3.1-03 a missing pack named — OPEN
 - v0.3.1-04 the export checks the packs — OPEN
 - v0.3.1-05 the pause cap and the pack panel — OPEN
