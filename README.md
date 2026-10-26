@@ -22,7 +22,8 @@ Matterhorn included, come later (M5).
 What 0.3.1 changes, from your test of 0.3.0:
 
 - **The river:** the photo's own colour (× 0.9 instead of × 0.6), less of a mirror (roughness
-  0.3 instead of 0.05), smaller ripples, and the bank eased over 1 m instead of a stepped edge.
+  0.3 instead of 0.05), smaller, stronger ripples drifting apart at 0.8 m/s (no net direction; 0.3.0's
+  drifted slowly downstream), and the bank eased over 1 m instead of the 0.2 m edge.
 - **The frame rate:** at most 60 frames a second, and at most 15 while the pause screen is open.
 - **The edges:** 4× MSAA.
 - **The log:** every line is written to `godot.log` when it is printed, so the log fills while
@@ -75,7 +76,16 @@ version, the controls, the credits, Resume and Quit.
 2. Godot writes a log on every start, line by line while the game runs:
    - Windows: `%APPDATA%\Godot\app_userdata\mattini\logs\godot.log`
    - Linux: `~/.local/share/godot/app_userdata/mattini/logs/godot.log`
-3. Send the log and a screenshot to the `feedback` session.
+3. If the game closes or shows nothing at the start (a possible cause: 4× MSAA on your GPU),
+   try it without MSAA before rolling back: put a text file named `override.cfg` beside the
+   executable holding these two lines, then start the game again:
+
+       [rendering]
+       anti_aliasing/quality/msaa_3d=0
+
+   The exported build reads such a file (checked here by overriding another setting, not by
+   a crash); delete it to have MSAA again.
+4. Send the log and a screenshot to the `feedback` session.
 
 The rollback is the named folder of the version before the current one: `mattini-0.3.0/`
 (0.3.0, five files per platform, as above). Take its files of your platform and keep them
