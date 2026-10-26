@@ -33,6 +33,8 @@ const PLACEMENT_LINES := [
 	"uniform vec4 surfaces_rect = vec4(0.0, 0.0, 1.0, 1.0);",
 	"vec4 class_weights(vec2 xz) {",
 	"vec2 t = (xz - surfaces_rect.xy) / surfaces_rect.zw * vec2(size) - 0.5;",
+	# Brief M4-06: water_weight reads the classes from the same texel centres.
+	"vec2 t = (xz - surfaces_rect.xy) / surfaces_rect.zw * vec2(size) - 0.5;",
 	"vec2 xz = v_vertex.xz;",
 	"vec2 puv = (v_vertex.xz - photo_rect.xy) / photo_rect.zw;",
 	"vec3 albedo = texture(photo, puv).rgb;",
@@ -146,4 +148,4 @@ func test_exactly_one_statement_assigns_the_photo_uv() -> void:
 	# puv.x -= 0.1 / photo_rect.z, puv = puv.yx) is an assignment to puv or to one of its parts.
 	var assignments := _code_lines_matching(PHOTO, "\\bpuv\\b[.a-z]*\\s*([-+*/]?=)[^=]")
 	assert_eq(assignments.size(), 1, "one assignment to puv: %s" % [assignments])
-	assert_eq(assignments, PackedStringArray([PLACEMENT_LINES[5]]), "and it is the pinned one")
+	assert_eq(assignments, PackedStringArray([PLACEMENT_LINES[6]]), "and it is the pinned one")

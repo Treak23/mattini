@@ -1,7 +1,7 @@
 // Copyright © 2023-2026 Cory Petkovsek, Roope Palmroos, and Contributors.
 // This shader is the minimum needed to allow the terrain to function, without any texturing.
 //
-// mattini's photo look (briefs M3-09 and M3-10; docs/SPEC.md §10): Terrain3D 1.0.2's
+// mattini's photo look (briefs M3-09, M3-10 and v0.3.1-01; docs/SPEC.md §10): Terrain3D 1.0.2's
 // extras/shaders/minimum.gdshader (MIT, res://addons/terrain_3d/LICENSE.txt) as in
 // terrain_clay.gdshader, its vertex() and the terrain normals in fragment() unchanged, without
 // the contour lines. The albedo is the aerial photo (SWISSIMAGE 2023): photo_rect holds the
@@ -11,8 +11,10 @@
 // never filtered) add: on rock, a triplanar CC0 rock texture weighted by smoothstep(35°, 55°,
 // slope), its luminance relative to its mean tinting the photo's colour; on roads and paths,
 // CC0 detail textures whose luminance relative to their mean multiplies the photo, fading out
-// by near_fade_m from the camera; on water, roughness 0.05, the photo darkened, two drifting
-// noise normal maps (NoiseTexture2D, made by TerrainLoader).
+// by near_fade_m from the camera; on water, the photo's colour × 0.9 and roughness 0.3, with
+// ripples from two noise normal maps (NoiseTexture2D, made by TerrainLoader) tiling every 2 m
+// and 3.4 m and drifting apart at 0.8 m/s, the water's weight eased over 1 m at the bank
+// (water_weight).
 
 shader_type spatial;
 render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx,skip_vertex_transform;
@@ -91,18 +93,21 @@ uniform float path_scale_m = 2.0;
 uniform float detail_normal_strength = 1.0;
 
 group_uniforms water;
-// Two NoiseTexture2D normal maps (TerrainLoader makes them; no file), drifting apart.
+// Two NoiseTexture2D normal maps (TerrainLoader makes them; no file). Map a tiles every
+// water_scale_a_m and drifts along water_drift, map b tiles every water_scale_b_m and drifts
+// against it: 0.8 m/s each way, no net direction (a torrent's turbulence; m4-design §8).
 uniform sampler2D water_normal_a : hint_normal, filter_linear_mipmap, repeat_enable;
 uniform sampler2D water_normal_b : hint_normal, filter_linear_mipmap, repeat_enable;
-uniform float water_scale_m = 10.0;
-uniform vec2 water_drift_a = vec2(0.23, 0.11); // m/s
-uniform vec2 water_drift_b = vec2(-0.13, 0.19); // m/s
-uniform float water_normal_strength = 0.2;
-uniform float water_darken = 0.6;
+uniform float water_scale_a_m = 2.0;
+uniform float water_scale_b_m = 3.4;
+uniform vec2 water_drift = vec2(0.48, 0.64); // m/s
+uniform float water_normal_strength = 0.35;
+// On water the photo's colour is multiplied by this: the photo's own river, a little darker.
+uniform float water_albedo = 0.9;
 group_uniforms;
 
 const float PHOTO_ROUGHNESS = 0.95;
-const float WATER_ROUGHNESS = 0.05;
+const float WATER_ROUGHNESS = 0.3;
 
 // Luminance of a linear colour (Rec. 709).
 float luminance(vec3 c) {
@@ -145,6 +150,34 @@ vec4 class_weights(vec2 xz) {
 		w += b * vec4(float(c == 1), float(c == 2), float(c == 3), float(c == 4));
 	}
 	return w;
+}
+
+// The water's weight at (x, z), its bank eased over 1 m (m4-design §8): the share of water among
+// the 5 x 5 class texels (1 m at 0.2 m) around the point, each read exactly (texelFetch); the
+// boxes of the four nearest texel centres blended bilinearly, so 6 x 6 texels with the outer row
+// and column weighted by the fraction; then a smoothstep. On a straight bank the weight is 0.5 on
+// the class edge, 0 from 0.5 m outside it and 1 from 0.5 m inside; a channel narrower than 1 m
+// never reaches 1. Texels are placed as in class_weights; outside the grid: no water.
+float water_weight(vec2 xz) {
+	ivec2 size = textureSize(surfaces, 0);
+	vec2 t = (xz - surfaces_rect.xy) / surfaces_rect.zw * vec2(size) - 0.5;
+	vec2 base = floor(t);
+	vec2 f = t - base;
+	ivec2 i0 = ivec2(base);
+	float share = 0.0;
+	for (int j = -2; j <= 3; j++) {
+		float wy = j == -2 ? 1.0 - f.y : (j == 3 ? f.y : 1.0);
+		for (int i = -2; i <= 3; i++) {
+			ivec2 p = i0 + ivec2(i, j);
+			if (p.x < 0 || p.y < 0 || p.x >= size.x || p.y >= size.y) {
+				continue;
+			}
+			float wx = i == -2 ? 1.0 - f.x : (i == 3 ? f.x : 1.0);
+			int c = int(texelFetch(surfaces, p, 0).r * 255.0 + 0.5);
+			share += wx * wy * float(c == 2);
+		}
+	}
+	return smoothstep(0.0, 1.0, share / 25.0);
 }
 
 // The rock texture projected along the three world axes and blended by the terrain normal n
@@ -414,16 +447,17 @@ void fragment() {
 		bump += detail_bump * detail_normal_strength * w_path;
 	}
 
-	// Water: smooth, darker, its normals drifting.
-	float w_water = classes.y;
+	// Water: the photo's colour × water_albedo, roughness WATER_ROUGHNESS, two ripple maps
+	// drifting apart; its weight eased over 1 m at the bank.
+	float w_water = water_weight(xz);
 	if (w_water > 0.0) {
-		vec2 ua = xz / water_scale_m + TIME * water_drift_a / water_scale_m;
-		vec2 ub = xz / (water_scale_m * 1.7) + TIME * water_drift_b / (water_scale_m * 1.7);
-		vec3 na = unpack_normal(textureGrad(water_normal_a, ua, ddx_xz / water_scale_m, ddy_xz / water_scale_m));
-		vec3 nb = unpack_normal(textureGrad(water_normal_b, ub, ddx_xz / (water_scale_m * 1.7), ddy_xz / (water_scale_m * 1.7)));
+		vec2 ua = (xz - TIME * water_drift) / water_scale_a_m;
+		vec2 ub = (xz + TIME * water_drift) / water_scale_b_m;
+		vec3 na = unpack_normal(textureGrad(water_normal_a, ua, ddx_xz / water_scale_a_m, ddy_xz / water_scale_a_m));
+		vec3 nb = unpack_normal(textureGrad(water_normal_b, ub, ddx_xz / water_scale_b_m, ddy_xz / water_scale_b_m));
 		vec2 ripple = (na.xy + nb.xy) * water_normal_strength;
 		bump = mix(bump, vec3(ripple.x, 0.0, ripple.y), w_water);
-		albedo *= mix(1.0, water_darken, w_water);
+		albedo *= mix(1.0, water_albedo, w_water);
 		roughness = mix(roughness, WATER_ROUGHNESS, w_water);
 	}
 
