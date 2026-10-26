@@ -19,6 +19,7 @@ process changed on 2026-10-24 (SPEC §13 row 49, `docs/WORKFLOW.md`); this is it
 - v0.3.1-04 the export checks the packs — DONE (`f0b7df0`; the first run was lost to a container restart before any code, re-run from `630531f`): step 2b and the check after 4b, the stand-ins without M4-06's lines; 11 mutation rows killed, batch gate green (pytest 2238); review: no P0–P2, two P3 notes for the whole-range review (the stand-in packs an empty folder where `pack.gd` refuses; a refused export can leave a half-written `build/` folder, which RELEASE.md never copies)
 - v0.3.1-05 the pause cap and the pack panel — DONE (`8dd6949`): 15 fps while the pause screen is open, the project's cap given back; in an export the missing packs on the error panel (`docs/briefs/shots/v0.3.1-05-pack-panel.jpg`, through the test seam); 17 mutation rows killed, batch gate green (GUT 52 scripts, 287 tests); review: no P0–P2. A slip: the code commit's gate ran through a pipe, not chained (card 1); its log and the batch gate passed
 - v0.3.1-06 the version 0.3.1 — OPEN (RELEASE.md §B's bump, after the whole-range review)
+- Whole-range review, round 1 (`docs/reviews/v0.3.1-round1.md`): no P0–P2 (one P2 graded P3 by its skeptic); no fix batch; the P3s acted on in docs and the release gate, the rest below
 
 **Next release, 0.4.0 — the moving sun:** the rest of M4 (`docs/briefs/M4-plan.md`; the owner's
 answers are SPEC §13 rows 41–48; its process note says what 0.3.1 took and what the next cut must
@@ -99,6 +100,13 @@ closed (0.3.0, ARCHIVE).
 - A session's checkout is shallow, and its local `main` can be an old ref that `git pull`
   calls diverged (brain.md H14): the spawn prompts' sync line handles it since M2
   planning.
+- 0.3.1's whole-range review, P3 (`docs/reviews/v0.3.1-round1.md`): R1-02 the packs' folder computed in
+  `data_packs.gd` and `main.gd` separately; R1-03 ripple map b jumps once an hour when `TIME` wraps (3.4 m
+  does not divide the drift over 3600 s); R1-05 `render_photo.gd`'s first line and `WATER_TOLERANCE`
+  comment claim more than the check (at its next re-pin); R1-06 the export stand-in packs an empty folder
+  where `pack.gd` refuses, and a refused export leaves an unfinished `build/`; F6 `ReleaseBuild`'s comment
+  against the census's `until_m4_10` exemption (next cut); F7 the frame-cap test's engine half has a second
+  writer since v0.3.1-05; F10 `test_m4_08_data_packs_expected.gd` leaves scratch subfolders in `user://`.
 - Process residue (the 0.3.1 triage, 2026-10-25): `docs/roles/FEEDBACK.md` commits each item
   without the gate, which lesson 18 forbids (a rule stated two ways, older than the process
   change); no tool reads the weekly allowance (DESIGN.md step 3 reports the five-hour status and

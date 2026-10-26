@@ -20,6 +20,11 @@ Status: SUPERSEDED as a plan by the one-session process (2026-10-24); its decisi
 >   `test_m4_06_terrain_look.gd` replaces 0.3.1's water-only cut.
 > - M4-10's pins were written on top of M4-08 and M4-06; its decisions 2 (the cap) and 5 are
 >   built, and its tests of them stay as regression tests.
+> - M4-10's pinned `test_m4_08_release_hints.gd`, `fake_tools.py`, `test_export_startup_lines.py` and
+>   `render_photo.gd` predate 0.3.1: rebuild each on the live file (0.3.1's pins), not on M4-10's
+>   copy. `test_m4_08_release_hints.gd` keeps the live lines 134-137 (the seam test's four lines that
+>   kill the mutant R11, v0.3.1-03) and drops only the `until_m4_10` exemption; the other three keep
+>   0.3.1's "Since brief v0.3.1-04" paragraphs (whole-range review R1-01/F1, `docs/reviews/v0.3.1-round1.md`).
 > - **Base, integration notes, review plan:** none of this plan's apply. Each release's plan
 >   names its go sha (the review's range), its seams and its reviews (DESIGN.md §The release
 >   steps 3 and 4). Under WORKFLOW §Review policy the pipeline's determinism is tier 1, so the
