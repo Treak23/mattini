@@ -19,9 +19,11 @@ rebuild): SkyClock, SkyRig and the physical sky, the stars, the sky step, the ma
 and keys (about 16 builder hours). Then the far mountains' shadows and the softened photo shadows
 (13 batches, mostly tier 1: one more cut). M4-08 is superseded by 0.3.1's batches.
 
-**Waiting on the owner:** the first look at 0.3.1 on the laptop (does it start with 4× MSAA; the river; the
-GPU at 60 and 15 fps; the log while running; `docs/releases/v0.3.1.md` §What 0.3.1 does NOT prove), through
-`feedback`. Switching the repository to public (the owner's word, 2026-10-26; RULINGS):
+**The owner's first look at 0.3.1 (2026-10-26):** it starts with 4× MSAA, 60 fps and 15 paused, the GPU at
+40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
+river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
+
+**Waiting on the owner:** Switching the repository to public (the owner's word, 2026-10-26; RULINGS):
 the README's swisstopo credit and the inbox's paths are ready on `main`; then GitHub rulesets
 blocking force pushes and deletions on `main` and `dist` (never `claude/*`, which the janitor
 deletes). A second developer may join: how a person works beside the release sessions (the

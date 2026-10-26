@@ -6,6 +6,18 @@ sequential across both files. Pull --rebase before every commit.
 
 ## Open
 
+### FB-008 · 2026-10-26 · bug · Ground / the river flows side to side, it needs a direction
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, EndeavourOS, KDE Plasma on Wayland, 1920x1080 at 300 Hz; as FB-003)
+Build: 0.3.1 (dist 5b51347; the owner's local session verified the five Linux files and the mattini-0.3.0/ rollback against the README's checksums)
+Impact: degraded
+Owner's words: "river flows but side to side, we will need to give it a direction. everything else is good"
+What happened: Filed by the 0.3.1 release session from the owner's message in its chat (the clerk was not in the loop). The river now visibly moves, but its two ripple patterns drift apart in opposite directions at 0.8 m/s with no net direction (0.3.1's design, the owner's answer at the go), which reads as side to side.
+Expected: the river flows in one direction, downstream.
+Repro / where exactly: 0.3.1, the Vispa in the village, any view.
+Screenshots: none
+Possibly same as: FB-003 (archived, shipped in 0.3.1)
+Disposition: → the next release's triage (0.4.0): a flow direction per stretch from swissTLM3D's river lines (the option offered at 0.3.1's go, pipeline work), or one fixed downstream direction for the village's Vispa (a shader change, wrong wherever a stream runs another way). Release session, 2026-10-26.
+
 ### FB-004 · 2026-10-17 · design · Whole game / 0.3.0 owner test results (the M3 release's test list)
 Machine: linux (the owner's laptop, not the RTX 4090 PC: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run, Vulkan 1.4.341, Forward+; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 15 GB RAM, 1920x1080 at 300 Hz, windowed, on AC, performance profile)
 Build: 0.3.0 (dist 5f08379, all 10 files match the README's SHA-256 block; pause screen shows "mattini 0.3.0")
