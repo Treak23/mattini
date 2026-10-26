@@ -339,3 +339,10 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     the owner's open inbox entries and nothing else unless the owner names it; next release,
     everything else, ending in the DEFERRED list with its cost (DESIGN.md §The release
     step 1).
+
+50. `[all]` **A push is a sha on the remote, read after the push.** `git push origin main` from a
+    worktree's own branch exits 0, prints "Everything up-to-date" and pushes nothing; the adopted
+    process built every batch on it (found by the 0.3.1 triage before the first batch, 2026-10-25),
+    and the process change itself sat on a session branch for a day because its session never pushed
+    `main`. Push `HEAD:main`, then fetch and check `git merge-base --is-ancestor HEAD origin/main`;
+    the session counts a landing only by the brief's commits on `origin/main` (lessons 27, 30).

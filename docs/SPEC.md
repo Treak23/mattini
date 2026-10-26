@@ -872,8 +872,10 @@ M3-12, M3-14):**
     `terrain_photo.gdshader`: uv from the world position, roughness 0.95, a neutral colour
     outside the photo).
   - On it, swissTLM3D's classes (`SurfaceGrid`): roads with a CC0 asphalt grain and paths
-    with gravel, both fading out by 150 m; water darker (albedo × 0.6), smooth (roughness
-    0.05), with two drifting noise normal maps; steep rock (blended in between 35° and 55°)
+    with gravel, both fading out by 150 m; water in the photo's own colour (albedo × 0.9),
+    roughness 0.3, two noise normal maps tiling every 2 m and 3.4 m drifting apart at 0.8 m/s,
+    its edge eased over 1 m (from 0.3.1, brief v0.3.1-01; 0.3.0: × 0.6, roughness 0.05, a 0.2 m
+    edge); steep rock (blended in between 35° and 55°)
     with a triplanar CC0 rock texture tinted to the photo's colour.
   - Roofs in the colour the photo gives each building (an sRGB vertex colour). Walls one
     neutral plaster (0.78, 0.76, 0.72), roughness 0.9: a labelled placeholder (§13 row 31).
@@ -896,7 +898,13 @@ M3-12, M3-14):**
   photo, the trees take a placeholder green, the roofs M2's roof colour. In an exported
   build the panel says instead to keep `mattini.pck` and the `mattini-*.pck` packs beside
   the executable and to download the release folder again. One startup line per block,
-  after the packs' lines.
+  after the packs' lines. From 0.3.1 an exported build names each missing data pack, the
+  folder and what it holds, in the log (DataPacks) and first on the panel, and every reader's
+  file message in an export ends "download the release folder again" (`ReleaseBuild`).
+- *Frame rate, log, edges (from 0.3.1, `project.godot`):* at most 60 frames a second, 15 while
+  the pause screen is open; every printed line flushed to the console and `godot.log`; 4× MSAA
+  on 3D. An `override.cfg` beside the exported executable overrides them (measured at the
+  0.3.1 release gate).
 - *Credits:* the dataset lines from the blocks (`swissalti3d 2024`, `swissbuildings3d
   2020`, `swissimage 2023`, `swisssurface3d 2021-2022`, `swisstlm3d 2026-02`, each
   `© swisstopo`), the CC0 textures by name and author (`game/textures/LICENSE.txt`), the

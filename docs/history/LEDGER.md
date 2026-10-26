@@ -37,6 +37,17 @@ arc closes; opened one section at a time, never at startup.
   hand. Guard: lesson 40; M2-08's and M2-09's pinned tests were run against the live code
   before pinning.
 
+- **2026-10-24 · process change · the session that adopted the one-session process.** It committed
+  the owner's adopted process to its harness branch `claude/festive-dirac-fd2rke` only; `main` never
+  got it, and the next session (started with the new spawn word) found it there and merged it
+  (`bb1d547`), with a SPEC §13 row both sides had numbered 47. Cost: a merge; nothing lost (the janitor
+  never deletes a diverged branch). Guard: WORKFLOW §Branches (push to `main`, mirror into the harness's
+  branch), DESIGN.md startup 1.
+- **2026-10-26 · 0.3.1 · the v0.3.1-05 builder.** Its code commit's gate ran as `( time tools/gate.sh >
+  gate.log ) | tail`, so the exit status did not decide the commit (BUILD.md card 1, lesson 7); the
+  builder read the log's last line before committing and recorded the slip. Cost: none (the log read
+  `all steps passed`, and the batch gate passed again from a clean worktree). Guard: card 1, unchanged.
+
 ### Fabricated instead of read
 
 Nothing found in M0.
@@ -59,6 +70,19 @@ None found at the M1 close: 0.1.0 is the first build that reaches the owner, and
 first look comes back through `feedback`.
 
 ### Wasted time and tokens
+
+- **2026-10-25 · 0.3.1 · the batch machinery before its first run.** The adopted process told a builder
+  in a worktree to `git push origin main`, which from the worktree's own branch pushes nothing and exits 0:
+  every batch would have reported DONE with nothing on `main`. Found by the triage's process scout before
+  any batch ran, fixed in BUILD.md and `RELEASE-WORKFLOW.js` (`git push origin HEAD:main`, the ancestry
+  check, the NOTHING_LANDED status). Cost: none. Guard: lesson 50.
+- **2026-10-26 · 0.3.1 · a container restart.** The platform restarted the session's container four
+  minutes into batch v0.3.1-04's first run, with nothing heavy running; the builder had copied its pins and
+  written no code. Cost: about five minutes and a re-run from the same commit. Guard: push after every
+  commit; a landing is a sha on `origin/main`.
+- **2026-10-26 · 0.3.1 · the release gate's first launch.** Its timing wrapper (`/usr/bin/time`) does not
+  exist in the container, so the first gate never ran; the agent saw it in the log and ran it again. Cost:
+  minutes.
 
 - **2026-09-24 · M0 · no landing started a tick.** All four ticks began at a scheduled
   wake: the hourly one at :45, or the 30-minute one-shot at 05:16. Each came 9 to 53
@@ -130,3 +154,6 @@ first look comes back through `feedback`.
   M2-08, two by the close, I-07 moved to M5. Seventeen V1 P3s: one fixed at the close,
   sixteen carried into M3. Before the owner's first look, no defect is known to have
   reached them.
+- **0.3.1** (the first release of the one-session process): six batch briefs built, each reviewed;
+  the whole-range review clean of P0-P2; the release gate green from a fresh clone; shipped on `dist`.
+  Before the owner's first look, no defect is known to have reached them.

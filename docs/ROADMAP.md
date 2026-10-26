@@ -6,20 +6,12 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**M3 Surfaces and trees — closed 2026-10-16: version 0.3.0 is shipped on `dist` (commit `5f08379`, on the owner's word "push dist") and recorded (`docs/releases/v0.3.0.md`).** The plan is
-`docs/briefs/M3-plan.md` (status DONE); the close in full is `docs/history/ARCS.md` §M3. All fourteen briefs and the six review fixes are DONE; rounds R1, V1 and R2 are adjudicated (`docs/reviews/M3-round1.md`, `M3-V1.md`, `M3-round2.md`): no P0, P1 or P2 is open, and the P3 and the Tier 2 P2 are on the residue list below. The standard gate from a fresh clone of `main` `697a154` is exit 0 (pytest 2228, GUT 47 scripts, 261 tests, 9760 asserts, the render step run); the real village rebuilt from the pinned inputs gives the manifest `3ca0445c…`; the ten files are under 100 MiB; a fresh clone of `dist` verifies against the README and its Linux build starts with all eight startup lines.
-
-**Release 0.3.1 — GO 2026-10-25 (the owner), building.** The 0.3.0 test's items (FB-003 to
-FB-007): five tier-2 batches in one lane, builders on Sonnet, two days and about half a week's
-allowance (`docs/briefs/v0.3.1-plan.md`; the go: `docs/history/blocked/2026-10-25-1.md`). The
-process changed on 2026-10-24 (SPEC §13 row 49, `docs/WORKFLOW.md`); this is its first release.
-- v0.3.1-01 the river — DONE (`d568f5a`): pins red then green, 11 mutation rows killed, batch gate green (GUT 48 scripts, 262 tests); review: no P0–P2. Looking towards the sun the new water shows a broad soft glare where 0.3.0 had sharp glints and a jagged rim (`docs/briefs/shots/v0.3.1-01-sun-*.jpg`): for the owner's look
-- v0.3.1-02 frame cap, log, edges — DONE (`b784d96`): three settings in `project.godot`, 8 mutation rows killed, batch gate green (GUT 49 scripts, 265 tests); render numbers under 4× MSAA as rehearsed (trees 0.9380 → 0.9387); review: no P0–P2, and a scratch project showed the flush writes while the game runs
-- v0.3.1-03 a missing pack named — DONE (`041c0d8`): ReleaseBuild, DataPacks' `EXPECTED_PACKS` and `missing_pack_errors`, the seven readers' release hint; 19 mutation rows killed, batch gate green (GUT 51 scripts, 279 tests); review: no P0–P2, and a probe outside the repo showed DataPacks naming `mattini-photo.pck`, its folder and "the aerial photo" (editor binary; the export is the release gate's)
-- v0.3.1-04 the export checks the packs — DONE (`f0b7df0`; the first run was lost to a container restart before any code, re-run from `630531f`): step 2b and the check after 4b, the stand-ins without M4-06's lines; 11 mutation rows killed, batch gate green (pytest 2238); review: no P0–P2, two P3 notes for the whole-range review (the stand-in packs an empty folder where `pack.gd` refuses; a refused export can leave a half-written `build/` folder, which RELEASE.md never copies)
-- v0.3.1-05 the pause cap and the pack panel — DONE (`8dd6949`): 15 fps while the pause screen is open, the project's cap given back; in an export the missing packs on the error panel (`docs/briefs/shots/v0.3.1-05-pack-panel.jpg`, through the test seam); 17 mutation rows killed, batch gate green (GUT 52 scripts, 287 tests); review: no P0–P2. A slip: the code commit's gate ran through a pipe, not chained (card 1); its log and the batch gate passed
-- v0.3.1-06 the version 0.3.1 — OPEN (RELEASE.md §B's bump, after the whole-range review)
-- Whole-range review, round 1 (`docs/reviews/v0.3.1-round1.md`): no P0–P2 (one P2 graded P3 by its skeptic); no fix batch; the P3s acted on in docs and the release gate, the rest below
+**Release 0.3.1 — shipped 2026-10-26 on `dist` (`7182c84`, `5b51347`, built from `main` `cb5946e`),
+recorded in `docs/releases/v0.3.1.md`.** The 0.3.0 test's fixes: the river reworked, 60 fps and 15 paused,
+the log flushed per line, 4× MSAA, a missing data pack named in the log and on the panel, the export's pack
+check; six briefs DONE (`docs/briefs/v0.3.1-plan.md`, Status DONE), the whole-range review clean of P0–P2
+(`docs/reviews/v0.3.1-round1.md`), the release gate from a fresh clone green (pytest 2238, GUT 52 scripts,
+287 tests, 9892 asserts; the manifest `3ca0445c…` as 0.3.0's; the three new §C checks passed).
 
 **Next release, 0.4.0 — the moving sun:** the rest of M4 (`docs/briefs/M4-plan.md`; the owner's
 answers are SPEC §13 rows 41–48; its process note says what 0.3.1 took and what the next cut must
@@ -27,7 +19,9 @@ rebuild): SkyClock, SkyRig and the physical sky, the stars, the sky step, the ma
 and keys (about 16 builder hours). Then the far mountains' shadows and the softened photo shadows
 (13 batches, mostly tier 1: one more cut). M4-08 is superseded by 0.3.1's batches.
 
-**Waiting on the owner:** switching the repository to public (the owner's word, 2026-10-26; RULINGS):
+**Waiting on the owner:** the first look at 0.3.1 on the laptop (does it start with 4× MSAA; the river; the
+GPU at 60 and 15 fps; the log while running; `docs/releases/v0.3.1.md` §What 0.3.1 does NOT prove), through
+`feedback`. Switching the repository to public (the owner's word, 2026-10-26; RULINGS):
 the README's swisstopo credit and the inbox's paths are ready on `main`; then GitHub rulesets
 blocking force pushes and deletions on `main` and `dist` (never `claude/*`, which the janitor
 deletes). A second developer may join: how a person works beside the release sessions (the
@@ -45,11 +39,14 @@ decides 2), release 0.3.1: four water screenshots instead of M4-06's two (v0.3.1
 pins' comments re-pinned with the 0.3.1 brief ids (v0.3.1-02 to -05); if a render check fails under
 MSAA, the render scripts turn MSAA off (they measure placement, not edges); ReleaseBuild's comment
 names no caller, so v0.3.1-05 edits no file of v0.3.1-03; the three new release-gate checks are
-permanent in `docs/RELEASE.md` §C. The briefs' Findings carry both options of each.
+permanent in `docs/RELEASE.md` §C. The briefs' Findings carry both options of each. At the publish: `dist`
+pushed without a separate "push dist" (DESIGN.md step 6 publishes; it added 21 MB, `mattini.pck`, every
+other file 0.3.0's; RULINGS 2026-10-26); `mattini-0.1.0/` left `dist`'s tree (the last three kept).
 
-**Last shipped:** 0.3.0, 2026-10-16: the village in a realistic look made from the data
-(`docs/releases/v0.3.0.md`; `dist` `5f08379`, built from `main` `697a154`). Before it: 0.2.0, 2026-09-26, the village with its
-1'486 buildings (`docs/releases/v0.2.0.md`; `dist` `5ce4888`, built from `main` `10f0060`), kept on `dist` as `mattini-0.2.0/`, the rollback.
+**Last shipped:** 0.3.1, 2026-10-26: the 0.3.0 test's fixes (`docs/releases/v0.3.1.md`; `dist` `5b51347`,
+built from `main` `cb5946e`). Before it: 0.3.0, 2026-10-16, the village in a realistic look made from the data
+(`docs/releases/v0.3.0.md`; `dist` `5f08379`), kept on `dist` as `mattini-0.3.0/`, the rollback; 0.2.0 as
+`mattini-0.2.0/`.
 
 Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in full is `docs/history/ARCS.md` §M3. Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 `docs/history/ARCS.md` §M2. Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0 (ARCS §M1).
@@ -70,15 +67,14 @@ Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in fu
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0 to M3
 are closed.
 
-1. 0.3.1 — the 0.3.0 test's fixes (building, `docs/briefs/v0.3.1-plan.md`)
-2. 0.4.0 — the moving sun (the rest of M4's sky)
-3. The far mountains' shadows and the softened photo shadows (the rest of M4)
-4. M5 Scale up
-5. M6 Weather and walking
+1. 0.4.0 — the moving sun (the rest of M4's sky)
+2. The far mountains' shadows and the softened photo shadows (the rest of M4)
+3. M5 Scale up
+4. M6 Weather and walking
 
 ## DEFERRED, said out loud
 
-0.3.1's list, with reasons and costs, is in `docs/briefs/v0.3.1-plan.md` §DEFERRED (M4's in
+0.3.1's list (shipped; its deferrals carry into 0.4.0's triage), with reasons and costs, is in `docs/briefs/v0.3.1-plan.md` §DEFERRED (M4's in
 `docs/briefs/M4-plan.md`, M3's in `docs/briefs/M3-plan.md`). Every Open inbox entry (FB-003 to
 FB-007) is in 0.3.1 or on its DEFERRED list (FB-004 items 1, 3, 5 and the look items); FB-001 is
 closed (0.3.0, ARCHIVE).
@@ -164,6 +160,10 @@ Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified,
 
 ## Shipped
 
+- **0.3.1** — 2026-10-26 — the 0.3.0 test's fixes: the river, the frame cap, the log, MSAA, a missing
+  pack named (`docs/releases/v0.3.1.md`).
+- **0.3.0** — 2026-10-16 — arc M3: the village in a realistic look made from the data
+  (`docs/releases/v0.3.0.md`).
 - **0.2.0** — 2026-09-26 — arc M2: the village's 1'486 buildings as a white architectural
   model, the real sample as a test fixture, godot-cpp's notice in the credits
   (`docs/releases/v0.2.0.md`).

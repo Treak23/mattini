@@ -3,6 +3,58 @@
 Moved here from `INBOX.md` §Open by the design realm's drain, each with its disposition and
 version. Entries keep their original text; nothing is deleted.
 
+### FB-007 · 2026-10-17 · bug · Performance / GPU runs flat out, also while paused (no frame cap)
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
+Build: 0.3.0 (dist 5f08379)
+Impact: degraded
+Owner's words: not stated (the owner said "fluid"; the GPU load is the tester's measurement)
+What happened: MEASURED over ~15 min (432 samples every 2 s): GPU utilisation 94 % on average, 100 % at peak, also while paused in the Esc menu; 87 C and 111 W at peak. The display runs at 300 Hz and project.godot sets no frame cap, so the GPU renders flat out all the time: heat and fan noise on a laptop. No frame rate was measured (no counter in the game, no MangoHud installed).
+Expected: not stated.
+Repro / where exactly: 0.3.0 dist build on the laptop, windowed, any view including the Esc menu. Samples: ~/mattini-test-0.3.0/resources.csv on the owner's laptop.
+Screenshots: none
+Possibly same as: FB-004 (item 10)
+Disposition: → M4-08 (frame cap 60 in the project) and M4-10 (15 while the pause screen is open); SPEC §13 row 45. Design, 2026-10-17.
+Disposition (0.3.1): Shipped in 0.3.1 (2026-10-26, `docs/releases/v0.3.1.md`): at most 60 frames a second (v0.3.1-02, `b784d96`) and 15 while the pause screen is open (v0.3.1-05, `8dd6949`); the exported build printed `Project FPS: 60` at the release gate. The GPU load on the owner's laptop is the owner's to read. Release session, 2026-10-26.
+
+### FB-006 · 2026-10-17 · bug · Log / output held back until the game exits
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
+Build: 0.3.0 (dist 5f08379)
+Impact: degraded
+Owner's words: not stated (tester's observation)
+What happened: During ~3 minutes of running, godot.log and stdout showed only the first 2 "mattini" lines (the two data pack lines); the other 6 appeared only when the game quit. A crash would likely lose them, the moment they are needed. The tester notes Godot's project setting application/run/flush_stdout_on_print is off by default in release builds, likely relevant (the tester's guess).
+Expected: not stated.
+Repro / where exactly: 0.3.0 dist build on Linux; watch godot.log or stdout while the game runs.
+Screenshots: none
+Possibly same as: FB-004 (other observations)
+Disposition: → M4-08 (`application/run/flush_stdout_on_print` true: release exports flush stdout and godot.log per line, measured in Godot's source); SPEC §13 row 45. Design, 2026-10-17.
+Disposition (0.3.1): Shipped in 0.3.1 (2026-10-26, `docs/releases/v0.3.1.md`): `application/run/flush_stdout_on_print` true (v0.3.1-02, `b784d96`); the release gate saw the exported Linux build's pack and startup lines in the console and in `godot.log` while it was still running. Release session, 2026-10-26.
+
+### FB-005 · 2026-10-17 · bug · Errors / missing photo pack message names the pipeline, not the pack
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
+Build: 0.3.0 (dist 5f08379)
+Impact: degraded
+Owner's words: not stated (the owner declined this test: "no i dont want to do that. if there are real errors i will screenshot them, i wont fabricate them"; found by the tester, MEASURED)
+What happened: With mattini-photo.pck moved aside, the game did not crash and kept running; the log carries "ERROR: PhotoGrid: res://assets/generated/manifest.json: the photo res://assets/generated/photo/village.jpg is missing; python -m mattini photo rebuilds it". The message gives a developer hint (run the pipeline) and never names mattini-photo.pck, which is what a player of the shipped build would be missing. Whether an error panel appeared on screen: unknown (nobody looked; the tester closed the game after ~30 s). The pack was restored, checksum OK.
+Expected: not stated.
+Repro / where exactly: 0.3.0 dist build, start with mattini-photo.pck removed from the game folder. Log: ~/mattini-test-0.3.0/mattini-0.3.0-no-photo.log on the owner's laptop.
+Screenshots: none
+Possibly same as: FB-004 (item 9)
+Disposition: → M4-08 (DataPacks names a missing pack, the folder and what it holds; in an export the readers' hint says to download the release folder again, not the pipeline) and M4-10 (DataPacks' errors on the error panel); SPEC §13 row 45. Design, 2026-10-17.
+Disposition (0.3.1): Shipped in 0.3.1 (2026-10-26, `docs/releases/v0.3.1.md`): DataPacks names a missing pack, its folder and what it holds, and the readers' messages in a release say to download the release folder again (v0.3.1-03, `041c0d8`); the error panel lists the missing packs (v0.3.1-05, `8dd6949`); `tools/export.sh` refuses a release with other packs (v0.3.1-04, `f0b7df0`). The release gate's run with `mattini-photo.pck` moved aside logged both lines; the panel was seen only in a software render. Release session, 2026-10-26.
+
+### FB-003 · 2026-10-17 · bug · Ground / river water effect (village, close up)
+Machine: linux (the owner's laptop, not the RTX 4090 PC: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run, Vulkan 1.4.341, Forward+; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 15 GB RAM, 1920x1080 at 300 Hz, windowed, on AC, performance profile)
+Build: 0.3.0 (dist 5f08379, all 10 files match the README's SHA-256 block; pause screen shows "mattini 0.3.0")
+Impact: degraded
+Owner's words: "water moves but very slightly and looks weird."
+What happened: From the tester's report (Claude's reading of the shots, not the owner's verdict): up close the water is near-black with large white glints that change between two shots taken 5 s apart; a hard stepped edge with a jagged white rim where it meets the bank; the effect covers only a patch near the camera, the river beyond shows the flat photo.
+Expected: not stated.
+Repro / where exactly: Low over the river (the Vispa, guess) in the village, looking upstream along it, close to the water. Time of day and weather not stated. Item 4 (ground) of the 0.3.0 test.
+Screenshots: shots/FB-003-a.png (11:47:45: low over the river, near-black water patch with white glints in the foreground, its jagged white rim at the bank; the river further up shows the flat photo; dark cone trees and pale block buildings either side), shots/FB-003-b.png (11:47:50, the same view 5 s later)
+Possibly same as: —
+Disposition: → M4-06 (measured: 94 % of the Vispa's channel carries the water class, so the "patch" is the shading: albedo × 0.9, roughness 0.3, turbulent ripples at 0.8 m/s, the bank eased over 1 m; docs/briefs/sketches/M4-soften/README.md); SPEC §13 row 45. Design, 2026-10-17.
+Disposition (0.3.1): Shipped in 0.3.1 (2026-10-26, `docs/releases/v0.3.1.md`): the water in the photo's own colour (× 0.9), roughness 0.3, ripples at 2 m and 3.4 m drifting apart at 0.8 m/s with no net direction (the owner's answer at the go), the bank eased over 1 m (v0.3.1-01, `9793026`). Whether it reads right, and whether the near-black patch was a real or a baked shadow (not changed), is the owner's look. Release session, 2026-10-26.
+
 ### FB-002 · 2026-10-14 · idea · Game type / collaborative "Zermatt builder"
 Machine: not stated
 Build: 0.2.0 (same test session as FB-001)

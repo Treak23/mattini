@@ -1,11 +1,11 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-10-16 — version 0.3.0 (M3, Surfaces and
-trees: the village in a realistic look made from the data: the 0.2 m aerial photo, roads, paths,
-water and rock, 34'412 conifers, a colour per roof, plaster walls, the sun and light of the photo,
-data packs) is on the `dist` branch (commit `5f08379`, built from `main` `697a154`, recorded in
-`docs/releases/v0.3.0.md`; no P2 or above open after rounds R1, V1, R2). 0.2.0 (M2, Buildings: the
-white model) stays on `dist` as `mattini-0.2.0/`, the rollback**
+Orientation for any session. Current as of **2026-10-26 — version 0.3.1 (the 0.3.0 test's fixes:
+the river reworked, 60 fps and 15 paused, the log flushed per line, 4× MSAA, a missing data pack
+named; the first release of the one-session process) is on the `dist` branch (commits `7182c84`,
+`5b51347`, built from `main` `cb5946e`, recorded in `docs/releases/v0.3.1.md`; no P2 or above open).
+0.3.0 (M3, the village in a realistic look made from the data) stays on `dist` as `mattini-0.3.0/`,
+the rollback**
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -36,8 +36,8 @@ copies it into the generated manifest, and the game learns the origin only from 
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
 4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
 from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (the
-M3 close, 2026-10-16): pytest 2228 passed, 5 network tests deselected; GUT 47 scripts, 261
-tests, 9760 asserts; the gate's render step passes.
+0.3.1 release gate, 2026-10-26): pytest 2238 passed, 5 network tests deselected; GUT 52 scripts, 287
+tests, 9892 asserts; the gate's render step passes.
 
 ## 5. HISTORY
 Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
@@ -45,11 +45,11 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-Release 0.3.1 (the first under the one-session process, §8; go 2026-10-25): the 0.3.0 test's
-items (FB-003 to FB-007) as five batches cut from M4-06, M4-08 and M4-10
-(`docs/briefs/v0.3.1-plan.md`). Then 0.4.0, the moving sun (the rest of M4,
-`docs/briefs/M4-plan.md`, its answers in: SPEC §13 rows 47, 48), the far mountains' and the
-softened photo shadows, M5 scale-up, M6 weather and walking. The board is the live version.
+The owner's first look at 0.3.1 (above all: does it start with 4× MSAA; an `override.cfg` turns it
+off) comes back through `feedback`. Then 0.4.0, the moving sun, from a fresh `ultracode design`
+session: the rest of M4 (`docs/briefs/M4-plan.md`, its answers in: SPEC §13 rows 47, 48; its process
+note says what to rebuild on 0.3.1's pins), then the far mountains' and the softened photo shadows, M5
+scale-up, M6 weather and walking. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -205,7 +205,10 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   one that was pushed. The first
   import of a fresh checkout may print `WARNING: Canceling suspended execution of
   "_enter_tree" due to a script reload.`, a warning line. The started build logs to
-  `user://logs/godot.log` (Linux `~/.local/share/godot/app_userdata/mattini/logs/`).
+  `user://logs/godot.log` (Linux `~/.local/share/godot/app_userdata/mattini/logs/`). Measured at the 0.3.1
+  release gate (2026-10-26): an exported build reads an `override.cfg` beside its executable (a version
+  override showed in every startup line), and `--print-fps` prints `Project FPS: 60` headless under the
+  project's cap.
 - **H16 — Godot's meshes (measured at M2 planning and in M2-05, 2026-09-25).** Front
   faces are clockwise: `SurfaceTool.generate_normals` gives (0, 1, 0) for the triangle
   (0,0,0), (1,0,0), (0,0,1), whose right-hand normal is (0, −1, 0), so a counter-clockwise
@@ -320,8 +323,9 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   with `render`: two SceneTree scripts in `game/tests/render/` (names without `test_`, so GUT does not count
   them) run under `xvfb-run -a` with Compatibility on Mesa llvmpipe, 12 to 19 s, and print one `RENDER <check>:
   PASS|FAIL …` line each (photo, classes, trees). Under Xvfb a Godot run needs `--audio-driver Dummy`, or ALSA's
-  probe prints an `ERROR` line the gate's scan refuses. The classes' counts move by a sample or two between runs
-  (the water's normal maps drift with `TIME`); the other numbers repeat exactly. Where `xvfb-run` is missing the step
+  probe prints an `ERROR` line the gate's scan refuses. From 0.3.1 the classes check switches the light's highlight
+  off and every number repeats exactly between runs (15 runs at v0.3.1-01's rehearsal): a count that moves is a
+  defect to read, not drift. Where `xvfb-run` is missing the step
   fails unless `MATTINI_SKIP_RENDER=1`, which skips and says so on both streams and excuses nothing where `xvfb-run`
   exists. It proves where the photo, the water class and the crowns' colour land on a flat 16 m test world with
   positive coordinates (a shift of 0.1 m, a flip, swapped axes); it does not see an empty forest, rock, road or path,
