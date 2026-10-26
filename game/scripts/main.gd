@@ -1,16 +1,22 @@
 extends Node3D
-## The main scene (docs/SPEC.md §10, M1's to M3's game; briefs M1-05, M2-05, M3-14). Reads the
-## manifest at manifest_path and builds, in this order, its terrain (TerrainLoader, node
-## "Terrain", the aerial photo on it with the surfaces drawn on the photo), its trees
+## The main scene (docs/SPEC.md §10, M1's to M3's game; briefs M1-05, M2-05, M3-14, v0.3.1-05).
+## Reads the manifest at manifest_path and builds, in this order, its terrain (TerrainLoader,
+## node "Terrain", the aerial photo on it with the surfaces drawn on the photo), its trees
 ## (TreeLoader, "Trees") and its buildings (BuildingLoader, "Buildings", each roof in its
 ## measured colour), beside each other, under the sun of the photo and a sky. It starts the
 ## free-fly camera START_ABOVE_M above the ground at the grid's centre, facing
 ## START_BEARING_DEG, pitched START_PITCH_DOWN_DEG down. The pause action opens UI/PauseMenu:
 ## the version (shown nowhere else, owner 2026-09-25), the controls, the credits, Resume and
-## Quit. A missing, refused or stale manifest or block (the terrain, buildings, photo,
-## surfaces, trees or roofs) opens UI/ErrorPanel: its first line names what cannot be shown,
-## then each refusal with the commands that fix it, or in an exported build the release folder
-## (Hard Rule 2). What can be shown still is: without the photo the terrain in M2's clay look
+## Quit. While it is open the frame rate is capped at PAUSED_MAX_FPS (15); closing it, or the
+## scene leaving the tree, gives back the project's cap (application/run/max_fps). A missing,
+## refused or stale manifest or block (the terrain, buildings, photo, surfaces, trees or roofs)
+## opens UI/ErrorPanel: its first line names what cannot be shown, then each refusal with the
+## commands that fix it, or in an exported build the release folder (Hard Rule 2). In an
+## exported build (ReleaseBuild.is_exported()) the data packs missing beside the executable
+## (DataPacks.missing_pack_errors, asked before the manifest is read) are listed after the
+## first line, before the refusals, and open the panel on their own, its first line then
+## "mattini cannot find every data pack."; main logs nothing more about them (DataPacks logged
+## them at start). What can be shown still is: without the photo the terrain in M2's clay look
 ## and the trees in their placeholder green, without the surfaces the photo without their
 ## classes, without the trees no "Trees", without the roof colours M2's roofs; the terrain
 ## without its buildings, and the buildings without their terrain, the camera then starting
@@ -78,6 +84,9 @@ const EXPORTED_FIX := (
 	"keep mattini.pck and the data packs mattini-*.pck beside the executable:"
 	+ " download the release folder again and keep its files together."
 )
+## The script of the autoload DataPacks, preloaded because it has no class_name and the gate's
+## parse step (--check-only) knows no autoload.
+const DATA_PACKS := preload("res://scripts/data_packs.gd")
 const START_ABOVE_M := 150.0
 ## Clockwise from LV95 north: towards the Matterhorn.
 const START_BEARING_DEG := 235.0
@@ -100,6 +109,9 @@ const TEXTURES_LICENSE := "res://textures/LICENSE.txt"
 ## The streams' placeholder, always in the credits: the surfaces step draws a stream 2 m wide
 ## (its STREAM_WIDTH_MM), because swissTLM3D gives lines and no width.
 const STREAMS_NOTE := "Streams: drawn 2 m wide, an assumed width: swissTLM3D gives none."
+## The frame cap while the pause screen is open (SPEC §13 row 45). The scene behind the pause
+## screen still draws, at most this many times a second.
+const PAUSED_MAX_FPS := 15
 ## The pause screen's list of controls: each InputMap action and what it does.
 const CONTROLS := [
 	[&"fly_forward", "fly forward, along the view"],
@@ -120,6 +132,9 @@ var _east := Vector3.ZERO
 var _north := Vector3.ZERO
 var _up := Vector3.ZERO
 var _terrain: Terrain3D
+## The messages of the data packs an exported build is missing, asked before the manifest is
+## read; empty outside an exported build.
+var _missing_packs := PackedStringArray()
 
 @onready var _camera: FreeFlyCamera = $Camera
 @onready var _sun: DirectionalLight3D = $Sun
@@ -143,6 +158,10 @@ func _ready() -> void:
 	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(datasets)
 
 
+func _exit_tree() -> void:
+	Engine.max_fps = _project_max_fps()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"pause"):
 		toggle_pause()
@@ -150,20 +169,33 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## Opens the pause screen, or closes it when it is open. While it is open the camera
-## ignores its controls and the mouse is free.
+## ignores its controls, the mouse is free and the frame rate is capped at PAUSED_MAX_FPS;
+## closing it gives back the project's cap (_project_max_fps).
 func toggle_pause() -> void:
 	var open := not _pause_menu.visible
 	_pause_menu.visible = open
 	_camera.input_enabled = not open
+	Engine.max_fps = PAUSED_MAX_FPS if open else _project_max_fps()
 	if open:
 		_resume.grab_focus()
 
 
-## Reads the manifest and every block, then builds the terrain, the trees and the buildings,
-## and prints one startup line per block read. A refused manifest shows nothing; a refused
-## block leaves the others shown (see the file's comment). Every refusal opens the error
-## panel. Returns the credits' line of each dataset loaded, one per distinct line, sorted.
+## The project's frame cap, application/run/max_fps, read each time this is called and never a
+## literal.
+static func _project_max_fps() -> int:
+	return ProjectSettings.get_setting("application/run/max_fps")
+
+
+## In an exported build it first asks which data packs are missing. Reads the manifest and every
+## block, then builds the terrain, the trees and the buildings, and prints one startup line per
+## block read. A refused manifest shows nothing; a refused block leaves the others shown (see
+## the file's comment). Every refusal, and in an exported build every missing data pack, opens
+## the error panel. Returns the credits' line of each dataset loaded, one per distinct line,
+## sorted.
 func _load_world() -> PackedStringArray:
+	_missing_packs = PackedStringArray()
+	if ReleaseBuild.is_exported():
+		_missing_packs = DATA_PACKS.missing_pack_errors(OS.get_executable_path().get_base_dir())
 	var read_world := _caught(WorldConfig.from_manifest.bind(manifest_path))
 	var world: WorldConfig = read_world[0]
 	if world == null:
@@ -213,7 +245,7 @@ func _load_world() -> PackedStringArray:
 		if grid == null:
 			_start_view_over(node)
 	_print_startup_lines(grid, buildings, photo, surfaces, trees, roofs)
-	if not refusals.is_empty():
+	if not refusals.is_empty() or not _missing_packs.is_empty():
 		_show_error(refusals)
 	return _credited(grid, buildings, photo, surfaces, trees, roofs)
 
@@ -411,10 +443,13 @@ func _terrain_source() -> Dictionary:
 	return terrain["source"]
 
 
-## Opens the error panel with [method error_text]; an exported build gets the release
-## folder as the fix, a source checkout the commands.
+## Opens the error panel with [method error_text]; an exported build (ReleaseBuild.is_exported())
+## gets the missing data packs after the first line and the release folder as the fix, a source
+## checkout the commands.
 func _show_error(refusals: Array) -> void:
-	_error_message.text = error_text(refusals, manifest_path, OS.has_feature("template"))
+	_error_message.text = error_text(
+		refusals, manifest_path, ReleaseBuild.is_exported(), _missing_packs
+	)
 	_error_panel.show()
 
 
@@ -422,12 +457,25 @@ func _show_error(refusals: Array) -> void:
 ## its reader logged and how to fix it. [param refusals] holds one [what, the messages logged,
 ## the commands] per refusal, in the order of the blocks (the terrain's first); [param path]
 ## is the manifest. [param exported]: a player has no pipeline (brief M3-14), so every fix
-## line, the manifest's included, is the release folder and no command is named.
-static func error_text(refusals: Array, path: String, exported: bool) -> String:
+## line, the manifest's included, is the release folder and no command is named. [param packs]:
+## the missing data packs' messages (DataPacks.missing_pack_errors, an exported build's), shown
+## after the first line and an empty line, before the refusals; with no refusal the first line is
+## "mattini cannot find every data pack." and the fix is the release folder (brief v0.3.1-05,
+## M4-10 decision 5).
+static func error_text(
+	refusals: Array, path: String, exported: bool, packs := PackedStringArray()
+) -> String:
 	var what := PackedStringArray()
 	for refusal: Array in refusals:
 		what.append(refusal[0])
-	var lines := PackedStringArray(["mattini cannot show %s." % _names(what)])
+	var lines := PackedStringArray()
+	if refusals.is_empty():
+		lines.append("mattini cannot find every data pack.")
+	else:
+		lines.append("mattini cannot show %s." % _names(what))
+	if not packs.is_empty():
+		lines.append("")
+		lines.append_array(packs)
 	for refusal: Array in refusals:
 		var messages: PackedStringArray = refusal[1]
 		var fix: Array = refusal[2]
@@ -447,6 +495,9 @@ static func error_text(refusals: Array, path: String, exported: bool) -> String:
 		if not exported:
 			for command: String in fix:
 				lines.append("    " + command)
+	if refusals.is_empty():
+		lines.append("")
+		lines.append("To fix it, " + EXPORTED_FIX)
 	return "\n".join(lines)
 
 
