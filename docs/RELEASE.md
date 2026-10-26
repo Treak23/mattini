@@ -66,6 +66,18 @@ Walk it top to bottom before any version bump.
       data pack, then the terrain's startup line (columns, rows, spacing), the buildings'
       (their count) and, from M3-14, the photo's, the surfaces', the trees' and the roofs'
       lines, and no `ERROR` line (M2-02, M2-05, M3-08, M3-14).
+- [ ] A missing data pack is named (from 0.3.1, FB-005): with `mattini-photo.pck` moved
+      aside, `build/linux/mattini.x86_64 --headless --quit-after 300` (its `user://` in a
+      scratch folder) logs DataPacks' `ERROR` line naming `mattini-photo.pck`, the folder and
+      "the aerial photo", and PhotoGrid's line ending "download the release folder again";
+      the pack goes back and its SHA-256 is checked. Both lines in the record. The error
+      panel's text is not seen here (the release template ignores `--script`): the owner's.
+- [ ] The log is written while the game runs (from 0.3.1, FB-006): start the Linux build
+      headless with stdout to a file and no `--quit-after`; while its process is alive, the
+      file and `user://logs/godot.log` already hold the pack lines and the startup lines;
+      then stop it by its PID. The result in the record.
+- [ ] `tools/export.sh`'s log carries "the game expects mattini-photo.pck
+      mattini-terrain.pck, as written here" (its step 2b, from 0.3.1), quoted in the record.
 - [ ] The build written to `windows/` and `linux/` (fixed names: the current version)
       and to `mattini-<version>/windows/` and `…/linux/`; the previous version's named
       folder stays as the rollback; keep the last three named folders (older ones stay in
@@ -77,7 +89,8 @@ Walk it top to bottom before any version bump.
       keep the five files of a folder together: the game, `mattini.pck`, the data packs and
       Terrain3D's library; without its terrain pack the game says "mattini cannot show the
       terrain", and the fix is to download the folder again (from M3-08; the exported
-      game's error panel says the same from M3-14);
+      game's error panel says the same from M3-14, and from 0.3.1 the log and the panel name
+      the missing pack);
       `.gitattributes` holds `* binary`, with the README as text.
 - [ ] The dist commit carries the version, the `main` sha it was built from, and the
       gate's exit line.

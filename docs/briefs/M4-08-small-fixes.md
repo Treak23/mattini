@@ -1,5 +1,5 @@
 # Brief: M4-08 — The 0.3.0 test's small fixes
-Status: OPEN
+Status: SUPERSEDED by v0.3.1-02, v0.3.1-03 and v0.3.1-04 (the go of 2026-10-25; docs/briefs/v0.3.1-plan.md): its decisions are built there, with re-cut pins
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane H of wave 1 (the arc plan names the waves). It answers FB-005,

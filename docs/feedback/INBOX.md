@@ -13,7 +13,7 @@ Impact: degraded
 Owner's words: not stated (the owner said "fluid"; the GPU load is the tester's measurement)
 What happened: MEASURED over ~15 min (432 samples every 2 s): GPU utilisation 94 % on average, 100 % at peak, also while paused in the Esc menu; 87 C and 111 W at peak. The display runs at 300 Hz and project.godot sets no frame cap, so the GPU renders flat out all the time: heat and fan noise on a laptop. No frame rate was measured (no counter in the game, no MangoHud installed).
 Expected: not stated.
-Repro / where exactly: 0.3.0 dist build on the laptop, windowed, any view including the Esc menu. Samples: /home/reto/mattini-test-0.3.0/resources.csv on the owner's laptop.
+Repro / where exactly: 0.3.0 dist build on the laptop, windowed, any view including the Esc menu. Samples: ~/mattini-test-0.3.0/resources.csv on the owner's laptop.
 Screenshots: none
 Possibly same as: FB-004 (item 10)
 Disposition: → M4-08 (frame cap 60 in the project) and M4-10 (15 while the pause screen is open); SPEC §13 row 45. Design, 2026-10-17.
@@ -37,7 +37,7 @@ Impact: degraded
 Owner's words: not stated (the owner declined this test: "no i dont want to do that. if there are real errors i will screenshot them, i wont fabricate them"; found by the tester, MEASURED)
 What happened: With mattini-photo.pck moved aside, the game did not crash and kept running; the log carries "ERROR: PhotoGrid: res://assets/generated/manifest.json: the photo res://assets/generated/photo/village.jpg is missing; python -m mattini photo rebuilds it". The message gives a developer hint (run the pipeline) and never names mattini-photo.pck, which is what a player of the shipped build would be missing. Whether an error panel appeared on screen: unknown (nobody looked; the tester closed the game after ~30 s). The pack was restored, checksum OK.
 Expected: not stated.
-Repro / where exactly: 0.3.0 dist build, start with mattini-photo.pck removed from the game folder. Log: /home/reto/mattini-test-0.3.0/mattini-0.3.0-no-photo.log on the owner's laptop.
+Repro / where exactly: 0.3.0 dist build, start with mattini-photo.pck removed from the game folder. Log: ~/mattini-test-0.3.0/mattini-0.3.0-no-photo.log on the owner's laptop.
 Screenshots: none
 Possibly same as: FB-004 (item 9)
 Disposition: → M4-08 (DataPacks names a missing pack, the folder and what it holds; in an export the readers' hint says to download the release folder again, not the pipeline) and M4-10 (DataPacks' errors on the error panel); SPEC §13 row 45. Design, 2026-10-17.
@@ -47,7 +47,7 @@ Machine: linux (the owner's laptop, not the RTX 4090 PC: RTX 3060 Laptop GPU 6 G
 Build: 0.3.0 (dist 5f08379, all 10 files match the README's SHA-256 block; pause screen shows "mattini 0.3.0")
 Impact: degraded
 Owner's words: "done the screenshots. water moves but very slightly and looks weird.otherwise fluid and looks not bad. we will skip windows testing if&until im ready to share it to others, not a priority" / "1 yes credit scrolls and i quit" / on item 9, the error-path test: "no i dont want to do that. if there are real errors i will screenshot them, i wont fabricate them" / "i did most of the tests that were asked for at the last build, log the results"
-What happened: The tester's report (REPORT.txt, on the owner's laptop at /home/reto/mattini-test-0.3.0/) keeps three kinds apart: OWNER (verbatim, above), MEASURED (logs, resource sampling) and READ (Claude's reading of the shots, not the owner's verdict). Shot-to-item matching is inferred from the order taken; camera heights are the handoff's targets, not measured.
+What happened: The tester's report (REPORT.txt, on the owner's laptop at ~/mattini-test-0.3.0/) keeps three kinds apart: OWNER (verbatim, above), MEASURED (logs, resource sampling) and READ (Claude's reading of the shots, not the owner's verdict). Shot-to-item matching is inferred from the order taken; camera heights are the handoff's targets, not measured.
 - Log, PASS (MEASURED): the 8 expected lines: data pack mattini-photo.pck loaded / data pack mattini-terrain.pck loaded / terrain village loaded, 4001 x 6001 vertices at 0.5 m / buildings village loaded, 1486 buildings in 6 chunks, 178910 triangles / photo village loaded, 10000 x 15000 texels at 0.2 m / surfaces village loaded, 10000 x 15000 cells at 0.2 m / trees village loaded, 34412 trees in 6 chunks / roofs village loaded, 1486 of 1486 buildings coloured. No ERROR lines; only the known Terrain3D WARNING (instance_reset_physics_interpolation() is deprecated).
 - 1 Start view, "too white" (FB-001): OWNER "looks not bad" (general). READ: not too white; if anything flat and grey: dull grey-blue sky, mid-grey buildings, forest on the shaded slope near-black.
 - 2 Photo sharpness: READ: ~150 m good (cemetery graves readable); ~60 m acceptable; ~30 m soft. On steep terrain (the river's walls) the photo is visibly stretched.

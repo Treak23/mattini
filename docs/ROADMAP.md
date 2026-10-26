@@ -9,25 +9,41 @@ Open items only. Shipped and answered items live in `docs/history/` and
 **M3 Surfaces and trees — closed 2026-10-16: version 0.3.0 is shipped on `dist` (commit `5f08379`, on the owner's word "push dist") and recorded (`docs/releases/v0.3.0.md`).** The plan is
 `docs/briefs/M3-plan.md` (status DONE); the close in full is `docs/history/ARCS.md` §M3. All fourteen briefs and the six review fixes are DONE; rounds R1, V1 and R2 are adjudicated (`docs/reviews/M3-round1.md`, `M3-V1.md`, `M3-round2.md`): no P0, P1 or P2 is open, and the P3 and the Tier 2 P2 are on the residue list below. The standard gate from a fresh clone of `main` `697a154` is exit 0 (pytest 2228, GUT 47 scripts, 261 tests, 9760 asserts, the render step run); the real village rebuilt from the pinned inputs gives the manifest `3ca0445c…`; the ten files are under 100 MiB; a fresh clone of `dist` verifies against the README and its Linux build starts with all eight startup lines.
 
-**The process changed on 2026-10-24** (SPEC §13 row 49, RULINGS 2026-10-24): one session per
-release, `ultracode design`, two days of build each, the owner's inbox first (`docs/WORKFLOW.md`).
-The first such session triages the inbox and the M4 plan into releases of that size.
+**Release 0.3.1 — GO 2026-10-25 (the owner), building.** The 0.3.0 test's items (FB-003 to
+FB-007): five tier-2 batches in one lane, builders on Sonnet, two days and about half a week's
+allowance (`docs/briefs/v0.3.1-plan.md`; the go: `docs/history/blocked/2026-10-25-1.md`). The
+process changed on 2026-10-24 (SPEC §13 row 49, `docs/WORKFLOW.md`); this is its first release.
+- v0.3.1-01 the river — OPEN
+- v0.3.1-02 frame cap, log, edges — OPEN
+- v0.3.1-03 a missing pack named — OPEN
+- v0.3.1-04 the export checks the packs — OPEN
+- v0.3.1-05 the pause cap and the pack panel — OPEN
 
-**M4 Sun cycle — planned (2026-10-17), under the old process.** The owner's answers are SPEC §13
-rows 41–46; the plan is `docs/briefs/M4-plan.md` (ten arc-sized briefs, M4-01 to M4-10, two waves;
-its process note says how the first release session reads it), design's notes
-`docs/briefs/sketches/m4-design.md`.
+**Next release, 0.4.0 — the moving sun:** the rest of M4 (`docs/briefs/M4-plan.md`; the owner's
+answers are SPEC §13 rows 41–48; its process note says what 0.3.1 took and what the next cut must
+rebuild): SkyClock, SkyRig and the physical sky, the stars, the sky step, the main scene's clock
+and keys (about 16 builder hours). Then the far mountains' shadows and the softened photo shadows
+(13 batches, mostly tier 1: one more cut). M4-08 is superseded by 0.3.1's batches.
 
-**Waiting on the owner:** the first `ultracode design` session's triage and go (the go names the
-helpers' model, the budget and the lane count). The M4 plan's two answers are in (2026-10-24: the
-softened shadows kept at G = 3; the stars from the Yale Bright Star Catalogue): SPEC §13 rows 47,
-48. The Windows build's first start stays deferred by the owner ("not a priority" until sharing).
+**Waiting on the owner:** switching the repository to public (the owner's word, 2026-10-26; RULINGS):
+the README's swisstopo credit and the inbox's paths are ready on `main`; then GitHub rulesets
+blocking force pushes and deletions on `main` and `dist` (never `claude/*`, which the janitor
+deletes). A second developer may join: how a person works beside the release sessions (the
+process assumes only agents commit to `main`) is a `design` conversation when they do. The Windows
+build's first start stays deferred by the owner ("not a priority" until sharing).
 
 **Open licence question:** the Yale Bright Star Catalogue (BSC5) states no licence anywhere
-authoritative; settle it (or swap the source) before any commercial release (SPEC §13 row 48).
+authoritative (the triage of 2026-10-25: NASA's old archive called its data public domain, the
+catalogue's ReadMe restricts distribution to that archive's CD; every alternative is worse). 0.4.0
+decides whether it must be settled before any sale or before sharing at all (the repository goes public:
+the stars table is published the day M4-05 commits it), and its closing condition (SPEC §13 row 48).
 
-**Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session decides 2): none. (M3 fix-3's three were audited and kept, RULINGS
-2026-10-17.)
+**Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session
+decides 2), release 0.3.1: four water screenshots instead of M4-06's two (v0.3.1-01); the copied
+pins' comments re-pinned with the 0.3.1 brief ids (v0.3.1-02 to -05); if a render check fails under
+MSAA, the render scripts turn MSAA off (they measure placement, not edges); ReleaseBuild's comment
+names no caller, so v0.3.1-05 edits no file of v0.3.1-03; the three new release-gate checks are
+permanent in `docs/RELEASE.md` §C. The briefs' Findings carry both options of each.
 
 **Last shipped:** 0.3.0, 2026-10-16: the village in a realistic look made from the data
 (`docs/releases/v0.3.0.md`; `dist` `5f08379`, built from `main` `697a154`). Before it: 0.2.0, 2026-09-26, the village with its
@@ -52,15 +68,18 @@ Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in fu
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0 to M3
 are closed.
 
-1. M4 Sun cycle — planned 2026-10-17 (`docs/briefs/M4-plan.md`), to be cut into two-day releases by the first `ultracode design` session
-2. M5 Scale up — ARC
-3. M6 Weather and walking — ARC
+1. 0.3.1 — the 0.3.0 test's fixes (building, `docs/briefs/v0.3.1-plan.md`)
+2. 0.4.0 — the moving sun (the rest of M4's sky)
+3. The far mountains' shadows and the softened photo shadows (the rest of M4)
+4. M5 Scale up
+5. M6 Weather and walking
 
 ## DEFERRED, said out loud
 
-M4's list, with reasons and costs, is in `docs/briefs/M4-plan.md` §DEFERRED (M3's in
-`docs/briefs/M3-plan.md`). Every Open inbox entry (FB-003 to FB-007) has its disposition into M4;
-FB-001 is closed (0.3.0, ARCHIVE).
+0.3.1's list, with reasons and costs, is in `docs/briefs/v0.3.1-plan.md` §DEFERRED (M4's in
+`docs/briefs/M4-plan.md`, M3's in `docs/briefs/M3-plan.md`). Every Open inbox entry (FB-003 to
+FB-007) is in 0.3.1 or on its DEFERRED list (FB-004 items 1, 3, 5 and the look items); FB-001 is
+closed (0.3.0, ARCHIVE).
 
 ## Residues and hazards
 
@@ -79,14 +98,18 @@ FB-001 is closed (0.3.0, ARCHIVE).
 - A session's checkout is shallow, and its local `main` can be an old ref that `git pull`
   calls diverged (brain.md H14): the spawn prompts' sync line handles it since M2
   planning.
-- Two M1 sessions of the former supervisor were not archived at the close, because the
-  auto-mode classifier refused it: `session_01Nf7BgWfr9p8KWviRiSQHKG` and
-  `session_01X6QWucdq2PdcnnthGwjLX9`. For the owner, from the session list.
+- Process residue (the 0.3.1 triage, 2026-10-25): `docs/roles/FEEDBACK.md` commits each item
+  without the gate, which lesson 18 forbids (a rule stated two ways, older than the process
+  change); no tool reads the weekly allowance (DESIGN.md step 3 reports the five-hour status and
+  the API-equivalent cost); the lane-session path is not written (one lane per release until it
+  is); a `:<branch>` deletion refspec has no deny rule; WORKFLOW's "a tier-1 batch runs alone in
+  its lane" has no testable meaning with one lane; builder worktrees that hold commits stay in
+  the session's container (the harness removes only unchanged ones).
 
 ## M3 R1 residue (P2 and P3 of round R1, `docs/reviews/M3-round1.md`)
 
 I-01 (P2, the PNG's bytes and zlib) is fix brief `M3-R1-fix-6`; P-01 and P-03 are `M3-R1-fix-2` and `-3` (all three DONE, 2026-10-16).
-For design (fix wave): `tests/shared/surfaces_vectors.json` still says "its bytes depend on the zlib build, so only its pixels are pinned" (stale since fix-6; design's file, outside every lane's Scope); brain.md H12 may gain one line: under Xvfb a Godot run needs `--audio-driver Dummy` or ALSA's probe prints an `ERROR` line the gate's scan refuses (fix-3 Findings 10); the render step's trees check sees a synthetic flat world and 20 trees, not the village's relief or its MultiMesh cells (fix-3 Findings 10d).
+For design (fix wave): `tests/shared/surfaces_vectors.json` still says "its bytes depend on the zlib build, so only its pixels are pinned" (stale since fix-6; design's file, outside every lane's Scope); the render step's trees check sees a synthetic flat world and 20 trees, not the village's relief or its MultiMesh cells (fix-3 Findings 10d).
 P2: **G-02** `source_color` of the photo, detail textures and tree colours is pinned by no test;
 **G-04** (the part that is not Hard Rule 4) the readers' refusal tests assert refusal, not cause;
 **G-05** 22 of 31 mutations of `tools/export.sh`'s refusals leave its tests green (step 5's 100 MiB
@@ -104,7 +127,7 @@ carried items: `PhotoGrid` does not refuse a photo wider than 16384 texels (M3-0
 `trees.py` imports private grid helpers from `surfaces.py`, a manifest write cut before its rename
 leaves `manifest.json.part` (M3-13 Findings 8).
 
-Round R2 (`docs/reviews/M3-round2.md`, closed clean), all P3: P-01 the render step's trees check passes with no tree drawn (`VISIBILITY_END_M`, a `discard`, a zero draw count leave the whole gate green) and its PASS line says "over 20 trees"; P-02 the render world is 16 m wide, flat and positive-coordinates-only (an `abs()`, a scale of 1.002, a shift of the terrain's vertices pass; nine edits move it north-west); P-03 the classes check reads the water class only, and CLAUDE.md, SPEC §12 and the `tools/gate.sh` header say "the surface classes" (design's wording); P-04 the classes check's 0.1 m rule rests on three samples in one direction; S-01 no test gives a 40 to 63 digit hex string to the SHA-256 check (only the message would be lost); S-02 RELEASE.md §C's manifest box prints nothing on a wrong size (the release walk records `wc -c` and the exit status); S-03 SPEC §8's config shape omits `expected_png_sha256`; V1-2 and V1-3 below stay open.
+Round R2 (`docs/reviews/M3-round2.md`, closed clean), all P3: P-01 the render step's trees check passes with no tree drawn (`VISIBILITY_END_M`, a `discard`, a zero draw count leave the whole gate green) and its PASS line says "over 20 trees"; P-02 the render world is 16 m wide, flat and positive-coordinates-only (an `abs()`, a scale of 1.002, a shift of the terrain's vertices pass; nine edits move it north-west); P-03 the classes check reads the water class only, and the `tools/gate.sh` header and `game/tests/render/render_common.gd` say "the surface classes" (CLAUDE.md and SPEC §12 corrected 2026-10-25; the rest is a builder's); P-04 the classes check's 0.1 m rule rests on three samples in one direction; S-01 no test gives a 40 to 63 digit hex string to the SHA-256 check (only the message would be lost); S-02 RELEASE.md §C's manifest box prints nothing on a wrong size (the release walk records `wc -c` and the exit status); S-03 SPEC §8's config shape omits `expected_png_sha256`; V1-2 and V1-3 below stay open.
 
 Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified, no P0 to P2), all P3: V1-1 fix-1's placement census does not name `xz` or `origin` (an edit of either after its declaration moves the classes or the crowns' colour with the gate green: the remainder of P-03); V1-2 fix-4's normal census counts lines that begin with `NORMAL` (a braced second statement passes, a correct `dFdyCoarse` spelling fails); V1-3 the scene-level tree tests see one cell south-east of the origin (a sign error that shows only at x < 0 passes); V1-4 `ManifestValue.differs` calls a String and a StringName different types (no site passes a StringName); V1-5 the fix-5 brief's gate boxes were unticked (ticked).
 
