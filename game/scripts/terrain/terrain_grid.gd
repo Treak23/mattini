@@ -212,7 +212,7 @@ func _read_heights(folder: String, terrain: Dictionary) -> String:
 	if typeof(sha256) != TYPE_STRING or sha256.length() != 64 or not sha256.is_valid_hex_number():
 		return "terrain.sha256 must be 64 hex digits, found %s" % [sha256]
 	var heights_path := folder.path_join(file)
-	var rebuild := "; %s rebuilds it" % TERRAIN_COMMAND
+	var rebuild := ReleaseBuild.file_hint(TERRAIN_COMMAND)
 	if not FileAccess.file_exists(heights_path):
 		return "the heights file %s is missing%s" % [heights_path, rebuild]
 	var expected_size := columns * rows * 4

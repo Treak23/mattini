@@ -246,7 +246,7 @@ func _read_image(folder: String, photo: Dictionary) -> String:
 			% [file]
 		)
 	var jpeg_path := folder.path_join(file)
-	var rebuild := "; %s rebuilds it" % PHOTO_COMMAND
+	var rebuild := ReleaseBuild.file_hint(PHOTO_COMMAND)
 	if not FileAccess.file_exists(jpeg_path):
 		return "the photo %s is missing%s" % [jpeg_path, rebuild]
 	var data := FileAccess.get_file_as_bytes(jpeg_path)
@@ -262,7 +262,7 @@ func _read_image(folder: String, photo: Dictionary) -> String:
 ## Decodes the JPEG (its SHA-256 already checked), checks its size and format, and makes the
 ## texture with mipmaps.
 func _make_texture(data: PackedByteArray, jpeg_path: String) -> String:
-	var rebuild := "; %s rebuilds it" % PHOTO_COMMAND
+	var rebuild := ReleaseBuild.file_hint(PHOTO_COMMAND)
 	var image := Image.new()
 	var decode_error := image.load_jpg_from_buffer(data)
 	if decode_error != OK:

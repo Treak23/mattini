@@ -276,7 +276,7 @@ func _read_chunk(folder: String, entry: Dictionary) -> String:
 	var tile: String = entry["tile"]
 	var count := int(entry["trees"])
 	var chunk_path := folder.path_join(entry["file"])
-	var rebuild := "; %s rebuilds it" % TREES_COMMAND
+	var rebuild := ReleaseBuild.file_hint(TREES_COMMAND)
 	if not FileAccess.file_exists(chunk_path):
 		return "chunk %s: the file %s is missing%s" % [tile, chunk_path, rebuild]
 	var expected_size := TREE_BYTES * count

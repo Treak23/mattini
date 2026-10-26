@@ -198,7 +198,7 @@ func _read_chunk(folder: String, entry: Dictionary) -> String:
 	var vertices := int(entry["vertices"])
 	var triangles := int(entry["triangles"])
 	var chunk_path := folder.path_join(entry["file"])
-	var rebuild := "; %s rebuilds it" % BUILDINGS_COMMAND
+	var rebuild := ReleaseBuild.file_hint(BUILDINGS_COMMAND)
 	if not FileAccess.file_exists(chunk_path):
 		return "chunk %s: the file %s is missing%s" % [tile, chunk_path, rebuild]
 	var expected_size := VERTEX_BYTES * vertices + TRIANGLE_BYTES * triangles

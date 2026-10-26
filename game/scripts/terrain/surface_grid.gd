@@ -272,7 +272,7 @@ func _read_image(folder: String, surfaces: Dictionary) -> String:
 			% [file]
 		)
 	var png_path := folder.path_join(file)
-	var rebuild := "; %s rebuilds it" % SURFACES_COMMAND
+	var rebuild := ReleaseBuild.file_hint(SURFACES_COMMAND)
 	if not FileAccess.file_exists(png_path):
 		return "the class image %s is missing%s" % [png_path, rebuild]
 	var data := FileAccess.get_file_as_bytes(png_path)
@@ -288,7 +288,7 @@ func _read_image(folder: String, surfaces: Dictionary) -> String:
 ## Decodes the PNG (its SHA-256 already checked) to L8, checks its size and its decoded
 ## bytes' SHA-256, and keeps the classes and their texture.
 func _make_texture(data: PackedByteArray, png_path: String, pixels_sha256: String) -> String:
-	var rebuild := "; %s rebuilds it" % SURFACES_COMMAND
+	var rebuild := ReleaseBuild.file_hint(SURFACES_COMMAND)
 	var image := Image.new()
 	var decode_error := image.load_png_from_buffer(data)
 	if decode_error != OK:
