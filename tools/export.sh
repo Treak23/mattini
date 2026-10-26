@@ -17,6 +17,12 @@
 #      commands that build the first missing one, in order (brief M3-14). Nothing is exported
 #      before this check (M2 R1 G-03: it used to run before the rewrite, so a block the
 #      rewrite dropped was found only after both exports);
+#   2b. refuses unless the data packs the game expects, the one-line const EXPECTED_PACKS of
+#      game/scripts/data_packs.gd (read with a regular expression, in its order), are
+#      exactly mattini-<folder>.pck for each folder of PACKED_FOLDERS below, in its order,
+#      naming that file, both lists and "nothing was exported"; a data_packs.gd without that
+#      one line, or with it twice, is refused too. Nothing is downloaded or exported before
+#      this check (brief v0.3.1-04; FB-005: a release folder without a pack the game needs);
 #   3. installs Godot 4.6.3-stable's export templates for these two presets into Godot's
 #      templates folder when they are missing, from Godot's download mirror (github.com
 #      release downloads are refused in cloud containers, brain.md H6), verified against
@@ -29,7 +35,9 @@
 #      (photo, terrain) are too large for mattini.pck, which the presets keep them out of,
 #      so game/tools/pack.gd writes each folder that exists into build/linux/mattini-<folder>.pck
 #      (a folder that does not exist gets no pack, and the script says so), and the pack is
-#      copied beside the Windows executable too; then
+#      copied beside the Windows executable too. Then it refuses, naming the packs written
+#      and the packs the game expects, unless they are the same, in order; the Linux build
+#      is not started then (brief v0.3.1-04); then
 #      4c. reads the directory of mattini.pck and of every mattini-*.pck in each build folder
 #      (Godot 4.6.3's pack format 3, in Python) and fails, listing every problem, unless each
 #      file under game/assets/generated/ (but names starting with ".", *.part and *.import)
@@ -92,8 +100,16 @@ PRESETS=(
 )
 LIMIT_BYTES=104857600
 # The generated folders that ship as data packs beside the executable, in name order, and
-# the same list the presets' exclude filters hold (game/export_presets.cfg; brief M3-08).
+# the same list the presets' exclude filters hold (game/export_presets.cfg; brief M3-08);
+# step 2b requires game/scripts/data_packs.gd to expect exactly their packs, in this order.
 PACKED_FOLDERS=(photo terrain)
+# Step 2b: the script that names the data packs the game expects, and the one line of it that
+# does (an extended regular expression, matched on a line at a time).
+DATA_PACKS_GD="game/scripts/data_packs.gd"
+EXPECTED_PACKS_PATTERN='^const EXPECTED_PACKS := \["[^" ]+"(, "[^" ]+")*\]$'
+# Step 2b sets it: the pack names that line holds, in its order, joined by one blank. The
+# check at the end of step 4b compares the packs written with it.
+PACKS_EXPECTED=""
 # Step 4c: a generated file of this size (10 MiB) or more must be in a packed folder.
 UNPACKED_LIMIT_BYTES=10485760
 # Step 4b: the pack tool is killed if it has not quit after this many seconds (a 96 MB
@@ -362,6 +378,27 @@ step "2. the manifest step 1 wrote has all six blocks"
 require_blocks
 echo "all six blocks are there: terrain, buildings, photo, surfaces, trees and roofs"
 
+step "2b. the data packs the game expects are the ones this script writes"
+[ -f "$DATA_PACKS_GD" ] || fail "$DATA_PACKS_GD is missing: nothing was exported"
+# Read as text, a CR at a line's end removed first (the gate's rule for every scan); grep -a, so
+# a NUL byte cannot turn the scan into "binary file matches" (brain.md H9). Exactly one line
+# must match; a grep that finds nothing exits 1, hence the || true and the count checked here.
+sed -e 's/\r$//' "$DATA_PACKS_GD" > "$SCRATCH/data_packs.gd"
+matching="$(grep -a -c -E "$EXPECTED_PACKS_PATTERN" "$SCRATCH/data_packs.gd" || true)"
+[ "$matching" = "1" ] \
+	|| fail "$DATA_PACKS_GD has no one-line const EXPECTED_PACKS := [\"<name>.pck\", ...], or has it more than once: nothing was exported"
+# The quoted names of that line, in the order written (the pattern allows no blank or quote in
+# one), joined by one blank, so two lists compare as two strings.
+PACKS_EXPECTED="$(grep -a -E "$EXPECTED_PACKS_PATTERN" "$SCRATCH/data_packs.gd" | grep -a -o -E '"[^" ]+"' | tr -d '"' | tr '\n' ' ')"
+PACKS_EXPECTED="${PACKS_EXPECTED% }"
+packs_here=""
+for packed_folder in "${PACKED_FOLDERS[@]}"; do
+	packs_here+="${packs_here:+ }mattini-$packed_folder.pck"
+done
+[ "$PACKS_EXPECTED" = "$packs_here" ] \
+	|| fail "$DATA_PACKS_GD expects the data packs $PACKS_EXPECTED, but this script writes $packs_here (PACKED_FOLDERS); the two must be the same, in order: nothing was exported"
+echo "the game expects $PACKS_EXPECTED, as written here"
+
 step "3. Godot $GODOT_VERSION's export templates"
 found="$("$GODOT" --version 2>&1)" || fail "$GODOT --version failed: $found"
 case "$found" in
@@ -441,6 +478,13 @@ for folder in "${PACKED_FOLDERS[@]}"; do
 	mv -f "build/windows/$pack.part" "build/windows/$pack"
 	PACKS_WRITTEN+=("$pack")
 done
+# A plain check (brief v0.3.1-04): the packs written are the ones step 2b read, in order, or the
+# Linux build is not started. Step 2 already refuses a packed folder whose manifest block is
+# null, so this guards a packed folder that has no manifest block of its own, or a folder lost
+# after step 1.
+packs_written="${PACKS_WRITTEN[*]:-none}"
+[ "$packs_written" = "$PACKS_EXPECTED" ] \
+	|| fail "the data packs written ($packs_written) are not the ones the game expects ($PACKS_EXPECTED); the Linux build was not started"
 
 step "4c. every generated file is in exactly one pack, as it is"
 build_folders=()

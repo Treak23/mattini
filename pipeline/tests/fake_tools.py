@@ -31,6 +31,16 @@ and this paragraph change): the export ships six blocks, so the stand-in manifes
 terrain, buildings, photo, surfaces, trees and roofs blocks, and the started build prints
 their six startup lines, M2's two first (test_export_startup_lines.py pins them).
 
+Since brief v0.3.1-04 (M4-08 decisions 5 and 6; design's full replacement of M3-R1-fix-3's
+file; only `FAKE_GODOT`'s pack tool, `export_tree`, `PACK_LINES`, `STARTUP_LINES`,
+`packed_files`, the `pack` command at the end and this paragraph change): tools/export.sh
+refuses a release whose data packs are not exactly DataPacks.EXPECTED_PACKS, which it reads
+from game/scripts/data_packs.gd. So the export tree
+holds that file and both packed folders (a small stand-in file in each), the stand-in Godot
+runs the pack tool (`-s res://tools/pack.gd -- <pack> res://assets/generated/<folder>`) as
+game/tools/pack.gd does, writing every file of the folder in name order at its res:// path,
+and the started build prints one line per pack before the six.
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -81,6 +91,10 @@ for ((i = 0; i < ${#args[@]}; i++)); do
 		addons/gut/gut_cmdln.gd)
 			cat "$FAKE_GUT_OUTPUT"
 			exit "${FAKE_GUT_EXIT:-0}"
+			;;
+		res://tools/pack.gd)
+			"$FAKE_PYTHON" "$FAKE_TOOLS" pack "${args[$((i + 2))]}" "${game:-game}" "${args[$((i + 3))]}"
+			exit $?
 			;;
 		res://tests/render/*.gd)
 			name="${args[$i]##*/}"
@@ -448,7 +462,12 @@ MANIFEST = {
         "chunks": [{"trees": 5734}, {"trees": 3662}, {"trees": 25027}],
     },
 }
+PACK_LINES = (
+    f"mattini {VERSION}: data pack mattini-photo.pck loaded",
+    f"mattini {VERSION}: data pack mattini-terrain.pck loaded",
+)
 STARTUP_LINES = (
+    *PACK_LINES,
     f"mattini {VERSION}: terrain village loaded, 4001 x 6001 vertices at 0.5 m",
     f"mattini {VERSION}: buildings village loaded, 1486 buildings in 2 chunks, 178910 triangles",
     f"mattini {VERSION}: photo village loaded, 10000 x 15000 texels at 0.2 m",
@@ -459,19 +478,26 @@ STARTUP_LINES = (
 
 
 def export_tree(tmp_path: Path, templates_dir: Path | None) -> Path:
-    """A scratch repository for tools/export.sh: the script, game/project.godot, a manifest
-    with both blocks (step 1's rewrite is the stand-in uv's no-op), and, unless None,
-    Godot's export templates installed in `templates_dir`."""
+    """A scratch repository for tools/export.sh: the script, game/project.godot,
+    game/scripts/data_packs.gd (its EXPECTED_PACKS), a manifest with the six blocks (step
+    1's rewrite is the stand-in uv's no-op), a small stand-in file in each packed folder
+    (PACKED_FOLDERS), and, unless None, Godot's export templates installed in
+    `templates_dir`."""
     import json
 
     root = tmp_path / "repo"
     (root / "tools").mkdir(parents=True)
     shutil.copy2(REPO / "tools" / "export.sh", root / "tools" / "export.sh")
-    (root / "game").mkdir()
+    (root / "game" / "scripts").mkdir(parents=True)
     shutil.copy2(REPO / "game" / "project.godot", root / "game" / "project.godot")
+    data_packs = root / "game" / "scripts" / "data_packs.gd"
+    shutil.copy2(REPO / "game" / "scripts" / "data_packs.gd", data_packs)
     manifest = root / "game" / "assets" / "generated" / "manifest.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(json.dumps(MANIFEST, indent=2), encoding="utf-8")
+    for folder, name, size in (("photo", "village.jpg", 70), ("terrain", "village.f32", 44)):
+        (manifest.parent / folder).mkdir()
+        (manifest.parent / folder / name).write_bytes(bytes(range(size)))
     (root / "pipeline").mkdir()
     if templates_dir is not None:
         templates_dir.mkdir(parents=True)
@@ -520,5 +546,16 @@ def start_output(lines=STARTUP_LINES) -> str:
     )
 
 
+def packed_files(game: Path, folder: str) -> list[tuple[str, bytes]]:
+    """What game/tools/pack.gd puts into a data pack from `folder` (res://assets/generated/<x>):
+    every file of the folder, in name order, at its path without res://."""
+    rel = folder.removeprefix("res://")
+    files = sorted(path for path in (game / rel).iterdir() if path.is_file())
+    return [(f"{rel}/{path.name}", path.read_bytes()) for path in files]
+
+
 if __name__ == "__main__" and sys.argv[1:2] == ["pck"]:  # the stand-in Godot's export
     write_pck(Path(sys.argv[2]), exported_files(Path(sys.argv[3])))
+if __name__ == "__main__" and sys.argv[1:2] == ["pack"]:  # the stand-in Godot's pack tool
+    write_pck(Path(sys.argv[2]), packed_files(Path(sys.argv[3]), sys.argv[4]))
+    print("pack: wrote " + sys.argv[2])

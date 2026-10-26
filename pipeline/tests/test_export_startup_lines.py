@@ -22,8 +22,13 @@ The script under test is the repository's own, run on stand-ins (fake_tools.py, 
 M3-02); here the stand-in Godot also writes the data packs, as game/tools/pack.gd does, so
 step 4c reads real pack directories.
 
-Does NOT prove: that the real build prints these lines (the brief's export run does); the
-Windows build (the owner's PC).
+Since brief v0.3.1-04 (M4-08 decisions 5 and 6; design's full replacement of M3-14's file;
+only `_tree`'s folders, the export run named under "Does NOT prove" and this paragraph
+change): fake_tools.export_tree makes both packed folders itself, so `_tree` only writes its
+files into them.
+
+Does NOT prove: that the real build prints these lines (the release gate's export run does,
+docs/RELEASE.md §C); the Windows build (the owner's PC).
 """
 
 import json
@@ -109,7 +114,7 @@ def _tree(tmp_path: Path, manifest: dict) -> Path:
     generated = root / "game" / "assets" / "generated"
     (generated / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     for folder, name, size in (("photo", "village.jpg", 70), ("terrain", "village.f32", 44)):
-        (generated / folder).mkdir()
+        (generated / folder).mkdir(exist_ok=True)
         (generated / folder / name).write_bytes(bytes(range(size)))
     return root
 
