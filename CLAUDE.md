@@ -44,7 +44,7 @@ guards Hard Rules 4 and 5 (`config/world.json`, the coordinate transforms on bot
 the pipeline's determinism) MUST have tests, mutation-proved.
 
 **Three gate levels** (WORKFLOW §Gates): the standard gate is the commit gate, chained to
-every commit; the batch gate runs it once more from a clean worktree at the pushed head with
+every commit (the clerk's inbox commits take the hygiene tests: WORKFLOW §Gates); the batch gate runs it once more from a clean worktree at the pushed head with
 the brief's own gates and mutation rows before a brief is DONE; the release gate is
 `docs/RELEASE.md` §B and §C from a fresh clone, once per release, solo. A gate is never
 polled.

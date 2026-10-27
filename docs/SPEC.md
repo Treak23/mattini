@@ -770,7 +770,8 @@ and `computed_for` like every step above; their rules in full are `docs/briefs/s
 - `sky`: the area's latitude, longitude and true-to-grid angle (−0.2258° for the village: a grid
   azimuth is the true azimuth minus 0.2258) from `config/sky.json`, for the game's sun;
   `sky/<area>.json`.
-The manifest gains the `surroundings`, `shadows` and `sky` blocks (twelve keys at the top).
+The manifest gains the `surroundings`, `shadows` and `sky` blocks (twelve keys at the top); 0.4.0 adds `sky`
+alone (ten keys) and the surfaces block's `flow` object (briefs v0.4.0-01, -07).
 
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same
@@ -873,8 +874,12 @@ M3-12, M3-14):**
     outside the photo).
   - On it, swissTLM3D's classes (`SurfaceGrid`): roads with a CC0 asphalt grain and paths
     with gravel, both fading out by 150 m; water in the photo's own colour (albedo × 0.9),
-    roughness 0.3, two noise normal maps tiling every 2 m and 3.4 m drifting apart at 0.8 m/s,
-    its edge eased over 1 m (from 0.3.1, brief v0.3.1-01; 0.3.0: × 0.6, roughness 0.05, a 0.2 m
+    roughness 0.3, two noise normal maps tiling every 2 m and 3.4 m, its edge eased over 1 m; from
+    0.4.0 (§13 row 53, briefs v0.4.0-01 to -03) both maps drift downstream (0.8 and 0.5 m/s, look
+    values) along a 2 m flow grid the surfaces step paints from swissTLM3D's watercourse lines (the
+    nearest line's downstream bearing within 12 m, one byte per cell), read by `SurfaceGrid` through the
+    world config, in two crossfaded phases of 2 s so nothing jumps when TIME wraps (0.3.1: drifting apart
+    at 0.8 m/s with no net direction) (from 0.3.1, brief v0.3.1-01; 0.3.0: × 0.6, roughness 0.05, a 0.2 m
     edge); steep rock (blended in between 35° and 55°)
     with a triplanar CC0 rock texture tinted to the photo's colour.
   - Roofs in the colour the photo gives each building (an sRGB vertex colour). Walls one
@@ -935,7 +940,7 @@ M3-12, M3-14):**
 - *The far mountains:* a shadows-only mesh from the `surroundings` block casts the mountains'
   shadows (Forward+; Compatibility draws none); nothing of it is visible until M5.
 - *The photo's baked shadows* lifted 3× inside the capture mask (§13 row 41); *the water* in the
-  photo's colour × 0.9, roughness 0.3, turbulent ripples, a soft bank.
+  photo's colour × 0.9, roughness 0.3, ripples flowing downstream (0.4.0), a soft bank.
 - *The machine:* a frame cap of 60 (15 while paused), the log flushed per line, MSAA 4×; in an
   export a missing data pack is named, and the readers say to download the release folder again.
 - *Not in M4:* the far mountains drawn (M5), weather and snow (M6), lit windows, bridges.

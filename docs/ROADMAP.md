@@ -20,7 +20,8 @@ Hipparcos Catalogue (2a), the sky step, the sun and the moon in the main scene, 
 four leftovers (I-03, F6, two §C checks, the clerk's gate); the version. Two days of build plus the day 1b adds,
 about half a week's allowance, one lane, builders on Sonnet. The batches wait for the owner: the seven-day
 allowance read `allowed_warning` at the go (reset 2026-10-29 06:00 UTC), and the owner starts the build in the
-release session's chat ("5a … ill start it manually"). The plan: `docs/briefs/v0.4.0-plan.md` (with the briefs).
+release session's chat ("5a … ill start it manually"). The plan: `docs/briefs/v0.4.0-plan.md`: ten briefs, six tier 1, all rehearsed together (the real village's
+manifest 324'931 bytes, `a03c5722…`).
 
 **The owner's first look at 0.3.1 (2026-10-26):** it starts with 4× MSAA, 60 fps and 15 paused, the GPU at
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
@@ -37,7 +38,9 @@ deletion and non-fast-forward pushes on `main` and `dist` with no bypass actors.
 files removed. The Yale catalogue was refused (no licence; the ADC's recorded word forbids altered copies).
 
 **Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session
-decides 2), release 0.3.1, kept at 0.4.0's go (2026-10-27, shown to the owner, no objection): four water screenshots instead of M4-06's two (v0.3.1-01); the copied
+decides 2), release 0.4.0 (the plan): SkyClock (v0.4.0-04) at tier 1 although it reads no world config; the sky rig and
+the stars (05, 06) at tier 2, their frame reviewed in 08 at tier 1; the river's ripples run in real time whatever the
+game clock does. Release 0.3.1, kept at 0.4.0's go (2026-10-27, shown to the owner, no objection): four water screenshots instead of M4-06's two (v0.3.1-01); the copied
 pins' comments re-pinned with the 0.3.1 brief ids (v0.3.1-02 to -05); if a render check fails under
 MSAA, the render scripts turn MSAA off (they measure placement, not edges); ReleaseBuild's comment
 names no caller, so v0.3.1-05 edits no file of v0.3.1-03; the three new release-gate checks are
@@ -110,9 +113,7 @@ closed (0.3.0, ARCHIVE).
   where `pack.gd` refuses, and a refused export leaves an unfinished `build/`; F6 `ReleaseBuild`'s comment
   against the census's `until_m4_10` exemption (next cut); F7 the frame-cap test's engine half has a second
   writer since v0.3.1-05; F10 `test_m4_08_data_packs_expected.gd` leaves scratch subfolders in `user://`.
-- Process residue (the 0.3.1 triage, 2026-10-25): `docs/roles/FEEDBACK.md` commits each item
-  without the gate, which lesson 18 forbids (a rule stated two ways, older than the process
-  change); no tool reads the weekly allowance (DESIGN.md step 3 reports the five-hour status and
+- Process residue (the 0.3.1 triage, 2026-10-25): the clerk's gate is settled (WORKFLOW §Gates, 2026-10-27); no tool reads the weekly allowance (DESIGN.md step 3 reports the five-hour status and
   the API-equivalent cost); the lane-session path is not written (one lane per release until it
   is); a `:<branch>` deletion refspec has no deny rule; WORKFLOW's "a tier-1 batch runs alone in
   its lane" has no testable meaning with one lane; builder worktrees that hold commits stay in

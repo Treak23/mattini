@@ -124,6 +124,13 @@ report, never a reason to raise the number. **A gate is never polled:** it runs 
 shell tool's tracked background task, or in the foreground redirected to a log, and the
 agent makes no call until it returns. An untracked background run dies with the turn.
 
+**The clerk's commits** touch only `docs/feedback/` and are chained to the tests that read
+those files, `pipeline/tests/test_repo_hygiene.py` (`docs/roles/FEEDBACK.md` rule 6), not to
+the standard gate: a filing then costs seconds and never waits on a `main` that is red for
+someone else. This holds while `git grep -l -e INBOX -e docs/feedback -- pipeline/tests
+game/tests tools` finds no other test; when it finds one, the clerk's commits take the
+standard gate (lesson 18; the owner's "4c", 2026-10-27).
+
 Every gate carries its "does NOT prove" line (lesson 10). A source census proves text,
 never behaviour (lesson 5): it is never the sole gate for code that runs at scene load,
 `_ready()`, autoload initialisation or pipeline start-up.

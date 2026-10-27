@@ -106,7 +106,9 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
 18. `[all]` **A docs-only commit is not exempt from the gate.** Some tests pin the docs; a
     reworded heading broke `main` for ninety minutes. Grep the test tree for the file's name
     before pushing prose; when writing such a test, pin the substance, never the status
-    prefix meant to change.
+    prefix meant to change. *Now:* the clerk's commits, which touch only `docs/feedback/`,
+    are chained to the tests that read those files (WORKFLOW §Gates; the owner's "4c",
+    2026-10-27).
 
 19. `[all]` **An aggregate a script only counted can be stale or half-built.** A run that
     stops at the first failing module leaves the other module's stale results looking green

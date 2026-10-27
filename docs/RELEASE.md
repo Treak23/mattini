@@ -21,7 +21,10 @@ Walk it top to bottom before any version bump.
       for every dataset in the build (CLAUDE.md Hard Rule 3), and the licence notices of
       the third-party code the build ships: Godot and its components, Terrain3D, and
       godot-cpp, which is compiled into Terrain3D's library (all MIT; its notice since
-      M2-02, `game/credits/godot-cpp-LICENSE.txt`; 0.1.0 lacked it, D17).
+      M2-02, `game/credits/godot-cpp-LICENSE.txt`; 0.1.0 lacked it, D17). From 0.4.0 the
+      stars' credit, word for word as `game/sky/stars.csv`'s first line ("Stars derived from the
+      Hipparcos Catalogue … Credit: ESA. CC BY-NC 3.0 IGO" with the licence's URL), on the pause
+      screen and in the `dist` README: CC BY-NC 3.0 IGO ends on a breach (SPEC §13 row 51).
 - [ ] **No raw data or unmanaged binaries** entered git history in this release, but the
       one real sample the owner allowed (SPEC §13 row 24), which `test_repo_hygiene.py`
       names with its SHA-256.
@@ -42,14 +45,16 @@ Walk it top to bottom before any version bump.
       pixels and JPEG (`config/photo.json`), the roof colours (`config/roofs.json`), the
       surfaces by their pixels and their PNG's bytes (`config/surfaces.json`: the PNG's
       bytes depend on the zlib build, so they are design's too; a machine whose zlib writes
-      other bytes is refused, M3-R1-fix-6) and the six tree chunks (`config/trees.json`).
-      `terrain`, `buildings`, `photo`, `roofs`, `surfaces` and `trees` compare before they
-      write, and `manifest` refuses any other file (M2-01, M2-04, M3-04 to M3-07, M3-13),
+      other bytes is refused, M3-R1-fix-6), from 0.4.0 the river's flow grid by its pixels and
+      its PNG's bytes (`config/surfaces.json`: `c05a7535…`, `c51120dd…`), the six tree chunks
+      (`config/trees.json`) and from 0.4.0 the sky's site (`config/sky.json`; run
+      `python -m mattini sky` before `manifest`). `terrain`, `buildings`, `photo`, `roofs`,
+      `surfaces`, `trees` and `sky` compare before they write, and `manifest` refuses any other file (M2-01, M2-04, M3-04 to M3-07, M3-13),
       so their exit 0 in the fresh checkout is the check.
 - [ ] The fresh checkout's `game/assets/generated/manifest.json` has the size and SHA-256
-      the release's plan names (M3: 324'359 bytes, `3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065`),
-      compared by a command, its output in the release record:
-      `test "$(wc -c < game/assets/generated/manifest.json)" -eq 324359 && echo "3ca0445c9109eec4696d654d1c7536f50220f4db04503fab836412f5b0c01065  game/assets/generated/manifest.json" | sha256sum -c -`
+      the release's plan names (0.4.0: 324'931 bytes, `a03c5722da8231349323f71d61e2db2f1cbb6919070d545177d9a31caf510ce5`;
+      0.3.1: 324'359 bytes, `3ca0445c…`), compared by a command, its output in the release record:
+      `test "$(wc -c < game/assets/generated/manifest.json)" -eq 324931 && echo "a03c5722da8231349323f71d61e2db2f1cbb6919070d545177d9a31caf510ce5  game/assets/generated/manifest.json" | sha256sum -c -`
       (each release's plan names its pair: the last release's when no batch changes a
       generated file, else the pair measured at the go).
 - [ ] Windows and Linux exports built with the pinned Godot version's export templates,
@@ -76,6 +81,15 @@ Walk it top to bottom before any version bump.
       headless with stdout to a file and no `--quit-after`; while its process is alive, the
       file and `user://logs/godot.log` already hold the pack lines and the startup lines;
       then stop it by its PID. The result in the record.
+- [ ] The frame cap holds in the exported build (from 0.4.0, the owner's "4b"; 0.3.1 R1 F7):
+      `build/linux/mattini.x86_64 --headless --print-fps --quit-after 600` prints
+      `Project FPS: 60` (quoted in the record). It does not prove the 15 fps pause cap (no
+      pause headless): the pause screen's own test does.
+- [ ] MSAA can be switched off without a rollback (from 0.4.0, the owner's "4b"): with an
+      `override.cfg` beside the Linux executable holding `[rendering]` and
+      `anti_aliasing/quality/msaa_3d=0` plus a marker setting (`application/config/version`
+      set to a test value), the started build's startup lines show the marker; the file is
+      removed again. The result in the record (the `dist` README tells the player this route).
 - [ ] `tools/export.sh`'s log carries "the game expects mattini-photo.pck
       mattini-terrain.pck, as written here" (its step 2b, from 0.3.1), quoted in the record.
 - [ ] The build written to `windows/` and `linux/` (fixed names: the current version)

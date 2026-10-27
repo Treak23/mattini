@@ -42,7 +42,11 @@ lighting, weather), because the owner's PC is where the game is actually seen.
 4. **The owner's exact words are sacred:** quoted verbatim, typos and all.
 5. **Never merge silently:** file it and write `Possibly same as: FB-NN`.
 6. **Commit per item, push immediately, on `main`.** Message `feedback: FB-NNN <five-word
-   gist>`.
+   gist>`. Chain each commit to the tests that read what you write (WORKFLOW §Gates):
+   `uv run --project pipeline pytest -q pipeline/tests/test_repo_hygiene.py > /tmp/hygiene.log
+   && git commit …` (the log outside the repository, rule 1). A red run means the file you
+   added is refused (a screenshot over the size limit, a raw download): file the entry
+   without the file, describe the image (§Screenshots), and say so in the receipt.
 6b. **The push dance:** pull --rebase, commit, push; rejected → pull --rebase, push again.
    Never force; never resolve a conflict by discarding anyone's words. Stuck → say so in
    one line.
