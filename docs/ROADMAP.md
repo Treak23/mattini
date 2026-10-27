@@ -35,7 +35,7 @@ deletion and non-fast-forward pushes on `main` and `dist` with no bypass actors.
 
 **The stars' licence (SPEC §13 row 51, settled 2026-10-27):** the Hipparcos Catalogue under CC BY-NC 3.0 IGO,
 "Credit: ESA"; the open condition is a sale, which needs ESA's permission (data.licences@esa.int) or section S's
-files removed. The Yale catalogue was refused (no licence; the ADC's recorded word forbids altered copies).
+files removed. The Yale catalogue was refused (no licence; the ADC's recorded word forbids altered copies). Known limits (v0.4.0-06): positions are J1991.25, not precessed to the date (0.13 to 0.35°); no star colours. The licence's §7(b) reinstates it if a breach is cured within 30 days (the triage said otherwise).
 
 **Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session
 decides 2), release 0.4.0 (the plan): SkyClock (v0.4.0-04) at tier 1 although it reads no world config; the sky rig and

@@ -1,0 +1,28 @@
+WorldConfig: user://test_ # the refusal tests write broken manifests under user://test_* on purpose
+WorldConfig: not read from a manifest @ res://tests/test_world_config_unbuilt.gd # it provokes the unbuilt-config refusal on purpose, and only it may
+TerrainGrid: user://test_ # the terrain refusal tests write broken manifests under user://test_* on purpose
+BuildingChunks: user://test_ @ res://tests/test_building_chunks_indices.gd # it refuses chunks whose indices it set to 2^31 or more on purpose (brief M2-05)
+BuildingChunks: user://test_ @ res://tests/test_building_chunks.gd # its refusal tests write broken manifests under user://test_building_chunks on purpose
+BuildingChunks: user://test_ @ res://tests/test_main_scene_buildings.gd # its stale and missing buildings cases are refused on purpose
+no terrain has been built @ res://tests/test_scene_placement.gd # it opens the main scene on the shared buildings fixture, which has no terrain, on purpose (brief M2-08)
+the WorldConfig given was not read from this manifest @ res://tests/test_scene_placement.gd # it gives BuildingChunks another manifest's WorldConfig on purpose (brief M2-08)
+BuildingRoofs: user://test_ @ res://tests/test_building_roofs.gd # its refusal tests write broken manifests under user://test_building_roofs on purpose (brief M3-12)
+PhotoGrid: user://test_ @ res://tests/test_photo_grid.gd # its refusal tests write broken manifests under user://test_photo_grid on purpose (brief M3-09)
+TreeChunks: user://test_ @ res://tests/test_tree_chunks.gd # its refusal tests write broken manifests under user://test_tree_chunks on purpose (brief M3-11)
+SurfaceGrid: user://test_ @ res://tests/test_surface_grid.gd # its refusal tests write broken manifests under user://test_surface_grid on purpose (brief M3-10)
+SurfaceGrid: user://test_ @ res://tests/test_surface_flow.gd # its refusal tests write broken flow grids and flow blocks under user://test_surface_flow on purpose (brief v0.4.0-02)
+DataPacks: cannot load the data pack @ res://tests/test_data_packs.gd # its broken pack is refused on purpose (brief M3-08)
+PhotoGrid: user://test_ @ res://tests/test_main_scene_refusals.gd # its missing photo is refused on purpose (brief M3-14)
+SurfaceGrid: user://test_ @ res://tests/test_main_scene_refusals.gd # its damaged surfaces are refused on purpose (brief M3-14)
+TreeChunks: user://test_ @ res://tests/test_main_scene_refusals.gd # its missing trees are refused on purpose (brief M3-14)
+BuildingRoofs: user://test_ @ res://tests/test_main_scene_refusals.gd # its missing roof colours are refused on purpose (brief M3-14)
+BuildingChunks: user://test_ @ res://tests/test_main_scene_refusals.gd # its missing buildings are refused on purpose (brief M3-14)
+tests/shared/buildings_fixture/generated/manifest.json: @ res://tests/test_scene_placement.gd # it opens the main scene on the shared buildings fixture, which holds no terrain, photo, surfaces, trees or roofs, on purpose (brief M3-14)
+TerrainGrid: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
+BuildingChunks: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
+PhotoGrid: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
+SurfaceGrid: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
+TreeChunks: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
+BuildingRoofs: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
+the WorldConfig given was not read from this manifest @ res://tests/test_m3_r1_fix5_world_guard.gd # it gives PhotoGrid and SurfaceGrid another manifest's WorldConfig on purpose (brief M3-R1-fix-5)
+SkySite: user://test_ @ res://tests/test_m4_10_refusals.gd # its missing and stale sun's places are refused on purpose (brief v0.4.0-08, from M4-10)

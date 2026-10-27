@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "areas": {
+    "fixture": {
+      "computed_for": {
+        "world_sha256": "729e9f5edd9c1aee7d33ace6cddf177ad276ff43e8341ac08dc33adac116165e"
+      },
+      "latitude_deg": 46.4993906,
+      "longitude_deg": 8.1030272,
+      "true_to_grid_deg": -0.4849
+    }
+  }
+}
