@@ -13,31 +13,31 @@ check; six briefs DONE (`docs/briefs/v0.3.1-plan.md`, Status DONE), the whole-ra
 (`docs/reviews/v0.3.1-round1.md`), the release gate from a fresh clone green (pytest 2238, GUT 52 scripts,
 287 tests, 9892 asserts; the manifest `3ca0445c…` as 0.3.0's; the three new §C checks passed).
 
-**Next release, 0.4.0 — the moving sun:** the rest of M4 (`docs/briefs/M4-plan.md`; the owner's
-answers are SPEC §13 rows 41–48; its process note says what 0.3.1 took and what the next cut must
-rebuild): SkyClock, SkyRig and the physical sky, the stars, the sky step, the main scene's clock
-and keys (about 16 builder hours). Then the far mountains' shadows and the softened photo shadows
-(13 batches, mostly tier 1: one more cut). M4-08 is superseded by 0.3.1's batches.
+**Release 0.4.0 — GO 2026-10-27 (the owner; `docs/history/blocked/2026-10-27-1.md`), no batch started:** the
+river's direction per stretch from swissTLM3D's lines (FB-008, 1b, three tier-1 batches); the moving sun (FB-004
+items 1, 7): the sky clock, the sky rig and the physical sky with the valley-coloured ground (3a), the stars on the
+Hipparcos Catalogue (2a), the sky step, the sun and the moon in the main scene, the time keys and the clock label;
+four leftovers (I-03, F6, two §C checks, the clerk's gate); the version. Two days of build plus the day 1b adds,
+about half a week's allowance, one lane, builders on Sonnet. The batches wait for the owner: the seven-day
+allowance read `allowed_warning` at the go (reset 2026-10-29 06:00 UTC), and the owner starts the build in the
+release session's chat ("5a … ill start it manually"). The plan: `docs/briefs/v0.4.0-plan.md` (with the briefs).
 
 **The owner's first look at 0.3.1 (2026-10-26):** it starts with 4× MSAA, 60 fps and 15 paused, the GPU at
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
 river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
 
-**Waiting on the owner:** Switching the repository to public (the owner's word, 2026-10-26; RULINGS):
-the README's swisstopo credit and the inbox's paths are ready on `main`; then GitHub rulesets
-blocking force pushes and deletions on `main` and `dist` (never `claude/*`, which the janitor
-deletes). A second developer may join: how a person works beside the release sessions (the
-process assumes only agents commit to `main`) is a `design` conversation when they do. The Windows
-build's first start stays deferred by the owner ("not a priority" until sharing).
+**Waiting on the owner:** starting 0.4.0's batches after the allowance's reset. A second developer may join:
+how a person works beside the release sessions (the process assumes only agents commit to `main`) and the licence
+of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
+the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks
+deletion and non-fast-forward pushes on `main` and `dist` with no bypass actors.
 
-**Open licence question:** the Yale Bright Star Catalogue (BSC5) states no licence anywhere
-authoritative (the triage of 2026-10-25: NASA's old archive called its data public domain, the
-catalogue's ReadMe restricts distribution to that archive's CD; every alternative is worse). 0.4.0
-decides whether it must be settled before any sale or before sharing at all (the repository goes public:
-the stars table is published the day M4-05 commits it), and its closing condition (SPEC §13 row 48).
+**The stars' licence (SPEC §13 row 51, settled 2026-10-27):** the Hipparcos Catalogue under CC BY-NC 3.0 IGO,
+"Credit: ESA"; the open condition is a sale, which needs ESA's permission (data.licences@esa.int) or section S's
+files removed. The Yale catalogue was refused (no licence; the ADC's recorded word forbids altered copies).
 
 **Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session
-decides 2), release 0.3.1: four water screenshots instead of M4-06's two (v0.3.1-01); the copied
+decides 2), release 0.3.1, kept at 0.4.0's go (2026-10-27, shown to the owner, no objection): four water screenshots instead of M4-06's two (v0.3.1-01); the copied
 pins' comments re-pinned with the 0.3.1 brief ids (v0.3.1-02 to -05); if a render check fails under
 MSAA, the render scripts turn MSAA off (they measure placement, not edges); ReleaseBuild's comment
 names no caller, so v0.3.1-05 edits no file of v0.3.1-03; the three new release-gate checks are
@@ -69,10 +69,15 @@ Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in fu
 v1 = M0–M6: walking, the day/night cycle and weather are in v1 (owner, 2026-09-24). M0 to M3
 are closed.
 
-1. 0.4.0 — the moving sun (the rest of M4's sky)
-2. The far mountains' shadows and the softened photo shadows (the rest of M4)
+The project's direction (the owner, 2026-10-27; SPEC §13 row 50): this repository is the map, as detailed and
+accurate as the data allows; each game is a branch or fork that takes what it needs.
+
+1. 0.4.0 — the river's direction per stretch, and the moving sun (the rest of M4's sky)
+2. The softened photo shadows (FB-004 item 3), then the far mountains' shadows (the rest of M4)
 3. M5 Scale up
 4. M6 Weather and walking
+- When Godot 4.8 is out of beta: the move to it (the owner, 2026-10-27), a release of its own once Terrain3D and
+  GUT support it (SPEC §4's pins)
 
 ## DEFERRED, said out loud
 
