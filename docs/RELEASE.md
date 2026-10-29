@@ -70,7 +70,12 @@ Walk it top to bottom before any version bump.
       `build/linux/mattini.x86_64 --headless --quit-after 300` and requires one line per
       data pack, then the terrain's startup line (columns, rows, spacing), the buildings'
       (their count) and, from M3-14, the photo's, the surfaces', the trees' and the roofs'
-      lines, and no `ERROR` line (M2-02, M2-05, M3-08, M3-14).
+      lines, and no `ERROR` line (M2-02, M2-05, M3-08, M3-14). The sky block prints no line of
+      its own (0.4.0): a refused `sky` block would print an `ERROR` line, so "no `ERROR`" is its check.
+- [ ] The stars ship (from 0.4.0): the exported `mattini.pck` holds `sky/stars.csv`
+      (list the pack's directory as step 4c does, or `strings`/`grep -c` the pack for its first
+      header line, "Stars derived from the Hipparcos Catalogue"), quoted in the record; a build
+      without it shows a starless night and no credit, and no other check sees that.
 - [ ] A missing data pack is named (from 0.3.1, FB-005): with `mattini-photo.pck` moved
       aside, `build/linux/mattini.x86_64 --headless --quit-after 300` (its `user://` in a
       scratch folder) logs DataPacks' `ERROR` line naming `mattini-photo.pck`, the folder and

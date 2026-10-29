@@ -913,8 +913,10 @@ M3-12, M3-14):**
 - *Credits:* the dataset lines from the blocks (`swissalti3d 2024`, `swissbuildings3d
   2020`, `swissimage 2023`, `swisssurface3d 2021-2022`, `swisstlm3d 2026-02`, each
   `© swisstopo`), the CC0 textures by name and author (`game/textures/LICENSE.txt`), the
-  placeholder notes (the walls, the trees, the streams' assumed width), then the software
-  licences.
+  placeholder notes (the walls, the trees, the streams' assumed width), from 0.4.0 the Sky section (the
+  sun and the moon's source, and, when `res://sky/stars.csv` is present and read, the Hipparcos Catalogue's
+  credit word for word as the table's first line: "Credit: ESA", CC BY-NC 3.0 IGO and its URL; §13 row 51),
+  then the software licences.
 - *Cost, measured in software:* the village scene builds in about 6 s (2.9 s in M2) and
   peaks at about 2.4 GiB, with 1'171 MiB of texture memory; the trees are about 34'000
   instances of 192 triangles in 250 m cells, each cell drawn to 3 km. GPU time is the

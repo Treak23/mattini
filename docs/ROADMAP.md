@@ -113,6 +113,14 @@ closed (0.3.0, ARCHIVE).
   where `pack.gd` refuses, and a refused export leaves an unfinished `build/`; F6 `ReleaseBuild`'s comment
   against the census's `until_m4_10` exemption (next cut); F7 the frame-cap test's engine half has a second
   writer since v0.3.1-05; F10 `test_m4_08_data_packs_expected.gd` leaves scratch subfolders in `user://`.
+- 0.4.0's whole-range review, P3 (`docs/reviews/v0.4.0-round1.md`): the star table's presence in the export is checked by words
+  at the release gate only (a code check in `tools/export.sh` step 4c, S-01); the placeholder sun (184.67, 50.1) is a hand copy of
+  `config/shadows.json` (S-02); `SkySite` is not in the every-reader guard censuses (S-03); `star_image` has no |dec| >= 90 guard
+  and `tools/stars_table.py` has no test (S-05); the day keys can leave the clock's validated 2020 to 2035 (S-06, an owner question:
+  clamp or label); the sky shader assumes up = +y (S-07); `night_sky` has no `repeat_enable` (CD-3); `config/sky.json` names only the
+  world's SHA-256 (CD-6); two margin tests have no non-vacuity count (TG-09); batch 01's `png_l8` messages say "classes" for the flow;
+  batch 04's float32 azimuth can round to 360.0 once in 25 million instants; the render step cannot see the river's direction (a
+  RENDER flow check is buildable: batch 03's probe).
 - Process residue (the 0.3.1 triage, 2026-10-25): the clerk's gate is settled (WORKFLOW §Gates, 2026-10-27); no tool reads the weekly allowance (DESIGN.md step 3 reports the five-hour status and
   the API-equivalent cost); the lane-session path is not written (one lane per release until it
   is); a `:<branch>` deletion refspec has no deny rule; WORKFLOW's "a tier-1 batch runs alone in

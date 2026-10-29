@@ -76,6 +76,7 @@ config/datasets.json swisstopo datasets: collection, pinned edition, attribution
 config/datasets.lock.json  the pinned tile checksums, written by `mattini lock` (from M1-01)
 config/terrain.json  the in-game terrain spacing per area, its expected heights (from M2-01)
 config/buildings.json the expected building chunks per area (from M2-04)
+config/sky.json     the sun's site (latitude, longitude, grid convergence), design's data (from 0.4.0)
 config/photo.json, roofs.json, surfaces.json, trees.json  the M3 steps' expected values,
                      design's data (the steps from M3-04 to M3-07)
 pipeline/            Python data pipeline (offline, re-runnable); package `mattini`
