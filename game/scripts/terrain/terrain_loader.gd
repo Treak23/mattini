@@ -15,8 +15,9 @@ extends RefCounted
 ## terrain_photo.gdshader, which samples the photo by world position inside the PhotoGrid's
 ## rectangle. Without one it keeps M2's clay look. Given a SurfaceGrid as well, the shader
 ## also draws swissTLM3D's classes on the photo (rock, water, path, road) with the CC0
-## textures under res://textures/ and two generated water normal maps; the classes alone,
-## without a photo, change nothing.
+## textures under res://textures/ and two generated water normal maps, which drift downstream
+## along the SurfaceGrid's flow texture (brief v0.4.0-03; placed by the classes' own rectangle,
+## whose box the flow grid shares); the classes alone, without a photo, change nothing.
 
 const TERRAIN_NAME := "Terrain"
 const REGION_WIDTH_M := 1024.0
@@ -38,6 +39,9 @@ const SURFACE_TEXTURES := {
 const WATER_NORMALS := {"water_normal_a": 1, "water_normal_b": 2}
 const WATER_NORMAL_SIZE := 256
 const WATER_BUMP_STRENGTH := 6.0
+## The flow when a SurfaceGrid has no flow texture: one RGB8 texel, which the shader decodes as
+## (rg · 255 − 128) / 127 · b = no drift.
+const NO_FLOW := [128, 128, 0]
 
 
 ## Adds a Terrain3D node named "Terrain" to [param parent] (in the tree, with a camera in
@@ -76,16 +80,25 @@ static func create(
 	return terrain
 
 
-## Hands the photo shader the classes, their own rectangle (not the photo's), the CC0
-## textures and the water's generated normal maps. Every sampler the shader declares is set:
-## an unset one draws Godot's default texture, silently.
+## Hands the photo shader the classes, their own rectangle (not the photo's), the flow (placed by
+## the same rectangle), the CC0 textures and the water's generated normal maps.
+## Every sampler the shader declares is set: an unset one draws Godot's default texture,
+## silently.
 static func _set_surfaces(material: Terrain3DMaterial, surfaces: SurfaceGrid) -> void:
 	material.set_shader_param("surfaces", surfaces.texture)
 	material.set_shader_param("surfaces_rect", surfaces.rect())
+	var flow: ImageTexture = surfaces.flow_texture
+	material.set_shader_param("water_flow", flow if flow != null else _no_flow())
 	for uniform: String in SURFACE_TEXTURES:
 		material.set_shader_param(uniform, load(TEXTURES_DIR.path_join(SURFACE_TEXTURES[uniform])))
 	for uniform: String in WATER_NORMALS:
 		material.set_shader_param(uniform, _water_normal(WATER_NORMALS[uniform]))
+
+
+## A 1 × 1 RGB8 texture of NO_FLOW: the flow where there is none.
+static func _no_flow() -> ImageTexture:
+	var image := Image.create_from_data(1, 1, false, Image.FORMAT_RGB8, PackedByteArray(NO_FLOW))
+	return ImageTexture.create_from_image(image)
 
 
 ## A seamless 256 × 256 normal map of smooth simplex noise (3 octaves), made in memory: the

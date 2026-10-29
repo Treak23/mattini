@@ -13,8 +13,9 @@
 // CC0 detail textures whose luminance relative to their mean multiplies the photo, fading out
 // by near_fade_m from the camera; on water, the photo's colour × 0.9 and roughness 0.3, with
 // ripples from two noise normal maps (NoiseTexture2D, made by TerrainLoader) tiling every 2 m
-// and 3.4 m and drifting apart at 0.8 m/s, the water's weight eased over 1 m at the bank
-// (water_weight).
+// and 3.4 m that drift downstream along swissTLM3D's watercourse lines at 0.8 and 0.5 m/s
+// (brief v0.4.0-03: the flow texture water_flow, two phases crossfaded), the water's weight
+// eased over 1 m at the bank (water_weight).
 
 shader_type spatial;
 render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx,skip_vertex_transform;
@@ -93,14 +94,27 @@ uniform float path_scale_m = 2.0;
 uniform float detail_normal_strength = 1.0;
 
 group_uniforms water;
-// Two NoiseTexture2D normal maps (TerrainLoader makes them; no file). Map a tiles every
-// water_scale_a_m and drifts along water_drift, map b tiles every water_scale_b_m and drifts
-// against it: 0.8 m/s each way, no net direction (a torrent's turbulence; m4-design §8).
+// The water's ripples drift downstream along swissTLM3D's watercourse lines (briefs v0.4.0-01 to
+// v0.4.0-03; SPEC §13 row 53). Two NoiseTexture2D normal maps (TerrainLoader makes them; no
+// file): map a tiles every water_scale_a_m and drifts at water_speed_a, map b tiles every
+// water_scale_b_m and drifts at water_speed_b, both along the flow. water_flow is SurfaceGrid's
+// flow texture, one RGB8 texel per 2 m cell of the classes' own box (placed by surfaces_rect):
+// the downstream direction in local (x, z) of the nearest drawn stream, decoded as
+// (rg · 255 − 128) / 127 · b, filtered linearly; b is 0 where no stream is near, and the sampler
+// unset reads black (hint_default_black), no drift too. The flow varies by place, so each map is
+// read in two phases half a period apart, each moved downstream for one period water_phase_s and
+// then restarted where its weight is 0, the two crossfaded (the flowmap technique); 3600 s, Godot's
+// TIME rollover, is a whole number of periods, so nothing jumps when TIME wraps.
 uniform sampler2D water_normal_a : hint_normal, filter_linear_mipmap, repeat_enable;
 uniform sampler2D water_normal_b : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform sampler2D water_flow : hint_default_black, filter_linear, repeat_disable;
 uniform float water_scale_a_m = 2.0;
 uniform float water_scale_b_m = 3.4;
-uniform vec2 water_drift = vec2(0.48, 0.64); // m/s
+// The crossfade's period (s), a look value; 3600 / water_phase_s must stay whole (a pinned test).
+uniform float water_phase_s = 2.0;
+// The drift speeds along the flow (m/s): look values, not measured (swissTLM3D gives no speed).
+uniform float water_speed_a = 0.8;
+uniform float water_speed_b = 0.5;
 uniform float water_normal_strength = 0.35;
 // On water the photo's colour is multiplied by this: the photo's own river, a little darker.
 uniform float water_albedo = 0.9;
@@ -178,6 +192,13 @@ float water_weight(vec2 xz) {
 		}
 	}
 	return smoothstep(0.0, 1.0, share / 25.0);
+}
+
+// The water's phase offset at (x, z), in periods: two sines across the ground (wavelengths about
+// 23 m and 37 m), together within ±0.5 of a period and smooth (no fract, so no seam), so that the
+// two phases' restarts do not pulse over the whole river at once. A look value, never measured.
+float water_phase(vec2 xz) {
+	return 0.25 * sin(dot(xz, vec2(0.21, 0.17))) + 0.25 * sin(dot(xz, vec2(-0.11, 0.13)));
 }
 
 // The rock texture projected along the three world axes and blended by the terrain normal n
@@ -447,15 +468,34 @@ void fragment() {
 		bump += detail_bump * detail_normal_strength * w_path;
 	}
 
-	// Water: the photo's colour × water_albedo, roughness WATER_ROUGHNESS, two ripple maps
-	// drifting apart; its weight eased over 1 m at the bank.
+	// Water: the photo's colour × water_albedo, roughness WATER_ROUGHNESS, its weight eased over
+	// 1 m at the bank; both ripple maps drift downstream along the flow, each read in two phases
+	// (p0, p1, half a period apart) whose weights (w0, w1) sum to 1 and are 0 at each restart.
 	float w_water = water_weight(xz);
 	if (w_water > 0.0) {
-		vec2 ua = (xz - TIME * water_drift) / water_scale_a_m;
-		vec2 ub = (xz + TIME * water_drift) / water_scale_b_m;
-		vec3 na = unpack_normal(textureGrad(water_normal_a, ua, ddx_xz / water_scale_a_m, ddy_xz / water_scale_a_m));
-		vec3 nb = unpack_normal(textureGrad(water_normal_b, ub, ddx_xz / water_scale_b_m, ddy_xz / water_scale_b_m));
-		vec2 ripple = (na.xy + nb.xy) * water_normal_strength;
+		vec4 t = texture(water_flow, (xz - surfaces_rect.xy) / surfaces_rect.zw);
+		vec2 flow = (t.rg * 255.0 - 128.0) / 127.0 * t.b;
+		float p0 = fract(TIME / water_phase_s + water_phase(xz));
+		float p1 = fract(p0 + 0.5);
+		// Each map's offset over one whole period, downstream (m).
+		vec2 da = flow * water_speed_a * water_phase_s;
+		vec2 db = flow * water_speed_b * water_phase_s;
+		// The pattern at xz is the one from (xz - offset): it moves along +flow.
+		vec2 ua0 = (xz - p0 * da) / water_scale_a_m;
+		vec2 ua1 = (xz - p1 * da) / water_scale_a_m;
+		vec2 ub0 = (xz - p0 * db) / water_scale_b_m;
+		vec2 ub1 = (xz - p1 * db) / water_scale_b_m;
+		vec2 dxa = ddx_xz / water_scale_a_m;
+		vec2 dya = ddy_xz / water_scale_a_m;
+		vec2 dxb = ddx_xz / water_scale_b_m;
+		vec2 dyb = ddy_xz / water_scale_b_m;
+		vec3 na0 = unpack_normal(textureGrad(water_normal_a, ua0, dxa, dya));
+		vec3 na1 = unpack_normal(textureGrad(water_normal_a, ua1, dxa, dya));
+		vec3 nb0 = unpack_normal(textureGrad(water_normal_b, ub0, dxb, dyb));
+		vec3 nb1 = unpack_normal(textureGrad(water_normal_b, ub1, dxb, dyb));
+		float w0 = 1.0 - abs(2.0 * p0 - 1.0);
+		float w1 = 1.0 - abs(2.0 * p1 - 1.0);
+		vec2 ripple = (w0 * (na0.xy + nb0.xy) + w1 * (na1.xy + nb1.xy)) * water_normal_strength;
 		bump = mix(bump, vec3(ripple.x, 0.0, ripple.y), w_water);
 		albedo *= mix(1.0, water_albedo, w_water);
 		roughness = mix(roughness, WATER_ROUGHNESS, w_water);

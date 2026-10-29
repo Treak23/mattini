@@ -16,6 +16,11 @@ extends GutTest
 ## gate green) fails here. It proves the TEXT; only a render proves that the photo and the
 ## classes land where the readers say, and that is design's question (docs/briefs/BLOCKED.md,
 ## M3 R1 P-03).
+##
+## Since brief v0.4.0-03: the water's flow texture (water_flow) is placed by the classes' own
+## rectangle, surfaces_rect (the flow grid covers the same box), and is sampled at one line, which
+## the same census pins: the flow read through the photo's rectangle, or half a cell off, fails
+## here.
 
 const CLAY := "res://shaders/terrain_clay.gdshader"
 const PHOTO := "res://shaders/terrain_photo.gdshader"
@@ -25,9 +30,10 @@ const TERRAIN_FROM := "// Varyings & Types"
 const CLAY_LOOK := "\t// Apply PBR: clay with contour lines of the real height H."
 const PHOTO_LOOK := "\t// The photo look."
 ## Every code line (comments cut, blanks dropped) of the photo shader that names the photo's or
-## the classes' rectangle, the photo's uv, or the world position the classes are read at.
+## the classes' rectangle, the photo's uv, or the world position the classes are read at, and the
+## line that samples the flow.
 const PLACEMENT_NAMES := "\\b(puv|photo_rect|surfaces_rect)\\b"
-const PLACEMENT_CALLS := "class_weights\\(|texture\\(photo|vec2 xz ="
+const PLACEMENT_CALLS := "class_weights\\(|texture\\(photo|texture\\(water_flow|vec2 xz ="
 const PLACEMENT_LINES := [
 	"uniform vec4 photo_rect = vec4(0.0, 0.0, 1.0, 1.0);",
 	"uniform vec4 surfaces_rect = vec4(0.0, 0.0, 1.0, 1.0);",
@@ -40,6 +46,8 @@ const PLACEMENT_LINES := [
 	"vec3 albedo = texture(photo, puv).rgb;",
 	"if (any(lessThan(puv, vec2(0.0))) || any(greaterThan(puv, vec2(1.0)))) {",
 	"vec4 classes = class_weights(xz);",
+	# Brief v0.4.0-03: the flow is read on the classes' rectangle, its texel centres the cells'.
+	"vec4 t = texture(water_flow, (xz - surfaces_rect.xy) / surfaces_rect.zw);",
 ]
 ## class_weights, line by line: texel (c, r) at ((c + 0.5) / columns, (r + 0.5) / rows) of
 ## surfaces_rect, rows from the north, the four nearest texels read exactly and blended.
