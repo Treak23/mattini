@@ -6,19 +6,6 @@ sequential across both files. Pull --rebase before every commit.
 
 ## Open
 
-### FB-008 · 2026-10-26 · bug · Ground / the river flows side to side, it needs a direction
-Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, EndeavourOS, KDE Plasma on Wayland, 1920x1080 at 300 Hz; as FB-003)
-Build: 0.3.1 (dist 5b51347; the owner's local session verified the five Linux files and the mattini-0.3.0/ rollback against the README's checksums)
-Impact: degraded
-Owner's words: "river flows but side to side, we will need to give it a direction. everything else is good"
-What happened: Filed by the 0.3.1 release session from the owner's message in its chat (the clerk was not in the loop). The river now visibly moves, but its two ripple patterns drift apart in opposite directions at 0.8 m/s with no net direction (0.3.1's design, the owner's answer at the go), which reads as side to side.
-Expected: the river flows in one direction, downstream.
-Repro / where exactly: 0.3.1, the Vispa in the village, any view.
-Screenshots: none
-Possibly same as: FB-003 (archived, shipped in 0.3.1)
-Disposition: → the next release's triage (0.4.0): a flow direction per stretch from swissTLM3D's river lines (the option offered at 0.3.1's go, pipeline work), or one fixed downstream direction for the village's Vispa (a shader change, wrong wherever a stream runs another way). Release session, 2026-10-26.
-Disposition (0.4.0 go): taken into 0.4.0, the owner's "1b": a direction per stretch from swissTLM3D's watercourse lines, which swisstopo draws downstream (SPEC §13 row 53; `docs/history/blocked/2026-10-27-1.md`). Release session, 2026-10-27.
-
 ### FB-004 · 2026-10-17 · design · Whole game / 0.3.0 owner test results (the M3 release's test list)
 Machine: linux (the owner's laptop, not the RTX 4090 PC: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run, Vulkan 1.4.341, Forward+; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 15 GB RAM, 1920x1080 at 300 Hz, windowed, on AC, performance profile)
 Build: 0.3.0 (dist 5f08379, all 10 files match the README's SHA-256 block; pause screen shows "mattini 0.3.0")
@@ -43,5 +30,6 @@ Repro / where exactly: The 0.3.0 dist build, run 2026-10-17, shots taken 11:45 t
 Screenshots: shots/FB-004-a.png (11:45:23, item 1 start view), shots/FB-004-b.png (11:46:10, item 2 at ~30 m, item 3), shots/FB-004-c.png (11:46:30, item 2 at ~60 m), shots/FB-004-d.png (11:47:04, item 2 at ~150 m, items 3 and 6), shots/FB-004-e.png (11:48:20, item 5 trees close), shots/FB-004-f.png (11:48:57: oblique aerial over the village, grey block buildings, dark cone trees, the river on the right, the church with a pale green nave roof in the centre; items 5 and 6), shots/FB-004-g.png (11:49:14: the Esc screen, "mattini 0.3.0", controls, credits with the five swisstopo datasets and the three Poly Haven textures, Resume and Quit; item 8). Items 4's shots are FB-003-a/-b. Mapping of shots to items is the tester's inference.
 Possibly same as: FB-001 (item 1 rechecks it)
 Disposition: the test report of 0.3.0, item by item (design, 2026-10-17): 1 and 7 ("looks not bad"; dull and grey) → M4-05/M4-10, the physical sky and exposure 0.70 (software Forward+ measured 0.3.0's ground at about 0.81 of the photo); 3 (baked shadows) → M4-03 and M4-06, softened (SPEC §13 row 41); 4 (water) is FB-003; 6 (the church's green roof) correct as built, the roof is green (the owner, SPEC §13 row 46); 9 is FB-005; 10 (GPU flat out) is FB-007; jagged edges → M4-08 (MSAA 4×); the photo stretched on steep walls, the bridge as a hump and the blur close to the ground are on M4's DEFERRED list (docs/briefs/M4-plan.md); Windows: deferred by the owner.
+Disposition (0.4.0, 2026-10-29): items 1 and 7 shipped in 0.4.0 (the moving sun with the physical sky, exposure 0.70 by day, the sky's valley ground: `docs/releases/v0.4.0.md`); item 5 rechecked in software Forward+ with three variants for the owner to choose from (the record's table and Question 1); item 3 (the baked shadows) is the next release; the look items and Windows stay deferred. Release session, 2026-10-29.
 Disposition (0.3.1): the jagged edges shipped in 0.3.1 (4× MSAA, v0.3.1-02). Still open, by the owner's answers at 0.3.1's go: items 1 and 7 (exposure, the owner's 1b) and item 3 (the softened shadows) with the moving sun (0.4.0 and after); item 5 (trees near-black from a distance, never dispositioned before) rechecked under 0.4.0's light; the look items on the DEFERRED list (`docs/briefs/v0.3.1-plan.md`). Release session, 2026-10-26.
 Disposition (0.4.0 go): items 1 and 7 → 0.4.0, the moving sun with the physical sky (exposure 0.70 by day) and the valley-coloured sky ground (SPEC §13 row 52); item 5 → no build, software Forward+ renders of three views with three variants in 0.4.0's record for the owner to choose from; item 3 → the next release (the softened shadows, after the sun, the owner's order); the look items and Windows stay deferred. Release session, 2026-10-27.

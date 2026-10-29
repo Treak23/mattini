@@ -3,6 +3,20 @@
 Moved here from `INBOX.md` §Open by the design realm's drain, each with its disposition and
 version. Entries keep their original text; nothing is deleted.
 
+### FB-008 · 2026-10-26 · bug · Ground / the river flows side to side, it needs a direction
+Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, EndeavourOS, KDE Plasma on Wayland, 1920x1080 at 300 Hz; as FB-003)
+Build: 0.3.1 (dist 5b51347; the owner's local session verified the five Linux files and the mattini-0.3.0/ rollback against the README's checksums)
+Impact: degraded
+Owner's words: "river flows but side to side, we will need to give it a direction. everything else is good"
+What happened: Filed by the 0.3.1 release session from the owner's message in its chat (the clerk was not in the loop). The river now visibly moves, but its two ripple patterns drift apart in opposite directions at 0.8 m/s with no net direction (0.3.1's design, the owner's answer at the go), which reads as side to side.
+Expected: the river flows in one direction, downstream.
+Repro / where exactly: 0.3.1, the Vispa in the village, any view.
+Screenshots: none
+Possibly same as: FB-003 (archived, shipped in 0.3.1)
+Disposition: → the next release's triage (0.4.0): a flow direction per stretch from swissTLM3D's river lines (the option offered at 0.3.1's go, pipeline work), or one fixed downstream direction for the village's Vispa (a shader change, wrong wherever a stream runs another way). Release session, 2026-10-26.
+Disposition (0.4.0 go): taken into 0.4.0, the owner's "1b": a direction per stretch from swissTLM3D's watercourse lines, which swisstopo draws downstream (SPEC §13 row 53; `docs/history/blocked/2026-10-27-1.md`). Release session, 2026-10-27.
+Disposition (0.4.0, 2026-10-29): shipped in 0.4.0, the owner's "1b": a flow direction per stretch from swissTLM3D's watercourse lines (briefs v0.4.0-01 to -03); measured in a software render the ripples move downstream at 0.71 to 0.80 m/s within 0.4 degrees of the local flow; not seen by eye by anyone yet (`docs/releases/v0.4.0.md`). Release session, 2026-10-29.
+
 ### FB-007 · 2026-10-17 · bug · Performance / GPU runs flat out, also while paused (no frame cap)
 Machine: linux (the owner's laptop: RTX 3060 Laptop GPU 6 GB plus AMD Vega iGPU, game on the NVIDIA GPU via prime-run; EndeavourOS, KDE Plasma on Wayland, NVIDIA driver 610.57.04, 1920x1080 at 300 Hz)
 Build: 0.3.0 (dist 5f08379)

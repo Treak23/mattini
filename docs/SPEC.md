@@ -1105,7 +1105,9 @@ Asked when the milestone that needs them is planned; each is also on the board.
   buildings have gaps near Zermatt (1348-22, -32, -34, -43 have no item), and `lock
   buildings` refuses a sheet without one as a failed read; M5 decides whether such a
   sheet means "no buildings" (M2 R1 I-07).
-- Delivery when the data outgrows packs on `dist` — M5 (§13 rows 23, 32).
+- Delivery when the data outgrows packs on `dist` — M5 (§13 rows 23, 32). The owner (2026-10-29) agreed to put delivery through GitHub
+  Releases (assets up to 2 GB per file, no pack splitting; `dist` kept as the rollback record) on the next release's list; the
+  100 MiB limit of a push stays whether the repository is public or not.
 - Game type — later (§13 row 34).
 
 Answered at M1 planning (2026-09-25; §13 rows 14–19): the terrain resolution, where the

@@ -348,3 +348,10 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     and the process change itself sat on a session branch for a day because its session never pushed
     `main`. Push `HEAD:main`, then fetch and check `git merge-base --is-ancestor HEAD origin/main`;
     the session counts a landing only by the brief's commits on `origin/main` (lessons 27, 30).
+
+51. `[design]` **A tier-1 brief whose Scope lists only pinned copies cannot close the prover's gaps.** In 0.4.0 the mutation
+    prover found real unpinned guards in four of six tier-1 batches (the flow's bound and types, the flow reader's world
+    twin, eleven guards of the sky step, the sky wiring); each fixer answered "every test file in Scope is a pinned copy,
+    byte-identical": the release session had to widen the Scope by one new test file and run a second round by hand each
+    time (2026-10-29). A tier-1 brief's Scope names one new test file for the prover's findings (`test_<release>_<nn>_gaps.*`);
+    the fixer fills it; the pinned copies stay untouched (BUILD.md rule 4; the 0.4.0 plan's process note).

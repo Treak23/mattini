@@ -1,11 +1,11 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-10-26 — version 0.3.1 (the 0.3.0 test's fixes:
-the river reworked, 60 fps and 15 paused, the log flushed per line, 4× MSAA, a missing data pack
-named; the first release of the one-session process) is on the `dist` branch (commits `7182c84`,
-`5b51347`, built from `main` `cb5946e`, recorded in `docs/releases/v0.3.1.md`; no P2 or above open).
-0.3.0 (M3, the village in a realistic look made from the data) stays on `dist` as `mattini-0.3.0/`,
-the rollback**
+Orientation for any session. Current as of **2026-10-29 — version 0.4.0 (the river flows downstream along
+swissTLM3D's lines; the sun and the moon move at the game's time, a physical sky and stars on the Hipparcos Catalogue; built
+from `main` `4bf2d83` by the first release session to run two lanes, recorded in `docs/releases/v0.4.0.md`; no P0 or P1 open) is
+built and audited, its `dist` commit `e2633b6` waits for the owner's "push dist"** (local branch `dist-publish` of the release
+session's container; until pushed, `dist` still holds 0.3.1, `5b51347`, built from `main` `cb5946e`; 0.3.1 stays as
+`mattini-0.3.1/`, the rollback)
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -36,8 +36,8 @@ copies it into the generated manifest, and the game learns the origin only from 
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
 4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
 from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (the
-0.3.1 release gate, 2026-10-26): pytest 2238 passed, 5 network tests deselected; GUT 52 scripts, 287
-tests, 9892 asserts; the gate's render step passes.
+0.4.0 release gate, 2026-10-29): pytest 2407 passed, 5 network tests deselected; GUT 64 scripts, 395 tests, 18196 asserts; the
+gate's render step passes (RENDER trees 0.8615, repeating exactly).
 
 ## 5. HISTORY
 Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
@@ -45,11 +45,13 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-The owner's first look at 0.3.1 (above all: does it start with 4× MSAA; an `override.cfg` turns it
-off) comes back through `feedback`. Then 0.4.0, the moving sun, from a fresh `ultracode design`
-session: the rest of M4 (`docs/briefs/M4-plan.md`, its answers in: SPEC §13 rows 47, 48; its process
-note says what to rebuild on 0.3.1's pins), then the far mountains' and the softened photo shadows, M5
-scale-up, M6 weather and walking. The board is the live version.
+The owner's word "push dist" for 0.4.0 (`git push origin dist-publish:dist` from the release session's checkout, or rebuild: the
+export is not byte-reproducible, H15). Then, from a fresh `ultracode design` session: the softened photo shadows (FB-004 item 3;
+M4-03, M4-06, the shadows parts of M4-09 and M4-10, rebuilt on 0.4.0's files per `docs/briefs/v0.4.0-plan.md`'s process note) and
+delivery through GitHub Releases (the owner's "Yes if it makes sense", 2026-10-29), then the far mountains' shadows (M4-01,
+M4-02, M4-07 and their parts of M4-09 and M4-10), the trees' variant the owner picks from the record's table, a clamp or label
+for the clock's range, the move to Godot 4.8 once it is out of beta, M5 scale-up, M6 weather and walking. The board is the live
+version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -325,11 +327,28 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   PASS|FAIL …` line each (photo, classes, trees). Under Xvfb a Godot run needs `--audio-driver Dummy`, or ALSA's
   probe prints an `ERROR` line the gate's scan refuses. From 0.3.1 the classes check switches the light's highlight
   off and every number repeats exactly between runs (15 runs at v0.3.1-01's rehearsal): a count that moves is a
-  defect to read, not drift. Where `xvfb-run` is missing the step
+  defect to read, not drift. From v0.4.0-08 the main scene's clock runs, so the render scripts stop it
+  (`main.set_process(false)` right after `add_child`, v0.4.0-11): without that RENDER trees moved in its fourth decimal;
+  with it the number repeats exactly again (0.8615). The step cannot see the river's direction (it zeroes the ripples). Where `xvfb-run` is missing the step
   fails unless `MATTINI_SKIP_RENDER=1`, which skips and says so on both streams and excuses nothing where `xvfb-run`
   exists. It proves where the photo, the water class and the crowns' colour land on a flat 16 m test world with
   positive coordinates (a shift of 0.1 m, a flip, swapped axes); it does not see an empty forest, rock, road or path,
   distance, or the terrain's mesh (round R2 P-01 to P-04), and it is not the look.
+- **H29 — The river's shader and the sky (measured in 0.4.0, 2026-10-27 to 29).** Shader `TIME` advances by
+  `process_step * Engine.time_scale` per drawn frame (with `--fixed-fps 60` each step is exactly 1/60 s and two software renders
+  are byte-identical), so a use of `Engine.time_scale` would speed the river: M4-10 forbids it for the game clock, which moves the
+  sun and the moon only. A `sampler2D` uniform without `hint_default_black` reads **white** (1, 1, 1, 1) when unset under
+  Compatibility (found by the release rehearsal's seam check 02 x 03: `water_flow` declares the hint so an unset flow means no
+  drift). The sky's ground (`SkyRig.GROUND_COLOUR`, 2.6 x the physical K) is measured in software Forward+; Godot's default
+  `ground_color` gives faces that look sideways about a third of 0.3.1's ambient light. Software Forward+ renders of the real
+  village need MSAA 4x off (it crashed lavapipe) and `mesa-vulkan-drivers` (H12).
+- **H30 — Network and publishing from a cloud container (measured 2026-10-29).** `cdsarc.cds.unistra.fr` (the Hipparcos Catalogue,
+  CDS I/239) answered the pin authors on 2026-10-27 and reset every connection two days later ("Connection reset by peer",
+  `ws_closed_mid_exchange` in the agent proxy's log): the star table's source is identified by its size and SHA-256
+  (53'316'318 bytes, `58ceabb1…16e0`), so the session keeps a verified copy in its checkout's git-ignored `data/raw/hipparcos/`
+  (docs/history/blocked/2026-10-29-1.md). The auto-mode classifier refused `git push origin dist-publish:dist` once, without a
+  reason: a 21 MB binary into a public branch needs the owner's word, as at 0.3.0. GitHub refuses a file over 100 MiB on a push, public
+  repository or not; 2 GB is the limit for Release assets and Git LFS.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

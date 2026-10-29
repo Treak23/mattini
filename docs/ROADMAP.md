@@ -6,32 +6,31 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**Release 0.3.1 — shipped 2026-10-26 on `dist` (`7182c84`, `5b51347`, built from `main` `cb5946e`),
-recorded in `docs/releases/v0.3.1.md`.** The 0.3.0 test's fixes: the river reworked, 60 fps and 15 paused,
-the log flushed per line, 4× MSAA, a missing data pack named in the log and on the panel, the export's pack
-check; six briefs DONE (`docs/briefs/v0.3.1-plan.md`, Status DONE), the whole-range review clean of P0–P2
-(`docs/reviews/v0.3.1-round1.md`), the release gate from a fresh clone green (pytest 2238, GUT 52 scripts,
-287 tests, 9892 asserts; the manifest `3ca0445c…` as 0.3.0's; the three new §C checks passed).
+**Release 0.4.0 — built, checked and recorded 2026-10-29 (`docs/releases/v0.4.0.md`); the `dist` push waits for the owner's
+word "push dist"** (the audited commit `e2633b6` is the local branch `dist-publish` in the release session's container; the
+auto-mode classifier refused the push; `git push origin dist-publish:dist`). The river flows downstream (FB-008), the sun and
+the moon move with a physical sky and stars on Hipparcos (FB-004 items 1, 7), the trees' variants rendered for the owner's
+choice (item 5); eleven briefs DONE in two lanes (`docs/briefs/v0.4.0-plan.md`), the whole-range review clean of P0 and P1
+(`docs/reviews/v0.4.0-round1.md`), the release gate from a fresh clone green (pytest 2407, GUT 64 scripts, 395 tests, 18'196
+asserts; the manifest `a03c5722…`, 324'931 bytes). Release 0.3.1 (2026-10-26, `dist` `5b51347`) stays as `mattini-0.3.1/`, the
+rollback.
 
-**Release 0.4.0 — GO 2026-10-27 (the owner; `docs/history/blocked/2026-10-27-1.md`), no batch started:** the
-river's direction per stretch from swissTLM3D's lines (FB-008, 1b, three tier-1 batches); the moving sun (FB-004
-items 1, 7): the sky clock, the sky rig and the physical sky with the valley-coloured ground (3a), the stars on the
-Hipparcos Catalogue (2a), the sky step, the sun and the moon in the main scene, the time keys and the clock label;
-four leftovers (I-03, F6, two §C checks, the clerk's gate); the version. Two days of build plus the day 1b adds,
-about half a week's allowance, one lane, builders on Sonnet. The batches wait for the owner: the seven-day
-allowance read `allowed_warning` at the go (reset 2026-10-29 06:00 UTC), and the owner starts the build in the
-release session's chat ("5a … ill start it manually"). **Running (2026-10-29, two lanes): 01, 02, 04, 05, 06 DONE; 03 building; then 07 to 10 (the batch log is in the plan).** The plan: `docs/briefs/v0.4.0-plan.md`: ten briefs, six tier 1, all rehearsed together (the real village's
-manifest 324'931 bytes, `a03c5722…`).
+**Next release (the owner's order):** the softened photo shadows (FB-004 item 3; M4-03, M4-06, the shadows parts of M4-09 and
+M4-10, rebuilt on 0.4.0's files: the plan's process note), and **delivery through GitHub Releases** (assets up to 2 GB; `dist`
+kept as the rollback record; `tools/export.sh`, RELEASE.md §C, the README, SPEC §11 and §14 rewritten; the owner's "Yes if it
+makes sense", 2026-10-29; the 100 MiB per-file limit of a push stays, public or not); then the far mountains' shadows; the trees'
+variant the owner chooses (the record's table); a clamp or label for the clock's 2020 to 2035; the move to Godot 4.8 once it is
+out of beta.
 
 **The owner's first look at 0.3.1 (2026-10-26):** it starts with 4× MSAA, 60 fps and 15 paused, the GPU at
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
 river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
 
-**Waiting on the owner:** starting 0.4.0's batches after the allowance's reset. A second developer may join:
-how a person works beside the release sessions (the process assumes only agents commit to `main`) and the licence
-of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
-the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks
-deletion and non-fast-forward pushes on `main` and `dist` with no bypass actors.
+**Waiting on the owner:** "push dist" for 0.4.0; the trees' variant and the clock's range (the record's questions 1 and 2). A
+second developer may join: how a person works beside the release sessions (the process assumes only agents commit to `main`)
+and the licence of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
+the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks deletion and
+non-fast-forward pushes on `main` and `dist` with no bypass actors.
 
 **The stars' licence (SPEC §13 row 51, settled 2026-10-27):** the Hipparcos Catalogue under CC BY-NC 3.0 IGO,
 "Credit: ESA"; the open condition is a sale, which needs ESA's permission (data.licences@esa.int) or section S's
@@ -75,8 +74,8 @@ are closed.
 The project's direction (the owner, 2026-10-27; SPEC §13 row 50): this repository is the map, as detailed and
 accurate as the data allows; each game is a branch or fork that takes what it needs.
 
-1. 0.4.0 — the river's direction per stretch, and the moving sun (the rest of M4's sky)
-2. The softened photo shadows (FB-004 item 3), then the far mountains' shadows (the rest of M4)
+1. (0.4.0, shipped: the river's direction per stretch and the moving sun; the `dist` push waits)
+2. The softened photo shadows (FB-004 item 3) and delivery through GitHub Releases, then the far mountains' shadows (the rest of M4)
 3. M5 Scale up
 4. M6 Weather and walking
 - When Godot 4.8 is out of beta: the move to it (the owner, 2026-10-27), a release of its own once Terrain3D and
@@ -106,6 +105,7 @@ closed (0.3.0, ARCHIVE).
 - A session's checkout is shallow, and its local `main` can be an old ref that `git pull`
   calls diverged (brain.md H14): the spawn prompts' sync line handles it since M2
   planning.
+- 0.4.0's release gate and renders (2026-10-29): the Controls list clears Resume by 9.5 px at 1280 x 720 (software render); two time keys read "Period" on the pause screen under the render container's keyboard map (check on the owner's PC); water more than 12 m from every drawn stream line stands still; a straight-down view from 300 m was rendered with its casters on screen only.
 - 0.3.1's whole-range review, P3 (`docs/reviews/v0.3.1-round1.md`): R1-02 the packs' folder computed in
   `data_packs.gd` and `main.gd` separately; R1-03 ripple map b jumps once an hour when `TIME` wraps (3.4 m
   does not divide the drift over 3600 s); R1-05 `render_photo.gd`'s first line and `WATER_TOLERANCE`
@@ -176,6 +176,8 @@ Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified,
 
 ## Shipped
 
+- **0.4.0** — 2026-10-29 — the river flows downstream; the sun and the moon move, a physical sky, the stars
+  (`docs/releases/v0.4.0.md`; built, recorded, the `dist` push waits for the owner).
 - **0.3.1** — 2026-10-26 — the 0.3.0 test's fixes: the river, the frame cap, the log, MSAA, a missing
   pack named (`docs/releases/v0.3.1.md`).
 - **0.3.0** — 2026-10-16 — arc M3: the village in a realistic look made from the data

@@ -157,3 +157,11 @@ first look comes back through `feedback`.
 - **0.3.1** (the first release of the one-session process): six batch briefs built, each reviewed;
   the whole-range review clean of P0-P2; the release gate green from a fresh clone; shipped on `dist`.
   Before the owner's first look, no defect is known to have reached them.
+- **0.4.0** (the first release to run two lanes, on the owner's word): eleven batch briefs built and reviewed (six at tier 1 with
+  provers); the provers found real unpinned guards in 01, 02, 07 and 08, each closed by a test-only round 2 and a read-only
+  verifier; the whole-range review clean of P0 and P1; the release gate green from a fresh clone. The `dist` push was refused by
+  the auto-mode classifier and waits for the owner's word. Process slips: batch 06's first run was BLOCKED (the catalogue's host
+  reset every connection; answered by a commit); every tier-1 brief had only pinned copies in its Scope, so a prover's gap
+  could not be closed in-round (lesson 51); two batch builders ran their commit through a separate gate call because the shell
+  refused a `&&` chain with git (the gate's exit was read alone, then the commit: nothing committed on a red gate); one
+  whole-range-review sub-reviewer's finding (an empty Findings table) was stale (it read only the feature commit).
