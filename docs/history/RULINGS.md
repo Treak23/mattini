@@ -14,6 +14,9 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-10-29 · owner's word, in the release session · 0.5.0 · the deferred items (question A)? → all join: the trees' haze, the clock's note, a RENDER flow check, four residue groups (tests and messages); the far mountains stay next; the list frozen (docs/history/blocked/2026-10-29-2.md)
+2026-10-29 · owner's word, in the release session · 0.5.0 · the board's audit list of reversible calls (0.4.0, 0.3.1)? → kept, all (docs/history/blocked/2026-10-29-2.md)
+2026-10-29 · owner's word, in the release session · process · a deny rule for the `:<branch>` deletion refspec? → leave it; off the board (docs/history/blocked/2026-10-29-2.md)
 2026-10-29 · owner's word, in the release session · 0.5.0 · delivery? → (a) a GitHub Actions workflow builds the release on a GitHub runner and attaches its files to a draft Release the owner publishes; dist stays as the rollback record (docs/history/blocked/2026-10-29-2.md)
 2026-10-29 · owner's word, in the release session · 0.5.0 · 0.4.0's delivery, its audited dist commit lost? → (c) not delivered on its own; 0.5.0 contains it (docs/history/blocked/2026-10-29-2.md)
 2026-10-29 · owner's word, in the release session · 0.5.0 · the capture-shadow mask's mipmaps? → (a) the session decides from a distant software render before pinning (docs/history/blocked/2026-10-29-2.md)

@@ -8,7 +8,7 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 **Release 0.5.0 — in progress (the go of 2026-10-29, `docs/history/blocked/2026-10-29-2.md`):** the softened photo shadows
 (FB-004 item 3) and delivery through GitHub Releases, built by a GitHub Actions workflow into a draft Release the owner
-publishes (1a); deferred items join by the owner's answer to the session's question A. **0.4.0 was never delivered:** its
+publishes (1a); and, by the owner's "question A OK", the trees' haze (FB-004 item 5), the clock's note outside 2020 to 2035, a RENDER check of the river's direction and four residue groups (tests and messages); the list is frozen. **0.4.0 was never delivered:** its
 audited `dist` commit `e2633b6` lived only in the previous session's container and is lost; the owner's "2c": 0.5.0, which
 contains 0.4.0, is the next build the owner gets. `dist` stays at 0.3.1 (`5b51347`), the rollback record.
 
@@ -23,7 +23,7 @@ out of beta.
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
 river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
 
-**Waiting on the owner:** question A (the deferred items for 0.5.0) and question 6 asked again (the audit list below; the `:<branch>` refspec). A
+**Waiting on the owner:** nothing for 0.5.0 until its record. A
 second developer may join: how a person works beside the release sessions (the process assumes only agents commit to `main`)
 and the licence of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
 the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks deletion and
@@ -34,7 +34,7 @@ non-fast-forward pushes on `main` and `dist` with no bypass actors.
 files removed. The Yale catalogue was refused (no licence; the ADC's recorded word forbids altered copies). Known limits (v0.4.0-06): positions are J1991.25, not precessed to the date (0.13 to 0.35°); no star colours. The licence's §7(b) reinstates it if a breach is cured within 30 days (the triage said otherwise).
 
 **Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session
-decides 2), release 0.4.0 (the plan): SkyClock (v0.4.0-04) at tier 1 although it reads no world config; the sky rig and
+decides 2; all below kept by the owner's "6a yes", 2026-10-29), release 0.4.0 (the plan): SkyClock (v0.4.0-04) at tier 1 although it reads no world config; the sky rig and
 the stars (05, 06) at tier 2, their frame reviewed in 08 at tier 1; the river's ripples run in real time whatever the
 game clock does. Release 0.3.1, kept at 0.4.0's go (2026-10-27, shown to the owner, no objection): four water screenshots instead of M4-06's two (v0.3.1-01); the copied
 pins' comments re-pinned with the 0.3.1 brief ids (v0.3.1-02 to -05); if a render check fails under
@@ -120,7 +120,7 @@ closed (0.3.0, ARCHIVE).
   RENDER flow check is buildable: batch 03's probe).
 - Process residue (the 0.3.1 triage, 2026-10-25): the clerk's gate is settled (WORKFLOW §Gates, 2026-10-27); no tool reads the weekly allowance (DESIGN.md step 3 reports the five-hour status and
   the API-equivalent cost); the lane-session path is not written (one lane per release until it
-  is); a `:<branch>` deletion refspec has no deny rule; WORKFLOW's "a tier-1 batch runs alone in
+  is); WORKFLOW's "a tier-1 batch runs alone in
   its lane" has no testable meaning with one lane; builder worktrees that hold commits stay in
   the session's container (the harness removes only unchanged ones).
 
