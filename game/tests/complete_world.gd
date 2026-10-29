@@ -11,8 +11,10 @@ extends RefCounted
 ## - The photo: the shared photo fixture's block and JPEG (80 x 40 texels at 0.2 m), its box
 ##   moved into this world's area at PHOTO_BOX (local rectangle PHOTO_RECT), its world_sha256
 ##   this world's.
-## - The surfaces: the shared surfaces fixture's block and PNG (200 x 150 cells at 0.2 m), its
-##   box moved to SURFACES_BOX (local SURFACES_RECT), its world_sha256 this world's.
+## - The surfaces: the shared surfaces fixture's block, its class PNG (200 x 150 cells at 0.2 m)
+##   and its flow PNG (block "flow", 20 x 15 cells at 2 m; brief v0.4.0-02), its box moved to
+##   SURFACES_BOX (local SURFACES_RECT), its world_sha256 this world's. The flow grid covers
+##   the same box, so it moves with it.
 ## - The trees: the shared trees fixture's block (its source and parameters), its world_sha256
 ##   and box this world's, and ONE chunk written here, in the box's tile: the TREES below, each
 ##   standing on this world's own terrain (brief M3-R1-fix-1, M2 R1 P-01's lesson for the
@@ -155,15 +157,20 @@ static func write(dir: String, change := Callable(), heights := PackedByteArray(
 	return path
 
 
-## The block [param key] of the shared fixture at [param fixture], its file copied into
-## [param dir], its box [param box] and its world_sha256 [param world_sha256].
+## The block [param key] of the shared fixture at [param fixture], its file (and its flow's
+## file, when it has a flow) copied into [param dir], its box [param box] and its world_sha256
+## [param world_sha256].
 static func _moved(
 	fixture: String, key: String, dir: String, box: Dictionary, world_sha256: String
 ) -> Dictionary:
 	var source := repo_file(fixture)
 	var block: Dictionary = _parse(source)[key]
-	var file: String = block["file"]
-	_store(dir.path_join(file), FileAccess.get_file_as_bytes(source.get_base_dir().path_join(file)))
+	var files: Array[String] = [block["file"]]
+	if typeof(block.get("flow")) == TYPE_DICTIONARY:
+		files.append(block["flow"]["file"])
+	for file in files:
+		var data := FileAccess.get_file_as_bytes(source.get_base_dir().path_join(file))
+		_store(dir.path_join(file), data)
 	block["lv95_box"] = box.duplicate()
 	block["world_sha256"] = world_sha256
 	return block

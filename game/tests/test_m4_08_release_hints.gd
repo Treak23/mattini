@@ -12,8 +12,9 @@ extends GutTest
 ## export "; it ships in the release's packs: download the release folder again" (the photo and
 ## the heights ship in the data packs, the rest in mattini.pck: both are the release's packs).
 ## Every reader site that used to write "; <command> rebuilds it" calls file_hint: TerrainGrid
-## (the heights), PhotoGrid (the JPEG; its decoding), SurfaceGrid (the PNG; its decoding),
-## TreeChunks and BuildingChunks (a chunk file). BuildingRoofs reads no file of its own. The
+## (the heights), PhotoGrid (the JPEG; its decoding), SurfaceGrid (the PNG; its decoding; from
+## brief v0.4.0-02 the flow PNG and its decoding too), TreeChunks and BuildingChunks (a chunk
+## file). BuildingRoofs reads no file of its own. The
 ## readers are called through _read(path, world), which returns the problem without a
 ## push_error, so this script prints no ERROR line.
 ##
@@ -175,6 +176,35 @@ func test_surfaces_that_decode_to_other_classes() -> void:
 	var change := func(m: Dictionary) -> void: m["surfaces"]["sha256"] = sha
 	var path := _write_case("surfaces_fixture", change, {"surfaces/fixture.png": png})
 	_assert_hints(SurfaceGrid.new, path, "pixels_sha256", "python -m mattini surfaces")
+
+
+func test_surfaces_flow_missing() -> void:
+	# The class PNG there, the flow PNG not (brief v0.4.0-02): SurfaceGrid's flow site.
+	var fixture := _repo_file(SHARED.path_join("surfaces_fixture/generated/surfaces/fixture.png"))
+	var files := {"surfaces/fixture.png": FileAccess.get_file_as_bytes(fixture)}
+	var path := _write_case("surfaces_fixture", _keep, files)
+	_assert_hints(
+		SurfaceGrid.new, path, "fixture-flow.png is missing", "python -m mattini surfaces"
+	)
+
+
+func test_surfaces_flow_that_decodes_to_other_codes() -> void:
+	# A flow PNG whose SHA-256 the block records, one code changed: the flow's decoding site.
+	var shared := _repo_file(SHARED.path_join("surfaces_fixture/generated/surfaces"))
+	var image := Image.new()
+	var flow := FileAccess.get_file_as_bytes(shared.path_join("fixture-flow.png"))
+	assert_eq(image.load_png_from_buffer(flow), OK)
+	var codes := image.get_data()
+	codes[150] = (codes[150] + 1) % 241
+	var png := Image.create_from_data(20, 15, false, Image.FORMAT_L8, codes).save_png_to_buffer()
+	var sha := _sha256(png)
+	var change := func(m: Dictionary) -> void: m["surfaces"]["flow"]["sha256"] = sha
+	var files := {
+		"surfaces/fixture.png": FileAccess.get_file_as_bytes(shared.path_join("fixture.png")),
+		"surfaces/fixture-flow.png": png,
+	}
+	var path := _write_case("surfaces_fixture", change, files)
+	_assert_hints(SurfaceGrid.new, path, "flow.pixels_sha256", "python -m mattini surfaces")
 
 
 func test_tree_chunk_missing() -> void:

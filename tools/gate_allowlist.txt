@@ -10,6 +10,7 @@ BuildingRoofs: user://test_ @ res://tests/test_building_roofs.gd # its refusal t
 PhotoGrid: user://test_ @ res://tests/test_photo_grid.gd # its refusal tests write broken manifests under user://test_photo_grid on purpose (brief M3-09)
 TreeChunks: user://test_ @ res://tests/test_tree_chunks.gd # its refusal tests write broken manifests under user://test_tree_chunks on purpose (brief M3-11)
 SurfaceGrid: user://test_ @ res://tests/test_surface_grid.gd # its refusal tests write broken manifests under user://test_surface_grid on purpose (brief M3-10)
+SurfaceGrid: user://test_ @ res://tests/test_surface_flow.gd # its refusal tests write broken flow grids and flow blocks under user://test_surface_flow on purpose (brief v0.4.0-02)
 DataPacks: cannot load the data pack @ res://tests/test_data_packs.gd # its broken pack is refused on purpose (brief M3-08)
 PhotoGrid: user://test_ @ res://tests/test_main_scene_refusals.gd # its missing photo is refused on purpose (brief M3-14)
 SurfaceGrid: user://test_ @ res://tests/test_main_scene_refusals.gd # its damaged surfaces are refused on purpose (brief M3-14)
