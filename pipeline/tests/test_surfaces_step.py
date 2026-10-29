@@ -17,7 +17,8 @@ surfaces/<area>.json holds, exactly its keys.
 manifest's check, wired by a later brief) gives None when no surfaces are built, else the
 block once it is shown to hold: it decodes the PNG with the standard library and refuses
 a row whose filter is not 0 (a valid PNG Godot would read, but not the pinned format) and
-pixels other than `pixels_sha256`, naming `python -m mattini surfaces`.
+pixels other than `pixels_sha256`, naming `python -m mattini surfaces`. From brief v0.4.0-01
+the block also holds `flow`, the flow grid's description (test_surfaces_flow.py).
 
 Does NOT prove: the CLI (`python -m mattini surfaces`) and the manifest's wiring (later
 briefs); that the real village gives design's classes (the step's own comparison with
@@ -57,6 +58,7 @@ BLOCK_KEYS = {
     "classes",
     "columns",
     "file",
+    "flow",  # brief v0.4.0-01
     "format",
     "lv95_box",
     "pixels_sha256",

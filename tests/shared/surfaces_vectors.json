@@ -1,5 +1,5 @@
 {
-  "about": "The shared surfaces fixture (m3-design section 4; briefs M3-06 and M3-10), the seam between the pipeline's surfaces step and the game's SurfaceGrid. tests/shared/surfaces_fixture/ holds a synthetic world (world.json: origin E 2700000 / N 1200000, height_offset_m 750.0, the owner's axes, area 'fixture' E 2700012-2700052, N 1199971-1200001: 40 m x 30 m, so x 12 ... 52 and z -1 ... 29) and source.json: a synthetic swissTLM3D (invented features, UUIDs and codes; no swisstopo data) in the reader's form, coordinates in whole millimetres, layers as the FileGDB holds them (not in UUID order). The reader hands over the features whose geometry meets the area box grown by 10 m (listed in 'read', sorted by UUID): not the L-shaped stream whose bounding box meets that box but whose line stays 15 m away, not a road 30 m east, not a rock annulus whose hole holds the whole box, not a path 0.5 m outside the grown box; but the path that touches the grown box at one point and the Wald polygon that encloses it. The class grid at 0.2 m (200 columns x 150 rows, rows north to south) covers every class and priority (road > path > water > rock > none), a tunnel, a gallery, an Unterfuehrung, a road in/auf Gebaeude, a Platz, a Klettersteig and an unknown surface not drawn, a bridge and a Treppe drawn, a 1 m Weg with a hard surface as road and a 3 m Strasse with a natural surface as path, the 2m Wegfragment (18) and 8m Strasse (20) widths, a rock polygon with a hole and one overlapping it, a waterfall drawn and an underground stream, a stream on a bridge, a Trockenrinne and a Bisse not drawn, features outside the area that reach into it, a line of two parts with a gap, a repeated vertex, and ties on purpose: polygon edges through texel centres (half-open: west and south edges in, east and north out), a vertex on a centre, centres at exactly half a width from a segment and from a segment's end. Expected outputs were computed two independent ways (a vectorised numpy implementation and a pure-Python row scanline with Fractions; identical bytes) at 0.2, 0.5 and 1 m; generated/ holds the 0.2 m output: the PNG (8-bit greyscale, filter 0 on every row, one zlib stream at level 9 in IDAT chunks of at most 1 MiB; its bytes depend on the zlib build, so only its pixels are pinned), its keep-file import note and its description, and a manifest whose other blocks are null. 'points' name texel centres (and four points 0.04 m from a texel boundary) with their class; the game finds each at class_at(local x, z) and each local point is WorldConfig.to_local of its LV95 point; 'outside' points give -1. 'twins' records, for the likeliest wrong implementations, how many texels differ and which points catch them.",
+  "about": "The shared surfaces fixture (m3-design section 4; briefs M3-06 and M3-10), the seam between the pipeline's surfaces step and the game's SurfaceGrid. tests/shared/surfaces_fixture/ holds a synthetic world (world.json: origin E 2700000 / N 1200000, height_offset_m 750.0, the owner's axes, area 'fixture' E 2700012-2700052, N 1199971-1200001: 40 m x 30 m, so x 12 ... 52 and z -1 ... 29) and source.json: a synthetic swissTLM3D (invented features, UUIDs and codes; no swisstopo data) in the reader's form, coordinates in whole millimetres, layers as the FileGDB holds them (not in UUID order). The reader hands over the features whose geometry meets the area box grown by 12 m (the step's MARGIN_M, 10 m until brief v0.4.0-01 raised it to the flow's radius; listed in 'read', sorted by UUID): not the L-shaped stream whose bounding box meets that box but whose line stays 13 m away, not a road 30 m east, not a rock annulus whose hole holds the whole box, not a path 0.5 m outside the grown box; but the path that touches the grown box at one point and the Wald polygon that encloses it. The class grid at 0.2 m (200 columns x 150 rows, rows north to south) covers every class and priority (road > path > water > rock > none), a tunnel, a gallery, an Unterfuehrung, a road in/auf Gebaeude, a Platz, a Klettersteig and an unknown surface not drawn, a bridge and a Treppe drawn, a 1 m Weg with a hard surface as road and a 3 m Strasse with a natural surface as path, the 2m Wegfragment (18) and 8m Strasse (20) widths, a rock polygon with a hole and one overlapping it, a waterfall drawn and an underground stream, a stream on a bridge, a Trockenrinne and a Bisse not drawn, a river's centre line inside its river area and a tributary under a road (brief v0.4.0-01: drawn, but inside water or under a road, so they change no class), features outside the area that reach into it, a line of two parts with a gap, a repeated vertex, and ties on purpose: polygon edges through texel centres (half-open: west and south edges in, east and north out), a vertex on a centre, centres at exactly half a width from a segment and from a segment's end. Expected outputs were computed two independent ways (a vectorised numpy implementation and a pure-Python row scanline with Fractions; identical bytes) at 0.2, 0.5 and 1 m; generated/ holds the 0.2 m output: the PNG (8-bit greyscale, filter 0 on every row, one zlib stream at level 9 in IDAT chunks of at most 1 MiB; its bytes depend on the zlib build, and both its pixels and, since brief M3-R1-fix-6, its bytes are pinned: surfaces.json's expected_pixels_sha256 and expected_png_sha256), its keep-file import note, the flow's PNG and keep file (brief v0.4.0-01, 'flow' below), the description, and a manifest whose other blocks are null. 'points' name texel centres (and four points 0.04 m from a texel boundary) with their class; the game finds each at class_at(local x, z) and each local point is WorldConfig.to_local of its LV95 point; 'outside' points give -1. 'twins' records, for the likeliest wrong implementations, how many texels differ and which points catch them.",
   "area": "fixture",
   "cell_m": 0.2,
   "columns": 200,
@@ -9,6 +9,520 @@
     "2": 4455,
     "3": 2349,
     "4": 7377
+  },
+  "flow": {
+    "about": "The flow grid of the same fixture (brief v0.4.0-01; docs/SPEC.md §8, the surfaces): 2 m cells on the area's box, 20 columns x 15 rows, rows north to south, texel (r, c) centred at E = e_min + 1 + 2c, N = n_max - 1 - 2r (local x = 13 + 2c, z = 2r); one byte each, the downstream bearing of the nearest drawn stream (TLM_FLIESSGEWAESSER OBJEKTART 4, VERLAUF 100 or 500, segment by segment in vertex order, swissTLM3D drawing them downstream): 0 none within 12 m, else code = 1 + (round(bearing / 1.5) mod 240), bearing = (code - 1) x 1.5 degrees clockwise from north. Painted in passes of 12, 11, ... 1 m, each segment in the reader's order (UUID, part, vertex), a later paint overwriting: a cell takes the code of a nearest segment to within 1 m, ties to the later. The streams: s1 (south-west then west), the waterfall s2 (south), the river's centre line s8 and s9 (north, s8's second segment 0.7 degrees west of north, code 1 by the mod) inside the river area r6, the tributary s10 (east, along road t01 and under the bridge t02) ending at their confluence with its last vertex repeated (a zero-length segment, never painted), and s11 (north) 11 m west of the area, whose 12.000 m to column 0's centres is the largest pass's tie and is read only with the 12 m margin. s8 to s11 are synthetic test data (invented, not swisstopo's), drawn inside water or under a road so that the classes stay the ones pinned above. Computed three ways with identical bytes: the step's code (flow_grid), and two programs of design's own (an exact rational distance per cell and segment, one reading the features itself with shapely). 'points' name cells with their code, its bearing and the downstream direction in local (x, z) under this world's axes (x = +e, z = -n): (sin b, -cos b). 'twins' records, for the likeliest wrong implementations, how many cells differ and which points catch them.",
+    "cell_m": 2.0,
+    "columns": 20,
+    "counts": {
+      "0": 12,
+      "1": 19,
+      "121": 60,
+      "130": 19,
+      "141": 11,
+      "155": 34,
+      "179": 21,
+      "6": 46,
+      "60": 35,
+      "61": 9,
+      "62": 10,
+      "8": 24
+    },
+    "encoding": "downstream-bearing-1.5deg",
+    "pixels_sha256": "39b24ba38c1f3ab1a4d8deea684a9825f9f231c142c6cb0e114117d4e6b43858",
+    "png_sha256": "65ddc2fd4ba715f068d1774047f7c1313db556d534226957f5fd3b80a23a40cb",
+    "points": [
+      {
+        "bearing_deg": 0.0,
+        "code": 1,
+        "direction_local": [
+          0.0,
+          -1.0
+        ],
+        "local": [
+          13.0,
+          0.0
+        ],
+        "lv95": [
+          2700013.0,
+          1200000.0
+        ],
+        "name": "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin",
+        "texel": [
+          0,
+          0
+        ]
+      },
+      {
+        "code": 0,
+        "local": [
+          17.0,
+          0.0
+        ],
+        "lv95": [
+          2700017.0,
+          1200000.0
+        ],
+        "name": "13 m from the waterfall s2's start, no stream within 12 m: none",
+        "texel": [
+          0,
+          2
+        ]
+      },
+      {
+        "bearing_deg": 7.5,
+        "code": 6,
+        "direction_local": [
+          0.130526,
+          -0.991445
+        ],
+        "local": [
+          23.0,
+          0.0
+        ],
+        "lv95": [
+          2700023.0,
+          1200000.0
+        ],
+        "name": "the river's centre line s9 from the confluence, 7.4 degrees: 12 m off at the edge of the last pass",
+        "texel": [
+          0,
+          5
+        ]
+      },
+      {
+        "bearing_deg": 210.0,
+        "code": 141,
+        "direction_local": [
+          -0.5,
+          0.866025
+        ],
+        "local": [
+          43.0,
+          0.0
+        ],
+        "lv95": [
+          2700043.0,
+          1200000.0
+        ],
+        "name": "s1's first segment, 209.7 degrees",
+        "texel": [
+          0,
+          15
+        ]
+      },
+      {
+        "bearing_deg": 180.0,
+        "code": 121,
+        "direction_local": [
+          0.0,
+          1.0
+        ],
+        "local": [
+          13.0,
+          2.0
+        ],
+        "lv95": [
+          2700013.0,
+          1199998.0
+        ],
+        "name": "three streams in the 12 m pass (s10, s11 and the waterfall s2): the last in order, s2, wins",
+        "texel": [
+          1,
+          0
+        ]
+      },
+      {
+        "bearing_deg": 193.5,
+        "code": 130,
+        "direction_local": [
+          -0.233445,
+          0.97237
+        ],
+        "local": [
+          45.0,
+          4.0
+        ],
+        "lv95": [
+          2700045.0,
+          1199996.0
+        ],
+        "name": "s1's second segment, 193.7 degrees",
+        "texel": [
+          2,
+          16
+        ]
+      },
+      {
+        "bearing_deg": 91.5,
+        "code": 62,
+        "direction_local": [
+          0.999657,
+          0.026177
+        ],
+        "local": [
+          13.0,
+          6.0
+        ],
+        "lv95": [
+          2700013.0,
+          1199994.0
+        ],
+        "name": "the tributary s10's first segment, 91.9 degrees",
+        "texel": [
+          3,
+          0
+        ]
+      },
+      {
+        "bearing_deg": 231.0,
+        "code": 155,
+        "direction_local": [
+          -0.777146,
+          0.62932
+        ],
+        "local": [
+          43.0,
+          12.0
+        ],
+        "lv95": [
+          2700043.0,
+          1199988.0
+        ],
+        "name": "s1's third segment, 231.6 degrees",
+        "texel": [
+          6,
+          15
+        ]
+      },
+      {
+        "bearing_deg": 90.0,
+        "code": 61,
+        "direction_local": [
+          1.0,
+          0.0
+        ],
+        "local": [
+          33.0,
+          14.0
+        ],
+        "lv95": [
+          2700033.0,
+          1199986.0
+        ],
+        "name": "the confluence: s10's last segment, exactly east, 0.2 m away; its repeated last vertex is not painted",
+        "texel": [
+          7,
+          10
+        ]
+      },
+      {
+        "bearing_deg": 90.0,
+        "code": 61,
+        "direction_local": [
+          1.0,
+          0.0
+        ],
+        "local": [
+          35.0,
+          14.0
+        ],
+        "lv95": [
+          2700035.0,
+          1199986.0
+        ],
+        "name": "east of the river at the confluence: river and tributary in one pass, the tributary later in order",
+        "texel": [
+          7,
+          11
+        ]
+      },
+      {
+        "bearing_deg": 180.0,
+        "code": 121,
+        "direction_local": [
+          0.0,
+          1.0
+        ],
+        "local": [
+          17.0,
+          18.0
+        ],
+        "lv95": [
+          2700017.0,
+          1199982.0
+        ],
+        "name": "the waterfall s2 flowing south, on its line",
+        "texel": [
+          9,
+          2
+        ]
+      },
+      {
+        "bearing_deg": 231.0,
+        "code": 155,
+        "direction_local": [
+          -0.777146,
+          0.62932
+        ],
+        "local": [
+          43.0,
+          18.0
+        ],
+        "lv95": [
+          2700043.0,
+          1199982.0
+        ],
+        "name": "beside the underground stream s3 (VERLAUF 200, not drawn): s1's 155",
+        "texel": [
+          9,
+          15
+        ]
+      },
+      {
+        "bearing_deg": 0.0,
+        "code": 1,
+        "direction_local": [
+          0.0,
+          -1.0
+        ],
+        "local": [
+          31.0,
+          20.0
+        ],
+        "lv95": [
+          2700031.0,
+          1199980.0
+        ],
+        "name": "the river's centre line s8, 0.7 degrees west of north: code 1 (mod 240)",
+        "texel": [
+          10,
+          9
+        ]
+      },
+      {
+        "bearing_deg": 267.0,
+        "code": 179,
+        "direction_local": [
+          -0.99863,
+          0.052336
+        ],
+        "local": [
+          37.0,
+          18.0
+        ],
+        "lv95": [
+          2700037.0,
+          1199982.0
+        ],
+        "name": "s1's last segment, 267.1 degrees",
+        "texel": [
+          9,
+          12
+        ]
+      },
+      {
+        "bearing_deg": 10.5,
+        "code": 8,
+        "direction_local": [
+          0.182236,
+          -0.983255
+        ],
+        "local": [
+          29.0,
+          26.0
+        ],
+        "lv95": [
+          2700029.0,
+          1199974.0
+        ],
+        "name": "the river's centre line s8's first segment, 10.8 degrees",
+        "texel": [
+          13,
+          8
+        ]
+      },
+      {
+        "code": 0,
+        "local": [
+          51.0,
+          28.0
+        ],
+        "lv95": [
+          2700051.0,
+          1199972.0
+        ],
+        "name": "the south-east corner, no stream within 12 m: none",
+        "texel": [
+          14,
+          19
+        ]
+      }
+    ],
+    "radius_m": 12,
+    "rows": 15,
+    "twins": [
+      {
+        "points_that_catch_it": [
+          "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin",
+          "the river's centre line s9 from the confluence, 7.4 degrees: 12 m off at the edge of the last pass",
+          "s1's first segment, 209.7 degrees",
+          "three streams in the 12 m pass (s10, s11 and the waterfall s2): the last in order, s2, wins",
+          "s1's second segment, 193.7 degrees",
+          "the tributary s10's first segment, 91.9 degrees",
+          "s1's third segment, 231.6 degrees",
+          "the confluence: s10's last segment, exactly east, 0.2 m away; its repeated last vertex is not painted",
+          "east of the river at the confluence: river and tributary in one pass, the tributary later in order",
+          "the waterfall s2 flowing south, on its line",
+          "beside the underground stream s3 (VERLAUF 200, not drawn): s1's 155",
+          "the river's centre line s8, 0.7 degrees west of north: code 1 (mod 240)",
+          "s1's last segment, 267.1 degrees",
+          "the river's centre line s8's first segment, 10.8 degrees"
+        ],
+        "texels_that_differ": 288,
+        "twin": "the line read backwards (every code turned 180 degrees)"
+      },
+      {
+        "points_that_catch_it": [
+          "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin",
+          "the river's centre line s9 from the confluence, 7.4 degrees: 12 m off at the edge of the last pass",
+          "s1's first segment, 209.7 degrees",
+          "three streams in the 12 m pass (s10, s11 and the waterfall s2): the last in order, s2, wins",
+          "s1's second segment, 193.7 degrees",
+          "the tributary s10's first segment, 91.9 degrees",
+          "s1's third segment, 231.6 degrees",
+          "the confluence: s10's last segment, exactly east, 0.2 m away; its repeated last vertex is not painted",
+          "east of the river at the confluence: river and tributary in one pass, the tributary later in order",
+          "the waterfall s2 flowing south, on its line",
+          "beside the underground stream s3 (VERLAUF 200, not drawn): s1's 155",
+          "the river's centre line s8, 0.7 degrees west of north: code 1 (mod 240)",
+          "s1's last segment, 267.1 degrees",
+          "the river's centre line s8's first segment, 10.8 degrees"
+        ],
+        "texels_that_differ": 288,
+        "twin": "east and north swapped in the bearing (atan2(dN, dE))"
+      },
+      {
+        "points_that_catch_it": [
+          "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin",
+          "the river's centre line s9 from the confluence, 7.4 degrees: 12 m off at the edge of the last pass",
+          "s1's first segment, 209.7 degrees",
+          "three streams in the 12 m pass (s10, s11 and the waterfall s2): the last in order, s2, wins",
+          "s1's second segment, 193.7 degrees",
+          "the tributary s10's first segment, 91.9 degrees",
+          "s1's third segment, 231.6 degrees",
+          "the waterfall s2 flowing south, on its line",
+          "beside the underground stream s3 (VERLAUF 200, not drawn): s1's 155",
+          "the river's centre line s8, 0.7 degrees west of north: code 1 (mod 240)",
+          "s1's last segment, 267.1 degrees",
+          "the river's centre line s8's first segment, 10.8 degrees"
+        ],
+        "texels_that_differ": 279,
+        "twin": "north negated in the bearing (the local z taken for north)"
+      },
+      {
+        "points_that_catch_it": [
+          "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin",
+          "13 m from the waterfall s2's start, no stream within 12 m: none",
+          "the river's centre line s9 from the confluence, 7.4 degrees: 12 m off at the edge of the last pass",
+          "s1's first segment, 209.7 degrees",
+          "s1's second segment, 193.7 degrees",
+          "the tributary s10's first segment, 91.9 degrees",
+          "the river's centre line s8, 0.7 degrees west of north: code 1 (mod 240)",
+          "s1's last segment, 267.1 degrees",
+          "the river's centre line s8's first segment, 10.8 degrees",
+          "the south-east corner, no stream within 12 m: none"
+        ],
+        "texels_that_differ": 204,
+        "twin": "rows from the south (the grid flipped north-south)"
+      },
+      {
+        "points_that_catch_it": [
+          "the river's centre line s9 from the confluence, 7.4 degrees: 12 m off at the edge of the last pass",
+          "s1's first segment, 209.7 degrees",
+          "three streams in the 12 m pass (s10, s11 and the waterfall s2): the last in order, s2, wins",
+          "east of the river at the confluence: river and tributary in one pass, the tributary later in order"
+        ],
+        "texels_that_differ": 53,
+        "twin": "texel corners instead of centres"
+      },
+      {
+        "points_that_catch_it": [
+          "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin",
+          "the river's centre line s9 from the confluence, 7.4 degrees: 12 m off at the edge of the last pass",
+          "three streams in the 12 m pass (s10, s11 and the waterfall s2): the last in order, s2, wins"
+        ],
+        "texels_that_differ": 9,
+        "twin": "a largest radius of 11 m"
+      },
+      {
+        "points_that_catch_it": [
+          "13 m from the waterfall s2's start, no stream within 12 m: none"
+        ],
+        "texels_that_differ": 4,
+        "twin": "a largest radius of 13 m"
+      },
+      {
+        "points_that_catch_it": [
+          "s1's first segment, 209.7 degrees",
+          "s1's second segment, 193.7 degrees",
+          "the tributary s10's first segment, 91.9 degrees",
+          "s1's third segment, 231.6 degrees",
+          "beside the underground stream s3 (VERLAUF 200, not drawn): s1's 155",
+          "the river's centre line s8, 0.7 degrees west of north: code 1 (mod 240)",
+          "s1's last segment, 267.1 degrees",
+          "the river's centre line s8's first segment, 10.8 degrees"
+        ],
+        "texels_that_differ": 193,
+        "twin": "the passes in increasing radius (the last pass, 12 m, decides)"
+      },
+      {
+        "points_that_catch_it": [
+          "three streams in the 12 m pass (s10, s11 and the waterfall s2): the last in order, s2, wins",
+          "s1's second segment, 193.7 degrees",
+          "the confluence: s10's last segment, exactly east, 0.2 m away; its repeated last vertex is not painted",
+          "east of the river at the confluence: river and tributary in one pass, the tributary later in order"
+        ],
+        "texels_that_differ": 95,
+        "twin": "the first paint of a pass wins (ties to the earlier)"
+      },
+      {
+        "points_that_catch_it": [
+          "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin"
+        ],
+        "texels_that_differ": 6,
+        "twin": "a strict distance test (< r)"
+      },
+      {
+        "points_that_catch_it": [
+          "beside the underground stream s3 (VERLAUF 200, not drawn): s1's 155"
+        ],
+        "texels_that_differ": 41,
+        "twin": "VERLAUF 200 (underground) drawn"
+      },
+      {
+        "points_that_catch_it": [
+          "the confluence: s10's last segment, exactly east, 0.2 m away; its repeated last vertex is not painted",
+          "east of the river at the confluence: river and tributary in one pass, the tributary later in order"
+        ],
+        "texels_that_differ": 3,
+        "twin": "a zero-length segment painted (as north)"
+      },
+      {
+        "points_that_catch_it": [
+          "the river's centre line s8, 0.7 degrees west of north: code 1 (mod 240)"
+        ],
+        "texels_that_differ": 18,
+        "twin": "no mod 240 (241 for a bearing within 0.75 degrees west of north)"
+      },
+      {
+        "points_that_catch_it": [
+          "s11 flowing north, exactly 12 m from this centre: the largest radius, ties included, read only with the 12 m margin"
+        ],
+        "texels_that_differ": 1,
+        "twin": "the 10 m read margin (MARGIN_M not raised)"
+      }
+    ]
   },
   "inside_edges": [
     {
@@ -53,6 +567,10 @@
     "{5A0F0050-0000-4000-8000-000000000004}": "r4-felsbloecke-locker-pentagon",
     "{5A0F0056-0000-4000-8000-000000000017}": "s7-l-shaped-stream-box-meets-line-does-not-not-read",
     "{5A0F005C-0000-4000-8000-000000000030}": "t13-platz-not-drawn",
+    "{5A0F0061-0000-4000-8000-000000000041}": "s8-river-centre-line-to-the-confluence",
+    "{5A0F0062-0000-4000-8000-000000000042}": "s9-river-centre-line-from-the-confluence",
+    "{5A0F0063-0000-4000-8000-000000000043}": "s10-tributary-flowing-east-along-t01-into-the-confluence",
+    "{5A0F0064-0000-4000-8000-000000000044}": "s11-stream-11-m-west-of-the-area-flowing-north",
     "{5A0F0067-0000-4000-8000-000000000012}": "s2-waterfall",
     "{5A0F006D-0000-4000-8000-000000000025}": "t08-3m-strasse-natur-is-path",
     "{5A0F0073-0000-4000-8000-000000000038}": "t21-4m-strasse-30-m-east-not-read",
@@ -978,6 +1496,10 @@
     "TLM_FLIESSGEWAESSER": [
       "{5A0F0006-0000-4000-8000-000000000011}",
       "{5A0F002E-0000-4000-8000-000000000014}",
+      "{5A0F0061-0000-4000-8000-000000000041}",
+      "{5A0F0062-0000-4000-8000-000000000042}",
+      "{5A0F0063-0000-4000-8000-000000000043}",
+      "{5A0F0064-0000-4000-8000-000000000044}",
       "{5A0F0067-0000-4000-8000-000000000012}",
       "{5A0F008F-0000-4000-8000-000000000015}",
       "{5A0F00C8-0000-4000-8000-000000000013}",
@@ -1107,7 +1629,7 @@
         "t09, a 10 m Strasse north of the area: row at exactly half its width: road"
       ],
       "texels_that_differ": 2576,
-      "twin": "only features meeting the area itself (no 10 m margin)"
+      "twin": "only features meeting the area itself (no margin)"
     },
     {
       "points_that_catch_it": [

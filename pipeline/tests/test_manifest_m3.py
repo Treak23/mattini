@@ -93,7 +93,7 @@ FIXTURES = {
         "world": "world.json",
         "configs": {"surfaces_config_path": "surfaces.json"},
         "built": ["surfaces"],
-        "sha256": "b768a330730cb2d90f3d5da909167c550d013d91b59fb61ffb9af206f4fa99ff",
+        "sha256": "58ebd442501261b40b342f1b0fabc0886909f4ae48844fd6095403ec49762be4",  # v0.4.0-01
     },
     "trees_fixture": {
         "world": "world.json",

@@ -18,7 +18,9 @@ millimetres (round(v * 1000), half to even; heights dropped); a coordinate more 
 The shared fixture's source.json is written into a FileGDB here and read back: the
 reader must hand over exactly the features its vectors list ('read'), and not the
 L-shaped stream whose bounding box meets the box, the road 30 m away or the rock annulus
-whose hole holds the box.
+whose hole holds the box. The box is the fixture's area grown by the step's MARGIN_M, 12 m
+from brief v0.4.0-01 (10 m before; the two paths at the read box's edge moved 2 m west with
+it, and the stream s11, 11 m west of the area, is read).
 
 Does NOT prove: that swisstopo's national file reads the same way (design read it with
 the same rule, 2026-10-14: 843 roads, 230 land-cover polygons and 73 watercourses for
@@ -42,7 +44,7 @@ LAYERS = {
     "TLM_FLIESSGEWAESSER": ("OBJEKTART", "VERLAUF"),
     "TLM_STRASSE": ("BELAGSART", "KUNSTBAUTE", "OBJEKTART"),
 }
-GROWN = (2700002.0, 2700062.0, 1199961.0, 1200011.0)  # the fixture's area grown by 10 m
+GROWN = (2700000.0, 2700064.0, 1199959.0, 1200013.0)  # the fixture's area grown by 12 m
 
 
 def _source() -> dict:
@@ -60,7 +62,7 @@ def test_the_reader_hands_over_the_features_that_meet_the_box(tmp_path):
     assert names and all("\\" in name and "/" not in name for name in names)
     read = read_tlm(path, LAYERS, GROWN)
     assert read == _expected()
-    assert sum(len(features) for features in read.values()) == 36
+    assert sum(len(features) for features in read.values()) == 40
     for features in read.values():
         uuids = [f["uuid"] for f in features]
         assert uuids == sorted(uuids)

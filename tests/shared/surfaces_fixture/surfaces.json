@@ -4,7 +4,7 @@
     "fixture": {
       "cell_m": 0.2,
       "computed_for": {
-        "inputs_sha256": "319a40ed2308141b815ab3750ee71d02b23e0cacd99f56e62db1d6dedfdd8fea",
+        "inputs_sha256": "cf4503fbd54a2786fee08dde3bda6bc94862c22e89c44163ab0b74488bb76568",
         "world_sha256": "8c509e115b47833170401f7395fff298f769a18deddb6ad51009ba26ca70e801"
       },
       "expected_pixels_sha256": {
@@ -16,7 +16,10 @@
         "0.2": "ef3828f91d98d0a68309981621e0fd706f0e07c1dbd3767dace243b83775e347",
         "0.5": "e0106ac1337bb0b12adc0a4a175a10954d6ecfc4d8dbd4c98687d92f1e0d1554",
         "1": "49e7647f6f1807291e1cd02c042f1dee5b9692a3bdd51425954d0686b3c17240"
-      }
+      },
+      "flow_cell_m": 2,
+      "expected_flow_pixels_sha256": "39b24ba38c1f3ab1a4d8deea684a9825f9f231c142c6cb0e114117d4e6b43858",
+      "expected_flow_png_sha256": "65ddc2fd4ba715f068d1774047f7c1313db556d534226957f5fd3b80a23a40cb"
     }
   }
 }

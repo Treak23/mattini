@@ -16,7 +16,10 @@
         "0.2": "8922edf904e3e4e1de40c65daf1af1aae3474d71481d628a548152ce5b843e12",
         "0.5": "6773cfc4b553cd3fa7e6c19fda08a66a8db711f8fd9ff0a498852d5dac17b071",
         "1": "e68a251cef28046b921999e2792c1bab3497cc193ee42e6afd49dc9cc60d6344"
-      }
+      },
+      "flow_cell_m": 2,
+      "expected_flow_pixels_sha256": "c05a75350a545d11684a5806f69ba1a4370119ef0c242d6b8d2f8dd01c0a69cf",
+      "expected_flow_png_sha256": "c51120dd081fc883671dfb14c4a5a2eafb2a408b93959bf6816fdfb8a59f7ca0"
     }
   }
 }

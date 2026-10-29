@@ -20,14 +20,21 @@ Pinned decisions (m3-design §4, as refined by design on 2026-10-14):
   depend on the zlib build and are design's too (`expected_png_sha256`, brief
   M3-R1-fix-6: the committed fixture PNG is written again byte for byte).
 - `write_surfaces` writes surfaces/<area>.png.import (`importer="keep"`, so that Godot
-  ships the PNG as it is: an imported PNG is not in an export, measured), the PNG and
-  surfaces/<area>.json, each through a `.part` rename; the description has exactly its
-  keys, sorted, 2-space indent, UTF-8, LF and a final newline.
+  ships the PNG as it is: an imported PNG is not in an export, measured), the PNG, from
+  brief v0.4.0-01 the flow's surfaces/<area>-flow.png.import and <area>-flow.png (the same
+  writer, values 0 to 240), and surfaces/<area>.json, each through a `.part` rename; the
+  description has exactly its keys, its `flow` object among them, sorted, 2-space indent,
+  UTF-8, LF and a final newline.
 
 The fixture (tests/shared/surfaces_fixture/, its outcomes and cases in
 tests/shared/surfaces_vectors.json) was computed by design two independent ways (a
 vectorised numpy rule and a pure-Python row scanline over Fractions; identical bytes at
-0.2, 0.5 and 1 m). Its points tell apart the likeliest wrong twins (listed there).
+0.2, 0.5 and 1 m). Its points tell apart the likeliest wrong twins (listed there). Brief
+v0.4.0-01 added four streams for the flow (s8 to s11), drawn inside water, under a road or
+outside the area, so the classes are the same bytes (checked two ways: class_grid gives the
+pinned bytes at 0.2, 0.5 and 1 m, and every texel within 1 m of s8 to s11 is already water,
+path or road in the pinned grids, by an exact distance of design's own), and the village
+config's flow values (test_surfaces_flow.py pins the flow itself).
 
 Does NOT prove: that the reader hands these features over (test_surfaces_read.py); that
 the real village's classes are design's (the step compares them with
@@ -62,6 +69,13 @@ VILLAGE_PNG = {  # the PNG's bytes, zlib 1.3 (brief M3-R1-fix-6); they pin the e
     "0.2": "8922edf904e3e4e1de40c65daf1af1aae3474d71481d628a548152ce5b843e12",
     "0.5": "6773cfc4b553cd3fa7e6c19fda08a66a8db711f8fd9ff0a498852d5dac17b071",
     "1": "e68a251cef28046b921999e2792c1bab3497cc193ee42e6afd49dc9cc60d6344",
+}
+VILLAGE_FLOW = {  # the flow's pixels and its PNG's bytes, zlib 1.3 (brief v0.4.0-01)
+    "flow_cell_m": 2,
+    "expected_flow_pixels_sha256": (
+        "c05a75350a545d11684a5806f69ba1a4370119ef0c242d6b8d2f8dd01c0a69cf"
+    ),
+    "expected_flow_png_sha256": "c51120dd081fc883671dfb14c4a5a2eafb2a408b93959bf6816fdfb8a59f7ca0",
 }
 VILLAGE_TLM_ENTRY = {  # the lock entry design computed the village from (`lock tlm` writes it)
     "collection": "ch.swisstopo.swisstlm3d",
@@ -151,8 +165,9 @@ def test_the_fixture_s_files_hold_the_designed_classes():
 def test_write_surfaces_writes_the_designed_files(tmp_path):
     block = json.loads((GENERATED / "surfaces" / "fixture.json").read_text(encoding="utf-8"))
     grid = class_grid(_features(), BOX, 0.2)
+    flow = surfaces.flow_grid(_features(), BOX, 2.0)  # brief v0.4.0-01
     written = write_surfaces(
-        tmp_path, "fixture", grid, BOX, 0.2, block["world_sha256"], block["source"]
+        tmp_path, "fixture", grid, BOX, 0.2, block["world_sha256"], block["source"], flow, 2.0
     )
     png = (tmp_path / "surfaces" / "fixture.png").read_bytes()
     assert written == block, "the whole description, the PNG's SHA-256 too, is design's"
@@ -161,7 +176,13 @@ def test_write_surfaces_writes_the_designed_files(tmp_path):
     assert (tmp_path / "surfaces" / "fixture.json").read_bytes() == text.encode("utf-8")
     assert (tmp_path / "surfaces" / "fixture.png.import").read_bytes() == KEEP
     _assert_designed_png(png, grid)
+    flow_png = (tmp_path / "surfaces" / "fixture-flow.png").read_bytes()
+    assert _sha(flow_png) == block["flow"]["sha256"], f"zlib {zlib.ZLIB_RUNTIME_VERSION}"
+    assert (tmp_path / "surfaces" / "fixture-flow.png.import").read_bytes() == KEEP
+    _assert_designed_png(flow_png, flow)
     assert sorted(p.name for p in (tmp_path / "surfaces").iterdir()) == [
+        "fixture-flow.png",
+        "fixture-flow.png.import",
         "fixture.json",
         "fixture.png",
         "fixture.png.import",
@@ -171,17 +192,30 @@ def test_write_surfaces_writes_the_designed_files(tmp_path):
 def test_write_surfaces_writes_the_png_it_is_given_and_encodes_nothing_again(tmp_path, monkeypatch):
     block = json.loads((GENERATED / "surfaces" / "fixture.json").read_text(encoding="utf-8"))
     designed = (GENERATED / "surfaces" / "fixture.png").read_bytes()
+    designed_flow = (GENERATED / "surfaces" / "fixture-flow.png").read_bytes()
     grid = class_grid(_features(), BOX, 0.2)
+    flow = surfaces.flow_grid(_features(), BOX, 2.0)  # brief v0.4.0-01
 
     def no_encoding(*args, **keywords):
         raise AssertionError("the PNG was compressed again")
 
     monkeypatch.setattr(surfaces.zlib, "compress", no_encoding)
     written = write_surfaces(
-        tmp_path, "fixture", grid, BOX, 0.2, block["world_sha256"], block["source"], png=designed
+        tmp_path,
+        "fixture",
+        grid,
+        BOX,
+        0.2,
+        block["world_sha256"],
+        block["source"],
+        flow,
+        2.0,
+        png=designed,
+        flow_png=designed_flow,
     )
     assert written == block
     assert (tmp_path / "surfaces" / "fixture.png").read_bytes() == designed
+    assert (tmp_path / "surfaces" / "fixture-flow.png").read_bytes() == designed_flow
 
 
 def test_one_level_9_stream_is_split_into_idat_chunks_of_at_most_1_mib():
@@ -207,6 +241,7 @@ def test_the_committed_config_expects_design_s_village():
                 },
                 "expected_pixels_sha256": VILLAGE,
                 "expected_png_sha256": VILLAGE_PNG,
+                **VILLAGE_FLOW,
             }
         },
     }

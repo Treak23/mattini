@@ -23,12 +23,15 @@ const DOWNLOAD_COMMAND := "python -m mattini download tlm"
 const SURFACES_COMMAND := "python -m mattini surfaces"
 ## How far columns × cell_m and rows × cell_m may be off the box's sides.
 const BOX_TOLERANCE_M := 0.001
+## The block's keys. "flow" (the flow grid's description, brief v0.4.0-01) is required here and
+## not read yet: brief v0.4.0-02 reads and checks it.
 const KEYS := [
 	"area",
 	"cell_m",
 	"classes",
 	"columns",
 	"file",
+	"flow",
 	"format",
 	"lv95_box",
 	"pixels_sha256",

@@ -10,6 +10,15 @@
   },
   "columns": 200,
   "file": "surfaces/fixture.png",
+  "flow": {
+    "cell_m": 2.0,
+    "columns": 20,
+    "encoding": "downstream-bearing-1.5deg",
+    "file": "surfaces/fixture-flow.png",
+    "pixels_sha256": "39b24ba38c1f3ab1a4d8deea684a9825f9f231c142c6cb0e114117d4e6b43858",
+    "rows": 15,
+    "sha256": "65ddc2fd4ba715f068d1774047f7c1313db556d534226957f5fd3b80a23a40cb"
+  },
   "format": "png-l8",
   "lv95_box": {
     "e_max": 2700052.0,
@@ -26,7 +35,7 @@
     "dataset": "swisstlm3d",
     "edition": "2026-02",
     "file": "source.json",
-    "sha256": "9a6abbf71b79c80c0aeb6d2ab2936e7040ebb35950e9e7e75e536c6e07dafb63"
+    "sha256": "a8791c92950a0ea8bf48f5c33ba244cbbc6c37a0aca30b64c5ce2e753c09014e"
   },
   "world_sha256": "8c509e115b47833170401f7395fff298f769a18deddb6ad51009ba26ca70e801"
 }

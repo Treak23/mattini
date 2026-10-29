@@ -5,7 +5,8 @@ The shared fixture's synthetic TLM is written as a zipped FileGDB in `download t
 anything is created, not even the output folder, and before any progress line; the file's
 size is compared with provenance.json's before the file is hashed; its SHA-256 before it is
 read; after the read its (size, mtime_ns, inode) must be what they were; the files are written
-`.png.import`, `.png`, `.json`, each through a `.part` rename; a lock without the TLM entry
+`.png.import`, `.png`, `-flow.png.import`, `-flow.png`, `.json`, each through a `.part` rename
+(the flow's two from brief v0.4.0-01); a lock without the TLM entry
 is refused naming `python -m mattini lock tlm`, never a KeyError. `built_surfaces_block`
 refuses a built description that does not match, naming the rebuild, and a world or lock
 that is not the one the expected values were computed for, naming design's step.
@@ -136,13 +137,15 @@ def test_the_progress_lines_come_in_order_and_the_hash_comes_before_the_read(tmp
     monkeypatch.setattr(surfaces, "read_tlm", lambda *a: (events.append("read"), real_read(*a))[1])
     said: list[str] = []
     _build(case, progress=lambda line: (events.append("say"), said.append(line)))
-    assert events == ["say", "hash", "say", "read", "say", "say", "say", "say"]
+    assert events == ["say", "hash", "say", "read", "say", "say", "say", "say", "say", "say"]
     starts = [
         "checking the SHA-256 of",
         "reading",
         "read ",
         "the classes have the SHA-256",
         "the PNG has the SHA-256",
+        "the flow has the SHA-256",  # brief v0.4.0-01
+        "the flow's PNG has the SHA-256",
         "wrote",
     ]
     assert len(said) == len(starts) and all(
@@ -305,8 +308,10 @@ def test_the_files_are_written_in_order_each_through_a_part_rename(tmp_path, mon
     assert moves == [
         ("fixture.png.import.part", "fixture.png.import"),
         ("fixture.png.part", "fixture.png"),
+        ("fixture-flow.png.import.part", "fixture-flow.png.import"),  # brief v0.4.0-01
+        ("fixture-flow.png.part", "fixture-flow.png"),
         ("fixture.json.part", "fixture.json"),
-    ]
+    ], "each keep file before its PNG, both PNGs before the description that names them"
 
 
 def test_part_files_left_by_a_cut_run_are_removed_from_the_surfaces_folder_only(tmp_path):
@@ -319,6 +324,8 @@ def test_part_files_left_by_a_cut_run_are_removed_from_the_surfaces_folder_only(
     (other / "fixture.f32.part").write_bytes(b"cut short")
     _build(case)
     assert sorted(p.name for p in folder.iterdir()) == [
+        "fixture-flow.png",
+        "fixture-flow.png.import",
         "fixture.json",
         "fixture.png",
         "fixture.png.import",
@@ -401,10 +408,14 @@ def test_the_png_is_encoded_once_and_is_the_one_written(tmp_path, monkeypatch):
         surfaces.zlib, "compress", lambda *a, **k: (calls.append(1), original(*a, **k))[1]
     )
     block = _build(case)
-    assert len(calls) == 1, "about 150 MB of scanlines for the village: compressed once"
+    # about 150 MB of scanlines for the village and 1.5 MB of flow (brief v0.4.0-01): each once
+    assert len(calls) == 2, "the classes' PNG and the flow's PNG, each compressed once"
     png = (case.out / "surfaces" / "fixture.png").read_bytes()
     designed = case.config["areas"]["fixture"]["expected_png_sha256"]["0.2"]
     assert _sha(png) == block["sha256"] == designed
+    flow_png = (case.out / "surfaces" / "fixture-flow.png").read_bytes()
+    designed_flow = case.config["areas"]["fixture"]["expected_flow_png_sha256"]
+    assert _sha(flow_png) == block["flow"]["sha256"] == designed_flow
 
 
 @pytest.mark.parametrize(("cell", "key"), [(0.5, "0.5"), (1.0, "1")])

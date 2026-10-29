@@ -51,11 +51,36 @@ SHA-256 before it writes anything, naming the machine's zlib (SPEC §13 row 39);
 check refuses a built PNG that is not design's. `surfaces/<area>.png.import` says
 `importer="keep"` (brain.md H24: Godot would import the PNG as a texture, and an export would
 ship the texture instead of the PNG). The files are written in the order `.png.import`,
-`.png`, `.json`, each through a `.part` rename. Only the owner's axes (x = +e, y = +h, z = −n)
+`.png`, `-flow.png.import`, `-flow.png`, `.json`, each through a `.part` rename. Only the owner's axes (x = +e, y = +h, z = −n)
 are supported: another mapping would place the rows and columns wrongly (Hard Rule 4).
 
+The flow grid (brief v0.4.0-01, SPEC §13 row 53): the same step also writes, beside the class
+PNG, one byte for every 2 m cell of the area's box (`flow_cell_m`), the bearing the nearest
+drawn stream flows to, so that the game can drift the water along it. The streams are exactly
+those the classes draw as water (TLM_FLIESSGEWAESSER OBJEKTART 4 with VERLAUF 100 or 500),
+read segment by segment in vertex order, in the order `class_grid` reads them (the features
+as handed over, their parts, each part's segments). swisstopo draws them downstream:
+"Die Linien sind in Richtung des Gewässerflusses gerichtet" (Objektkatalog swissTLM3D 2.4,
+February 2026, §8.1). A segment's code (`flow_code`) is 0 for a zero-length segment (never
+painted), else 1 + round(bearing / 1.5°) mod 240, the bearing of (dE, dN) in [0, 360) degrees
+from north through east: 1 is north, 61 east, 121 south, 181 west, 241 to 255 never written.
+The bearing is the one floating-point operation of the step (`math.atan2`, `math.degrees`, the
+division, `round`); a machine whose result differs is refused by
+`expected_flow_pixels_sha256` (lesson 43). The painting is in passes of radius
+`FLOW_RADIUS_M` (12 m), 11 m, ... 1 m, each pass painting every segment's stadium (the classes'
+exact arithmetic, ties included) with its code, a later segment over an earlier one, and a
+pass over the earlier passes: a cell takes the code of a nearest segment to within 1 m (the
+later of equal ones, a known limit at confluences), and keeps 0 where no segment lies within
+12 m. The read margin `MARGIN_M` equals that radius. Like the classes, the flow's pixels
+(`expected_flow_pixels_sha256`) and its PNG's bytes (`expected_flow_png_sha256`, the same
+encoder, values 0 to 240) are compared with config/surfaces.json before anything is written,
+and `built_surfaces_block` refuses a built flow that is not design's. The flow's PNG has its
+keep file too, and the description's `flow` object holds its cell, size, file and SHA-256s.
+
 Does NOT prove: that the classes sit on the photo's roads (the grid is the TLM's, which
-the photo does not have to agree with to a texel); the game's reading (brief M3-10).
+the photo does not have to agree with to a texel); the game's reading (brief M3-10); how fast
+the water flows (TLM gives no speed); that a line runs downstream where swisstopo drew it
+otherwise.
 """
 
 from __future__ import annotations
@@ -90,7 +115,16 @@ SURFACES_CONFIG_NAME = "config/surfaces.json"  # the home of the expected classe
 SCHEMA = 1
 CELLS = (0.2, 0.5, 1.0)
 CELL_KEYS = ("0.2", "0.5", "1")  # CELLS as the config writes them: format(c, "g")
-AREA_CONFIG_KEYS = {"cell_m", "computed_for", "expected_pixels_sha256", "expected_png_sha256"}
+FLOW_CELLS = (2.0,)  # the flow grid's cell sizes in metres, by value
+AREA_CONFIG_KEYS = {
+    "cell_m",
+    "computed_for",
+    "expected_flow_png_sha256",
+    "expected_flow_pixels_sha256",
+    "expected_pixels_sha256",
+    "expected_png_sha256",
+    "flow_cell_m",
+}
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 DATASET = "swisstlm3d"
@@ -107,6 +141,7 @@ BLOCK_KEYS = {
     "classes",
     "columns",
     "file",
+    "flow",
     "format",
     "lv95_box",
     "pixels_sha256",
@@ -115,6 +150,11 @@ BLOCK_KEYS = {
     "source",
     "world_sha256",
 }
+FLOW_KEYS = {"cell_m", "columns", "encoding", "file", "pixels_sha256", "rows", "sha256"}
+FLOW_ENCODING = "downstream-bearing-1.5deg"
+FLOW_STEP_DEG = 1.5  # one code step
+FLOW_CODES = 240  # 360 / FLOW_STEP_DEG: the codes are 1 to 240, 0 is no stream
+FLOW_RADIUS_M = 12  # a cell farther than this from every drawn stream keeps 0 (measured, brief)
 
 # What the reader hands over per layer: the integer attributes besides the UUID.
 STRASSE, BODENBEDECKUNG, FLIESSGEWAESSER = (
@@ -127,7 +167,9 @@ LAYERS = {
     FLIESSGEWAESSER: ("OBJEKTART", "VERLAUF"),
     STRASSE: ("BELAGSART", "KUNSTBAUTE", "OBJEKTART"),
 }
-MARGIN_M = 10  # a feature is read when it meets the area grown by this much
+# A feature is read when it meets the area grown by this much. It equals FLOW_RADIUS_M so that
+# every line that can reach a cell of the flow grid is read.
+MARGIN_M = 12
 PREFILTER_M = 1  # GDAL's rectangle filter gets the box grown by this much and only pre-filters
 
 # TLM_STRASSE: BELAGSART gives the class, OBJEKTART the width (mm), KUNSTBAUTE what is not drawn.
@@ -191,8 +233,10 @@ def check_surfaces_config(data: object, where: Path | str = "the surfaces config
     were computed for, `terrain.check_computed_for`), `expected_pixels_sha256` and
     `expected_png_sha256`: each an object from cell sizes as the config writes them ("0.2",
     "0.5", "1") to the SHA-256 of the class bytes, or of the PNG's bytes, at that cell, 64
-    lower-case hex digits, holding the configured cell; the two hold the same cells. The
-    SurfacesError names `where`.
+    lower-case hex digits, holding the configured cell; the two hold the same cells. It also
+    has `flow_cell_m` (a number in `FLOW_CELLS`, by value) and the single SHA-256s
+    `expected_flow_pixels_sha256` and `expected_flow_png_sha256`. The SurfacesError names
+    `where`.
     """
 
     def fail(message: str) -> SurfacesError:
@@ -215,6 +259,18 @@ def check_surfaces_config(data: object, where: Path | str = "the surfaces config
             raise fail(
                 f"area {name!r}: cell_m must be one of {list(CELLS)}, found {area['cell_m']!r}"
             )
+        if type(area["flow_cell_m"]) not in (int, float) or area["flow_cell_m"] not in FLOW_CELLS:
+            raise fail(
+                f"area {name!r}: flow_cell_m must be one of {list(FLOW_CELLS)}, "
+                f"found {area['flow_cell_m']!r}"
+            )
+        for field in ("expected_flow_pixels_sha256", "expected_flow_png_sha256"):
+            value = area[field]
+            if not (isinstance(value, str) and SHA256_HEX.fullmatch(value)):
+                raise fail(
+                    f"area {name!r}: {field} must be a SHA-256 in 64 lower-case hex "
+                    f"characters, found {value!r}"
+                )
         for field in ("expected_pixels_sha256", "expected_png_sha256"):
             expected = area[field]
             if not isinstance(expected, dict):
@@ -328,6 +384,72 @@ def class_grid(features: dict, box: Box, cell_m: float) -> np.ndarray:
         if spans[code]:
             _paint(grid, frame, code, *(np.concatenate(p) for p in zip(*spans[code], strict=True)))
     return grid
+
+
+def flow_code(dx: int, dy: int) -> int:
+    """The flow code of a segment going `dx` mm east and `dy` mm north: 0 for a zero-length
+    segment (it has no direction), else 1 + round(bearing / 1.5°) mod 240, the bearing in
+    [0, 360) degrees from north through east (1 north, 61 east, 121 south, 181 west).
+
+    The bearing is the one floating-point operation of the flow (`math.atan2`,
+    `math.degrees`, the division, `round`, half to even); a machine whose result differs is
+    refused by `expected_flow_pixels_sha256` (lesson 43).
+    """
+    if dx == 0 and dy == 0:
+        return 0
+    bearing = math.degrees(math.atan2(dx, dy)) % 360.0
+    return 1 + round(bearing / FLOW_STEP_DEG) % FLOW_CODES
+
+
+def flow_grid(features: dict, box: Box, cell_m: float) -> np.ndarray:
+    """The flow codes (uint8, rows × columns) of the configured area `box` at `cell_m`.
+
+    `features` is what `read_tlm` hands over (all three layers, as `class_grid` takes it).
+    One byte per texel (r, c), centred at E = e_min + cell/2 + c·cell, N = n_max − cell/2 −
+    r·cell: the code of a nearest drawn stream segment to within 1 m, 0 where none lies
+    within `FLOW_RADIUS_M`. The rule is in the module's docstring.
+    """
+    frame = _Frame(box, cell_m)
+    if not isinstance(features, dict) or set(features) != set(LAYERS):
+        raise SurfacesError(f"the features must be a dict of exactly the layers {sorted(LAYERS)}")
+    parts = []
+    for feature in features[FLIESSGEWAESSER]:
+        uuid, attributes = _identity(feature, FLIESSGEWAESSER)
+        if attributes["OBJEKTART"] == STREAM_OBJEKTART and attributes["VERLAUF"] in STREAM_VERLAUF:
+            parts.append(_segments(frame, feature, FLIESSGEWAESSER, uuid, 0))
+    grid = np.zeros((frame.rows, frame.columns), dtype=np.uint8)
+    if not parts:
+        return grid
+    ax, ay, bx, by = (np.concatenate([part[i] for part in parts]) for i in range(4))
+    codes = np.array(
+        [flow_code(dx, dy) for dx, dy in zip((bx - ax).tolist(), (by - ay).tolist(), strict=True)],
+        dtype=np.uint8,
+    )
+    drawn = codes > 0  # a zero-length segment is never painted
+    ax, ay, bx, by, codes = ax[drawn], ay[drawn], bx[drawn], by[drawn], codes[drawn]
+    for radius in range(FLOW_RADIUS_M, 0, -1):
+        rr = np.full(len(codes), radius * 1000, dtype=np.int64)
+        _paint_over(grid, frame, codes, *_stadium_cuts(frame, ax, ay, bx, by, rr))
+    return grid
+
+
+def _paint_over(grid, frame, codes, index, rows, starts, ends) -> None:
+    """Set each texel of the spans [start, end) of rows to the code of the highest segment
+    index covering it (the later segment wins); the texels no span covers keep their value.
+
+    Exact and integer only: `np.maximum.at` finds the last segment, never a fancy-index
+    assignment with repeated indices (numpy does not promise an order there).
+    """
+    if not len(rows):
+        return
+    lengths = (ends - starts).astype(np.int64)
+    cells = np.repeat(rows.astype(np.int64) * frame.columns + starts, lengths) + (
+        np.arange(int(lengths.sum())) - np.repeat(np.cumsum(lengths) - lengths, lengths)
+    )
+    last = np.full(grid.size, -1, dtype=np.int64)
+    np.maximum.at(last, cells, np.repeat(index, lengths))
+    covered = np.flatnonzero(last >= 0)
+    grid.ravel()[covered] = codes[last[covered]]
 
 
 def _identity(feature: object, layer: str) -> tuple[str, dict]:
@@ -446,7 +568,16 @@ def _polygon_spans(frame: _Frame, feature: dict, layer: str, uuid: str):
 def _stadium_spans(
     frame: _Frame, ax: np.ndarray, ay: np.ndarray, bx: np.ndarray, by: np.ndarray, rr: np.ndarray
 ):
-    """The texels within `rr` mm of segments A–B (distance ≤ rr, ties included), as spans.
+    """The texels within `rr` mm of segments A–B (distance ≤ rr, ties included), as spans:
+    (rows, first column, end column)."""
+    return _stadium_cuts(frame, ax, ay, bx, by, rr)[1:]
+
+
+def _stadium_cuts(
+    frame: _Frame, ax: np.ndarray, ay: np.ndarray, bx: np.ndarray, by: np.ndarray, rr: np.ndarray
+):
+    """The texels within `rr` mm of segments A–B (distance ≤ rr, ties included), as spans
+    with the index of the segment each belongs to: (index, rows, first column, end column).
 
     The stadium is convex, so its cut by a texel row is one interval; the hull of the cuts of
     its three pieces, the band (the points whose foot on the line lies on the segment and
@@ -464,7 +595,7 @@ def _stadium_spans(
     )
     first = np.maximum(_ceil_div(-half - (np.maximum(ay, by) + rr), cell), 0)
     last = np.minimum(_floor_div(-half - (np.minimum(ay, by) - rr), cell), frame.rows - 1)
-    row_parts, start_parts, end_parts = [], [], []
+    index_parts, row_parts, start_parts, end_parts = [], [], [], []
     for s, row in _row_pairs(first, last):
         yc = -half - row * cell
         pax, pay, pbx, pby, prr = ax[s], ay[s], bx[s], by[s], rr[s]
@@ -495,12 +626,18 @@ def _stadium_spans(
         start = np.maximum(_ceil_div(x_low - half, cell), 0)  # texels with centre x in [lo, hi]
         end = np.minimum(_floor_div(x_high - half, cell) + 1, columns)
         reached &= start < end
+        index_parts.append(s[reached].astype(np.int64))
         row_parts.append(row[reached].astype(np.int32))
         start_parts.append(start[reached].astype(np.int32))
         end_parts.append(end[reached].astype(np.int32))
     if not row_parts:
-        return (np.empty(0, np.int32),) * 3
-    return np.concatenate(row_parts), np.concatenate(start_parts), np.concatenate(end_parts)
+        return (np.empty(0, np.int64),) + (np.empty(0, np.int32),) * 3
+    return (
+        np.concatenate(index_parts),
+        np.concatenate(row_parts),
+        np.concatenate(start_parts),
+        np.concatenate(end_parts),
+    )
 
 
 def _row_pairs(first: np.ndarray, last: np.ndarray):
@@ -575,15 +712,16 @@ def _isqrt(h: np.ndarray) -> np.ndarray:
 # ------------------------------------------------------------------------------- the PNG
 
 
-def png_l8(pixels: np.ndarray) -> bytes:
-    """`pixels` (uint8, rows × columns, values 0 to 4) as the pinned 8-bit grey PNG."""
+def png_l8(pixels: np.ndarray, top: int = ROAD) -> bytes:
+    """`pixels` (uint8, rows × columns, values 0 to `top`: 4, the classes', unless given; the
+    flow's is `FLOW_CODES`) as the pinned 8-bit grey PNG."""
     if not isinstance(pixels, np.ndarray) or pixels.dtype != np.uint8 or pixels.ndim != 2:
         raise SurfacesError("the classes must be a two-dimensional array of uint8")
     rows, columns = pixels.shape
     if not (0 < rows < MIB and 0 < columns < MIB and rows * (columns + 1) < 1 << 31):
         raise SurfacesError(f"{columns} × {rows} classes do not make a PNG")
-    if pixels.max() > ROAD:
-        raise SurfacesError(f"the classes are 0 to {ROAD}, found {int(pixels.max())}")
+    if pixels.max() > top:
+        raise SurfacesError(f"the classes are 0 to {top}, found {int(pixels.max())}")
     scanlines = np.zeros((rows, columns + 1), dtype=np.uint8)  # filter byte 0 on every row
     scanlines[:, 1:] = pixels
     stream = zlib.compress(scanlines, 9)
@@ -672,16 +810,20 @@ def write_surfaces(
     cell_m: float,
     world_sha256: str,
     source: dict,
+    flow: np.ndarray,
+    flow_cell_m: float,
     *,
     png: bytes | None = None,
+    flow_png: bytes | None = None,
 ) -> dict:
-    """Write `surfaces/<area>.png.import`, `.png` and `.json` (each through a `.part` rename).
+    """Write `surfaces/<area>.png.import`, `.png`, `-flow.png.import`, `-flow.png` and
+    `.json` (each through a `.part` rename), in that order.
 
     Returns the description, which is what the `.json` holds. A `*.part` an earlier run left
-    in `surfaces/` is removed once all three files are written. `png` is `png_l8(grid)` when
-    the caller has encoded it already (the step does, to compare its SHA-256 before anything
-    is written): it is written as given, not checked against `grid`. Without it the writer
-    encodes `grid` itself.
+    in `surfaces/` is removed once all five files are written. `png` is `png_l8(grid)` and
+    `flow_png` is `png_l8(flow, FLOW_CODES)` when the caller has encoded them already (the
+    step does, to compare their SHA-256s before anything is written): each is written as
+    given, not checked against its grid. Without it the writer encodes the grid itself.
     """
     if not AREA_NAME.fullmatch(area):
         raise SurfacesError(f"area name {area!r} must be lower-case letters, digits and '_'")
@@ -691,8 +833,16 @@ def write_surfaces(
             f"the classes are {grid.shape[1]} × {grid.shape[0]}, the box at {cell_m} m needs "
             f"{frame.columns} × {frame.rows}"
         )
+    flow_frame = _Frame(box, flow_cell_m)
+    if flow.shape != (flow_frame.rows, flow_frame.columns):
+        raise SurfacesError(
+            f"the flow is {flow.shape[1]} × {flow.shape[0]}, the box at {flow_cell_m} m needs "
+            f"{flow_frame.columns} × {flow_frame.rows}"
+        )
     if png is None:
         png = png_l8(grid)
+    if flow_png is None:
+        flow_png = png_l8(flow, FLOW_CODES)
     e_min, e_max, n_min, n_max = (float(v) for v in box)
     block = {
         "area": area,
@@ -700,6 +850,15 @@ def write_surfaces(
         "classes": dict(CLASSES),
         "columns": frame.columns,
         "file": f"surfaces/{area}.png",
+        "flow": {
+            "cell_m": float(flow_cell_m),
+            "columns": flow_frame.columns,
+            "encoding": FLOW_ENCODING,
+            "file": f"surfaces/{area}-flow.png",
+            "pixels_sha256": hashlib.sha256(np.ascontiguousarray(flow)).hexdigest(),
+            "rows": flow_frame.rows,
+            "sha256": hashlib.sha256(flow_png).hexdigest(),
+        },
         "format": FORMAT,
         "lv95_box": {"e_max": e_max, "e_min": e_min, "n_max": n_max, "n_min": n_min},
         "pixels_sha256": hashlib.sha256(np.ascontiguousarray(grid)).hexdigest(),
@@ -712,6 +871,8 @@ def write_surfaces(
     folder.mkdir(parents=True, exist_ok=True)
     _replace(folder / f"{area}.png.import", KEEP)
     _replace(folder / f"{area}.png", png)
+    _replace(folder / f"{area}-flow.png.import", KEEP)
+    _replace(folder / f"{area}-flow.png", flow_png)
     _replace(folder / f"{area}.json", _json_bytes(block))
     for leftover in folder.glob("*.part"):
         leftover.unlink()
@@ -734,7 +895,9 @@ def build_surfaces(
     """Build the configured area's surfaces from the downloaded, locked TLM; return the block.
 
     The checks run in the order of the module's docstring, each before the next reads
-    anything. The classes' SHA-256 must equal the config's `expected_pixels_sha256` for the
+    anything. The flow grid is built after the classes and compared the same way (its pixels
+    with `expected_flow_pixels_sha256`, its PNG with `expected_flow_png_sha256`), both before
+    anything is written. The classes' SHA-256 must equal the config's `expected_pixels_sha256` for the
     cell, and the PNG's, encoded once from them, its `expected_png_sha256`: each is compared
     before anything is written, and a difference is a SurfacesError naming both values
     (lesson 38), the PNG's naming the machine's zlib. A missing download is refused before
@@ -751,10 +914,14 @@ def build_surfaces(
     cell_m = float(settings["cell_m"])
     expected = settings["expected_pixels_sha256"][cell_key(cell_m)]
     expected_png = settings["expected_png_sha256"][cell_key(cell_m)]
+    flow_cell_m = float(settings["flow_cell_m"])
+    expected_flow = settings["expected_flow_pixels_sha256"]
+    expected_flow_png = settings["expected_flow_png_sha256"]
     if area not in world.areas:
         raise SurfacesError(f"{world.path}: no area named {area!r} for the surfaces config's area")
     box = world.area(area)
     _Frame(box, cell_m)  # refuses a box that is not whole cells
+    _Frame(box, flow_cell_m)
     world_raw = read_config_bytes(world.path)
     if parse_world(world_raw, world.path) != world:
         raise SurfacesError(f"{world.path}: the world config changed while the surfaces were built")
@@ -805,7 +972,6 @@ def build_surfaces(
         + f"; classifying a {cell_m} m grid"
     )
     grid = class_grid(features, box, cell_m)
-    del features
     pixels_sha256 = hashlib.sha256(grid).hexdigest()
     if pixels_sha256 != expected:
         raise SurfacesError(
@@ -829,6 +995,31 @@ def build_surfaces(
             f"then run with UV_PYTHON_PREFERENCE=only-managed; nothing was written"
         )
     say(f"the PNG has the SHA-256 {SURFACES_CONFIG_NAME} expects, {expected_png}")
+    flow = flow_grid(features, box, flow_cell_m)
+    del features
+    flow_sha256 = hashlib.sha256(flow).hexdigest()
+    if flow_sha256 != expected_flow:
+        raise SurfacesError(
+            f"area {area!r}: the flow built here has SHA-256 {flow_sha256}, "
+            f"{SURFACES_CONFIG_NAME} expects {expected_flow} (expected_flow_pixels_sha256). "
+            f"Design computed the expected value two independent ways, so this machine or this "
+            f"code produces another flow than the design's; nothing was written"
+        )
+    say(f"the flow has the SHA-256 {SURFACES_CONFIG_NAME} expects, {expected_flow}")
+    flow_png = png_l8(flow, FLOW_CODES)
+    flow_png_sha256 = hashlib.sha256(flow_png).hexdigest()
+    if flow_png_sha256 != expected_flow_png:
+        raise SurfacesError(
+            f"area {area!r}: the flow is design's, but its PNG built here has SHA-256 "
+            f"{flow_png_sha256} and {SURFACES_CONFIG_NAME} expects {expected_flow_png} "
+            f"(expected_flow_png_sha256). The PNG's bytes depend on the zlib build, so this "
+            f"machine's (zlib {zlib.ZLIB_RUNTIME_VERSION}) or this code writes other bytes than "
+            f"design's. A Python whose zlib writes design's bytes (zlib 1.3.x was measured to) "
+            f"builds the same file, uv's managed CPython for one: "
+            f"`uv python install 3.13 --managed-python`, then run with "
+            f"UV_PYTHON_PREFERENCE=only-managed; nothing was written"
+        )
+    say(f"the flow's PNG has the SHA-256 {SURFACES_CONFIG_NAME} expects, {expected_flow_png}")
     source = {
         "attribution": tlm["attribution"],
         "collection": tlm["collection"],
@@ -837,8 +1028,24 @@ def build_surfaces(
         "file": entry["file"],
         "sha256": entry["sha256"],
     }
-    block = write_surfaces(out_dir, area, grid, box, cell_m, world_sha256, source, png=png)
-    say(f"wrote {Path(out_dir) / block['file']} ({block['columns']} × {block['rows']} texels)")
+    block = write_surfaces(
+        out_dir,
+        area,
+        grid,
+        box,
+        cell_m,
+        world_sha256,
+        source,
+        flow,
+        flow_cell_m,
+        png=png,
+        flow_png=flow_png,
+    )
+    say(
+        f"wrote {Path(out_dir) / block['file']} ({block['columns']} × {block['rows']} texels) "
+        f"and {Path(out_dir) / block['flow']['file']} "
+        f"({block['flow']['columns']} × {block['flow']['rows']} texels)"
+    )
     return block
 
 
@@ -855,8 +1062,9 @@ def built_surfaces_block(
     Built surfaces that no longer match are a SurfacesError naming the command: a world or a
     lock entry that is not the one the expected values were computed for (naming design's
     step, as the build does), a description whose keys, area, file, format, cell, classes,
-    box, columns, rows or source are not what the configs and the lock give, a missing or
-    wrong `.png.import`, a PNG whose SHA-256 is not the description's, one that is not the
+    box, columns, rows or source are not what the configs and the lock give, a `flow` that is
+    not what the config and the box give or a flow PNG that is not design's (checked after
+    the classes, as they are), a missing or wrong `.png.import`, a PNG whose SHA-256 is not the description's, one that is not the
     pinned format (`read_png_l8`: a row with a filter other than 0, say) or whose pixels do
     not have the description's `pixels_sha256` and the config's expected value for the cell,
     and last a PNG whose bytes are not the config's `expected_png_sha256` for the cell (a
@@ -970,7 +1178,73 @@ def built_surfaces_block(
             f"are not (they depend on the zlib build of the machine that wrote it; this "
             f"machine's is zlib {zlib.ZLIB_RUNTIME_VERSION})"
         )
+    _check_built_flow(
+        block["flow"], Path(out_dir), settings, area, (e_min, e_max, n_min, n_max), fail
+    )
     return block
+
+
+def _check_built_flow(
+    flow: object, out_dir: Path, settings: dict, area: str, box: Box, fail: Callable
+) -> None:
+    """Refuse a built flow that is not the description's or not design's (see
+    `built_surfaces_block`); `fail` makes the SurfacesError naming the rebuild."""
+    if not isinstance(flow, dict) or set(flow) != FLOW_KEYS:
+        raise fail(f"flow must be an object with exactly the keys {sorted(FLOW_KEYS)}")
+    flow_cell_m = float(settings["flow_cell_m"])
+    frame = _Frame(box, flow_cell_m)
+    wanted = {
+        "cell_m": flow_cell_m,
+        "columns": frame.columns,
+        "encoding": FLOW_ENCODING,
+        "file": f"surfaces/{area}-flow.png",
+        "rows": frame.rows,
+    }
+    for key, value in wanted.items():
+        if flow[key] != value or type(flow[key]) is not type(value):
+            raise fail(f"flow.{key} is {flow[key]!r}, expected {value!r}")
+    png_path = out_dir / flow["file"]
+    keep_path = png_path.with_name(png_path.name + ".import")
+    try:
+        keep = keep_path.read_bytes()
+        data = png_path.read_bytes()
+    except OSError as exc:
+        raise fail(f"cannot read its flow files: {exc}") from exc
+    if keep != KEEP:
+        raise fail(f"{keep_path} must hold exactly {KEEP!r} (brain.md H24), found {keep!r}")
+    png_sha256 = hashlib.sha256(data).hexdigest()
+    if png_sha256 != flow["sha256"]:
+        raise fail(f"{png_path} has SHA-256 {png_sha256}, the description pins {flow['sha256']}")
+    try:
+        pixels = read_png_l8(data)
+    except SurfacesError as exc:
+        raise fail(f"{png_path}: {exc}") from exc
+    if pixels.shape != (frame.rows, frame.columns):
+        raise fail(f"{png_path} is {pixels.shape[1]} × {pixels.shape[0]} pixels")
+    if pixels.max() > FLOW_CODES:
+        raise fail(
+            f"{png_path} holds the code {int(pixels.max())}; the codes are 0 to {FLOW_CODES}"
+        )
+    actual = hashlib.sha256(pixels).hexdigest()
+    expected = settings["expected_flow_pixels_sha256"]
+    if actual != flow["pixels_sha256"]:
+        raise fail(
+            f"the flow in {png_path} has SHA-256 {actual}, the description's flow.pixels_sha256 "
+            f"is {flow['pixels_sha256']}"
+        )
+    if actual != expected:
+        raise fail(
+            f"the flow in {png_path} has SHA-256 {actual}, {SURFACES_CONFIG_NAME} expects "
+            f"{expected} (expected_flow_pixels_sha256)"
+        )
+    expected_png = settings["expected_flow_png_sha256"]
+    if png_sha256 != expected_png:
+        raise fail(
+            f"{png_path} has SHA-256 {png_sha256}, {SURFACES_CONFIG_NAME} expects {expected_png} "
+            f"(expected_flow_png_sha256): its flow is design's, its bytes are not (they depend "
+            f"on the zlib build of the machine that wrote it; this machine's is zlib "
+            f"{zlib.ZLIB_RUNTIME_VERSION})"
+        )
 
 
 def _dataset(datasets: dict) -> dict:
