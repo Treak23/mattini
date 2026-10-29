@@ -1,14 +1,17 @@
 class_name SkyRig
 extends RefCounted
-## The sky rig (brief v0.4.0-05; M4-05 decisions 1 to 5 without its stars section; m4-design §6;
-## SPEC §13 row 52): takes the directions towards the sun and the moon as local unit vectors and
+## The sky rig (brief v0.4.0-05; M4-05 decisions 1 to 5; m4-design §6; SPEC §13 rows 51, 52)
 ## sets the sun light, a moon light, the exposure and the physical sky
 ## (res://shaders/sky_physical.gdshader) of an Environment.
 ##
 ## The rig reads no world config and no clock: it is given a frame (the scene's local east,
 ## north and up as the columns of a Basis) and the directions, and measures every elevation
-## against that frame's up, never the scene's y. The stars (the star image, the celestial
-## basis) are v0.4.0-06's.
+## against that frame's up, never the scene's y. The stars are brief v0.4.0-06's (M4-05 section S
+## on the Hipparcos Catalogue, SPEC §13 row 51): [method star_image] draws the star table
+## res://sky/stars.csv and [method apply] sets the celestial basis the sky shader samples it by.
+## The table's positions are ICRS at epoch J1991.25, used as given: not precessed to the date, so
+## the stars stand 0.13 to 0.35 degrees from their mean places of 2023-09-06 (measured by the pin
+## author; one texel of the image is 0.088 degrees).
 
 const SHADER_PATH := "res://shaders/sky_physical.gdshader"
 
@@ -38,15 +41,21 @@ const EXPOSURE_NIGHT := 4.0
 ## The moon light's energy at full phase and height.
 const MOON_ENERGY := 0.03
 
+## The star image's size: an equirectangular image in celestial coordinates.
+const STAR_WIDTH := 4096
+const STAR_HEIGHT := 2048
+
 ## The sky's material, a ShaderMaterial of res://shaders/sky_physical.gdshader.
 var sky_material: ShaderMaterial
-## The latitude in degrees, kept for v0.4.0-06's celestial basis; nothing reads it in this brief.
+## The latitude in degrees, from [method create]; [method apply] builds the celestial basis from it.
 var latitude_deg := 0.0
 
 var _sun: DirectionalLight3D
 var _moon: DirectionalLight3D
 var _environment: Environment
 var _up := Vector3.UP
+var _east := Vector3.RIGHT
+var _north := Vector3.FORWARD
 
 
 ## Makes a rig for [param sun], [param moon] and [param environment]. [param frame]'s columns are
@@ -70,6 +79,8 @@ static func create(
 	rig._moon = moon
 	rig._environment = environment
 	rig._up = frame.z.normalized()
+	rig._east = frame.x.normalized()
+	rig._north = frame.y.normalized()
 	rig.latitude_deg = latitude_deg
 
 	sun.shadow_enabled = true
@@ -95,13 +106,70 @@ static func create(
 	return rig
 
 
+## The star image (brief v0.4.0-06; M4-05 decision 8) of the table at [param path] (lines
+## starting with "# " and the line "ra_deg,dec_deg,vmag" draw nothing; every other line is
+## "ra_deg,dec_deg,vmag" as three numbers): 4096 x 2048, FORMAT_RGBE9995 (a first-magnitude star
+## and a sixth-magnitude one fit one texel), no mipmaps, equirectangular in celestial
+## coordinates: u = right ascension / 360, v = (90 - declination) / 180. A star adds
+## 10^(-0.4 V) to red, green and blue (the stars are white) of the row
+## min(floor((90 - dec) / 180 * 2048), 2047), at the columns c - h to c + h, wrapped, with
+## c = floor(ra / 360 * 4096) mod 4096 and h = floor(0.5 / cos(dec)): the run keeps a star about
+## one texel high wide at any declination, where one texel would be 0.001 degrees wide at
+## Polaris and show nothing. A file that cannot be read, or a line that is not three numbers, is
+## an error (push_error, naming the file and the line) and null. The positions are not
+## precessed: see the class comment.
+static func star_image(path: String) -> Image:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("SkyRig: %s: cannot be read (error %d)" % [path, FileAccess.get_open_error()])
+		return null
+	var light := {}
+	var number := 0
+	while not file.eof_reached():
+		var line := file.get_line().strip_edges()
+		number += 1
+		if line.is_empty() or line.begins_with("# ") or line == "ra_deg,dec_deg,vmag":
+			continue
+		var fields := line.split(",")
+		if (
+			fields.size() != 3
+			or not fields[0].is_valid_float()
+			or not fields[1].is_valid_float()
+			or not fields[2].is_valid_float()
+		):
+			push_error("SkyRig: %s line %d: not three numbers: %s" % [path, number, line])
+			return null
+		var ra := fields[0].to_float()
+		var dec := fields[1].to_float()
+		var flux := pow(10.0, -0.4 * fields[2].to_float())
+		var col := int(floor(ra / 360.0 * STAR_WIDTH)) % STAR_WIDTH
+		var row := mini(int(floor((90.0 - dec) / 180.0 * STAR_HEIGHT)), STAR_HEIGHT - 1)
+		var half := int(floor(0.5 / cos(deg_to_rad(dec))))
+		for c in range(col - half, col + half + 1):
+			var key := row * STAR_WIDTH + posmod(c, STAR_WIDTH)
+			light[key] = light.get(key, 0.0) + flux
+	var image := Image.create(STAR_WIDTH, STAR_HEIGHT, false, Image.FORMAT_RGBE9995)
+	for key: int in light:
+		var value: float = light[key]
+		image.set_pixel(key % STAR_WIDTH, key / STAR_WIDTH, Color(value, value, value))
+	return image
+
+
 ## Sets the lights, the exposure and the sky for the unit vectors [param to_sun] and
 ## [param to_moon] (local, in the frame given to [method create]) and the moon's illuminated
 ## fraction [param moon_fraction]. Called every frame. Each elevation is measured against the
 ## frame's up. Sets the sky material's stars_strength, sun_direction (every frame, also while the
-## sun light is hidden) and twilight_colour; it does not touch ground_color.
-## [param _sidereal_deg] is unused until v0.4.0-06.
-func apply(to_sun: Vector3, to_moon: Vector3, moon_fraction: float, _sidereal_deg: float) -> void:
+## sun light is hidden), twilight_colour and celestial_basis; it does not touch ground_color.
+## [param sidereal_deg] is the local sidereal time in degrees.
+##
+## The celestial basis (brief v0.4.0-06; M4-05 decision 9) turns a scene direction into celestial
+## coordinates (x towards RA 0 on the equator, y towards RA 90, z the north celestial pole). With
+## the frame's east E, north N and up U, the latitude phi ([member latitude_deg]) and the local
+## sidereal time theta: the pole P = N cos(phi) + U sin(phi), the equator's meridian point
+## Q = U cos(phi) - N sin(phi), X = Q cos(theta) - E sin(theta), Y = Q sin(theta) + E cos(theta);
+## the basis whose rows are X, Y, P. Measured in software Forward+ (brief v0.4.0-06 gate P2): the
+## shader's mat3 uniform reaches it as GDScript multiplies it, neither mirrored nor transposed.
+func apply(to_sun: Vector3, to_moon: Vector3, moon_fraction: float, sidereal_deg: float) -> void:
 	var sun_dir := to_sun.normalized()
 	var moon_dir := to_moon.normalized()
 	var sun_el := _elevation(sun_dir)
@@ -120,6 +188,18 @@ func apply(to_sun: Vector3, to_moon: Vector3, moon_fraction: float, _sidereal_de
 	sky_material.set_shader_parameter("stars_strength", 1.0 - smoothstep(-12.0, -6.0, sun_el))
 	sky_material.set_shader_parameter("sun_direction", sun_dir)
 	sky_material.set_shader_parameter("twilight_colour", _twilight(sun_el))
+	sky_material.set_shader_parameter("celestial_basis", _celestial_basis(sidereal_deg))
+
+
+## The basis of [method apply]'s comment for the local sidereal time [param sidereal_deg].
+func _celestial_basis(sidereal_deg: float) -> Basis:
+	var phi := deg_to_rad(latitude_deg)
+	var theta := deg_to_rad(sidereal_deg)
+	var pole := _north * cos(phi) + _up * sin(phi)
+	var meridian := _up * cos(phi) - _north * sin(phi)
+	var x_axis := meridian * cos(theta) - _east * sin(theta)
+	var y_axis := meridian * sin(theta) + _east * cos(theta)
+	return Basis(x_axis, y_axis, pole).transposed()
 
 
 ## The elevation in degrees of the unit vector [param direction] above the frame's horizon.

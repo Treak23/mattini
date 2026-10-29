@@ -6,6 +6,8 @@
 // mattini: sun and the night sky's faint glow), and the sun's disk from sun_disk_deg. The ground's
 // mattini: blend line and ground_color's declaration are Godot's; the rig sets ground_color
 // mattini: (SkyRig.GROUND_COLOUR, SPEC section 13 row 52).
+// mattini: Brief v0.4.0-06 (M4-05 decision 4, SPEC section 13 row 51): the night sky is sampled at
+// mattini: the celestial coordinates of the view's direction through celestial_basis, not SKY_COORDS.
 
 shader_type sky;
 render_mode use_debanding;
@@ -24,6 +26,9 @@ uniform float exposure : hint_range(0, 128) = 1.0;
 uniform sampler2D night_sky : filter_linear, source_color, hint_default_black;
 // mattini: 0 by day, 1 at a sun elevation of -12 degrees and below; multiplies the night sky.
 uniform float stars_strength : hint_range(0, 1) = 0.0;
+// mattini: turns a scene direction into celestial coordinates (x towards right ascension 0 on the
+// mattini: equator, y towards 90 degrees, z the north celestial pole); set by the rig every apply.
+uniform mat3 celestial_basis = mat3(1.0);
 // mattini: the twilight and the night sky's glow. sun_direction is the unit vector towards the
 // mattini: sun, set by the rig every frame (a hidden sun light is not the sky's LIGHT0).
 uniform vec3 sun_direction = vec3(0.0, 1.0, 0.0);
@@ -56,6 +61,13 @@ vec3 twilight_and_glow(vec3 dir) {
 	float eye_elevation = degrees(asin(clamp(dir.y, -1.0, 1.0)));
 	float shape = (0.3 + 0.7 * pow(facing, 3.0)) * exp(-max(0.0, eye_elevation) / 12.0);
 	return twilight_colour * twilight_energy * shape + skyglow;
+}
+
+// mattini: the night sky's texture coordinates of a direction: u = right ascension / 360 and
+// mattini: v = (90 degrees - declination) / 180 degrees.
+vec2 celestial_uv(vec3 dir) {
+	vec3 c = celestial_basis * dir;
+	return vec2(fract(atan(c.y, c.x) / TAU), acos(clamp(c.z, -1.0, 1.0)) / PI);
 }
 
 void sky() {
@@ -103,7 +115,7 @@ void sky() {
 		float sundisk = smoothstep(sunAngularDiameterCos, sunAngularDiameterCos2, dot(EYEDIR, normalize(sun_direction)));
 		vec3 L0 = (sun_energy * extinction) * sundisk * LIGHT0_COLOR;
 		// mattini: the night sky fades in with stars_strength.
-		L0 += texture(night_sky, SKY_COORDS).xyz * extinction * stars_strength;
+		L0 += texture(night_sky, celestial_uv(EYEDIR)).xyz * extinction * stars_strength;
 
 		vec3 color = Lin + L0;
 		COLOR = pow(color, vec3(1.0 / (1.2 + (1.2 * sun_fade))));
@@ -113,7 +125,7 @@ void sky() {
 	} else {
 		// There is no sun, so display night_sky and nothing else.
 		// mattini: the night sky fades in with stars_strength; the glow and the twilight on top.
-		COLOR = texture(night_sky, SKY_COORDS).xyz * stars_strength;
+		COLOR = texture(night_sky, celestial_uv(EYEDIR)).xyz * stars_strength;
 		COLOR += twilight_and_glow(EYEDIR);
 		COLOR *= exposure;
 	}
