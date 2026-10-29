@@ -359,10 +359,10 @@ Spawn words: `ultracode design` (a release start to finish: two-list triage, the
 helpers' model, the budget and the lane count, batch-sized briefs built one builder agent each
 through `docs/briefs/RELEASE-WORKFLOW.js`, reviews by tier, the whole-range review, the release
 gate, RELEASE.md, the record, the end), `design` (a conversation, builds nothing), `feedback`
-(the clerk). A release is two days of build and about half a week's allowance, the owner's inbox
+(the clerk). A release is two days of wall time (however many builders run) and about half a week's allowance, the owner's inbox
 first, the list frozen at the go. Three gate levels: the standard gate per commit, the batch gate
-before DONE, the release gate from a fresh clone. Lanes are separate sessions: one build-running
-agent per container. Nothing pins a model; the batch script sets the one effort. `main` is the only source branch (`dist`
+before DONE, the release gate from a fresh clone. Up to two lanes run in the release session's
+container, Scopes disjoint, each gate in its own worktree and `XDG_DATA_HOME` (from 2026-10-29). Nothing pins a model; the batch script sets the one effort. `main` is the only source branch (`dist`
 holds builds). State lives in the repo, never in chat. Pinning tests travel with their brief under
 `docs/briefs/pinning/` (WORKFLOW §Brief lifecycle). Before 2026-10-24: three realms (design,
 `ultracode build` orchestrator with builder sessions per wave, clerk), their record

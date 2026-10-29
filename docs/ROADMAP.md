@@ -6,14 +6,11 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**Release 0.4.0 — built, checked and recorded 2026-10-29 (`docs/releases/v0.4.0.md`); the `dist` push waits for the owner's
-word "push dist"** (the audited commit `e2633b6` is the local branch `dist-publish` in the release session's container; the
-auto-mode classifier refused the push; `git push origin dist-publish:dist`). The river flows downstream (FB-008), the sun and
-the moon move with a physical sky and stars on Hipparcos (FB-004 items 1, 7), the trees' variants rendered for the owner's
-choice (item 5); eleven briefs DONE in two lanes (`docs/briefs/v0.4.0-plan.md`), the whole-range review clean of P0 and P1
-(`docs/reviews/v0.4.0-round1.md`), the release gate from a fresh clone green (pytest 2407, GUT 64 scripts, 395 tests, 18'196
-asserts; the manifest `a03c5722…`, 324'931 bytes). Release 0.3.1 (2026-10-26, `dist` `5b51347`) stays as `mattini-0.3.1/`, the
-rollback.
+**Release 0.5.0 — in progress (the go of 2026-10-29, `docs/history/blocked/2026-10-29-2.md`):** the softened photo shadows
+(FB-004 item 3) and delivery through GitHub Releases, built by a GitHub Actions workflow into a draft Release the owner
+publishes (1a); deferred items join by the owner's answer to the session's question A. **0.4.0 was never delivered:** its
+audited `dist` commit `e2633b6` lived only in the previous session's container and is lost; the owner's "2c": 0.5.0, which
+contains 0.4.0, is the next build the owner gets. `dist` stays at 0.3.1 (`5b51347`), the rollback record.
 
 **Next release (the owner's order):** the softened photo shadows (FB-004 item 3; M4-03, M4-06, the shadows parts of M4-09 and
 M4-10, rebuilt on 0.4.0's files: the plan's process note), and **delivery through GitHub Releases** (assets up to 2 GB; `dist`
@@ -26,7 +23,7 @@ out of beta.
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
 river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
 
-**Waiting on the owner:** "push dist" for 0.4.0; the trees' variant and the clock's range (the record's questions 1 and 2). A
+**Waiting on the owner:** question A (the deferred items for 0.5.0) and question 6 asked again (the audit list below; the `:<branch>` refspec). A
 second developer may join: how a person works beside the release sessions (the process assumes only agents commit to `main`)
 and the licence of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
 the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks deletion and

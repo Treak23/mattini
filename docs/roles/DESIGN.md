@@ -59,8 +59,8 @@ every rule here.
    histories.** The clerk writes the inbox; builders write their brief's Findings and
    Status.
 9. **The session's own commits are gated too** (lesson 18; WORKFLOW §Gates): chained to
-   `tools/gate.sh`, run only between batches, never while a helper's gate runs (one
-   build-running agent per container).
+   `tools/gate.sh`, never making a third gate beside two running ones (at most two gates
+   at once in the container, each in its own worktree and `XDG_DATA_HOME`: WORKFLOW §Lanes).
 
 ## How the session decides and asks
 

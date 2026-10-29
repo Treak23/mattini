@@ -73,7 +73,9 @@ on `main`; the source project's v3.69 took eleven days and 3 to 4 times the cost
 release it was modelled on, and its record said so while nothing stopped it.
 
 - **Two days of build and about half a week's allowance**, fixed at the go in one line
-  each (DESIGN.md §The release, step 2). By default the release holds the owner's open inbox
+  each (DESIGN.md §The release, step 2). The two days are **wall time**, however many
+  builders run (the owner, 2026-10-29): spare builder capacity inside them may take deferred
+  items the owner names. By default the release holds the owner's open inbox
   entries and nothing else; board items, review leftovers and the session's own ideas come
   in only when the owner names them.
 - **The list is frozen at the go.** Anything filed during the build goes to the next
@@ -97,14 +99,14 @@ container colliding on Godot's `user://` (brain.md H9).
   `__main__.py`, `manifest.py`, `tools/gate.sh`, `tools/gate_allowlist.txt`) are listed
   once at the top of the plan with their batch order. A tier-1 batch runs alone in its lane.
   Owner-reported items first in each lane; words-only batches last.
-- **A lane is a separate session in its own container**, never a second build lane in the
-  same box: **one build-running agent per container.** The release session runs lane A's
-  batches itself as helper-agent workflows; a second lane would be a second session given
-  the plan and its lane letter, which builds that lane's batches and ends. That path is not
-  written yet (who starts it, how the release session learns it has finished, and whether a
-  session the first one spawns gets the `ultracode` switch at all): until it is, a release
-  runs one lane (the go of 2026-10-25). Parallelism comes from more sessions, never from
-  more lanes in one container.
+- **Up to two lanes run in the release session's own container** (the owner's "4 ok",
+  2026-10-29, codifying what 0.4.0 ran from 2026-10-29): two batches at once only when their
+  Scopes share no file, each builder and each gate in its own worktree with its own
+  `XDG_DATA_HOME` (brain.md H9), at most two gates at once (lesson 20). "A tier-1 batch runs
+  alone in its lane" means no other batch of the same lane runs beside it. The release gate
+  runs solo. A lane as a separate session in another container is not written (who starts
+  it, how the release session learns it has finished, whether a spawned session gets the
+  `ultracode` switch); until it is, more parallelism comes from these two lanes only.
 - Any agent that runs the gate works in its own `git worktree`, with its own
   `XDG_DATA_HOME` (brain.md H9) and leaves the tree clean (lesson 20); the Workflow harness
   removes an unchanged worktree, and keeps one that holds commits.
