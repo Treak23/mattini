@@ -20,7 +20,7 @@ Hipparcos Catalogue (2a), the sky step, the sun and the moon in the main scene, 
 four leftovers (I-03, F6, two §C checks, the clerk's gate); the version. Two days of build plus the day 1b adds,
 about half a week's allowance, one lane, builders on Sonnet. The batches wait for the owner: the seven-day
 allowance read `allowed_warning` at the go (reset 2026-10-29 06:00 UTC), and the owner starts the build in the
-release session's chat ("5a … ill start it manually"). The plan: `docs/briefs/v0.4.0-plan.md`: ten briefs, six tier 1, all rehearsed together (the real village's
+release session's chat ("5a … ill start it manually"). **Running (2026-10-29, two lanes): 01, 02, 04, 05, 06 DONE; 03 building; then 07 to 10 (the batch log is in the plan).** The plan: `docs/briefs/v0.4.0-plan.md`: ten briefs, six tier 1, all rehearsed together (the real village's
 manifest 324'931 bytes, `a03c5722…`).
 
 **The owner's first look at 0.3.1 (2026-10-26):** it starts with 4× MSAA, 60 fps and 15 paused, the GPU at
