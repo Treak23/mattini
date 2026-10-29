@@ -228,6 +228,7 @@
     "world_sha256": "e7cd091dc238bc1ba68839c6120d60af5849d0d7923b3798b226480468d5254a"
   },
   "schema": 1,
+  "sky": null,
   "surfaces": null,
   "terrain": null,
   "trees": null,

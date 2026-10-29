@@ -2,7 +2,7 @@
 
 Pinned decisions (brief M2-04, *The manifest*): the top level is exactly `buildings`,
 `schema`, `terrain`, `world`, `world_sha256` (since M3-13 also `photo`, `roofs`, `surfaces`
-and `trees`, null here: none is built); `buildings` is null when the folder holds no
+and `trees`, since v0.4.0-07 also `sky`, null here: none is built); `buildings` is null when the folder holds no
 `buildings/<area>.json` for the terrain config's area, whatever the buildings config says,
 and otherwise that description copied verbatim. `manifest` refuses a built block, naming
 `python -m mattini buildings`, and writes nothing, when its key sets are not exact, its
@@ -99,6 +99,7 @@ def test_a_built_block_is_copied_verbatim(tmp_path):
         "photo",
         "roofs",
         "schema",
+        "sky",
         "surfaces",
         "terrain",
         "trees",
@@ -129,6 +130,7 @@ def test_the_real_config_without_buildings_gives_a_null_block(tmp_path):
         "photo",
         "roofs",
         "schema",
+        "sky",
         "surfaces",
         "terrain",
         "trees",

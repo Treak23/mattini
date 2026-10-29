@@ -3,6 +3,7 @@
   "photo": null,
   "roofs": null,
   "schema": 1,
+  "sky": null,
   "surfaces": {
     "area": "fixture",
     "cell_m": 0.2,

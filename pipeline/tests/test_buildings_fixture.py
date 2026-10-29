@@ -101,11 +101,12 @@ def test_write_buildings_and_manifest_write_the_fixture_files(tmp_path):
     )
     assert path.read_bytes() == (GENERATED / "manifest.json").read_bytes()
     manifest = json.loads(path.read_bytes())
-    assert set(manifest) == {
+    assert set(manifest) == {  # since v0.4.0-07 with "sky" (null here)
         "buildings",
         "photo",
         "roofs",
         "schema",
+        "sky",
         "surfaces",
         "terrain",
         "trees",

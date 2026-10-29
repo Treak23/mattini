@@ -22,10 +22,12 @@ from mattini.world import load_world
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE_WORLD = REPO / "tests" / "shared" / "terrain_fixture" / "world.json"
 # M1-03 added the terrain block, M2-04 the buildings block, M3-13 the photo, roofs, surfaces
-# and trees blocks (all null here: nothing is built): each a new key set and golden. M3-13's
-# golden is M2-04's bytes (ba8383ff…) with the four lines `  "photo": null,`, `  "roofs":
-# null,`, `  "surfaces": null,` and `  "trees": null,` added, computed two ways (design).
-MANIFEST_SHA256 = "cf4b939c6e4a89bf202081c365f22b338180c7d7141d34189af69cf709e20081"
+# and trees blocks, v0.4.0-07 the sky block (all null here: nothing is built): each a new key
+# set and golden. v0.4.0-07's golden is M3-13's bytes (cf4b939c…) with the one line
+# `  "sky": null,` added, 680 bytes, computed two ways (that text edit by hand, and the pin
+# author's throwaway `write_manifest`; identical). M3-13's was M2-04's bytes (ba8383ff…)
+# with `  "photo": null,`, `  "roofs": null,`, `  "surfaces": null,` and `  "trees": null,`.
+MANIFEST_SHA256 = "d8c11ede88065d3e2eb5ed2f78f5219cf32cb5a0367b21d370e983154ee2ec21"
 PROVENANCE_SHA256 = "2efd91929da1aa4aa7a987c39a1b66ad25af330ba51eabcde84da3809b77b73a"
 PROVENANCE_KEYS = {
     "attribution",
@@ -47,6 +49,7 @@ def test_manifest_bytes_for_a_fixed_world_config(tmp_path):
         "photo",
         "roofs",
         "schema",
+        "sky",
         "surfaces",
         "terrain",
         "trees",

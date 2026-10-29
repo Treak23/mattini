@@ -3,6 +3,7 @@
   "photo": null,
   "roofs": null,
   "schema": 1,
+  "sky": null,
   "surfaces": null,
   "terrain": {
     "area": "fixture_nw",

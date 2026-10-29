@@ -36,6 +36,7 @@
   },
   "roofs": null,
   "schema": 1,
+  "sky": null,
   "surfaces": null,
   "terrain": null,
   "trees": null,

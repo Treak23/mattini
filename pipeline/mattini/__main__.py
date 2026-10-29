@@ -11,6 +11,12 @@ other entry (brief M2-03).
 datasets that `download` fetched, and a step without its download ends in one
 `mattini: error:` line naming the `download` command.
 
+`sky` writes the sun's place for the configured area from config/sky.json, then the manifest
+(brief v0.4.0-07); it reads no download, so it has no `--raw`.
+
+A file-system error (an unusable `--out`, a folder where a file belongs) ends any command in
+one `mattini: error:` line naming the path, never a traceback (I-03).
+
 A Ctrl-C ends any command with one line, `mattini: interrupted: ...` naming the command to
 run again, and exit status 130, never a traceback (brief M3-03). `download tlm` keeps the
 part of its file, and the next run resumes it.
@@ -22,7 +28,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from mattini import buildings, download, lock, photo, roofs, surfaces, terrain, trees
+from mattini import buildings, download, lock, photo, roofs, sky, surfaces, terrain, trees
 from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.manifest import DEFAULT_OUT, write_manifest
 from mattini.world import WorldConfigError, load_world
@@ -89,6 +95,12 @@ def main(argv: list[str] | None = None) -> int:
         step.add_argument(
             "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
         )
+    sun = commands.add_parser(
+        "sky", help="write the sun's place for the configured area, then the manifest"
+    )
+    sun.add_argument(
+        "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
+    )
     manifest = commands.add_parser("manifest", help="write the generated manifest.json")
     manifest.add_argument(
         "--out", default=DEFAULT_OUT, help="output directory (default: game/assets/generated)"
@@ -108,6 +120,8 @@ def main(argv: list[str] | None = None) -> int:
             print(_build_buildings(Path(args.raw), Path(args.out)))
         elif args.command in STEPS:
             print(_build_step(args.command, Path(args.raw), Path(args.out)))
+        elif args.command == "sky":
+            print(_build_sky(Path(args.out)))
     except KeyboardInterrupt:
         command = f"python -m mattini {args.command}"
         if args.command in ("lock", "download"):
@@ -133,6 +147,8 @@ def main(argv: list[str] | None = None) -> int:
         roofs.RoofsError,
         surfaces.SurfacesError,
         trees.TreesError,
+        sky.SkyError,
+        OSError,
     ) as exc:
         print(f"mattini: error: {exc}", file=sys.stderr)
         return 1
@@ -311,6 +327,16 @@ def _build_step(step: str, raw_root: Path, out_dir: Path) -> Path:
             out_dir,
             progress=progress,
         )
+    return write_manifest(out_dir)
+
+
+def _build_sky(out_dir: Path) -> Path:
+    """Write the configured area's sun place, then the manifest; progress on stderr."""
+
+    def progress(message: str) -> None:
+        print(message, file=sys.stderr, flush=True)
+
+    sky.build_sky(load_world(), sky.load_sky_config(), out_dir, progress=progress)
     return write_manifest(out_dir)
 
 
