@@ -7,8 +7,9 @@ extends GutTest
 ## the manifest at its manifest_path (res://assets/generated/manifest.json by default; every
 ## test sets it, so no result depends on what the machine has generated). It builds the
 ## terrain with TerrainLoader (node "Terrain"), a FreeFlyCamera ("Camera") that asks the
-## terrain for the ground height, a fixed sun ("Sun") and a sky ("Environment"). The camera
-## starts 150 m above the ground at the centre of the terrain grid, facing bearing 235
+## terrain for the ground height, a sun ("Sun") and a sky ("Environment") that
+## follow the game's clock (briefs v0.4.0-04 to -09). The camera starts 150 m above the ground at
+## the centre of the terrain grid, facing bearing 235
 ## degrees (clockwise from north, computed through WorldConfig), pitched 20 degrees down.
 ## A missing or refused manifest or terrain opens UI/ErrorPanel, whose Message names the
 ## command that fixes it (Hard Rule 2). The pause action opens UI/PauseMenu: the version

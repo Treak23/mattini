@@ -9,7 +9,7 @@ extends GutTest
 ## after one push_error("SkySite: <path>: <problem>") as every reader; `_read(path, world)`
 ## returns the problem without logging it. Properties area, latitude_deg, longitude_deg,
 ## true_to_grid_deg (float). It refuses, in this order: no WorldConfig; a manifest that cannot
-## be read or is not an object; a null block ("the sun's place has not been written: run python
+## be read or is not an object; a null block ("the sun's place has not been written; python
 ## -m mattini sky"); a block that is not an object; a world_sha256 that is not text or not the
 ## manifest's (naming python -m mattini sky); a WorldConfig not read from this manifest
 ## (BuildingChunks' check: any axes are fine, the directions go through the world config); a
@@ -92,7 +92,7 @@ func test_no_world_config_is_refused() -> void:
 
 func test_a_missing_block_names_the_sky_command() -> void:
 	var problem := _problem(func(m: Dictionary) -> void: m["sky"] = null)
-	assert_eq(problem, "the sun's place has not been written: run " + COMMAND)
+	assert_eq(problem, "the sun's place has not been written; " + COMMAND + " rebuilds it")
 
 
 func test_a_block_that_is_not_an_object_is_refused() -> void:
@@ -110,6 +110,7 @@ func test_another_world_is_refused() -> void:
 		var problem := _problem(change)
 		assert_string_contains(problem, "another world config", "refused, not a runtime error")
 		assert_string_contains(problem, COMMAND)
+		assert_true(problem.ends_with(ReleaseBuild.file_hint(COMMAND)), "the readers' ending")
 
 
 func test_a_world_config_of_another_manifest_is_refused() -> void:
@@ -128,6 +129,7 @@ func test_another_key_set_is_refused() -> void:
 		var problem := _problem(change)
 		assert_string_contains(problem, "sky must hold exactly")
 		assert_string_contains(problem, COMMAND)
+		assert_true(problem.ends_with(ReleaseBuild.file_hint(COMMAND)), "the readers' ending")
 
 
 func test_an_area_not_in_the_world_is_refused() -> void:
@@ -149,6 +151,7 @@ func test_values_out_of_range_or_not_numbers_are_refused() -> void:
 		var problem := _problem(func(m: Dictionary) -> void: m["sky"][case[0]] = case[1])
 		assert_string_contains(problem, "sky.%s must be a finite number" % case[0], str(case))
 		assert_string_contains(problem, COMMAND)
+		assert_true(problem.ends_with(ReleaseBuild.file_hint(COMMAND)), "the readers' ending")
 
 
 func test_the_limits_themselves_are_accepted() -> void:

@@ -13,7 +13,8 @@ extends RefCounted
 ## not one of the world config's areas; a latitude, longitude or convergence that is not a finite
 ## number or lies beyond 90, 180 and 10 degrees. Every compare is typed (brain.md H26). Every
 ## refusal but the world's (no WorldConfig, an unreadable manifest, a WorldConfig of another
-## manifest) names the command that writes the block.
+## manifest) ends with ReleaseBuild.file_hint(SKY_COMMAND): outside an export the command that
+## writes the block, in one "download the release folder again" (the other readers' ending).
 
 const SKY_COMMAND := "python -m mattini sky"
 const KEYS := ["area", "latitude_deg", "longitude_deg", "true_to_grid_deg", "world_sha256"]
@@ -67,9 +68,12 @@ func _read(path: String, world: WorldConfig) -> String:
 static func _check_written(manifest: Dictionary) -> String:
 	var block: Variant = manifest.get("sky")
 	if block == null:
-		return "the sun's place has not been written: run %s" % SKY_COMMAND
+		return "the sun's place has not been written%s" % ReleaseBuild.file_hint(SKY_COMMAND)
 	if typeof(block) != TYPE_DICTIONARY:
-		return "sky must be an object or null, found %s: run %s" % [block, SKY_COMMAND]
+		return (
+			"sky must be an object or null, found %s%s"
+			% [block, ReleaseBuild.file_hint(SKY_COMMAND)]
+		)
 	if (
 		typeof(block.get("world_sha256")) != TYPE_STRING
 		or ManifestValue.differs(block["world_sha256"], manifest.get("world_sha256"))
@@ -79,7 +83,10 @@ static func _check_written(manifest: Dictionary) -> String:
 				"the sun's place was written for another world config (sky.world_sha256 %s,"
 				% [block.get("world_sha256")]
 			)
-			+ " the manifest's %s): run %s" % [manifest.get("world_sha256"), SKY_COMMAND]
+			+ (
+				" the manifest's %s)%s"
+				% [manifest.get("world_sha256"), ReleaseBuild.file_hint(SKY_COMMAND)]
+			)
 		)
 	return ""
 
@@ -89,17 +96,21 @@ static func _check_block(block: Dictionary, areas: Dictionary) -> String:
 	var keys := block.keys()
 	keys.sort()
 	if keys != KEYS:
-		return "sky must hold exactly %s, found %s: run %s" % [KEYS, keys, SKY_COMMAND]
+		return (
+			"sky must hold exactly %s, found %s%s"
+			% [KEYS, keys, ReleaseBuild.file_hint(SKY_COMMAND)]
+		)
 	if typeof(block["area"]) != TYPE_STRING or not areas.has(block["area"]):
 		return (
-			"sky.area %s is not an area of the world config: run %s" % [block["area"], SKY_COMMAND]
+			"sky.area %s is not an area of the world config%s"
+			% [block["area"], ReleaseBuild.file_hint(SKY_COMMAND)]
 		)
 	for key: String in LIMITS:
 		var value: Variant = block[key]
 		var number := typeof(value) == TYPE_FLOAT or typeof(value) == TYPE_INT
 		if not number or not is_finite(value) or absf(value) > LIMITS[key]:
 			return (
-				"sky.%s must be a finite number of at most %s degrees, found %s: run %s"
-				% [key, LIMITS[key], value, SKY_COMMAND]
+				"sky.%s must be a finite number of at most %s degrees, found %s%s"
+				% [key, LIMITS[key], value, ReleaseBuild.file_hint(SKY_COMMAND)]
 			)
 	return ""

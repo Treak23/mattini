@@ -8,7 +8,8 @@ extends RefCounted
 ## Time is Unix seconds UTC, latitude and longitude are degrees (longitude east-positive),
 ## angles come back in true-north, clockwise-from-north terms. Nothing here converts them
 ## to the game's grid. The vectors in tests/shared/sky_vectors.json cover 2020 to 2035;
-## nothing here claims more.
+## nothing here claims more. The game's day keys can leave that range; the clock's output there
+## is unvalidated (nothing is clamped).
 ##
 ## Sources:
 ##  - the sun: NOAA's solar calculator, "General Solar Position Calculations" and its

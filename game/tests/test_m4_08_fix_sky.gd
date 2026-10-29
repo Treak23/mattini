@@ -143,3 +143,4 @@ func test_a_manifest_whose_world_sha256_is_not_text_is_refused() -> void:
 		var problem := _problem(change)
 		assert_string_contains(problem, "another world config", "refused, not a runtime error")
 		assert_string_contains(problem, COMMAND)
+		assert_true(problem.ends_with(ReleaseBuild.file_hint(COMMAND)), "the readers' ending")

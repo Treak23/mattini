@@ -3,13 +3,14 @@ extends Node3D
 ## Reads the manifest at manifest_path and builds, in this order, its terrain (TerrainLoader,
 ## node "Terrain", the aerial photo on it with the surfaces drawn on the photo), its trees
 ## (TreeLoader, "Trees") and its buildings (BuildingLoader, "Buildings", each roof in its
-## measured colour), beside each other, under the sun of the photo and a sky. It starts the
+## measured colour), beside each other, under a sun, a moon and a sky that follow the game's clock
+## (the sky rig, below). It starts the
 ## free-fly camera START_ABOVE_M above the ground at the grid's centre, facing
 ## START_BEARING_DEG, pitched START_PITCH_DOWN_DEG down. The pause action opens UI/PauseMenu:
 ## the version (shown nowhere else, owner 2026-09-25), the controls, the credits, Resume and
 ## Quit. While it is open the frame rate is capped at PAUSED_MAX_FPS (15); closing it, or the
 ## scene leaving the tree, gives back the project's cap (application/run/max_fps). A missing,
-## refused or stale manifest or block (the terrain, buildings, photo, surfaces, trees or roofs)
+## refused or stale manifest or block (the terrain, buildings, photo, surfaces, trees, roofs or sky)
 ## opens UI/ErrorPanel: its first line names what cannot be shown, then each refusal with the
 ## commands that fix it, or in an exported build the release folder (Hard Rule 2). In an
 ## exported build (ReleaseBuild.is_exported()) the data packs missing beside the executable
@@ -116,7 +117,8 @@ const START_BEARING_DEG := 235.0
 const START_PITCH_DOWN_DEG := 20.0
 ## A PLACEHOLDER, not the clock's sun (Hard Rule 2): where the sun stands without a sky block,
 ## the flight's mean sun from config/shadows.json (grid azimuth clockwise from LV95 north, and
-## elevation). The clock still runs; the panel says why the sun does not move.
+## elevation); the two numbers were copied by hand from that file, nothing reads it here, and they
+## are this placeholder's only use. The clock still runs; the panel says why the sun does not move.
 const FALLBACK_SUN_AZIMUTH_GRID_DEG := 184.67
 const FALLBACK_SUN_ELEVATION_DEG := 50.1
 ## The stars' table: its presence switches the stars on (brief v0.4.0-06). The rig's script is
@@ -232,6 +234,8 @@ func _ready() -> void:
 	# The camera is in the tree and current by now: Terrain3D needs it on entering.
 	var datasets := _load_world()
 	_place_sky()
+	# The Hipparcos credit is shown whenever the star table is present and read (the licence's
+	# condition), not whenever stars are visible at this moment.
 	var stars_drawn := _rig != null and _star_image != null
 	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(datasets, stars_drawn)
 

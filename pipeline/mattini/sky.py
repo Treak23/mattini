@@ -20,8 +20,10 @@ refused naming `python -m mattini sky`.
 The file is written through a `.part` rename, with sorted keys, two-space indent and LF line
 endings, no times and no absolute paths (Hard Rule 5).
 
-Does NOT prove: that the values are the place's (test_m4_09_sky_config.py recomputes them
-with swisstopo's formulas); that the game turns azimuths with them.
+Does NOT prove: that the values are the place's. The step proves only that the config is
+well-formed and for this world (its world SHA-256 and area); that its numbers are the place's
+is proved by the config test (test_m4_09_sky_config.py recomputes them with swisstopo's
+formulas). Nor that the game turns azimuths with them.
 """
 
 from __future__ import annotations

@@ -102,6 +102,9 @@ func _check() -> bool:
 	var main: Node3D = load("res://main.tscn").instantiate()
 	main.manifest_path = path
 	root.add_child(main)
+	# The game clock runs in main's _process; this check wants one sun, and _ready has already
+	# placed it at the start moment (brief v0.4.0-11).
+	main.set_process(false)
 	for i in 4:
 		await process_frame
 	var world := WorldConfig.from_manifest(path)
