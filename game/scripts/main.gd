@@ -35,7 +35,8 @@ extends Node3D
 ## roofs (tools/export.sh checks them in an exported build).
 ##
 ## The sky (brief v0.4.0-08, from M4-10): the clock, time_unix, starts at SkyClock.START_UNIX (the
-## photo's moment) and runs at 1x, standing still while the pause screen is open. Every frame the
+## photo's moment) and runs at 1x (SPEEDS), standing still while the pause screen is
+## open. Every frame the
 ## sun and the moon stand where SkyClock puts them for the clock's time at the manifest's sky
 ## block (SkySite): the true azimuth plus the block's true_to_grid_deg is a grid azimuth, turned
 ## into a local direction through WorldConfig's east, north and up, and the SkyRig lights the
@@ -44,6 +45,13 @@ extends Node3D
 ## still at a labelled placeholder and the panel says why. Without a world config no sky is made:
 ## the directions need it, and the owner's axes written here would be a second home for the axis
 ## mapping (Hard Rule 4).
+##
+## The time keys (brief v0.4.0-09): time_earlier and time_later move the clock 15 minutes,
+## day_earlier and day_later a day (held keys repeat), time_speed steps SPEEDS (1x, 60x, 600x,
+## stopped) and time_now sets the computer's clock; they do nothing while the pause screen is
+## open. UI/Clock says
+## the time and the speed (clock_text) for CLOCK_SHOWN_S real seconds after a key, and always while
+## the pause screen is open.
 
 
 ## Collects the errors logged while the generated data is read, so that the error panel
@@ -144,6 +152,17 @@ const STREAMS_NOTE := "Streams: drawn 2 m wide, an assumed width: swissTLM3D giv
 ## The frame cap while the pause screen is open (SPEC §13 row 45). The scene behind the pause
 ## screen still draws, at most this many times a second.
 const PAUSED_MAX_FPS := 15
+## The clock's speeds, stepped in this order by time_speed, the first at the start: the game's
+## seconds per real second; 0 is stopped. They move the sun, the moon and the stars only: the
+## river's ripples run on the terrain shader's TIME, in real time, at every speed and when stopped
+## (brief v0.4.0-08 decision 6).
+const SPEEDS := [1.0, 60.0, 600.0, 0.0]
+## What time_earlier and time_later move the clock by, in seconds.
+const TIME_STEP_S := 900.0
+## What day_earlier and day_later move the clock by, in seconds.
+const DAY_STEP_S := 86400.0
+## How long UI/Clock stays shown after a time key, in real seconds.
+const CLOCK_SHOWN_S := 4.0
 ## The pause screen's list of controls: each InputMap action and what it does.
 const CONTROLS := [
 	[&"fly_forward", "fly forward, along the view"],
@@ -154,6 +173,12 @@ const CONTROLS := [
 	[&"fly_down", "fly straight down"],
 	[&"fly_fast", "hold to fly %s times faster"],
 	[&"fly_look", "hold and move the mouse to look around"],
+	[&"time_earlier", "the time 15 minutes earlier"],
+	[&"time_later", "the time 15 minutes later"],
+	[&"day_earlier", "the date one day earlier"],
+	[&"day_later", "the date one day later"],
+	[&"time_speed", "the time's speed: 1×, 60×, 600×, stopped"],
+	[&"time_now", "the time and date now, this computer's clock"],
 	[&"pause", "this screen; again to resume"],
 ]
 
@@ -167,6 +192,9 @@ static var _stars_read := false
 ## The game's clock, Unix seconds UTC: the photo's moment at the start, 1x (the time keys are
 ## brief v0.4.0-09's). Public: the tests and a probe set it.
 var time_unix := SkyClock.START_UNIX
+## The index into SPEEDS, and the label's remaining real seconds.
+var _speed := 0
+var _clock_left := 0.0
 
 ## LV95 east, north and up as local directions, once a WorldConfig was read.
 var _east := Vector3.ZERO
@@ -190,11 +218,13 @@ var _rig: SkyRig
 @onready var _pause_menu: Control = $UI/PauseMenu
 @onready var _resume: Button = $UI/PauseMenu/Resume
 @onready var _quit: Button = $UI/PauseMenu/Quit
+@onready var _clock: Label = $UI/Clock
 
 
 func _ready() -> void:
 	_error_panel.hide()
 	_pause_menu.hide()
+	_clock.hide()
 	_resume.pressed.connect(toggle_pause)
 	_quit.pressed.connect(get_tree().quit)
 	($UI/PauseMenu/Version as Label).text = "mattini %s" % _version()
@@ -206,10 +236,17 @@ func _ready() -> void:
 	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(datasets, stars_drawn)
 
 
-## The clock runs at 1x unless the pause screen is open; then the sky is placed for it.
+## The clock runs at SPEEDS[_speed] unless the pause screen is open; the label counts down in real
+## time and follows the clock while shown; then the sky is placed for it.
 func _process(delta: float) -> void:
 	if not _pause_menu.visible:
-		time_unix += delta
+		time_unix += delta * SPEEDS[_speed]
+		if _clock.visible:
+			_clock_left -= delta
+			if _clock_left <= 0.0:
+				_clock.hide()
+	if _clock.visible:
+		_clock.text = clock_text()
 	_place_sky()
 
 
@@ -221,6 +258,35 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"pause"):
 		toggle_pause()
 		get_viewport().set_input_as_handled()
+		return
+	if _pause_menu.visible:
+		return
+	if event.is_action_pressed(&"time_earlier", true):
+		time_unix -= TIME_STEP_S
+	elif event.is_action_pressed(&"time_later", true):
+		time_unix += TIME_STEP_S
+	elif event.is_action_pressed(&"day_earlier", true):
+		time_unix -= DAY_STEP_S
+	elif event.is_action_pressed(&"day_later", true):
+		time_unix += DAY_STEP_S
+	elif event.is_action_pressed(&"time_speed"):
+		_speed = (_speed + 1) % SPEEDS.size()
+	elif event.is_action_pressed(&"time_now"):
+		time_unix = Time.get_unix_time_from_system()
+	else:
+		return
+	get_viewport().set_input_as_handled()
+	_clock_left = CLOCK_SHOWN_S
+	_clock.text = clock_text()
+	_clock.show()
+	_place_sky()
+
+
+## The label's text: the clock's local time and the speed, "6 Sep 2023 13:40 CEST · 1×".
+func clock_text() -> String:
+	var speed: float = SPEEDS[_speed]
+	var speed_text := "stopped" if speed == 0.0 else _number(speed) + "×"
+	return "%s · %s" % [SkyClock.local_text(time_unix), speed_text]
 
 
 ## Opens the pause screen, or closes it when it is open. While it is open the camera
@@ -232,7 +298,12 @@ func toggle_pause() -> void:
 	_camera.input_enabled = not open
 	Engine.max_fps = PAUSED_MAX_FPS if open else _project_max_fps()
 	if open:
+		_clock.text = clock_text()
+		_clock.show()
 		_resume.grab_focus()
+	else:
+		_clock.hide()
+		_clock_left = 0.0
 
 
 ## The project's frame cap, application/run/max_fps, read each time this is called and never a

@@ -19,10 +19,14 @@ extends GutTest
 ## push_error, so this script prints no ERROR line.
 ##
 ## The census at the end is text only: no script under res://scripts but release_build.gd
-## spells "rebuilds it" itself. Two paths are skipped by name: surroundings_grid.gd
-## (SurroundingsGrid, the far mountains, M4-07) and shadow_grid.gd (CaptureShadowGrid, the
-## photo's capture mask, M4-06), readers of a later release that are not in 0.3.1; M4-10
-## decision 6 moves them onto file_hint and off the list.
+## spells "rebuilds it" itself.
+##
+## Since brief v0.4.0-09 (the owner's "4d" of 2026-10-27, 0.3.1 R1 F6; only the census and this
+## paragraph change): the census skips no reader. The two paths it used to skip by name until
+## M4-10, surroundings_grid.gd (SurroundingsGrid, the far mountains, M4-07) and shadow_grid.gd
+## (CaptureShadowGrid, the photo's capture mask, M4-06), belong to a later release and do not
+## exist yet; from their first commit they must call file_hint like every other reader (M4-10
+## decision 6), or this census names them.
 ##
 ## Does NOT prove: that an exported build shows these messages (the release template ignores
 ## --script; the release gate's export run starts the Linux build with mattini-photo.pck moved
@@ -230,17 +234,14 @@ func _scripts(dir: String) -> PackedStringArray:
 
 func test_no_script_spells_the_pipeline_hint_itself() -> void:
 	# Text only (lesson 5): the tests above prove the behaviour of each site they reach.
+	# No exception but ReleaseBuild itself (brief v0.4.0-09: the far mountains' and the capture
+	# mask's readers, when they come, are counted like every other).
 	var allowed := ["res://scripts/world/release_build.gd"]
-	# Readers of a later release (M4-07's far mountains, M4-06's capture mask), not in 0.3.1:
-	# skipped by path; M4-10 decision 6 moves them onto file_hint and off this list.
-	var until_m4_10 := [
-		"res://scripts/terrain/surroundings_grid.gd", "res://scripts/terrain/shadow_grid.gd"
-	]
 	var scripts := _scripts("res://scripts")
 	assert_gt(scripts.size(), 10, "the census reads the game's scripts")
 	var spelled := []
 	for script in scripts:
-		if script in allowed or script in until_m4_10:
+		if script in allowed:
 			continue
 		if FileAccess.get_file_as_string(script).contains("rebuilds it"):
 			spelled.append(script)

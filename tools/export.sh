@@ -12,8 +12,8 @@
 # failure:
 #   1. rewrites the generated manifest, which re-checks the generated data against the
 #      config (and writes a block null when its generated data is gone);
-#   2. refuses unless the manifest step 1 has just written has all six blocks the build
-#      ships (terrain, buildings, photo, surfaces, trees and roofs: BLOCKS below), naming the
+#   2. refuses unless the manifest step 1 has just written has all seven blocks the build
+#      ships (terrain, buildings, photo, surfaces, trees, roofs and sky: BLOCKS below), naming the
 #      commands that build the first missing one, in order (brief M3-14). Nothing is exported
 #      before this check (M2 R1 G-03: it used to run before the rewrite, so a block the
 #      rewrite dropped was found only after both exports);
@@ -64,7 +64,8 @@
 #      one's counts: a line never printed fails, a line only printed earlier is out of
 #      order). It also requires exit 0 and no ERROR line (M1 review G-02: an export without
 #      its terrain passed every step before this one). A manifest without one of the blocks
-#      is refused there too, with step 2's message.
+#      is refused there too, with step 2's message; the sky block is required there but prints
+#      no startup line (brief v0.4.0-09).
 #      Nothing here starts the Windows build (the owner's PC is its test).
 # Godot's output is read with ANSI colours and a CR at the end of a line removed, so a CR LF
 # run reads as an LF one (brief M3-02, V1-G-07).
@@ -145,7 +146,8 @@ error_lines() {
 }
 
 # The blocks of the manifest the build ships, in the order of the startup lines, each with the
-# commands that build it, in order (brief M3-14).
+# commands that build it, in order (brief M3-14). The sky block is required and prints no startup
+# line (brief v0.4.0-09).
 BLOCKS=(
 	"terrain|download terrain|terrain"
 	"buildings|download buildings|buildings"
@@ -153,6 +155,7 @@ BLOCKS=(
 	"surfaces|download tlm|surfaces"
 	"trees|download surface|download tlm|trees"
 	"roofs|download photo|roofs"
+	"sky|sky"
 )
 
 # What steps 2 and 6 say when the manifest lacks the block named $1: the commands that build
@@ -179,7 +182,7 @@ no_block_message() {
 # manifest's blocks: the terrain's area, columns, rows and spacing; the buildings' area and
 # counts of buildings, chunks and triangles; the photo's and the surfaces' area, columns,
 # rows and cell; the trees' area, count and chunks; the roofs' area, the buildings with a
-# colour and all buildings. A missing block is refused with step 2's message, not a
+# colour and all buildings. The sky block must be there too but prints no line (brief v0.4.0-09). A missing block is refused with step 2's message, not a
 # traceback (require_blocks).
 expected_startup_lines() {
 	require_blocks
@@ -373,10 +376,10 @@ system="$(uname -s)"
 step "1. the manifest, rewritten and re-checked against the config"
 "${UV_RUN[@]}" python -m mattini manifest || fail "python -m mattini manifest refused the generated data (see above)"
 
-step "2. the manifest step 1 wrote has all six blocks"
+step "2. the manifest step 1 wrote has all seven blocks"
 [ -f "$MANIFEST" ] || fail "$MANIFEST is missing after step 1 wrote it"
 require_blocks
-echo "all six blocks are there: terrain, buildings, photo, surfaces, trees and roofs"
+echo "all seven blocks are there: terrain, buildings, photo, surfaces, trees, roofs and sky"
 
 step "2b. the data packs the game expects are the ones this script writes"
 [ -f "$DATA_PACKS_GD" ] || fail "$DATA_PACKS_GD is missing: nothing was exported"

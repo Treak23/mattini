@@ -27,6 +27,13 @@ only `_tree`'s folders, the export run named under "Does NOT prove" and this par
 change): fake_tools.export_tree makes both packed folders itself, so `_tree` only writes its
 files into them.
 
+Since brief v0.4.0-09 (M4-10 decision 10's sky; only MANIFEST, one refusal case and this
+paragraph change): the build ships seven blocks, so step 2 also refuses a manifest without the
+sky block, naming `python -m mattini sky`, before anything is exported. The sky block prints no
+startup line, so step 6 still requires exactly the packs' lines and the six (M4-10's two lines
+of the far mountains and the capture mask belong to a later release): the first test passes on
+a manifest with all seven blocks, and fails if step 6 expects another count.
+
 Does NOT prove: that the real build prints these lines (the release gate's export run does,
 docs/RELEASE.md §C); the Windows build (the owner's PC).
 """
@@ -65,6 +72,13 @@ MANIFEST = {
         ],
     },
     "schema": 1,
+    "sky": {
+        "area": "village",
+        "latitude_deg": 46.0196233,
+        "longitude_deg": 7.7485397,
+        "true_to_grid_deg": -0.2258,
+        "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b",
+    },
     "surfaces": {"area": "village", "cell_m": 0.5, "columns": 4000, "rows": 6000},
     "terrain": {"area": "village", "columns": 4001, "rows": 6001, "spacing_m": 0.5},
     "trees": {
@@ -196,6 +210,7 @@ def test_a_line_out_of_order_fails(tmp_path, order):
         ("surfaces", ["download tlm", "surfaces"]),
         ("trees", ["download surface", "download tlm", "trees"]),
         ("roofs", ["download photo", "roofs"]),
+        ("sky", ["sky"]),
     ],
 )
 def test_a_manifest_without_a_block_is_refused_before_any_export(tmp_path, block, commands):

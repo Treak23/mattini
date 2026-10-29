@@ -41,6 +41,12 @@ runs the pack tool (`-s res://tools/pack.gd -- <pack> res://assets/generated/<fo
 game/tools/pack.gd does, writing every file of the folder in name order at its res:// path,
 and the started build prints one line per pack before the six.
 
+Since brief v0.4.0-09 (M4-10 decision 10's sky; only MANIFEST, `export_tree`'s docstring and
+this paragraph change): the export ships seven blocks, so the stand-in manifest also holds the
+sky block, as `python -m mattini sky` writes it for the real village (config/sky.json's village
+values and config/world.json's SHA-256). The sky prints no startup line: the started build
+still prints the six.
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -455,6 +461,13 @@ MANIFEST = {
         ],
     },
     "schema": 1,
+    "sky": {
+        "area": "village",
+        "latitude_deg": 46.0196233,
+        "longitude_deg": 7.7485397,
+        "true_to_grid_deg": -0.2258,
+        "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b",
+    },
     "surfaces": {"area": "village", "cell_m": 0.5, "columns": 4000, "rows": 6000},
     "terrain": {"area": "village", "columns": 4001, "rows": 6001, "spacing_m": 0.5},
     "trees": {
@@ -479,7 +492,7 @@ STARTUP_LINES = (
 
 def export_tree(tmp_path: Path, templates_dir: Path | None) -> Path:
     """A scratch repository for tools/export.sh: the script, game/project.godot,
-    game/scripts/data_packs.gd (its EXPECTED_PACKS), a manifest with the six blocks (step
+    game/scripts/data_packs.gd (its EXPECTED_PACKS), a manifest with the seven blocks (step
     1's rewrite is the stand-in uv's no-op), a small stand-in file in each packed folder
     (PACKED_FOLDERS), and, unless None, Godot's export templates installed in
     `templates_dir`."""
