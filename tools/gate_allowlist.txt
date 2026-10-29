@@ -25,3 +25,4 @@ SurfaceGrid: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its ref
 TreeChunks: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
 BuildingRoofs: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose (brief M3-R1-fix-5)
 the WorldConfig given was not read from this manifest @ res://tests/test_m3_r1_fix5_world_guard.gd # it gives PhotoGrid and SurfaceGrid another manifest's WorldConfig on purpose (brief M3-R1-fix-5)
+SkySite: user://test_ @ res://tests/test_m4_10_refusals.gd # its missing and stale sun's places are refused on purpose (brief v0.4.0-08, from M4-10)

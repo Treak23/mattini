@@ -10,6 +10,9 @@ extends GutTest
 ## is refused on screen, so these tests read a complete world (complete_world.gd): the
 ## terrain fixture plus one box. A test that means something is missing says so.
 ##
+## Brief v0.4.0-08 (M4-10 decision 10, cut to the sky): a refused manifest names seven, the
+## sun's and the moon's course after the roof colours.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); how the controls feel.
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
@@ -194,10 +197,11 @@ func test_a_manifest_that_is_not_json_shows_its_refusal_and_the_manifest_command
 		message.begins_with(
 			(
 				"mattini cannot show the terrain, the buildings, the aerial photo, the surfaces"
-				+ " (roads, paths, water and rock), the trees and the roof colours.\n"
+				+ " (roads, paths, water and rock), the trees, the roof colours and the sun's and"
+				+ " the moon's course.\n"
 			)
 		),
-		"a refused manifest shows nothing: all six are named (M2-05, M3-14)"
+		"a refused manifest shows nothing: all seven are named (M2-05, M3-14, v0.4.0-08)"
 	)
 	assert_null(main.get_node_or_null("Terrain"))
 	assert_null(main.get_node_or_null("Buildings"))

@@ -24,6 +24,10 @@ extends GutTest
 ## panel's text, so both forms are read here headless (called at run time: a main.gd without
 ## it fails this test by name, not by a parse error).
 ##
+## Since brief v0.4.0-08 (M4-10's replacement of M3-14's file, cut to the sky; only the refused
+## manifest's test and this paragraph change): a refused manifest names all seven, M3's six and
+## then "the sun's and the moon's course".
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); that an exported build
 ## reaches the panel (tools/export.sh step 6 starts one with its packs, not without them).
 
@@ -202,7 +206,7 @@ func test_without_the_buildings_their_roofs_are_not_read() -> void:
 	assert_not_null(main.get_node_or_null("Trees"), "the trees stay")
 
 
-func test_a_refused_manifest_names_all_six() -> void:
+func test_a_refused_manifest_names_all_seven() -> void:
 	DirAccess.make_dir_recursive_absolute(SCRATCH_DIR)
 	var path := SCRATCH_DIR.path_join("not_json.json")
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -211,9 +215,10 @@ func test_a_refused_manifest_names_all_six() -> void:
 	var main := _main_with(path)
 	var first := (
 		"mattini cannot show the terrain, the buildings, the aerial photo, the surfaces (roads,"
-		+ " paths, water and rock), the trees and the roof colours.\n"
+		+ " paths, water and rock), the trees, the roof colours and the sun's and the moon's"
+		+ " course.\n"
 	)
-	assert_true(_message(main).begins_with(first), "nothing is shown: all six are named")
+	assert_true(_message(main).begins_with(first), "nothing is shown: all seven are named")
 	assert_push_error("not valid JSON", "WorldConfig logs its refusal")
 	assert_push_error_count(1, "once")
 

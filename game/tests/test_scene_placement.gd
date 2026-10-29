@@ -30,6 +30,11 @@ extends GutTest
 ## from the MultiMesh buffers (brain.md H25: headless, set_instance_transform is dropped but an
 ## assigned buffer is kept), the very bytes the renderer is given.
 ##
+## Since brief v0.4.0-08 (M4-10's replacement of this file, cut to the sky; only this paragraph
+## and the reader absorbed change): the main scene also reads the sky block, which the shared
+## buildings fixture holds as null ("sky": null, brief v0.4.0-07), so SkySite's refusal of it is
+## absorbed as the others' are.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); that the real village's
 ## buildings meet its terrain (measured at M2 planning and by the review, SPEC §8); that the real
 ## village's 34'412 trees stand on its ground (the placement lens measured 0 of them more than
@@ -43,7 +48,7 @@ const SCRATCH_DIR := "user://test_scene_placement"
 const DEPRECATION := "instance_reset_physics_interpolation() is deprecated"
 ## The readers whose refusals of the buildings fixture (it holds only buildings) are expected.
 const ABSENT_BLOCKS := [
-	"TerrainGrid: ", "PhotoGrid: ", "SurfaceGrid: ", "TreeChunks: ", "BuildingRoofs: "
+	"TerrainGrid: ", "PhotoGrid: ", "SurfaceGrid: ", "TreeChunks: ", "BuildingRoofs: ", "SkySite: "
 ]
 
 var _cases := 0

@@ -25,13 +25,25 @@ extends Node3D
 ## colours are not read: one cause, one entry. With nothing, the camera starts at the scene's
 ## origin. It flies either way. Each refusal is logged once, by the reader that refuses it
 ## (WorldConfig, TerrainGrid, BuildingChunks, PhotoGrid, SurfaceGrid, TreeChunks,
-## BuildingRoofs); the panel shows what they logged. Every direction (the start view, the
-## sun) is measured through WorldConfig, never assumed, and the buildings and the trees stand
+## BuildingRoofs, SkySite); the panel shows what they logged. Every direction (the start view,
+## the sun and the moon) is measured through WorldConfig, never assumed, and the buildings and
+## the trees stand
 ## where the pipeline placed them for the world config the manifest pins (Hard Rule 4): the
 ## Buildings and Trees nodes and their meshes sit at the scene's origin, unturned and
 ## unscaled (test_scene_placement.gd). Once everything is built, one startup line per block
 ## its reader accepted is printed, in the order terrain, buildings, photo, surfaces, trees,
 ## roofs (tools/export.sh checks them in an exported build).
+##
+## The sky (brief v0.4.0-08, from M4-10): the clock, time_unix, starts at SkyClock.START_UNIX (the
+## photo's moment) and runs at 1x, standing still while the pause screen is open. Every frame the
+## sun and the moon stand where SkyClock puts them for the clock's time at the manifest's sky
+## block (SkySite): the true azimuth plus the block's true_to_grid_deg is a grid azimuth, turned
+## into a local direction through WorldConfig's east, north and up, and the SkyRig lights the
+## scene from them (the physical sky, the exposure by day and night, and the stars when
+## res://sky/stars.csv exists, credited on the pause screen). Without a sky block the sun stands
+## still at a labelled placeholder and the panel says why. Without a world config no sky is made:
+## the directions need it, and the owner's axes written here would be a second home for the axis
+## mapping (Hard Rule 4).
 
 
 ## Collects the errors logged while the generated data is read, so that the error panel
@@ -72,6 +84,7 @@ const PHOTO_FIX := [RUN + "download photo", RUN + "photo"]
 const SURFACES_FIX := [RUN + "download tlm", RUN + "surfaces"]
 const TREES_FIX := [RUN + "download surface", RUN + "download tlm", RUN + "trees"]
 const ROOFS_FIX := [RUN + "download photo", RUN + "roofs"]
+const SKY_FIX := [RUN + "sky"]
 ## What the error panel's first line names when it cannot be shown.
 const TERRAIN_WHAT := "the terrain"
 const BUILDINGS_WHAT := "the buildings"
@@ -79,6 +92,7 @@ const PHOTO_WHAT := "the aerial photo"
 const SURFACES_WHAT := "the surfaces (roads, paths, water and rock)"
 const TREES_WHAT := "the trees"
 const ROOFS_WHAT := "the roof colours"
+const SKY_WHAT := "the sun's and the moon's course"
 ## In an exported build a player has no pipeline: every fix is the release folder.
 const EXPORTED_FIX := (
 	"keep mattini.pck and the data packs mattini-*.pck beside the executable:"
@@ -92,12 +106,30 @@ const START_ABOVE_M := 150.0
 const START_BEARING_DEG := 235.0
 ## Below the horizon.
 const START_PITCH_DOWN_DEG := 20.0
-## Where the sun stood when the photo was taken (7 September 2023, about 11:30 UTC): measured
-## from the photo's shadows (brief M3-14). The solar position formulas give 181° and 50° for
-## the flight time, within the shadows' measuring error; the shadows' values are kept.
-const SUN_ELEVATION_DEG := 52.0
-## Clockwise from LV95 north.
-const SUN_AZIMUTH_DEG := 183.0
+## A PLACEHOLDER, not the clock's sun (Hard Rule 2): where the sun stands without a sky block,
+## the flight's mean sun from config/shadows.json (grid azimuth clockwise from LV95 north, and
+## elevation). The clock still runs; the panel says why the sun does not move.
+const FALLBACK_SUN_AZIMUTH_GRID_DEG := 184.67
+const FALLBACK_SUN_ELEVATION_DEG := 50.1
+## The stars' table: its presence switches the stars on (brief v0.4.0-06). The rig's script is
+## loaded by path so that this script parses without it.
+const STARS_TABLE := "res://sky/stars.csv"
+const SKY_RIG_SCRIPT := "res://scripts/sky/sky_rig.gd"
+## The credits' "Sky" section: the sun's and the moon's formulas and, with the stars, the
+## Hipparcos credit (the first line of game/sky/stars.csv without its "# ").
+const SUN_NOTE := (
+	"Sun: NOAA's solar position calculations (Meeus, Astronomical Algorithms),"
+	+ " https://gml.noaa.gov/grad/solcalc/calcdetails.html"
+)
+const MOON_NOTE := (
+	"Moon: Paul Schlyter, How to compute planetary positions,"
+	+ " https://stjarnhimlen.se/comp/ppcomp.html"
+)
+const STARS_NOTE := (
+	"Stars derived from the Hipparcos Catalogue (ESA 1997, ESA SP-1200): stars to V 6.0,"
+	+ " positions rounded and reformatted. Credit: ESA. CC BY-NC 3.0 IGO,"
+	+ " https://creativecommons.org/licenses/by-nc/3.0/igo/"
+)
 const TERRAIN3D_TITLE := "Terrain3D 1.0.2"
 const TERRAIN3D_LICENSE := "res://addons/terrain_3d/LICENSE.txt"
 ## godot-cpp is compiled into Terrain3D's library (M1 close, D17). Its LICENSE.md, verbatim,
@@ -125,7 +157,16 @@ const CONTROLS := [
 	[&"pause", "this screen; again to resume"],
 ]
 
+## The stars' image, built once per process (4096 x 2048, 32 MiB: every main-scene test would
+## otherwise build it again), and whether it was tried.
+static var _star_image: Image = null
+static var _stars_read := false
+
 @export var manifest_path := "res://assets/generated/manifest.json"
+
+## The game's clock, Unix seconds UTC: the photo's moment at the start, 1x (the time keys are
+## brief v0.4.0-09's). Public: the tests and a probe set it.
+var time_unix := SkyClock.START_UNIX
 
 ## LV95 east, north and up as local directions, once a WorldConfig was read.
 var _east := Vector3.ZERO
@@ -135,9 +176,14 @@ var _terrain: Terrain3D
 ## The messages of the data packs an exported build is missing, asked before the manifest is
 ## read; empty outside an exported build.
 var _missing_packs := PackedStringArray()
+## The sun's place and the rig that lights the scene; null until made.
+var _site: SkySite
+var _rig: SkyRig
 
 @onready var _camera: FreeFlyCamera = $Camera
 @onready var _sun: DirectionalLight3D = $Sun
+@onready var _moon: DirectionalLight3D = $Moon
+@onready var _environment: WorldEnvironment = $Environment
 @onready var _ui: CanvasLayer = $UI
 @onready var _error_panel: Control = $UI/ErrorPanel
 @onready var _error_message: Label = $UI/ErrorPanel/Message
@@ -155,7 +201,16 @@ func _ready() -> void:
 	($UI/PauseMenu/Controls as Label).text = _controls_text()
 	# The camera is in the tree and current by now: Terrain3D needs it on entering.
 	var datasets := _load_world()
-	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(datasets)
+	_place_sky()
+	var stars_drawn := _rig != null and _star_image != null
+	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(datasets, stars_drawn)
+
+
+## The clock runs at 1x unless the pause screen is open; then the sky is placed for it.
+func _process(delta: float) -> void:
+	if not _pause_menu.visible:
+		time_unix += delta
+	_place_sky()
 
 
 func _exit_tree() -> void:
@@ -200,12 +255,17 @@ func _load_world() -> PackedStringArray:
 	var world: WorldConfig = read_world[0]
 	if world == null:
 		var every := [
-			TERRAIN_WHAT, BUILDINGS_WHAT, PHOTO_WHAT, SURFACES_WHAT, TREES_WHAT, ROOFS_WHAT
+			TERRAIN_WHAT,
+			BUILDINGS_WHAT,
+			PHOTO_WHAT,
+			SURFACES_WHAT,
+			TREES_WHAT,
+			ROOFS_WHAT,
+			SKY_WHAT
 		]
 		_show_error([[_names(every), read_world[1], MANIFEST_FIX]])
 		return PackedStringArray()
 	_read_directions(world)
-	_place_sun()
 	var refusals := []
 	var read_grid := _caught(TerrainGrid.from_manifest.bind(manifest_path, world))
 	var grid: TerrainGrid = read_grid[0]
@@ -234,6 +294,11 @@ func _load_world() -> PackedStringArray:
 		roofs = read_roofs[0]
 		if roofs == null:
 			refusals.append([ROOFS_WHAT, read_roofs[1], ROOFS_FIX])
+	var read_sky := _caught(SkySite.from_manifest.bind(manifest_path, world))
+	_site = read_sky[0]
+	if _site == null:
+		refusals.append([SKY_WHAT, read_sky[1], SKY_FIX])
+	_create_sky()
 	# One texture object for the photo, shared by the terrain and the trees: it is decoded
 	# once (the village's is about 600 MiB of texture).
 	if grid != null:
@@ -387,10 +452,54 @@ func _bearing(degrees: float) -> Vector3:
 	return _east * sin(bearing) + _north * cos(bearing)
 
 
-func _place_sun() -> void:
-	var elevation := deg_to_rad(SUN_ELEVATION_DEG)
-	var to_sun := _bearing(SUN_AZIMUTH_DEG) * cos(elevation) + _up * sin(elevation)
-	_sun.basis = Basis.looking_at(-to_sun, _up)
+## The local direction of a grid azimuth [param azimuth_deg] (clockwise from LV95 north) and an
+## elevation [param elevation_deg], through the world config's east, north and up.
+func _direction(azimuth_deg: float, elevation_deg: float) -> Vector3:
+	var elevation := deg_to_rad(elevation_deg)
+	return _bearing(azimuth_deg) * cos(elevation) + _up * sin(elevation)
+
+
+## Makes the rig, its frame at TRUE north: the rig uses its frame's north only for the stars'
+## pole, which stands 0.23 degrees off true north in the grid frame. True north lies at grid
+## azimuth true_to_grid_deg. Without a sky block: grid north and latitude 0, unused while the
+## placeholder sun stands by day (the rig's stars strength is 0 then).
+func _create_sky() -> void:
+	var true_to_grid := _site.true_to_grid_deg if _site != null else 0.0
+	var latitude := _site.latitude_deg if _site != null else 0.0
+	var frame := Basis(_bearing(true_to_grid + 90.0), _bearing(true_to_grid), _up)
+	_rig = SkyRig.create(_sun, _moon, _environment.environment, frame, latitude, _stars())
+
+
+## The stars' image, built once per process when the table exists, else null (4096 x 2048,
+## 32 MiB: every main-scene test would otherwise build it again). star_image is called by name
+## on the loaded script so that this file parses without SkyRig's star code.
+static func _stars() -> Image:
+	if not _stars_read:
+		_stars_read = true
+		if FileAccess.file_exists(STARS_TABLE):
+			_star_image = load(SKY_RIG_SCRIPT).star_image(STARS_TABLE)
+	return _star_image
+
+
+## Places the sun, the moon and the stars for the clock's time at the sky block's site (the
+## true azimuth plus true_to_grid_deg is the grid azimuth; moon.z is the illuminated fraction;
+## the sidereal angle turns the stars). Without a sky block, the placeholder sun, still, and the
+## moon below the horizon. Nothing without a rig (no world config).
+func _place_sky() -> void:
+	if _rig == null:
+		return
+	if _site == null:
+		var still := _direction(FALLBACK_SUN_AZIMUTH_GRID_DEG, FALLBACK_SUN_ELEVATION_DEG)
+		_rig.apply(still, -still, 0.0, 0.0)
+		return
+	var sun := SkyClock.sun(time_unix, _site.latitude_deg, _site.longitude_deg)
+	var moon := SkyClock.moon(time_unix, _site.latitude_deg, _site.longitude_deg)
+	_rig.apply(
+		_direction(sun.x + _site.true_to_grid_deg, sun.y),
+		_direction(moon.x + _site.true_to_grid_deg, moon.y),
+		moon.z,
+		SkyClock.sidereal_deg(time_unix, _site.longitude_deg)
+	)
 
 
 ## The camera START_ABOVE_M above the ground at the grid's centre, facing the start bearing,
@@ -552,9 +661,10 @@ func _key_name(event: InputEventKey) -> String:
 
 ## The credits: under "Data" one line per dataset loaded ([param datasets], sorted, each
 ## once), then "Textures" with the CC0 textures' note whole, then "Placeholders" (the walls,
-## the trees and the streams: they describe the build, so they are always listed), then the
-## software's licences.
-func _credits_text(datasets: PackedStringArray) -> String:
+## the trees and the streams: they describe the build, so they are always listed), then "Sky"
+## (the sun's and the moon's formulas, and the Hipparcos credit only when [param stars] is true:
+## the stars were drawn, so the table res://sky/stars.csv exists), then the software's licences.
+func _credits_text(datasets: PackedStringArray, stars: bool) -> String:
 	var lines := PackedStringArray(["Credits", "", "Data"])
 	if datasets.is_empty():
 		lines.append("No generated data is loaded, so no dataset is shown.")
@@ -564,6 +674,9 @@ func _credits_text(datasets: PackedStringArray) -> String:
 	lines.append_array(
 		["", "Placeholders", BuildingLoader.WALLS_NOTE, TreeLoader.TREES_NOTE, STREAMS_NOTE]
 	)
+	lines.append_array(["", "Sky", SUN_NOTE, MOON_NOTE])
+	if stars:
+		lines.append(STARS_NOTE)
 	lines.append_array(["", "Godot Engine", Engine.get_license_text(), ""])
 	lines.append("Godot Engine's components")
 	for component: Dictionary in Engine.get_copyright_info():

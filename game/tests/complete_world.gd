@@ -1,7 +1,8 @@
 extends RefCounted
-## Test helper for the main scene's tests (briefs M2-05, M2-08; M3-14's full replacement): a
-## complete world, every block the main scene reads, in one world, written into a folder
-## under user://. Not a test script: GUT runs only scripts named test_*.
+## Test helper for the main scene's tests (briefs M2-05, M2-08; M3-14's full replacement; the
+## flow from brief v0.4.0-02, the sun's place from brief v0.4.0-08): a complete world, every block
+## the main scene reads, in one world, written into a folder under user://. Not a test script:
+## GUT runs only scripts named test_*.
 ##
 ## - The terrain: the shared terrain fixture's manifest and heights (its world: origin
 ##   E 2'600'000 / N 1'200'000, height offset 1000 m, the owner's axes).
@@ -23,6 +24,10 @@ extends RefCounted
 ##   trees, item 7) written again here as test data, and the same as Terrain3D's height there
 ##   (tree_records(); the shared fixture's chunks are for another world and are not used).
 ## - The roofs: a block written here for the box, its colour ROOF.
+## - The sun's place (brief v0.4.0-08, from M4-10): SKY, config/sky.json's village values
+##   (latitude, longitude, true_to_grid_deg) under this world's area and world_sha256, so that the
+##   start's sun stands where it stands over Zermatt: test data, not this world's own place
+##   (test_main_scene_light.gd checks that SKY is config/sky.json's village values).
 ## The three rectangles differ on purpose: the photo's is not the terrain grid's, and the
 ## surfaces' is neither. The moved boxes, the box, its roof colour and the trees' places and
 ## sizes are test data, invented here, not swisstopo's (Hard Rule 2).
@@ -65,6 +70,9 @@ const TREES_FILE := "trees/2601-1199.bin"
 ## The box's roof colour, sRGB, as the roofs block writes it.
 const ROOF := "b4532a"
 const ROOF_UUID := "{0F1E2D3C-4B5A-4978-8796-A5B4C3D2E1F0}"
+## The sun's place: config/sky.json's village values (computed for config/world.json
+## d2607d13…, M4-03), as test data.
+const SKY := {"latitude_deg": 46.0196233, "longitude_deg": 7.7485397, "true_to_grid_deg": -0.2258}
 
 
 static func repo_file(rel: String) -> String:
@@ -77,8 +85,9 @@ static func terrain_fixture_path() -> String:
 
 ## Writes the complete world into [param dir] (created if missing): manifest.json, the
 ## terrain's heights (the fixture's, or [param heights] when given), the box's chunk, the
-## photo, the surfaces and the trees' chunk (standing on those heights), with [param change]
-## (a Callable taking the manifest Dictionary) applied last. Returns the manifest's path.
+## photo, the surfaces and the trees' chunk (standing on those heights) and the sky block (SKY),
+## with [param change] (a Callable taking the manifest Dictionary) applied last. Returns the
+## manifest's path.
 static func write(dir: String, change := Callable(), heights := PackedByteArray()) -> String:
 	for folder in ["terrain", "buildings", "photo", "surfaces", "trees"]:
 		DirAccess.make_dir_recursive_absolute(dir.path_join(folder))
@@ -148,6 +157,9 @@ static func write(dir: String, change := Callable(), heights := PackedByteArray(
 		},
 		"world_sha256": world_sha256,
 	}
+	manifest["sky"] = SKY.duplicate()
+	manifest["sky"]["area"] = "fixture"
+	manifest["sky"]["world_sha256"] = world_sha256
 	if change.is_valid():
 		change.call(manifest)
 	var path := dir.path_join("manifest.json")

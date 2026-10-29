@@ -31,9 +31,20 @@ extends GutTest
 ## STREAMS_NOTE; then the software licences as before. The three constants are read at run
 ## time, so a missing one fails this test by name, not by a parse error.
 ##
+## Since brief v0.4.0-08 (M4-10 decision 8's Sky credits, cut to the sky, with the stars on the
+## Hipparcos Catalogue, SPEC §13 row 51; one test and this paragraph change): after
+## "Placeholders" a heading "Sky" names the sources of the sun's and the moon's formulas (NOAA's
+## solar calculations; Paul Schlyter's planetary positions: main.gd's SUN_NOTE and MOON_NOTE) and,
+## only when the star table res://sky/stars.csv is there (brief v0.4.0-06), the catalogue's credit,
+## main.gd's STARS_NOTE: the table's first line without its "# " (ESA's "Credit: ESA" and the
+## licence, CC BY-NC 3.0 IGO), so the stars are never drawn without their credit. The switch is
+## an argument, _credits_text(datasets, stars), read here both ways whichever the tree holds. The
+## sky prints no startup line.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); what the shaders do with
 ## the textures; the real village's numbers (tools/export.sh step 6 does, on the exported
-## build).
+## build); that the catalogue's licence allows a sale (SPEC §13 row 51: it does not without ESA's
+## permission).
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
 const MAIN_SCRIPT := "res://scripts/main.gd"
@@ -53,6 +64,23 @@ const TEXTURES := [
 	["rocky_trail_diff_1k.jpg", "https://polyhaven.com/a/rocky_trail", "Amal Kumar"],
 ]
 const STREAMS_NOTE := "Streams: drawn 2 m wide, an assumed width: swissTLM3D gives none."
+const SKY_NOTES := [
+	(
+		"Sun: NOAA's solar position calculations (Meeus, Astronomical Algorithms),"
+		+ " https://gml.noaa.gov/grad/solcalc/calcdetails.html"
+	),
+	(
+		"Moon: Paul Schlyter, How to compute planetary positions,"
+		+ " https://stjarnhimlen.se/comp/ppcomp.html"
+	),
+]
+const STARS_TABLE := "res://sky/stars.csv"
+## The star table's first line without its "# " (brief v0.4.0-06 decision 3).
+const STARS_NOTE := (
+	"Stars derived from the Hipparcos Catalogue (ESA 1997, ESA SP-1200): stars to V 6.0,"
+	+ " positions rounded and reformatted. Credit: ESA. CC BY-NC 3.0 IGO,"
+	+ " https://creativecommons.org/licenses/by-nc/3.0/igo/"
+)
 
 
 ## Collects every line printed while it listens.
@@ -264,3 +292,26 @@ func test_the_credits_name_every_dataset_texture_and_placeholder() -> void:
 	assert_string_contains(walls, "placeholder", "the walls' note says so")
 	assert_string_contains(trees, "species", "the trees' note says what is not")
 	assert_lt(credits.find("\nPlaceholders\n"), credits.find("\nGodot Engine\n"), "before Godot")
+
+
+func test_the_credits_name_the_sky_s_sources_and_the_stars_only_with_their_table() -> void:
+	var main := _main_with(_complete)
+	var credits: String = main.get_node("UI/PauseMenu/Credits").text
+	var sky := "\n".join(["", "", "Sky"] + SKY_NOTES)
+	assert_string_contains(credits, sky, "the sun's and the moon's sources")
+	assert_lt(credits.find("\nPlaceholders\n"), credits.find("\nSky\n"), "after the placeholders")
+	assert_lt(credits.find("\nSky\n"), credits.find("\nGodot Engine\n"), "before Godot")
+	assert_eq(_constant(MAIN_SCRIPT, "STARS_NOTE"), STARS_NOTE, "the stars' credit, as written")
+	if FileAccess.file_exists(STARS_TABLE):
+		var first := FileAccess.get_file_as_string(STARS_TABLE).get_slice("\n", 0)
+		assert_eq(first, "# " + STARS_NOTE, "the credit is the table's own first line")
+		assert_string_contains(credits, sky + "\n" + STARS_NOTE + "\n", "the catalogue, credited")
+	else:
+		assert_false(credits.contains("Hipparcos"), "no stars, no catalogue")
+	# The switch itself, both ways, whichever this tree holds (main's
+	# _credits_text(datasets, stars)).
+	var none: String = main._credits_text(PackedStringArray(), false)
+	assert_false(none.contains("Hipparcos"), "without the stars no credit")
+	assert_string_contains(none, sky + "\n\n", "and the sky's two sources still")
+	var some: String = main._credits_text(PackedStringArray(), true)
+	assert_string_contains(some, sky + "\n" + STARS_NOTE + "\n", "with them, the credit")

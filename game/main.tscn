@@ -3,20 +3,12 @@
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/camera/free_fly_camera.gd" id="2_camera"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
-ground_bottom_color = Color(0.4, 0.43, 0.47, 1)
-ground_horizon_color = Color(0.6, 0.63, 0.67, 1)
-
-[sub_resource type="Sky" id="Sky_sky"]
-sky_material = SubResource("ProceduralSkyMaterial_sky")
-
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 2
-sky = SubResource("Sky_sky")
 ambient_light_source = 3
 ambient_light_sky_contribution = 0.25
 tonemap_mode = 2
-tonemap_exposure = 0.54
+tonemap_exposure = 0.7
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_error"]
 content_margin_left = 20.0
@@ -39,6 +31,13 @@ script = ExtResource("2_camera")
 [node name="Sun" type="DirectionalLight3D" parent="."]
 shadow_enabled = true
 directional_shadow_max_distance = 3000.0
+
+[node name="Moon" type="DirectionalLight3D" parent="."]
+visible = false
+light_color = Color(0.8, 0.85, 1, 1)
+light_energy = 0.0
+shadow_enabled = true
+sky_mode = 1
 
 [node name="Environment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
