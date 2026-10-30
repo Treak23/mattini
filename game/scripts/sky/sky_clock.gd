@@ -75,8 +75,9 @@ static func local_text(unix: float) -> String:
 
 
 ## The sun as (azimuth, elevation) in degrees: azimuth true, clockwise from north, in
-## [0, 360); elevation apparent (the true elevation plus NOAA's refraction). UTC stands in
-## for UT1.
+## [0, 360) as a double; elevation apparent (the true elevation plus NOAA's refraction). UTC
+## stands in for UT1. Stored in the float32 Vector2, an azimuth within about 1.5e-5 of 360 reads
+## 360.0, which means north as 0 does (every consumer takes its sine and cosine).
 static func sun(unix: float, lat_deg: float, lon_deg: float) -> Vector2:
 	var jd := unix / 86400.0 + 2440587.5
 	var t := (jd - 2451545.0) / 36525.0
@@ -122,7 +123,9 @@ static func sun(unix: float, lat_deg: float, lon_deg: float) -> Vector2:
 
 
 ## The moon as (azimuth, elevation, illuminated fraction): topocentric, no refraction;
-## azimuth true, clockwise from north; the fraction (1 - cos elongation) / 2.
+## azimuth true, clockwise from north, in [0, 360) as a double (stored in the float32 Vector3, a
+## value within about 1.5e-5 of 360 reads 360.0, which means north as 0 does); the fraction
+## (1 - cos elongation) / 2.
 ## Schlyter's elements and perturbations; our own code.
 static func moon(unix: float, lat_deg: float, lon_deg: float) -> Vector3:
 	var d := unix / 86400.0 + 2440587.5 - 2451543.5

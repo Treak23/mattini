@@ -16,6 +16,10 @@ extends GutTest
 ## check cannot stand in: the other world has the owner's axes, and the photo and the surfaces
 ## fit their box through any origin.
 ##
+## Brief v0.5.0-11 (0.4.0's whole-range review S-03) adds SkySite, the sky block's reader
+## (BuildingChunks._check_world, the same guard and words): the shared shadows fixture's
+## manifest, the one shared fixture with a sky block, read through the same three moved worlds.
+##
 ## Does NOT prove: that the manifest's world block is bound to config/world.json at read time
 ## (M3 review R1 G-12, by design: the pipeline's first step writes it and its tests pin it);
 ## the refusal of a rotated world (test_photo_grid.gd and test_surface_grid.gd).
@@ -24,6 +28,7 @@ const SCRATCH_DIR := "user://test_m3_r1_fix5_world_guard"
 const NOT_OURS := "the WorldConfig given was not read from this manifest"
 const PHOTO := "tests/shared/photo_fixture/generated/manifest.json"
 const SURFACES := "tests/shared/surfaces_fixture/generated/manifest.json"
+const SKY := "tests/shared/shadows_fixture/generated/manifest.json"
 const EAST_M := 1000.0
 const NORTH_M := 37.5
 const HEIGHT_M := 0.25
@@ -108,6 +113,12 @@ func _surfaces_with(change: Callable) -> void:
 	_assert_refused_once(SurfaceGrid.from_manifest(path, other), path, "SurfaceGrid, another world")
 
 
+func _sky_with(change: Callable) -> void:
+	var path := _repo_file(SKY)
+	var other := _other_world(SKY, change)
+	_assert_refused_once(SkySite.from_manifest(path, other), path, "SkySite, another world")
+
+
 func test_the_manifest_s_own_world_config_is_accepted() -> void:
 	# The control, with a guard that refuses everything or compares the wrong pair of fields.
 	var photo := _repo_file(PHOTO)
@@ -116,6 +127,10 @@ func test_the_manifest_s_own_world_config_is_accepted() -> void:
 	assert_not_null(SurfaceGrid.from_manifest(surfaces, WorldConfig.from_manifest(surfaces)))
 	var same := _other_world(PHOTO, func(_world: Dictionary) -> void: pass)
 	assert_not_null(PhotoGrid.from_manifest(photo, same), "a copy of the world block is accepted")
+	var sky := _repo_file(SKY)
+	assert_not_null(SkySite.from_manifest(sky, WorldConfig.from_manifest(sky)), "the sky's own")
+	var same_sky := _other_world(SKY, func(_world: Dictionary) -> void: pass)
+	assert_not_null(SkySite.from_manifest(sky, same_sky), "a copy of the sky's world block")
 
 
 func test_photo_grid_refuses_another_east_origin() -> void:
@@ -140,3 +155,15 @@ func test_surface_grid_refuses_another_north_origin() -> void:
 
 func test_surface_grid_refuses_another_height_offset() -> void:
 	_surfaces_with(_raised)
+
+
+func test_sky_site_refuses_another_east_origin() -> void:
+	_sky_with(_moved_east)
+
+
+func test_sky_site_refuses_another_north_origin() -> void:
+	_sky_with(_moved_north)
+
+
+func test_sky_site_refuses_another_height_offset() -> void:
+	_sky_with(_raised)

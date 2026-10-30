@@ -1,10 +1,20 @@
 extends GutTest
 ## Fixer's own tests for brief v0.4.0-04: closes the prover's thin margins and the two
 ## uncovered harms the pinned tests leave. The pinned files stay byte-identical.
+## Pinned whole by brief v0.5.0-11 (0.4.0 review TG-09): the two loops' counts and the measured
+## numbers below.
 ##
-## - The sun and moon vectors again at about twice the measured worst error (sun 0.0167
-##   degrees, moon 0.152 degrees), so that dropping the sun's refraction (0.109 off against the
-##   pinned 0.05 band) or the moon's longitude terms (1.1 off against 0.5) fails by a wide margin.
+## - The sun and moon vectors again at bands tighter than the pinned ones. The worst errors
+##   (measured by brief v0.5.0-11's pin author, 2026-10-30): the sun above 2 degrees 0.0167
+##   degrees against SUN_TIGHT_DEG 0.035 (2.1 times); the sun's elevation at 2 degrees and below
+##   0.0108 against SUN_LOW_DEG / 2 = 0.15 (14 times); the moon 0.071 degrees (azimuth times
+##   cos elevation; elevation 0.067) against MOON_TIGHT_DEG 0.25 (3.5 times); its phase 0.0091
+##   against 0.015 (1.6 times). So dropping the sun's refraction (0.273 degrees off above 2
+##   degrees, 0.579 at 2 and below) or the moon's -1.274 longitude term (1.27 off) fails by a
+##   wide margin.
+## - Each loop counts what it checked (brief v0.5.0-11, 0.4.0 review TG-09): 71 instants with the
+##   sun above 2 degrees (more than 50 asserted), 224 at 2 degrees and below, 295 moons, all of
+##   tests/shared/sky_vectors.json's 295; a loop that checks nothing passes nothing.
 ## - Kepler's solver is held to its own equation, which no pinned vector can do.
 ## - The southern hemisphere is held by geometry (a December sun is north of a southern site and
 ##   south of a northern one), independent of the other_sites rows.
@@ -17,6 +27,10 @@ const SUN_TIGHT_DEG := 0.035
 const SUN_LOW_DEG := 0.3
 const MOON_TIGHT_DEG := 0.25
 const MOON_FRACTION_TIGHT := 0.015
+## The vectors with the sun at 2 degrees and below, and all of them (the moons), counted in
+## tests/shared/sky_vectors.json by GDScript and by Python's json (brief v0.5.0-11).
+const LOW_SUN_VECTORS := 224
+const MOON_VECTORS := 295
 
 var _doc: Dictionary = {}
 
@@ -49,16 +63,20 @@ func test_the_sun_holds_a_tighter_band() -> void:
 func test_the_sun_below_the_horizon_holds_a_tighter_band() -> void:
 	var lat: float = _doc["site"]["latitude_deg"]
 	var lon: float = _doc["site"]["longitude_deg"]
+	var checked := 0
 	for v in _doc["vectors"]:
 		if v["sun_elevation_deg"] > 2.0:
 			continue
 		var got := SkyClock.sun(float(v["unix"]), lat, lon)
 		assert_lt(absf(got.y - v["sun_elevation_deg"]), SUN_LOW_DEG / 2.0, v["utc"])
+		checked += 1
+	assert_eq(checked, LOW_SUN_VECTORS, "every instant at 2 degrees and below was checked")
 
 
 func test_the_moon_holds_a_tighter_band() -> void:
 	var lat: float = _doc["site"]["latitude_deg"]
 	var lon: float = _doc["site"]["longitude_deg"]
+	var checked := 0
 	for v in _doc["vectors"]:
 		var got := SkyClock.moon(float(v["unix"]), lat, lon)
 		var el: float = v["moon_elevation_deg"]
@@ -70,6 +88,8 @@ func test_the_moon_holds_a_tighter_band() -> void:
 			MOON_FRACTION_TIGHT,
 			"%s: phase" % v["utc"]
 		)
+		checked += 1
+	assert_eq(checked, MOON_VECTORS, "every vector's moon was checked")
 
 
 func test_kepler_is_solved_to_convergence() -> void:

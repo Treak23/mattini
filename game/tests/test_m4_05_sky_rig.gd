@@ -2,6 +2,7 @@ extends GutTest
 ## Pinning tests for brief v0.4.0-05 (M4-05 without its stars section, and the sky's ground of
 ## SPEC §13 row 52): the sky rig turns the sun's and the moon's directions into the scene's
 ## lights, exposure and sky.
+## Re-pinned whole by brief v0.5.0-11: one line of GODOT_LINES, the night sky's repeat_enable.
 ##
 ## Pinned decisions (m4-design §6, as decided on 2026-10-17): SkyRig
 ## (game/scripts/sky/sky_rig.gd) is made by SkyRig.create(sun, moon, environment, frame,
@@ -68,7 +69,9 @@ const EPS := 0.0001
 ## Godot 4.6.3's PhysicalSkyMaterial shader (scene/resources/3d/sky_material.cpp:735-819),
 ## every line but the comment naming the version, the three lines its code fills in
 ## (render_mode, the two night sky lines) and its three lines of the sun's disk (replaced: see
-## DISK_LINES), stripped: each must appear in this order.
+## DISK_LINES), stripped: each must appear in this order. One is Godot's with a hint added: the
+## night sky's declaration carries repeat_enable after Godot's three hints (brief v0.5.0-11, the
+## 0.4.0 review's CD-3; test_v050_11_sky_guards.gd holds its comment).
 const GODOT_LINES: Array[String] = [
 	"shader_type sky;",
 	"uniform float rayleigh : hint_range(0, 64) = 2.0;",
@@ -80,7 +83,7 @@ const GODOT_LINES: Array[String] = [
 	"uniform float sun_disk_scale : hint_range(0, 360) = 1.0;",
 	"uniform vec4 ground_color : source_color = vec4(0.1, 0.07, 0.034, 1.0);",
 	"uniform float exposure : hint_range(0, 128) = 1.0;",
-	"uniform sampler2D night_sky : filter_linear, source_color, hint_default_black;",
+	"uniform sampler2D night_sky : filter_linear, source_color, hint_default_black, repeat_enable;",
 	"const vec3 UP = vec3( 0.0, 1.0, 0.0 );",
 	"const float rayleigh_zenith_size = 8.4e3;",
 	"const float mie_zenith_size = 1.25e3;",

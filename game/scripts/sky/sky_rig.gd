@@ -134,9 +134,13 @@ static func create(
 ## min(floor((90 - dec) / 180 * 2048), 2047), at the columns c - h to c + h, wrapped, with
 ## c = floor(ra / 360 * 4096) mod 4096 and h = floor(0.5 / cos(dec)): the run keeps a star about
 ## one texel high wide at any declination, where one texel would be 0.001 degrees wide at
-## Polaris and show nothing. A file that cannot be read, or a line that is not three numbers, is
-## an error (push_error, naming the file and the line) and null. The positions are not
-## precessed: see the class comment.
+## Polaris and show nothing. A file that cannot be read, a line that is not three numbers, a
+## right ascension not in [0, 360) degrees or a declination not strictly between -90 and 90 is an
+## error (push_error, naming the file and the line) and null (brief v0.5.0-11). The declination
+## guard is not optional: at exactly 90 the run is about 8e15 texels and the loop never returns,
+## and beyond 90 the run is negative and the star vanished without a word; a right ascension out
+## of range was drawn at a wrong column. NaN and the infinities fail both checks. The positions are
+## not precessed: see the class comment.
 static func star_image(path: String) -> Image:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
@@ -160,6 +164,22 @@ static func star_image(path: String) -> Image:
 			return null
 		var ra := fields[0].to_float()
 		var dec := fields[1].to_float()
+		if not (ra >= 0.0 and ra < 360.0):
+			push_error(
+				(
+					"SkyRig: %s line %d: right ascension %s is not in [0, 360) degrees: %s"
+					% [path, number, fields[0], line]
+				)
+			)
+			return null
+		if not (dec > -90.0 and dec < 90.0):
+			push_error(
+				(
+					"SkyRig: %s line %d: declination %s is not between -90 and 90 degrees: %s"
+					% [path, number, fields[1], line]
+				)
+			)
+			return null
 		var flux := pow(10.0, -0.4 * fields[2].to_float())
 		var col := int(floor(ra / 360.0 * STAR_WIDTH)) % STAR_WIDTH
 		var row := mini(int(floor((90.0 - dec) / 180.0 * STAR_HEIGHT)), STAR_HEIGHT - 1)

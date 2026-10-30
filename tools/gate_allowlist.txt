@@ -30,3 +30,5 @@ CaptureShadowGrid: user://test_ @ res://tests/test_m4_06_capture_shadow_grid.gd 
 CaptureShadowGrid: user://test_v0_5_0_03_gaps @ res://tests/test_v0_5_0_03_gaps.gd # its refusal tests write broken manifests under user://test_v0_5_0_03_gaps on purpose (brief v0.5.0-03 fix round)
 CaptureShadowGrid: user://test_ @ res://tests/test_main_scene_refusals.gd # its damaged capture mask is refused on purpose (brief v0.5.0-05, M4-10 decision 11)
 SkySite: user://test_ @ res://tests/test_main_scene_refusals.gd # its stale sun's place is refused on purpose beside a damaged capture mask, the two entries' order (brief v0.5.0-05, the release's checkers)
+SkySite: user://test_ @ res://tests/test_m3_r1_fix5_type_guards.gd # its refusal tests write manifests with a field of the wrong type under user://test_m3_r1_fix5_type_guards on purpose, SkySite the seventh reader (brief v0.5.0-11, review S-03)
+SkyRig: user://test_ @ res://tests/test_v050_11_sky_guards.gd # its refusal tests write star tables with a right ascension or a declination out of range under user://test_v050_11_sky_guards on purpose (brief v0.5.0-11, review S-05)

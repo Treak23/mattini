@@ -712,16 +712,17 @@ def _isqrt(h: np.ndarray) -> np.ndarray:
 # ------------------------------------------------------------------------------- the PNG
 
 
-def png_l8(pixels: np.ndarray, top: int = ROAD) -> bytes:
+def png_l8(pixels: np.ndarray, top: int = ROAD, *, what: str = "classes") -> bytes:
     """`pixels` (uint8, rows × columns, values 0 to `top`: 4, the classes', unless given; the
-    flow's is `FLOW_CODES`) as the pinned 8-bit grey PNG."""
+    flow's is `FLOW_CODES`) as the pinned 8-bit grey PNG. `what` names the grid in a refusal:
+    "classes" unless the caller encodes the flow, which passes "flow codes"."""
     if not isinstance(pixels, np.ndarray) or pixels.dtype != np.uint8 or pixels.ndim != 2:
-        raise SurfacesError("the classes must be a two-dimensional array of uint8")
+        raise SurfacesError(f"the {what} must be a two-dimensional array of uint8")
     rows, columns = pixels.shape
     if not (0 < rows < MIB and 0 < columns < MIB and rows * (columns + 1) < 1 << 31):
-        raise SurfacesError(f"{columns} × {rows} classes do not make a PNG")
+        raise SurfacesError(f"{columns} × {rows} {what} do not make a PNG")
     if pixels.max() > top:
-        raise SurfacesError(f"the classes are 0 to {top}, found {int(pixels.max())}")
+        raise SurfacesError(f"the {what} are 0 to {top}, found {int(pixels.max())}")
     scanlines = np.zeros((rows, columns + 1), dtype=np.uint8)  # filter byte 0 on every row
     scanlines[:, 1:] = pixels
     stream = zlib.compress(scanlines, 9)
@@ -821,7 +822,7 @@ def write_surfaces(
 
     Returns the description, which is what the `.json` holds. A `*.part` an earlier run left
     in `surfaces/` is removed once all five files are written. `png` is `png_l8(grid)` and
-    `flow_png` is `png_l8(flow, FLOW_CODES)` when the caller has encoded them already (the
+    `flow_png` is `png_l8(flow, FLOW_CODES, what="flow codes")` when the caller has encoded them already (the
     step does, to compare their SHA-256s before anything is written): each is written as
     given, not checked against its grid. Without it the writer encodes the grid itself.
     """
@@ -842,7 +843,7 @@ def write_surfaces(
     if png is None:
         png = png_l8(grid)
     if flow_png is None:
-        flow_png = png_l8(flow, FLOW_CODES)
+        flow_png = png_l8(flow, FLOW_CODES, what="flow codes")
     e_min, e_max, n_min, n_max = (float(v) for v in box)
     block = {
         "area": area,
@@ -1006,7 +1007,7 @@ def build_surfaces(
             f"code produces another flow than the design's; nothing was written"
         )
     say(f"the flow has the SHA-256 {SURFACES_CONFIG_NAME} expects, {expected_flow}")
-    flow_png = png_l8(flow, FLOW_CODES)
+    flow_png = png_l8(flow, FLOW_CODES, what="flow codes")
     flow_png_sha256 = hashlib.sha256(flow_png).hexdigest()
     if flow_png_sha256 != expected_flow_png:
         raise SurfacesError(

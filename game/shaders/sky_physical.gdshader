@@ -23,7 +23,10 @@ uniform float sun_disk_scale : hint_range(0, 360) = 1.0;
 uniform vec4 ground_color : source_color = vec4(0.1, 0.07, 0.034, 1.0);
 uniform float exposure : hint_range(0, 128) = 1.0;
 
-uniform sampler2D night_sky : filter_linear, source_color, hint_default_black;
+// mattini: Brief v0.5.0-11 (CD-3): repeat_enable on night_sky, so the sampler wraps across right
+// mattini: ascension 0/360 instead of clamping a one-texel seam there. The wrap of v across the
+// mattini: poles is harmless: rows 0 and 2047 hold no star (the table's stars lie on rows 8 to 2036).
+uniform sampler2D night_sky : filter_linear, source_color, hint_default_black, repeat_enable;
 // mattini: 0 by day, 1 at a sun elevation of -12 degrees and below; multiplies the night sky.
 uniform float stars_strength : hint_range(0, 1) = 0.0;
 // mattini: turns a scene direction into celestial coordinates (x towards right ascension 0 on the

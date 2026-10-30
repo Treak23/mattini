@@ -17,13 +17,28 @@ extends GutTest
 ## each with its needle: those guards were among G-04's survivors (removed, every test stayed
 ## green).
 ##
+## Brief v0.5.0-11 (0.4.0's whole-range review S-03) adds SkySite (res://scripts/sky/sky_site.gd),
+## the reader of the sky block, to every census here: it is the seventh reader, its block is
+## "sky", and it refuses a world_sha256 of the wrong type at the top level or in its block, and an
+## origin or a height offset of the wrong type, as the six do. Its words for another world config
+## are its own ("the sun's place was written for another world config", not "built"), so each
+## reader's needle is read from OTHER_WORLD_WORDS; sky_site.gd's words do not change. Its own
+## fields of the wrong type or value (area, latitude_deg, longitude_deg, true_to_grid_deg) are
+## refused with its own words, each a case here.
+##
 ## Does NOT prove: that no other manifest field of a wrong type is mishandled (a field no reader
 ## reads), nor that the readers' other checks are right.
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
 const SCRATCH_DIR := "user://test_m3_r1_fix5_type_guards"
 const READERS := [
-	"TerrainGrid", "BuildingChunks", "PhotoGrid", "SurfaceGrid", "TreeChunks", "BuildingRoofs"
+	"TerrainGrid",
+	"BuildingChunks",
+	"PhotoGrid",
+	"SurfaceGrid",
+	"TreeChunks",
+	"BuildingRoofs",
+	"SkySite",
 ]
 ## The block of the manifest each reader checks.
 const BLOCKS := {
@@ -33,8 +48,13 @@ const BLOCKS := {
 	"SurfaceGrid": "surfaces",
 	"TreeChunks": "trees",
 	"BuildingRoofs": "roofs",
+	"SkySite": "sky",
 }
 const OTHER_WORLD := "built for another world config"
+## Each reader's words for a block of another world config, where they are not OTHER_WORLD.
+const OTHER_WORLD_WORDS := {"SkySite": "the sun's place was written for another world config"}
+## SkySite's three numbers and the largest size of each, in degrees.
+const SKY_LIMITS := {"latitude_deg": 90.0, "longitude_deg": 180.0, "true_to_grid_deg": 10.0}
 const NOT_OURS := "the WorldConfig given was not read from this manifest"
 const TREE_DATASETS := ["swissalti3d", "swissbuildings3d", "swisssurface3d", "swisstlm3d"]
 
@@ -95,6 +115,8 @@ func _read(reader: String, path: String, world_from := "") -> RefCounted:
 			result = TreeChunks.from_manifest(path, world)
 		"BuildingRoofs":
 			result = BuildingRoofs.from_manifest(path, world, _good_buildings())
+		"SkySite":
+			result = SkySite.from_manifest(path, world)
 		_:
 			assert_true(false, "%s is not a reader" % reader)
 	return result
@@ -116,6 +138,11 @@ func _assert_refused_once(result: RefCounted, path: String, why: String, needle:
 		error.handled = true
 	assert_eq(pushed, 1, "%s: one push_error names %s and says '%s'" % [why, path, needle])
 	assert_eq(others, [], "%s: no other error, no SCRIPT ERROR" % why)
+
+
+## [param reader]'s words for a block of another world config.
+func _other_world(reader: String) -> String:
+	return OTHER_WORLD_WORDS.get(reader, OTHER_WORLD)
 
 
 func _name(keys: Array) -> String:
@@ -141,18 +168,19 @@ func test_the_unchanged_world_is_read_by_every_reader() -> void:
 
 func test_a_world_sha256_of_the_wrong_type_is_refused_by_every_reader() -> void:
 	# The manifest's own hash, the one every block's is compared with: a number was accepted
-	# by all six readers (G-03), with six SCRIPT ERROR lines.
+	# by all six readers (G-03), with six SCRIPT ERROR lines. SkySite, the seventh, since
+	# brief v0.5.0-11.
 	for value: Variant in [5.0, true, [], {}, null]:
 		var path := _world(_with_field(["world_sha256"], value))
 		for reader: String in READERS:
 			var why := "%s, world_sha256 = %s" % [reader, JSON.stringify(value)]
-			_assert_refused_once(_read(reader, path), path, why, OTHER_WORLD)
+			_assert_refused_once(_read(reader, path), path, why, _other_world(reader))
 
 
 func test_a_block_world_sha256_of_the_wrong_type_is_refused_by_every_reader() -> void:
 	for reader: String in READERS:
 		var keys := [BLOCKS[reader], "world_sha256"]
-		_refuse_each(reader, keys, [5.0, true, [], {}, null], OTHER_WORLD)
+		_refuse_each(reader, keys, [5.0, true, [], {}, null], _other_world(reader))
 
 
 func test_a_format_of_the_wrong_type_or_value_is_refused() -> void:
@@ -212,6 +240,17 @@ func test_roofs_of_the_wrong_area_tile_or_buildings_source_are_refused() -> void
 		wrong + ["swissbuildings3d", other_source],
 		"roofs.source.buildings is not the manifest's buildings.source"
 	)
+
+
+func test_a_sky_field_of_the_wrong_type_or_value_is_refused() -> void:
+	# Brief v0.5.0-11: SkySite's own fields, each refused with its own words. A wrong value too:
+	# an area the world config does not hold, a number beyond its limit.
+	var wrong := [5.0, true, [], {}, null]
+	_refuse_each("SkySite", ["sky", "area"], wrong + ["elsewhere"], "sky.area")
+	for key: String in SKY_LIMITS:
+		var values: Array = ["x", true, [], {}, null, SKY_LIMITS[key] + 0.5]
+		var needle := "sky.%s must be a finite number" % key
+		_refuse_each("SkySite", ["sky", key], values, needle)
 
 
 func test_an_origin_or_height_offset_of_the_wrong_type_is_refused_by_every_reader() -> void:
