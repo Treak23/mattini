@@ -14,6 +14,7 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-10-30 · release · v0.5.0-03 · the fixer's scoped allowlist line for the gaps test, in a pinned copy? → kept; v0.5.0-05's pinned allowlist re-cut to hold it, per BUILD.md rule 4 (a compile-forced file named in the commit) and WORKFLOW §Brief lifecycle (after DONE the live copies may evolve; the later brief re-pins)
 2026-10-29 · owner's word, in the release session · 0.5.0 · the deferred items (question A)? → all join: the trees' haze, the clock's note, a RENDER flow check, four residue groups (tests and messages); the far mountains stay next; the list frozen (docs/history/blocked/2026-10-29-2.md)
 2026-10-29 · owner's word, in the release session · 0.5.0 · the board's audit list of reversible calls (0.4.0, 0.3.1)? → kept, all (docs/history/blocked/2026-10-29-2.md)
 2026-10-29 · owner's word, in the release session · process · a deny rule for the `:<branch>` deletion refspec? → leave it; off the board (docs/history/blocked/2026-10-29-2.md)
