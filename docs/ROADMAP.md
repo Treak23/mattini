@@ -87,6 +87,14 @@ closed (0.3.0, ARCHIVE).
 
 ## Residues and hazards
 
+Closed in 0.5.0 and struck below (each checked against the code at `805223c`): 0.4.0's S-01 (the stars in the pack are checked
+by `tools/release_checks.sh` check 1 on every Release build), S-02, S-03, S-05, S-06 (the clock's note), CD-3, TG-09, `png_l8`'s
+words, the float32 360.0 note, the river's direction (RENDER flow); 0.3.1's R1-05, R1-06; M3's I-02, I-04, I-05, R2 P-01, P-03,
+P-04 (replaced by the measured gaps, the z limit below), R2 S-01, and G-05 in part (briefs v0.5.0-09 to -13). Found already fixed by
+0.5.0's triage: 0.3.1's R1-03 (the crossfade's 3600 s is a whole number of phases) and F6 (the census skips no reader, v0.4.0-09);
+M3's I-03 (`OSError` in `main()`'s tuple, v0.4.0-07), V1-1 (the render step catches both edits, M3-R1-fix-3), V1-5, and the stale
+zlib line of `tests/shared/surfaces_vectors.json`. This paragraph moves to 0.5.0's record at the publish.
+
 - Terrain3D 1.0.2's traps (brain.md H11) and its deprecation warning, printed once per
   process (H4). Collision over holes prints ERROR lines: M1 runs without collision, and
   walking (M6) needs an answer.
@@ -104,20 +112,28 @@ closed (0.3.0, ARCHIVE).
   planning.
 - 0.4.0's release gate and renders (2026-10-29): the Controls list clears Resume by 9.5 px at 1280 x 720 (software render); two time keys read "Period" on the pause screen under the render container's keyboard map (check on the owner's PC); water more than 12 m from every drawn stream line stands still; a straight-down view from 300 m was rendered with its casters on screen only.
 - 0.3.1's whole-range review, P3 (`docs/reviews/v0.3.1-round1.md`): R1-02 the packs' folder computed in
-  `data_packs.gd` and `main.gd` separately; R1-03 ripple map b jumps once an hour when `TIME` wraps (3.4 m
-  does not divide the drift over 3600 s); R1-05 `render_photo.gd`'s first line and `WATER_TOLERANCE`
-  comment claim more than the check (at its next re-pin); R1-06 the export stand-in packs an empty folder
-  where `pack.gd` refuses, and a refused export leaves an unfinished `build/`; F6 `ReleaseBuild`'s comment
-  against the census's `until_m4_10` exemption (next cut); F7 the frame-cap test's engine half has a second
+  `data_packs.gd` and `main.gd` separately; F7 the frame-cap test's engine half has a second
   writer since v0.3.1-05; F10 `test_m4_08_data_packs_expected.gd` leaves scratch subfolders in `user://`.
-- 0.4.0's whole-range review, P3 (`docs/reviews/v0.4.0-round1.md`): the star table's presence in the export is checked by words
-  at the release gate only (a code check in `tools/export.sh` step 4c, S-01); the placeholder sun (184.67, 50.1) is a hand copy of
-  `config/shadows.json` (S-02); `SkySite` is not in the every-reader guard censuses (S-03); `star_image` has no |dec| >= 90 guard
-  and `tools/stars_table.py` has no test (S-05); the day keys can leave the clock's validated 2020 to 2035 (S-06, an owner question:
-  clamp or label); the sky shader assumes up = +y (S-07); `night_sky` has no `repeat_enable` (CD-3); `config/sky.json` names only the
-  world's SHA-256 (CD-6); two margin tests have no non-vacuity count (TG-09); batch 01's `png_l8` messages say "classes" for the flow;
-  batch 04's float32 azimuth can round to 360.0 once in 25 million instants; the render step cannot see the river's direction (a
-  RENDER flow check is buildable: batch 03's probe).
+- 0.4.0's whole-range review, P3 (`docs/reviews/v0.4.0-round1.md`): the sky shader assumes up = +y (S-07); `config/sky.json` names
+  only the world's SHA-256 (CD-6).
+- 0.5.0's whole-range review, P3 (`docs/reviews/v0.5.0-round1.md`): `tools/gate_allowlist.txt` line 20 excuses every error on the
+  buildings fixture's path, so CaptureShadowGrid's and SkySite's refusals there are excused unnamed (S-09); `star_image`'s
+  declination guard refuses exactly ±90 only: just inside, the run width `floor(0.5 / cos dec)` is unbounded (a hang at
+  89.9999999, a doubled star at 89.99; the shipped table tops out at Polaris, +89.26) (correctness N2); `release_checks.sh` check
+  5's FAIL message says the game exited before the lines appeared even when they had (the verdict is right) (N4);
+  `release.yml` takes any 40-hex `sha` and never checks it is on `main`, while the notes say "built from `main`" (owner N2); the
+  mask reader's tests use LV95 values a float32 holds exactly, so a 32-bit origin subtraction passes (R1-CD-02, H5); the workflow
+  does not pin the Python interpreter whose zlib the PNGs' bytes depend on (the runner's uv-managed 3.13.14, the container's
+  system 3.13.17; R1-CD-04, H27).
+- 0.5.0's batches, P3 (`docs/briefs/v0.5.0-plan.md`, the batch log): the readers' world guard says "its origin differs" when only
+  the height offset differs (v0.5.0-03, in every reader that copies it: `shadow_grid.gd`, `surface_grid.gd`); RENDER lift's
+  east-west and transposed comparators read 0.0 and never decide (v0.5.0-04, a pinned file); the mask's credit takes the
+  config's first and last edition unsorted where TreeChunks sorts (v0.5.0-05); RENDER flow encodes the band bearings with its
+  own copy of the axis mapping (labels only; v0.5.0-09) and does not see where the flow is read
+  (a north-south or an east-west shift within the bands), ripple map b reversed alone (only the 0.60 correlation floor) or a
+  dropped validity factor (said in its words by v0.5.0-15, not gated); the classes check resolves the water's placement in z to about 0.2 m only (a 0.1 m shift passes;
+  v0.5.0-12); `tools/export.sh`: 16 of 31 refusal mutations still survive its tests (R12, R13, R16 to R23, R26 to R31; R22 the
+  started build's exit status and R23 its error scan first; v0.5.0-13), the rest of M3's G-05.
 - Process residue (the 0.3.1 triage, 2026-10-25): the clerk's gate is settled (WORKFLOW §Gates, 2026-10-27); no tool reads the weekly allowance (DESIGN.md step 3 reports the five-hour status and
   the API-equivalent cost); the lane-session path is not written (one lane per release until it
   is); WORKFLOW's "a tier-1 batch runs alone in
@@ -127,27 +143,25 @@ closed (0.3.0, ARCHIVE).
 ## M3 R1 residue (P2 and P3 of round R1, `docs/reviews/M3-round1.md`)
 
 I-01 (P2, the PNG's bytes and zlib) is fix brief `M3-R1-fix-6`; P-01 and P-03 are `M3-R1-fix-2` and `-3` (all three DONE, 2026-10-16).
-For design (fix wave): `tests/shared/surfaces_vectors.json` still says "its bytes depend on the zlib build, so only its pixels are pinned" (stale since fix-6; design's file, outside every lane's Scope); the render step's trees check sees a synthetic flat world and 20 trees, not the village's relief or its MultiMesh cells (fix-3 Findings 10d).
+For design (fix wave): the render step's trees check sees a synthetic flat world and 20 trees, not the village's relief or its MultiMesh cells (fix-3 Findings 10d).
 P2: **G-02** `source_color` of the photo, detail textures and tree colours is pinned by no test;
 **G-04** (the part that is not Hard Rule 4) the readers' refusal tests assert refusal, not cause;
-**G-05** 22 of 31 mutations of `tools/export.sh`'s refusals leave its tests green (step 5's 100 MiB
-check, 4c, exit status).
+**G-05** 16 of 31 mutations of `tools/export.sh`'s refusals leave its tests green (22 before
+v0.5.0-13, which pinned step 5's 100 MiB check and part of 4c; the survivors are 0.5.0's batches line above).
 P3: P-04 roof/wall split on float32 local coordinates; G-06 the terrain's credits line unvalidated;
 G-07 build messages still say "run pipeline commands", a damaged pack reads "missing"; G-08 the photo
 shader's wiring and loaders' look parameters mostly unpinned; G-09 `BuildingLoader.roofs_problem`'s
 refusing branch and the tile check untested; G-10 two gate behaviours unpinned; G-11 the steps' JSON
 copies ship in the packs; G-12 the manifest's `world` block not bound to `world_sha256` at read time
-(by design); I-02 a cut transfer is told only by the SHA-256 (the message does not say run it
-again); I-03 an `OSError` ends a command in a traceback; I-04 `resolution_m` for swissimage and
-swisssurface3d has no test; I-05 the roofs step's inputs-before-provenance order is not pinned; I-06
+(by design); I-06
 a step runs to its end before the manifest refuses another step's damaged config; wave 1 and 2's
 carried items: `PhotoGrid` does not refuse a photo wider than 16384 texels (M3-09 Findings 5),
 `trees.py` imports private grid helpers from `surfaces.py`, a manifest write cut before its rename
 leaves `manifest.json.part` (M3-13 Findings 8).
 
-Round R2 (`docs/reviews/M3-round2.md`, closed clean), all P3: P-01 the render step's trees check passes with no tree drawn (`VISIBILITY_END_M`, a `discard`, a zero draw count leave the whole gate green) and its PASS line says "over 20 trees"; P-02 the render world is 16 m wide, flat and positive-coordinates-only (an `abs()`, a scale of 1.002, a shift of the terrain's vertices pass; nine edits move it north-west); P-03 the classes check reads the water class only, and the `tools/gate.sh` header and `game/tests/render/render_common.gd` say "the surface classes" (CLAUDE.md and SPEC §12 corrected 2026-10-25; the rest is a builder's); P-04 the classes check's 0.1 m rule rests on three samples in one direction; S-01 no test gives a 40 to 63 digit hex string to the SHA-256 check (only the message would be lost); S-02 RELEASE.md §C's manifest box prints nothing on a wrong size (the release walk records `wc -c` and the exit status); S-03 SPEC §8's config shape omits `expected_png_sha256`; V1-2 and V1-3 below stay open.
+Round R2 (`docs/reviews/M3-round2.md`, closed clean), all P3: P-02 the render world is 16 m wide, flat and positive-coordinates-only (an `abs()`, a scale of 1.002, a shift of the terrain's vertices pass; nine edits move it north-west); S-02 RELEASE.md §C's manifest box prints nothing on a wrong size (the release walk records `wc -c` and the exit status); S-03 SPEC §8's config shape omits `expected_png_sha256`; V1-2 and V1-3 below stay open.
 
-Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified, no P0 to P2), all P3: V1-1 fix-1's placement census does not name `xz` or `origin` (an edit of either after its declaration moves the classes or the crowns' colour with the gate green: the remainder of P-03); V1-2 fix-4's normal census counts lines that begin with `NORMAL` (a braced second statement passes, a correct `dFdyCoarse` spelling fails); V1-3 the scene-level tree tests see one cell south-east of the origin (a sign error that shows only at x < 0 passes); V1-4 `ManifestValue.differs` calls a String and a StringName different types (no site passes a StringName); V1-5 the fix-5 brief's gate boxes were unticked (ticked).
+Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified, no P0 to P2), all P3: V1-2 fix-4's normal census counts lines that begin with `NORMAL` (a braced second statement passes, a correct `dFdyCoarse` spelling fails); V1-3 the scene-level tree tests see one cell south-east of the origin (a sign error that shows only at x < 0 passes); V1-4 `ManifestValue.differs` calls a String and a StringName different types (no site passes a StringName).
 
 ## Later
 
