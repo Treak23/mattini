@@ -23,6 +23,12 @@ extends SceneTree
 ## trees is at least TREES_MIN_CORR and above the same correlation with the photo read at a
 ## wrong place: x and z exchanged, mirrored north-south, mirrored east-west.
 ##
+## Since brief v0.5.0-07 (the trees' haze; one override and this paragraph): the sky rig turns on
+## an exponential fog coloured by the sky's radiance, which adds the sky's colour to every pixel;
+## the view switches it off, so the crowns and the photo are compared as the data. Measured in the
+## pin author's rehearsal: with the haze and no override, 0.8661 (the base's 0.8637); with it, the
+## base's line, digit for digit.
+##
 ## Proves where the crowns' colour is read, on 20 synthetic trees: not how a crown looks, not
 ## the colour encoding (brain.md H21), not Forward+, not the real village's trees.
 const CompleteWorld := preload("res://tests/complete_world.gd")
@@ -118,6 +124,9 @@ func _check() -> bool:
 	terrain.material.set_shader_param("surfaces", black)
 	var camera: FreeFlyCamera = main.get_node("Camera")
 	camera.set_view(CAMERA_AT, 0.0, -deg_to_rad(89.0))
+	# No haze (brief v0.5.0-07): the fog would add the sky's colour to the crowns and the ground.
+	var environment: Environment = main.get_node("Environment").environment
+	environment.fog_enabled = false
 	var image := await Common.capture(self)
 	Common.save(image, "render_trees")
 	return _compare(image, camera, trees, count, photo)

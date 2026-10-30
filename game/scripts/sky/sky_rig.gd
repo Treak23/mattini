@@ -12,6 +12,8 @@ extends RefCounted
 ## The table's positions are ICRS at epoch J1991.25, used as given: not precessed to the date, so
 ## the stars stand 0.13 to 0.35 degrees from their mean places of 2023-09-06 (measured by the pin
 ## author; one texel of the image is 0.088 degrees).
+## The haze (brief v0.5.0-07) is set by [method create] on the same environment: a light aerial
+## perspective, see [constant HAZE_DENSITY].
 
 const SHADER_PATH := "res://shaders/sky_physical.gdshader"
 
@@ -40,6 +42,13 @@ const EXPOSURE_DAY := 0.70
 const EXPOSURE_NIGHT := 4.0
 ## The moon light's energy at full phase and height.
 const MOON_ENERGY := 0.03
+## The haze's density, per metre (exponential fog; brief v0.5.0-07): design data, from
+## -ln(1 - 0.10) / 2000 m, so that ground 2 km away is about 10 % the sky's colour. Measured in
+## software Forward+ (the pin author's probe: a black unshaded wall under white fog at aerial
+## perspective 0, linear tone map, MSAA off): the share fogged at 1000 m 0.0513, at 2000 m 0.0999,
+## at 4000 m 0.1912, against 1 - exp(-density * D) 0.0513, 0.1000, 0.1901. Nothing here measures
+## the fog's colour or any GPU's.
+const HAZE_DENSITY := 5.27e-5
 
 ## The star image's size: an equirectangular image in celestial coordinates.
 const STAR_WIDTH := 4096
@@ -65,7 +74,12 @@ var _north := Vector3.FORWARD
 ## sun stays the sky's LIGHT0) and its colour; the environment's background the sky, whose
 ## material is a ShaderMaterial of the physical sky (property [member sky_material]) with
 ## [constant GROUND_COLOUR] as its ground, ambient light from the sky with contribution 0.25 and
-## Filmic tonemapping. With [param stars], an ImageTexture of it is the material's night_sky.
+## Filmic tonemapping, and the haze (brief v0.5.0-07): exponential fog of density
+## [constant HAZE_DENSITY], aerial perspective 1.0 (its colour is the sky's radiance in that
+## direction, so it follows the sun and goes dark at night), the sky itself not fogged
+## (fog_sky_affect 0.0); every other fog property keeps Godot's default (no height fog, no sun
+## scatter, no volumetric fog). Set once here; [method apply] touches no fog property.
+## With [param stars], an ImageTexture of it is the material's night_sky.
 static func create(
 	sun: DirectionalLight3D,
 	moon: DirectionalLight3D,
@@ -103,6 +117,11 @@ static func create(
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	environment.ambient_light_sky_contribution = 0.25
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.fog_enabled = true
+	environment.fog_mode = Environment.FOG_MODE_EXPONENTIAL
+	environment.fog_density = HAZE_DENSITY
+	environment.fog_aerial_perspective = 1.0
+	environment.fog_sky_affect = 0.0
 	return rig
 
 

@@ -37,6 +37,13 @@ extends SceneTree
 ## lift). Measured in the pin author's rehearsal: with the mask handed and no override, the photo's
 ## correlation fell to 0.6584 (FAIL); with it, the base's 0.9752.
 ##
+## Since brief v0.5.0-07 (the trees' haze; one override and this paragraph change): the sky rig
+## turns on an exponential fog coloured by the sky's radiance, so both views switch it off, as they
+## switch off ambient light: the fog adds the sky's colour to every pixel, so the ratio below would
+## not be the albedo's alone. Measured in the pin author's rehearsal: with the haze and no override,
+## RENDER photo's mirrored scans moved (0.0467 and -0.2204), RENDER classes' agreement fell to 70031
+## and its eased bank to 0.993 (all still PASS); with it, the base's lines, digit for digit.
+##
 ## Proves where, not how it looks: not Forward+, not the colour encoding (brain.md H21), not
 ## the owner's GPU, not any shader on the real village, not the water's roughness, ripples or
 ## drift (switched off or cancelled here). The flat terrain means the photo is seen from above at
@@ -136,6 +143,8 @@ func _check() -> bool:
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
+	# And no haze (brief v0.5.0-07): the fog would add the sky's colour to every pixel.
+	environment.fog_enabled = false
 	var with_classes := await Common.capture(self)
 	Common.save(with_classes, "render_photo_with_classes")
 	# The same view with the water class removed and every other class kept: the ratio of the two
