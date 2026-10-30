@@ -771,7 +771,10 @@ and `computed_for` like every step above; their rules in full are `docs/briefs/s
   azimuth is the true azimuth minus 0.2258) from `config/sky.json`, for the game's sun;
   `sky/<area>.json`.
 The manifest gains the `surroundings`, `shadows` and `sky` blocks (twelve keys at the top); 0.4.0 adds `sky`
-alone (ten keys) and the surfaces block's `flow` object (briefs v0.4.0-01, -07).
+alone (ten keys) and the surfaces block's `flow` object (briefs v0.4.0-01, -07); 0.5.0 adds `shadows`
+(eleven keys: `buildings`, `photo`, `roofs`, `schema`, `shadows`, `sky`, `surfaces`, `terrain`, `trees`,
+`world`, `world_sha256`; null until built; briefs v0.5.0-01, -02). `surroundings` waits for the far
+mountains' shadows.
 
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same
@@ -912,7 +915,8 @@ M3-12, M3-14):**
   0.3.1 release gate).
 - *Credits:* the dataset lines from the blocks (`swissalti3d 2024`, `swissbuildings3d
   2020`, `swissimage 2023`, `swisssurface3d 2021-2022`, `swisstlm3d 2026-02`, each
-  `© swisstopo`), the CC0 textures by name and author (`game/textures/LICENSE.txt`), the
+  `© swisstopo`; from 0.5.0 the capture-shadow mask's line is the trees' `swisssurface3d 2021-2022`,
+  listed once), the CC0 textures by name and author (`game/textures/LICENSE.txt`), the
   placeholder notes (the walls, the trees, the streams' assumed width), from 0.4.0 the Sky section (the
   sun and the moon's source, and, when `res://sky/stars.csv` is present and read, the Hipparcos Catalogue's
   credit word for word as the table's first line: "Credit: ESA", CC BY-NC 3.0 IGO and its URL; §13 row 51),
@@ -930,7 +934,9 @@ M3-12, M3-14):**
 - *Time:* the game starts at the photo's moment, 6 September 2023, 13:40 CEST, running at 1×.
   Comma and period move it 15 minutes, [ and ] a day, T cycles 1×, 60×, 600× and stopped, N sets
   the computer's clock; a label shows the date and time after a key and while paused. Swiss time
-  (CET, CEST by the EU rule). Pausing stops the time.
+  (CET, CEST by the EU rule). Pausing stops the time. From 0.5.0, while the clock is outside the
+  range the sky was checked for (2020 to 2035 UTC), the label adds " · the sky is unchecked outside
+  2020 to 2035 UTC" and stays shown; nothing is clamped (§13 row 57).
 - *Sun, moon, stars:* the sun by NOAA's solar position, the moon by Paul Schlyter's method with its
   phase, the local sidereal time, all for the manifest's `sky` site; directions turned from true to
   grid north and through the world config's axes (Hard Rule 4). The stars (the owner's catalogue
@@ -938,22 +944,46 @@ M3-12, M3-14):**
 - *Light:* Godot's physical sky as a sky shader with a twilight, a night-sky glow and the sun's
   disk; the sun light fades below 10° and hides below −1°, sharp shadows; a moon light by phase;
   exposure 0.70 by day (measured in software Forward+), 4.0 at night, between them by the sun's
-  height. No auto exposure.
+  height. No auto exposure. From 0.5.0 a light haze: exponential fog coloured by the sky's radiance
+  (aerial perspective), about 10 % at 2 km, the sky itself unfogged (§13 row 56).
 - *The far mountains:* a shadows-only mesh from the `surroundings` block casts the mountains'
   shadows (Forward+; Compatibility draws none); nothing of it is visible until M5.
-- *The photo's baked shadows* lifted 3× inside the capture mask (§13 row 41); *the water* in the
+- *The photo's baked shadows* lifted 3× inside the capture mask (§13 rows 41, 47; built in 0.5.0, the
+  mask mipmapped, row 55: the main scene reads it after the roof colours, prints `shadows <area>
+  loaded, <columns> x <rows> cells at 0.5 m`, and a missing or refused mask opens the error panel
+  with the photo shown unlifted); *the water* in the
   photo's colour × 0.9, roughness 0.3, ripples flowing downstream (0.4.0), a soft bank.
 - *The machine:* a frame cap of 60 (15 while paused), the log flushed per line, MSAA 4×; in an
   export a missing data pack is named, and the readers say to download the release folder again.
 - *Not in M4:* the far mountains drawn (M5), weather and snow (M6), lit windows, bridges.
 
-## 11. Delivery (owner, day one: option b)
+## 11. Delivery (from 0.5.0 GitHub Releases, the owner's "1a"; day one to 0.3.1 the `dist` shelf)
 
-Exported Windows and Linux builds on a `dist` shelf branch (orphan, never merged, never
-deleted): `windows/` and `linux/` hold the current version under fixed names,
+**GitHub Releases (the owner, 2026-10-29: "1a"; §13 row 54; brief v0.5.0-06).**
+`.github/workflows/release.yml`, started by hand only (`workflow_dispatch`) with a `main` commit,
+the version and the manifest pair the release's plan names, builds that commit on a GitHub-hosted
+runner (`ubuntu-24.04`) as the release gate builds it in a container: Godot and uv from
+`tools/pins.sh` (the pins' one home, also sourced by the session-start hook), the downloads, the
+pipeline from the pinned inputs (each step comparing with design's values before it writes), the
+manifest pair, `tools/export.sh`, `tools/release_checks.sh` (`docs/RELEASE.md` §C's runtime
+checks as a script with an exit status), then `tools/release_pack.sh`: a Windows zip and a Linux
+tar of the five files that belong together, and `SHA256SUMS` of both archives and the ten files
+inside them, printed in the log. A dry run (the default) keeps them as the run's artifact for
+three days; a real run creates a **draft** Release `v<version>` with the two archives,
+`SHA256SUMS` and notes rendered from `tools/release_notes.md` (start, rollback, checksums and every
+credit the pause screen shows); the owner publishes it. The only token is the runner's
+`GITHUB_TOKEN` (`contents: write`). Release assets may be up to 2 GB each, so packs need no
+further split; `tools/export.sh` still refuses a file over 100 MiB until M5 decides its extents
+(§14). Measured (the session's dry run of 0.4.0's tree, 2026-10-30): 7 min 35 s, and the runner's
+manifest equals design's pair byte for byte (the surfaces PNG's zlib included). The rollback is the
+previous version's Release; for 0.5.0, the first, `dist`'s `mattini-0.3.1/` (`docs/RELEASE.md` §E).
+
+**The `dist` shelf (day one to 0.3.1; the old shelf, kept as the record of 0.1.0 to 0.3.1, nothing
+pushed to it from 0.5.0 on).** Exported Windows and Linux builds on a `dist` shelf branch (orphan,
+never merged, never deleted): `windows/` and `linux/` hold the current version under fixed names,
 `mattini-<version>/` each version under its own name (the last three kept; the one before
 the current is the rollback), and a `README.md` says how to download, start and roll back
-(`docs/RELEASE.md` §C; ruled at the M1 close, D15: files cannot be renamed per version,
+(`docs/RELEASE.md` §C up to 0.3.1; ruled at the M1 close, D15: files cannot be renamed per version,
 since an executable finds its `.pck` by its own name and Terrain3D's library has a fixed
 one).
 Consequences: Godot 4.6.3 export templates are downloaded from the mirror at release time;
@@ -962,7 +992,8 @@ in the `dist` history, which a plain `git clone` or `git fetch` of every branch 
 too (about 140 MB per release; `--single-branch --branch main` avoids it). GitHub rejects
 files over 100 MiB: the first release measured the export size, and a larger export is a
 design question (split the pack file, or LFS on `dist`) — **OPEN** until M5 (the owner,
-2026-09-25). Measured at 0.1.0: nothing over; the largest file is `mattini.exe`, Godot's
+2026-09-25; data packs from M3, §13 row 32; Releases from 0.5.0, row 54, lift the limit for
+assets to 2 GB, §14). Measured at 0.1.0: nothing over; the largest file is `mattini.exe`, Godot's
 own Windows template, 198 KB under the limit, and each `.pck` had 8.3 MiB of room (D16).
 At 0.2.0, with the buildings: each `.pck` is 99'405'400 bytes, 5.2 MiB of room.
 
@@ -1017,14 +1048,40 @@ Forward+ on the owner's RTX 4090. The "does NOT prove: that it renders or looks 
 line stays on every visual gate.
 
 **The render step (owner, 2026-10-15: §13 row 38).** Where an image lies on the ground is a
-number, not a look. From brief M3-R1-fix-3 on, `tools/gate.sh` renders the complete test
-world under the Compatibility renderer (Mesa llvmpipe under Xvfb) and asserts, by
-correlation against flipped and shifted alternatives, where the photo shader puts the photo
-and the water class (not rock, road or path: M3 round R2 P-03) and where the tree shader
-reads the crowns' colour. It refuses where
-`xvfb-run` is missing unless `MATTINI_SKIP_RENDER=1`, which it prints. It gates placement
-only: not the look, not the colour encoding (brain.md H21), not Forward+, not the owner's
-GPU.
+number, not a look. From brief M3-R1-fix-3 on, `tools/gate.sh` ends with a render step: four
+SceneTree scripts in `game/tests/render/` render the complete test world (flat, 16 m, positive
+coordinates) under the Compatibility renderer (Mesa llvmpipe under Xvfb), every one at
+`--fixed-fps 60` so that shader `TIME` advances exactly 1/60 s per drawn frame (brain.md H29), and
+print five `RENDER <check>: PASS|FAIL …` lines. Each decides by number, against flipped, swapped
+and shifted alternatives:
+
+- *photo*: where the photo shader puts the photo (correlation against the mirrored and swapped
+  photo). It does not see the lift (`render_photo.gd` sets `shadow_lift` 1).
+- *classes*: where it puts the water class, and only the water (not rock, road or path: M3 round R2
+  P-03): the agreement at no shift may lie below the best of a scan of shifts by at most 100
+  samples in x and 10 in z, both printed (brief v0.5.0-12). A 0.05 m shift in x fails it; in z it
+  resolves the water's placement to about 0.2 m only (a 0.1 m shift passes).
+- *lift* (from v0.5.0-04): where the capture-shadow lift lands (against the mask mirrored,
+  transposed, read at the nearest texel and shifted in 0.05 m steps) and its strength (3 where the
+  mask is full, 1 where it is empty). Not its linear-light arithmetic (Compatibility shows no sRGB
+  conversion), and its east-west and transposed comparators read 0.0, so they never decide.
+- *flow* (from v0.5.0-09): which way and how fast the river's ripples drift on three bands (east,
+  north, south-west): within 5° of each band's flow, at 0.50 to 1.00 m/s, from two frames 15 drawn
+  frames apart. It does not see where the flow is read: a north-south shift that keeps the windows
+  on band rows passes, and so does an east-west shift within the bands; nor ripple map b reversed
+  alone (only the 0.60 correlation floor), nor a dropped validity factor (every test texel is
+  valid).
+- *trees*: where the tree shader reads the crowns' colour (correlation over 20 trees), and from
+  v0.5.0-12 that the crowns are drawn: a second render with the Trees node hidden, and every
+  crown's disc at least 8.0 from the bare ground's, printed as `20 of 20 crowns drawn`. It sees 20
+  synthetic trees on flat ground, not the village's relief or its MultiMesh cells.
+
+The two scripts that draw the main scene (photo and classes, trees) switch off what would move
+their numbers without moving placement: ambient light and, from v0.5.0-07, the haze (§13 row 56);
+the classes check also the light's highlight. The step
+refuses where `xvfb-run` is missing unless `MATTINI_SKIP_RENDER=1`, which it prints. It gates
+placement and the drift only: not the look, not the colour encoding (brain.md H21), not Forward+,
+not distance or the terrain's mesh, not the owner's GPU.
 
 ## 13. Decision record (day one, 2026-09-24)
 
@@ -1038,7 +1095,7 @@ GPU.
 | 5 | Python tooling | uv, Python 3.13, lockfile: identical environments on the container and both PCs (Hard Rule 5); uv installs Python itself (measured) | Design, delegated by the owner |
 | 6 | Local origin | E 2'623'000 / N 1'096'000 (tile corner) | Owner |
 | 7 | Generated assets | Git-ignored, regenerated on each machine | Owner |
-| 8 | Delivery | Exported builds on a `dist` shelf | Owner |
+| 8 | Delivery | Exported builds on a `dist` shelf; **amended by row 54 (2026-10-29): GitHub Releases from 0.5.0**, `dist` kept as the record of 0.1.0 to 0.3.1 | Owner |
 | 9 | Owner-implemented briefs | None | Owner |
 | 10 | v1 scope | Walking, day/night cycle and weather are in v1 | Owner |
 | 11 | Test area | The entire village (measured box in §7) | Owner; box measured by design |
@@ -1062,7 +1119,7 @@ GPU.
 | 29 | The look (FB-001; M3 planning, 2026-10-14) | (a) the realistic look made from the data: the aerial photo (SWISSIMAGE) on the terrain, a colour per roof from it, 3D trees where the LiDAR found them, a rock texture on steep rock, procedural conifers, the fixed sun moved to the photo's sun, the lighting matched to the photo's brightness; it replaces the stylised diorama (§1, §10). Read back to the owner as (a) with the slope rock and the conifers; not corrected. Not taken: (b) textured materials for walls and close-range ground everywhere; (c) photorealism beyond what the data gives | Owner ("a", 2026-10-14) |
 | 30 | The photo's resolution | 0.2 m (the 2023 photo's real detail over Zermatt is 25 cm), a separate texture over the area (§8, the photo), not Terrain3D's 0.5 m colour map; about 0.6–0.8 GB of GPU memory. Not taken: 0.5 m | Owner ("0.2") |
 | 31 | Walls | One neutral plaster for every wall, a labelled placeholder (no open wall data exists). Not taken: a rule-based chalet look (stone base, larch wood above), which would be invented | Owner ("neutral") |
-| 32 | An export over 100 MiB (row 23, D16) | Data packs beside the executable, each file under 100 MiB (§11). Not taken: Git LFS on `dist` (its free quota counts every download, over it downloads give pointer files, its objects cannot be deleted short of the repository, and cloud pushes through the proxy are unmeasured), GitHub Releases, terrain and photo at 1 m. M5's larger area revisits delivery | Owner ("do packs", after design's list of LFS's costs) |
+| 32 | An export over 100 MiB (row 23, D16) | Data packs beside the executable, each file under 100 MiB (§11). Not taken: Git LFS on `dist` (its free quota counts every download, over it downloads give pointer files, its objects cannot be deleted short of the repository, and cloud pushes through the proxy are unmeasured), GitHub Releases (then; taken for delivery by row 54, 2026-10-29, and the packs kept), terrain and photo at 1 m. M5's larger area revisits delivery | Owner ("do packs", after design's list of LFS's costs) |
 | 33 | swissTLM3D's access route and use (§14) | The national FileGDB, edition 2026-02 (2.88 GB), pinned by SHA-256 in the lock, downloaded once per machine and read straight from its zip (§5); used in M3 for water, roads, paths and rock on the terrain (§8, the surfaces) and to clean the trees (rock, building footprints). Not taken: the REST API (no edition, 2-D, 0.1 m), the GeoPackage (one deflated 10.8 GB member, unreadable in part) | Owner ("bring into m3 now"); the route measured by design |
 | 34 | The game type (FB-002, a collaborative builder) | Stays OPEN: "keep open, lets just build the map first. i want it as detailed and beautiful as possible". The idea is on the board | Owner |
 | 35 | An image library for the pipeline | Pillow, for the photo's JPEG (the surfaces' PNG is written with Python's own zlib, so the lane that builds it needs no new dependency); its JPEG output measured byte-identical across Pillow 10.4.0, 11.0.0 and 12.3.0 and with libjpeg-turbo's SIMD off | Design, delegated (CLAUDE.md §Stack) |
@@ -1084,6 +1141,10 @@ GPU.
 | 51 | The star catalogue, the repository public (amends row 48) | The Hipparcos Catalogue (ESA 1997, ESA SP-1200, CDS I/239) under CC BY-NC 3.0 IGO with "Credit: ESA"; the shipped table is labelled as derived (selected to V ≤ 6, rounded, reformatted). Free sharing and the public repository are covered; a sale needs ESA's permission (data.licences@esa.int) or M4-05's section S removed. Not taken: the BSC5 (no licence stated anywhere authoritative; the ADC's recorded word, kept in Debian's non-free `yale` package, forbids redistributing altered copies without the authors' permission); no stars | Owner ("2a", 2026-10-27) |
 | 52 | The physical sky's ground (0.4.0) | The sky below the horizon takes the valley's own colour instead of Godot's default `ground_color` (0.1, 0.07, 0.034), which gives faces that look sideways about a third of 0.3.1's ambient light (computed); a software Forward+ check keeps a shaded vertical face at no less than 0.3.1's light relative to lit flat ground | Owner ("3a", 2026-10-27) |
 | 53 | The river's direction (FB-008) | A flow direction per stretch from swissTLM3D's watercourse lines, which the object catalogue draws downstream (OKSTLM 2.4 §8.1; 56 of 56 stretches in the village box measured downhill): the surfaces step writes a flow grid, the game reads it through the world config, and both ripple patterns drift downstream along it. Not taken: one direction for the whole village (the Vispa's 31°, wrong on 13 % of the water); downhill from the terrain (70–80° wrong on the Vispa, measured) | Owner ("1b", 2026-10-27) |
+| 54 | Delivery (0.5.0's triage, 2026-10-29; amends rows 8 and 32) | (a) GitHub Releases: `.github/workflows/release.yml` (`workflow_dispatch` only, `contents: write`, only the runner's `GITHUB_TOKEN`) builds a `main` commit on a GitHub-hosted runner from the pinned inputs and attaches a Windows zip, a Linux tar and `SHA256SUMS` to a draft Release the owner publishes (§11; brief v0.5.0-06; `docs/RELEASE.md` §C). `dist` stays as the record of 0.1.0 to 0.3.1 and 0.5.0's rollback (`mattini-0.3.1/`); 0.4.0 is not delivered on its own ("2c"). Proved by the session's dry run of 0.4.0's tree (7 min 35 s; the runner's manifest equal to design's pair). Not taken: (b) a staging branch of built files turned into a Release; (c) the owner builds and uploads by hand; (d) keep `dist` | Owner ("1a", "2c", 2026-10-29; `docs/history/blocked/2026-10-29-2.md`) |
+| 55 | The softened photo shadows built (rows 41, 47) | Shipped in 0.5.0 (briefs v0.5.0-01 to -05): the `shadows` step writes the capture-shadow mask (`config/shadows.json`, §8), the main scene reads it (`CaptureShadowGrid`) and the photo shader lifts the photo inside it, G = 3 in linear light, clipped at 1. The mask has a full mip chain like the photo's, by the session's call on the owner's "3a": a distant software render of the village, with mipmaps against without, measured the speckle beyond 350 m 23 to 28 % lower and the frame-to-frame flicker 6 to 7.5 % lower. Not taken: the mask without mipmaps, as M4-06 pinned it | Owner ("3a", 2026-10-29); the mipmaps the session's, from the measurement |
+| 56 | The trees' haze (FB-004 item 5) | Variant V2: an aerial-perspective haze, Godot's exponential fog of density 5.27e-5 per metre (`SkyRig.HAZE_DENSITY`, measured in software Forward+ so ground 2 km away is about 10 % the sky's colour: 0.0999), aerial perspective 1.0 (its colour the sky's radiance, following the sun, dark at night), sky affect 0 (the sky itself unfogged); the gate's render checks switch it off (§12), and their numbers did not move (brief v0.5.0-07) | Owner ("question A OK", 2026-10-29) |
+| 57 | The sky's clock outside the validated 2020 to 2035 (0.4.0 review S-06) | A note, not a clamp: outside `SkyClock`'s validated range the clock label reads its usual text followed by " · the sky is unchecked outside 2020 to 2035 UTC" and stays shown until the clock is back inside; every key keeps working (brief v0.5.0-08). The label staying shown is the session's reversible call (the board's audit list). Not taken: a clamp | Owner ("question A OK", 2026-10-29) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not
@@ -1105,9 +1166,6 @@ Asked when the milestone that needs them is planned; each is also on the board.
   buildings have gaps near Zermatt (1348-22, -32, -34, -43 have no item), and `lock
   buildings` refuses a sheet without one as a failed read; M5 decides whether such a
   sheet means "no buildings" (M2 R1 I-07).
-- Delivery when the data outgrows packs on `dist` — M5 (§13 rows 23, 32). The owner (2026-10-29) agreed to put delivery through GitHub
-  Releases (assets up to 2 GB per file, no pack splitting; `dist` kept as the rollback record) on the next release's list; the
-  100 MiB limit of a push stays whether the repository is public or not.
 - Game type — later (§13 row 34).
 
 Answered at M1 planning (2026-09-25; §13 rows 14–19): the terrain resolution, where the
@@ -1115,4 +1173,8 @@ version shows, the version scheme, whether the owner designs visuals, software r
 in containers. Answered in M2 (2026-09-25; §13 rows 22–24, 27): the access route for
 swissBUILDINGS3D, the committed real sample, where the session pushes. Answered at M3 planning
 (2026-10-14; §13 rows 29–34): the look, the photo's resolution, the walls, an export over
-100 MiB (data packs), swissTLM3D's access route and its use in M3.
+100 MiB (data packs), swissTLM3D's access route and its use in M3. Settled in 0.5.0 (2026-10-29;
+§13 row 54): delivery when the data outgrows packs on `dist`, by GitHub Releases (assets up to 2 GB
+each; `dist` kept as the record of 0.1.0 to 0.3.1). M5's extents keep that constraint: every file
+under 2 GB, and `tools/export.sh` refuses one over 100 MiB until M5 changes it; the 100 MiB limit of
+a push stays whether the repository is public or not.
