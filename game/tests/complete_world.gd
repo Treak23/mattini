@@ -1,8 +1,8 @@
 extends RefCounted
 ## Test helper for the main scene's tests (briefs M2-05, M2-08; M3-14's full replacement; the
-## flow from brief v0.4.0-02, the sun's place from brief v0.4.0-08): a complete world, every block
-## the main scene reads, in one world, written into a folder under user://. Not a test script:
-## GUT runs only scripts named test_*.
+## flow from brief v0.4.0-02, the sun's place from brief v0.4.0-08, the capture shadows from brief
+## v0.5.0-03, M4-06 decision 7): a complete world, every block the main scene reads, in one world,
+## written into a folder under user://. Not a test script: GUT runs only scripts named test_*.
 ##
 ## - The terrain: the shared terrain fixture's manifest and heights (its world: origin
 ##   E 2'600'000 / N 1'200'000, height offset 1000 m, the owner's axes).
@@ -28,14 +28,19 @@ extends RefCounted
 ##   (latitude, longitude, true_to_grid_deg) under this world's area and world_sha256, so that the
 ##   start's sun stands where it stands over Zermatt: test data, not this world's own place
 ##   (test_main_scene_light.gd checks that SKY is config/sky.json's village values).
-## The three rectangles differ on purpose: the photo's is not the terrain grid's, and the
-## surfaces' is neither. The moved boxes, the box, its roof colour and the trees' places and
-## sizes are test data, invented here, not swisstopo's (Hard Rule 2).
+## - The capture shadows (brief v0.5.0-03, M4-06 decision 7): the shared shadows fixture's
+##   description and PNG (64 x 96 cells at 0.5 m), its box moved to SHADOWS_BOX, its
+##   world_sha256 this world's.
+## The rectangles differ on purpose: the photo's is not the terrain grid's, the surfaces' is
+## neither, and the capture shadows' is none of the three. The moved boxes, the box, its roof
+## colour and the trees' places and sizes are test data, invented here, not swisstopo's (Hard
+## Rule 2).
 
 const TERRAIN_FIXTURE := "tests/shared/terrain_fixture/generated/manifest.json"
 const PHOTO_FIXTURE := "tests/shared/photo_fixture/generated/manifest.json"
 const SURFACES_FIXTURE := "tests/shared/surfaces_fixture/generated/manifest.json"
 const TREES_FIXTURE := "tests/shared/trees_fixture/generated/manifest.json"
+const SHADOWS_FIXTURE := "tests/shared/shadows_fixture/generated/shadows/fixture.json"
 const TILE := "2601-1199"
 const CHUNK_FILE := "buildings/2601-1199.bin"
 ## The box's floor, local: at the fixture terrain's centre, 603 m (LN02 1603 m). The
@@ -52,6 +57,14 @@ const PHOTO_BOX := {"e_max": 2601033.0, "e_min": 2601017.0, "n_max": 1199988.5, 
 ## The surfaces' box in LV95: 40 m x 30 m (200 x 150 cells at 0.2 m), over the terrain.
 const SURFACES_BOX := {
 	"e_max": 2601053.0, "e_min": 2601013.0, "n_max": 1199991.0, "n_min": 1199961.0
+}
+## The capture shadows' box in LV95: 32 m x 48 m (64 x 96 cells at 0.5 m). The photo (local
+## x 1017 to 1033, z 11.5 to 19.5) lies over the mask's rows 32 to 47 and columns -4 to 27 (the
+## first four outside the mask): the block's shadow (rows 33 to 48, columns 7 to 16, its west
+## side stepped at rows 40 and 41) under the photo's middle, its north edge 0.5 m inside the
+## photo, its south edge 0.5 m outside; nothing else of the mask lies under the photo.
+const SHADOWS_BOX := {
+	"e_max": 2601051.0, "e_min": 2601019.0, "n_max": 1200004.5, "n_min": 1199956.5
 }
 ## The trees, test data: [column, row, height_m, crown_radius_m] of the terrain grid's pixel
 ## (the cell between vertices column and column + 1, row and row + 1) each one stands on. No
@@ -85,11 +98,11 @@ static func terrain_fixture_path() -> String:
 
 ## Writes the complete world into [param dir] (created if missing): manifest.json, the
 ## terrain's heights (the fixture's, or [param heights] when given), the box's chunk, the
-## photo, the surfaces and the trees' chunk (standing on those heights) and the sky block (SKY),
-## with [param change] (a Callable taking the manifest Dictionary) applied last. Returns the
-## manifest's path.
+## photo, the surfaces, the trees' chunk (standing on those heights), the sky block (SKY) and the
+## capture shadows' mask, with [param change] (a Callable taking the manifest Dictionary)
+## applied last. Returns the manifest's path.
 static func write(dir: String, change := Callable(), heights := PackedByteArray()) -> String:
-	for folder in ["terrain", "buildings", "photo", "surfaces", "trees"]:
+	for folder in ["terrain", "buildings", "photo", "surfaces", "trees", "shadows"]:
 		DirAccess.make_dir_recursive_absolute(dir.path_join(folder))
 	var source := terrain_fixture_path()
 	var manifest := _parse(source)
@@ -129,6 +142,7 @@ static func write(dir: String, change := Callable(), heights := PackedByteArray(
 	}
 	manifest["photo"] = _moved(PHOTO_FIXTURE, "photo", dir, PHOTO_BOX, world_sha256)
 	manifest["surfaces"] = _moved(SURFACES_FIXTURE, "surfaces", dir, SURFACES_BOX, world_sha256)
+	manifest["shadows"] = _moved_description(SHADOWS_FIXTURE, dir, SHADOWS_BOX, world_sha256)
 	manifest["trees"] = _trees(dir, manifest, WorldConfig.from_manifest(source), heights)
 	manifest["roofs"] = {
 		"area": "fixture",
@@ -183,6 +197,21 @@ static func _moved(
 	for file in files:
 		var data := FileAccess.get_file_as_bytes(source.get_base_dir().path_join(file))
 		_store(dir.path_join(file), data)
+	block["lv95_box"] = box.duplicate()
+	block["world_sha256"] = world_sha256
+	return block
+
+
+## The step's description at [param fixture] as the block, its file copied into [param dir], its
+## box [param box] and its world_sha256 [param world_sha256].
+static func _moved_description(
+	fixture: String, dir: String, box: Dictionary, world_sha256: String
+) -> Dictionary:
+	var source := repo_file(fixture)
+	var block := _parse(source)
+	var file: String = block["file"]
+	var folder := source.get_base_dir().get_base_dir()
+	_store(dir.path_join(file), FileAccess.get_file_as_bytes(folder.path_join(file)))
 	block["lv95_box"] = box.duplicate()
 	block["world_sha256"] = world_sha256
 	return block

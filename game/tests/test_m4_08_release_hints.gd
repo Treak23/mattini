@@ -24,9 +24,18 @@ extends GutTest
 ## Since brief v0.4.0-09 (the owner's "4d" of 2026-10-27, 0.3.1 R1 F6; only the census and this
 ## paragraph change): the census skips no reader. The two paths it used to skip by name until
 ## M4-10, surroundings_grid.gd (SurroundingsGrid, the far mountains, M4-07) and shadow_grid.gd
-## (CaptureShadowGrid, the photo's capture mask, M4-06), belong to a later release and do not
-## exist yet; from their first commit they must call file_hint like every other reader (M4-10
+## (CaptureShadowGrid, the photo's capture mask, M4-06), belonged to a later release and did not
+## exist then; from their first commit they must call file_hint like every other reader (M4-10
 ## decision 6), or this census names them.
+##
+## Since brief v0.5.0-03 (CaptureShadowGrid's first commit; M4-10 decision 6 moved forward; only
+## test_capture_mask_missing_or_damaged, its helper, the CompleteWorld preload and this paragraph
+## change): the capture mask's reader ends every message about its PNG with file_hint: the PNG
+## missing, of another SHA-256, not L8 of columns x rows (another size; RGB), and decoding to
+## bytes that are not pixels_sha256. The case is the complete test world, which carries the
+## shadows block (complete_world.gd, M4-06 decision 7). A PNG that cannot be decoded at all is
+## not a case here: Godot's PNG loader prints three engine ERROR lines of its own for it, which
+## the gate refuses (measured, brief v0.5.0-03's rehearsal).
 ##
 ## Does NOT prove: that an exported build shows these messages (the release template ignores
 ## --script; the release gate's export run starts the Linux build with mattini-photo.pck moved
@@ -35,6 +44,7 @@ extends GutTest
 ## refusals, which still name the pipeline (a release ships a manifest whose blocks are built
 ## for its world; tools/export.sh refuses any other).
 
+const CompleteWorld := preload("res://tests/complete_world.gd")
 const SCRATCH_DIR := "user://test_m4_08_release_hints"
 const RELEASE_HINT := "; it ships in the release's packs: download the release folder again"
 const SHARED := "tests/shared"
@@ -219,6 +229,51 @@ func test_tree_chunk_missing() -> void:
 func test_building_chunk_missing() -> void:
 	var path := _write_case("buildings_fixture", _keep)
 	_assert_hints(BuildingChunks.new, path, "is missing", "python -m mattini buildings")
+
+
+## The complete test world with its mask's PNG replaced by [param png] (null removes it) and,
+## when [param record] is true, the PNG's SHA-256 recorded in the shadows block; returns the
+## manifest's path.
+func _mask_case(png: Variant, record: bool) -> String:
+	_cases += 1
+	var change := Callable()
+	if record:
+		var sha := _sha256(png)
+		change = func(m: Dictionary) -> void: m["shadows"]["sha256"] = sha
+	var path := CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), change)
+	var file := path.get_base_dir().path_join("shadows/fixture.png")
+	if png == null:
+		DirAccess.remove_absolute(file)
+	else:
+		var out := FileAccess.open(file, FileAccess.WRITE)
+		out.store_buffer(png)
+		out.close()
+	return path
+
+
+func test_capture_mask_missing_or_damaged() -> void:
+	# Each site of the mask's PNG (brief v0.5.0-03): missing; another SHA-256 (checked before
+	# decoding); recorded but 8 x 8; recorded but RGB; recorded, L8, one texel changed.
+	var command := "python -m mattini shadows"
+	var fixture := _repo_file(SHARED.path_join("shadows_fixture/generated/shadows/fixture.png"))
+	var image := Image.new()
+	assert_eq(image.load_png_from_buffer(FileAccess.get_file_as_bytes(fixture)), OK)
+	var path := _mask_case(null, false)
+	_assert_hints(CaptureShadowGrid.new, path, "fixture.png is missing", command)
+	path = _mask_case(PackedByteArray([137, 80, 78, 71]), false)
+	_assert_hints(CaptureShadowGrid.new, path, "SHA-256", command)
+	var small := Image.create(8, 8, false, Image.FORMAT_L8)
+	path = _mask_case(small.save_png_to_buffer(), true)
+	_assert_hints(CaptureShadowGrid.new, path, "decodes to 8 × 8", command)
+	var rgb: Image = image.duplicate()
+	rgb.convert(Image.FORMAT_RGB8)
+	path = _mask_case(rgb.save_png_to_buffer(), true)
+	_assert_hints(CaptureShadowGrid.new, path, "L8", command)
+	var pixels := image.get_data()
+	pixels[40 * 64 + 10] = 0
+	var other := Image.create_from_data(64, 96, false, Image.FORMAT_L8, pixels)
+	path = _mask_case(other.save_png_to_buffer(), true)
+	_assert_hints(CaptureShadowGrid.new, path, "pixels_sha256", command)
 
 
 ## Every .gd file under [param dir], recursively, as res:// paths.
