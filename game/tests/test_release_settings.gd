@@ -3,9 +3,10 @@ extends GutTest
 ##
 ## Pinned decisions (docs/SPEC.md §11; the owner, 2026-09-25): the version scheme is
 ## 0.<n>.<patch> until v1; M1's close shipped 0.1.0, M2's 0.2.0, M3's 0.3.0, the patch after it
-## 0.3.1, the release after that 0.4.0. Exports for Linux and Windows, x86_64, go to build/
-## (git-ignored) with the .pck beside the executable, so no single file carries the engine and
-## the data together (GitHub's 100 MB limit, docs/RELEASE.md §C).
+## 0.3.1, the release after that 0.4.0 (its build was lost and never delivered; the owner took
+## 0.5.0 in its place, 2026-10-29), then 0.5.0. Exports for Linux and Windows, x86_64, go to
+## build/ (git-ignored) with the .pck beside the executable, so no single file carries the engine
+## and the data together (GitHub's 100 MB limit, docs/RELEASE.md §C).
 ## The generated assets and Terrain3D's licence ship; the tests and GUT do not. The Windows
 ## preset does not rewrite the executable's resources, which would need rcedit.
 ##
@@ -68,8 +69,8 @@ func _presets() -> Dictionary:
 	return by_name
 
 
-func test_the_version_is_0_4_0() -> void:
-	assert_eq(ProjectSettings.get_setting("application/config/version"), "0.4.0")
+func test_the_version_is_0_5_0() -> void:
+	assert_eq(ProjectSettings.get_setting("application/config/version"), "0.5.0")
 
 
 func test_linux_and_windows_presets_exist() -> void:
