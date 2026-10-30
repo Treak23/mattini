@@ -1,7 +1,8 @@
 """Tests for brief M3-R1-fix-3: what tools/gate.sh's render step requires and refuses.
 
 Pinned decisions (CLAUDE.md, the standard gate; brief M3-R1-fix-3, Decisions 1 and 3; the flow
-script and the fixed frame rate from brief v0.5.0-09):
+script and the fixed frame rate from brief v0.5.0-09; the SKIPPED line's words from brief
+v0.5.0-12: the water class, not "the classes", and whether the crowns are drawn):
 tools/gate.sh, run as the owner runs it (here in a scratch tree, fake_tools.py: a stand-in
 Godot whose render scripts print the lines a test gives them, a stand-in xvfb-run, or none):
 - where xvfb-run is not on PATH the step fails, naming xvfb-run and MATTINI_SKIP_RENDER=1, and
@@ -42,8 +43,9 @@ ALPHA = ("res://tests/test_alpha.gd", [("test_one", [])])
 PASSED = "== gate: all steps passed"
 FAILED = "== gate: FAILED at step: render"
 SKIPPED = (
-    "== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the classes, the lift and "
-    "the crowns' colour land and which way the ripples drift are not checked"
+    "== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the water class, the lift and "
+    "the crowns' colour land, whether the crowns are drawn and which way the ripples drift are "
+    "not checked"
 )
 PHOTO = "RENDER photo: PASS correlation 0.9761"
 CLASSES = "RENDER classes: PASS agreement 83091 of 83427"

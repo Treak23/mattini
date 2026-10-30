@@ -1,14 +1,16 @@
 extends RefCounted
-## Helpers of the gate's two render checks, render_photo.gd and render_trees.gd (brief
-## M3-R1-fix-3; docs/reviews/M3-R1-placement.md §M3-R1-P-03 and its Appendix B and C). Not a
-## test script (GUT runs only test_*.gd) and not a check itself.
+## Helpers of the gate's render scripts, render_photo.gd, render_lift.gd, render_flow.gd and
+## render_trees.gd (brief M3-R1-fix-3; docs/reviews/M3-R1-placement.md §M3-R1-P-03 and its
+## Appendix B and C; the lift's and the flow's scripts from briefs v0.5.0-04 and v0.5.0-09).
+## Not a test script (GUT runs only test_*.gd) and not a check itself.
 ##
 ## A check renders a synthetic world on a flat terrain with a camera straight above it
 ## (Compatibility renderer, Mesa's llvmpipe under Xvfb: tools/gate.sh runs it with
 ## xvfb-run) and compares the pixels with what the DATA says is at the world point under
-## each one. It proves WHERE the photo, the surface classes and the crowns' colour land, to a
-## number; it does not prove how they look, Forward+, the colour encoding or the owner's GPU
-## (SPEC §12, brain.md H12, H21).
+## each one. Together they prove WHERE the photo, the water class, the lift and the crowns'
+## colour land, that the crowns are drawn, and which way the ripples drift, to a number; they
+## do not prove how anything looks, the other classes, Forward+, the colour encoding or the
+## owner's GPU (SPEC §12, brain.md H12, H21).
 ##
 ## Each check prints one line, "RENDER <check>: PASS <numbers>" or "RENDER <check>: FAIL
 ## <what failed>; <numbers>"; tools/gate.sh requires the PASS line of every check and refuses

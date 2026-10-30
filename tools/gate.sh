@@ -26,17 +26,19 @@
 #
 # The render step runs last (SPEC §12, §13 row 38; brief M3-R1-fix-3): four SceneTree scripts
 # under game/tests/render/ render a synthetic world (Compatibility renderer on Mesa's llvmpipe,
-# under xvfb-run) and measure, by number, where the photo, the surface classes, the capture-shadow
-# lift and the crowns' colour land, and which way and how fast the river's ripples drift against
-# the flow (brief v0.5.0-09), so that a flipped, shifted or swapped placement in a shader or a
-# loader fails the gate with the check's own result line ("RENDER <check>: FAIL ..."). Every
-# script runs at --fixed-fps 60, so that shader TIME advances exactly 1/60 s per drawn frame
-# whatever llvmpipe's speed and the flow check's two frames are a known time apart (brain.md
-# H29). It proves where those land and the drift's direction and speed on three synthetic
-# bands, never the look, Forward+, the colour encoding or the owner's GPU. The flow check does
-# not see where the flow is read from north to south (a northward shift of any size reads the
-# clamped first row, a band row, and a southward one under about 1.6 m keeps the direction),
-# so a flow read shifted north-south is not gated (brief v0.5.0-09 decision 5). The step passes only when
+# under xvfb-run) and measure, by number, where the photo, the water class, the capture-shadow
+# lift and the crowns' colour land, whether the crowns are drawn, and which way and how fast the
+# river's ripples drift against the flow (briefs v0.5.0-09 and v0.5.0-12), so that a flipped,
+# shifted or swapped placement in a shader or a loader fails the gate with the check's own
+# result line ("RENDER <check>: FAIL ..."). Of the classes only the water is checked: the
+# classes check reads the water class, and not rock, path or road. Every script runs at
+# --fixed-fps 60, so that shader TIME advances exactly 1/60 s per drawn frame whatever
+# llvmpipe's speed and the flow check's two frames are a known time apart (brain.md H29). It
+# proves where those land and the drift's direction and speed on three synthetic bands, never
+# the look, Forward+, the colour encoding or the owner's GPU. The flow check does not see where
+# the flow is read from north to south (a northward shift of any size reads the clamped first
+# row, a band row, and a southward one under about 1.6 m keeps the direction), so a flow read
+# shifted north-south is not gated (brief v0.5.0-09 decision 5). The step passes only when
 # every check prints its "RENDER <check>: PASS" line and none a FAIL line, besides the scans and
 # the exit status every Godot step has (a timeout kills a script that hangs: brain.md H25). Where
 # xvfb-run is missing it fails, naming it and MATTINI_SKIP_RENDER=1; with that variable set it
@@ -371,14 +373,14 @@ gut_run() {
 	return "$status"
 }
 
-# The render step's four scripts (the photo and the classes, the lift, the flow, the trees) and
+# The render step's four scripts (the photo and the water class, the lift, the flow, the trees) and
 # the checks each prints; the timeout, in seconds, kills a script that hangs (a SceneTree script
 # that fails in _initialize can run on with no output, brain.md H25), 10 s later by force.
 # RENDER_FPS is the fixed frame rate every script runs at (--fixed-fps), so that shader TIME is
 # the drawn frames / 60 and the flow check's frames are 0.25 s apart on every machine.
 RENDER_TIMEOUT=180
 RENDER_FPS=60
-RENDER_SKIP_LINE="== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the classes, the lift and the crowns' colour land and which way the ripples drift are not checked"
+RENDER_SKIP_LINE="== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the water class, the lift and the crowns' colour land, whether the crowns are drawn and which way the ripples drift are not checked"
 
 # One render script ($1, a res:// path) under xvfb-run, its output scanned for engine errors as
 # the other Godot steps are (the allowlist's global entries apply); then each check named in the

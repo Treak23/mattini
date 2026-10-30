@@ -1,5 +1,5 @@
 extends SceneTree
-## The gate's render check of where the photo shader puts the photo and the surface classes
+## The gate's render check of where the photo shader puts the photo and the water class
 ## (brief M3-R1-fix-3; docs/reviews/M3-R1-placement.md §M3-R1-P-03, Appendix B; the water's
 ## part rewritten by brief M4-06 for m4-design §8's water). Run by
 ## tools/gate.sh under xvfb-run, Compatibility renderer (Mesa's llvmpipe), never in GUT.
@@ -22,14 +22,16 @@ extends SceneTree
 ##   on the samples EDGE_M inside the terrain. Where the data's 1 m box is all water, the ratio's
 ##   median is WATER_ALBEDO within WATER_TOLERANCE. The rendered water weight, (1 - ratio) /
 ##   (1 - that median), above 0.5 agrees with class_at's water on at least CLASSES_MIN_AGREE of
-##   the samples, better than with the data mirrored north-south, and its best fit over the
-##   shifts of the data is within one 0.05 m step of none, in x and in z. On the bank (the samples
+##   the samples, better than with the data mirrored north-south, and its agreement with the
+##   data at no shift is the best over the shifts of the data less at most CLASS_GAP_X samples
+##   in x and CLASS_GAP_Z in z. On the bank (the samples
 ##   where the data's weight or a twin's lies strictly between 0 and 1) it correlates with the
 ##   data's eased weight (the shader's water_weight, written again in _water_weight) at least
 ##   BANK_MIN_CORR and better than with every twin: not eased (M3's 0.2 m blend), the 1 m box
 ##   without the smoothstep, a 0.6 m box, a 1.4 m box.
 ## The numbers on each line are what a failure points at: the scans tell a flip from a shift
-## and a shift's size.
+## and a shift's size. Of the classes it reads the water class only (2); rock, path and road
+## are drawn but not checked here.
 ##
 ## Since brief v0.5.0-05 (M4-10 decision 9, re-cut on v0.4.0-11's file; one override and this
 ## paragraph change): the main scene hands the terrain the complete world's capture mask, so both
@@ -43,6 +45,12 @@ extends SceneTree
 ## not be the albedo's alone. Measured in the pin author's rehearsal: with the haze and no override,
 ## RENDER photo's mirrored scans moved (0.0467 and -0.2204), RENDER classes' agreement fell to 70031
 ## and its eased bank to 0.993 (all still PASS); with it, the base's lines, digit for digit.
+##
+## Since brief v0.5.0-12 (M3 round R2 P-03 and P-04; the words above and the shift's decision
+## change, every other line as v0.5.0-07 left it): the classes check no longer passes when the
+## best agreement within one step of no shift beats every other by any count (clean runs won
+## by 6 samples in z); it fails when the agreement at no shift lies more than CLASS_GAP_X (x)
+## or CLASS_GAP_Z (z) below the best of its scan, and its line prints both gaps.
 ##
 ## Proves where, not how it looks: not Forward+, not the colour encoding (brain.md H21), not
 ## the owner's GPU, not any shader on the real village, not the water's roughness, ripples or
@@ -69,12 +77,19 @@ const PHOTO_STEPS := 8
 ## The class shifts scanned, in 0.05 m steps, each way.
 const CLASS_STEPS := 6
 const SHIFT_M := 0.05
+## The agreement at no shift may lie this many samples below the best of its scan, in x and in
+## z (brief v0.5.0-12's rehearsal, of 70180 samples: clean 0 in x and 5 in z; the water moved
+## 0.1 m east 202 in x, 0.3 m south 28 in z). The fixture's banks run mostly north-south, so a
+## step in z moves the agreement about 7 samples, a step in x about 190.
+const CLASS_GAP_X := 100
+const CLASS_GAP_Z := 10
 ## A render darker than this without the classes tells nothing about them.
 const MIN_LUMINANCE := 8.0
 ## The water class.
 const WATER := 2
 ## Fully on water the render is the water's albedo times the render without it (m4-design §8:
-## 0.9), within WATER_TOLERANCE (the light's highlight on roughness 0.3 included).
+## 0.9), within WATER_TOLERANCE (the sun's highlight, the sky's reflection and ambient light are
+## switched off in _check; measured 0.894).
 const WATER_ALBEDO := 0.9
 const WATER_TOLERANCE := 0.03
 ## The rendered water weight on the bank correlates at least this with the data's eased weight.
@@ -325,32 +340,43 @@ func _check_classes(
 		failures.append("agreement %d of %d, below %.2f" % [right, total, CLASSES_MIN_AGREE])
 	if mirrored >= right:
 		failures.append("the data mirrored north-south agrees better (%d)" % mirrored)
-	var best_x := _best_class_shift(shifted_x)
-	if best_x != 0.0:
-		failures.append("best fit at an x shift of the data of %+.2f m" % best_x)
-	var best_z := _best_class_shift(shifted_z)
-	if best_z != 0.0:
-		failures.append("best fit at a z shift of the data of %+.2f m" % best_z)
+	var gap_x := _class_gap(shifted_x)
+	if gap_x[0] > CLASS_GAP_X:
+		failures.append(
+			(
+				"the data moved %+.2f m in x agrees %d more than at no shift, %d allowed"
+				% [gap_x[1], gap_x[0], CLASS_GAP_X]
+			)
+		)
+	var gap_z := _class_gap(shifted_z)
+	if gap_z[0] > CLASS_GAP_Z:
+		failures.append(
+			(
+				"the data moved %+.2f m in z agrees %d more than at no shift, %d allowed"
+				% [gap_z[1], gap_z[0], CLASS_GAP_Z]
+			)
+		)
 	failures.append_array(bank["failures"])
 	print("render classes: agreement by x shift of the data (-0.30 to 0.30 m): %s" % [shifted_x])
 	print("render classes: agreement by z shift of the data (-0.30 to 0.30 m): %s" % [shifted_z])
-	return Common.report(
-		"classes",
-		failures,
-		(
-			"agreement %d of %d, mirrored %d, water %s; full water %.3f over %d; bank %s over %d"
-			% [
-				right,
-				total,
-				mirrored,
-				counts,
-				full_ratio,
-				full.size(),
-				bank["correlations"],
-				bank["samples"]
-			]
-		)
+	var numbers := (
+		"agreement %d of %d, mirrored %d, water %s; full water %.3f over %d; bank %s over %d"
+		% [
+			right,
+			total,
+			mirrored,
+			counts,
+			full_ratio,
+			full.size(),
+			bank["correlations"],
+			bank["samples"]
+		]
 	)
+	numbers += (
+		"; at no shift %d below the scan's best in x (allowed %d), %d in z (allowed %d)"
+		% [gap_x[0], CLASS_GAP_X, gap_z[0], CLASS_GAP_Z]
+	)
+	return Common.report("classes", failures, numbers)
 
 
 ## The bank: the rendered water weight against the data's eased weight and its likeliest twins,
@@ -446,20 +472,18 @@ func _median(values: PackedFloat64Array) -> float:
 	return sorted[sorted.size() / 2]
 
 
-## The best shift of the data in metres: 0 when the greatest agreement lies within one step of
-## none and above every agreement outside it, else the shift (in metres) of the greatest.
-func _best_class_shift(values: PackedInt32Array) -> float:
-	var inside := 0
-	var outside := 0
-	var farthest := 0.0
+## How far the agreement at no shift lies below the best of [param values] (one value per
+## step from -CLASS_STEPS to CLASS_STEPS), and the shift in metres of that best (the nearest to
+## none of equal ones): [gap, shift].
+func _class_gap(values: PackedInt32Array) -> Array:
+	var best := CLASS_STEPS
 	for i in values.size():
-		var shift := (i - CLASS_STEPS) * SHIFT_M
-		if absf(shift) <= SHIFT_M + 1e-9:
-			inside = maxi(inside, values[i])
-		elif values[i] > outside:
-			outside = values[i]
-			farthest = shift
-	return 0.0 if inside > outside else farthest
+		if (
+			values[i] > values[best]
+			or (values[i] == values[best] and absi(i - CLASS_STEPS) < absi(best - CLASS_STEPS))
+		):
+			best = i
+	return [values[best] - values[CLASS_STEPS], (best - CLASS_STEPS) * SHIFT_M]
 
 
 ## Pearson correlation between the rendered luminance and the luminance of the photo texel the

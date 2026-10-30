@@ -4,13 +4,13 @@ extends SceneTree
 ## under xvfb-run, Compatibility renderer (Mesa's llvmpipe), never in GUT.
 ##
 ## The complete test world with its terrain replaced by one flat level, its box buried under it
-## (render_common.gd), the photo fixture on it, no surface classes, and its trees replaced by 20
-## synthetic ones written here (test data, labelled: invented, not swisstopo's, Hard Rule 2),
-## each standing at the centre of a block of the photo fixture, in alternate columns, so that
-## the block beside it has another colour; a camera straight above. For each tree the mean
-## rendered luminance of a disc of CROWN_READ_M about the crown's axis, at CROWN_AXIS_M above the
-## foot, is compared with the luminance of the photo (the data) around the tree's position. It
-## reads nothing of the shaders.
+## (render_common.gd), the photo fixture on it, every class texel none (0), and its trees
+## replaced by 20 synthetic ones written here (test data, labelled: invented, not swisstopo's,
+## Hard Rule 2), each standing at the centre of a block of the photo fixture, in alternate
+## columns, so that the block beside it has another colour; a camera straight above. For each
+## tree the mean rendered luminance of a disc of CROWN_READ_M about the crown's axis, at
+## CROWN_AXIS_M above the foot, is compared with the luminance of the photo (the data) around
+## the tree's position. It reads nothing of the shaders.
 ##
 ## The disc, not the review's 5 x 5 pixels at the apex (Appendix C): the crown's facets are lit
 ## one by one since brief M3-R1-fix-4 gave them their normals, so the luminance of a few
@@ -19,9 +19,11 @@ extends SceneTree
 ## Findings); averaged over the disc the right place gives about 0.93 and no wrong place more
 ## than 0.25.
 ##
-## One check, one result line (render_common.gd): "trees": the correlation of the two over the
-## trees is at least TREES_MIN_CORR and above the same correlation with the photo read at a
-## wrong place: x and z exchanged, mirrored north-south, mirrored east-west.
+## Since brief v0.5.0-12 (M3 round R2 P-01: an empty forest, the ground being the photo, scored
+## higher than the drawn one) the same view is rendered a second time with the main scene's
+## Trees node hidden (where the scene has none, the same view again), and a crown counts as
+## drawn where the mean luminance of its disc differs from the bare ground's there by
+## CROWN_MIN_DIFF or more.
 ##
 ## Since brief v0.5.0-07 (the trees' haze; one override and this paragraph): the sky rig turns on
 ## an exponential fog coloured by the sky's radiance, which adds the sky's colour to every pixel;
@@ -29,8 +31,16 @@ extends SceneTree
 ## pin author's rehearsal: with the haze and no override, 0.8661 (the base's 0.8637); with it, the
 ## base's line, digit for digit.
 ##
-## Proves where the crowns' colour is read, on 20 synthetic trees: not how a crown looks, not
-## the colour encoding (brain.md H21), not Forward+, not the real village's trees.
+## One check, one result line (render_common.gd): "trees": at least TREES_MIN_DRAWN of the
+## trees' crowns are drawn, and the correlation of the two over the trees is at least
+## TREES_MIN_CORR and above the same correlation with the photo read at a wrong place: x and z
+## exchanged, mirrored north-south, mirrored east-west. The line names how many crowns were
+## drawn and the least difference.
+##
+## Proves where the crowns' colour is read and that a crown is drawn at each of 20 synthetic
+## trees, seen from 22 m: not how a crown looks or its shape, not the colour encoding (brain.md
+## H21), not Forward+, not the real village's trees, not a crown seen from farther than this
+## view's 20 m.
 const CompleteWorld := preload("res://tests/complete_world.gd")
 const Common := preload("res://tests/render/render_common.gd")
 const COLUMNS := 41
@@ -54,6 +64,11 @@ const CROWN_AXIS_M := 2.0
 const PHOTO_TEXELS := 3
 const CAMERA_AT := Vector3(1025.0, LEVEL + 22.0, 15.5)
 const TREES_MIN_CORR := 0.6
+## A crown's disc differs from the bare ground's by at least this much luminance (0 to 255) to
+## count as drawn, and at least TREES_MIN_DRAWN crowns must be (measured in brief v0.5.0-12's
+## rehearsal: every crown 23.8 to 181.0 darker than the ground, none drawn 0.0).
+const CROWN_MIN_DIFF := 8.0
+const TREES_MIN_DRAWN := 20
 const WORLD_DIR := "user://render_trees"
 
 
@@ -129,14 +144,27 @@ func _check() -> bool:
 	environment.fog_enabled = false
 	var image := await Common.capture(self)
 	Common.save(image, "render_trees")
-	return _compare(image, camera, trees, count, photo)
+	# The same view without the trees: the ground each crown stands over.
+	var node := main.get_node_or_null(TreeLoader.NODE_NAME)
+	if node != null:
+		node.hide()
+	var bare := await Common.capture(self)
+	Common.save(bare, "render_trees_bare")
+	return _compare(image, bare, camera, trees, count, photo)
 
 
 func _compare(
-	image: Image, camera: Camera3D, trees: PackedFloat32Array, count: int, photo: PhotoGrid
+	image: Image,
+	bare: Image,
+	camera: Camera3D,
+	trees: PackedFloat32Array,
+	count: int,
+	photo: PhotoGrid
 ) -> bool:
 	var source := photo.texture.get_image()
 	var rendered := PackedFloat64Array()
+	var drawn := 0
+	var least := INF
 	var expected := {
 		"right": PackedFloat64Array(),
 		"x and z exchanged": PackedFloat64Array(),
@@ -146,7 +174,12 @@ func _compare(
 	for k in count:
 		var x := trees[5 * k]
 		var z := trees[5 * k + 2]
-		rendered.append(_crown_lum(image, camera, Vector3(x, LEVEL + CROWN_AXIS_M, z)))
+		var axis := Vector3(x, LEVEL + CROWN_AXIS_M, z)
+		rendered.append(_crown_lum(image, camera, axis))
+		var difference := absf(rendered[k] - _crown_lum(bare, camera, axis))
+		least = minf(least, difference)
+		if difference >= CROWN_MIN_DIFF:
+			drawn += 1
 		expected["right"].append(_photo_lum(source, photo, x, z))
 		# Where else the crown's colour might have been read from.
 		var swapped_x := photo.x0 + (z - photo.z0) * photo.width_m / photo.depth_m
@@ -158,6 +191,8 @@ func _compare(
 		expected["mirrored east-west"].append(_photo_lum(source, photo, east_west, z))
 	var right := Common.corr(rendered, expected["right"])
 	var failures := PackedStringArray()
+	if drawn < TREES_MIN_DRAWN:
+		failures.append("%d of %d crowns drawn, %d needed" % [drawn, count, TREES_MIN_DRAWN])
 	if right < TREES_MIN_CORR:
 		failures.append("correlation %.4f below %.2f" % [right, TREES_MIN_CORR])
 	var others := PackedStringArray()
@@ -168,11 +203,15 @@ func _compare(
 		others.append("%s %.4f" % [key, other])
 		if other >= right:
 			failures.append("the crowns read better with the photo %s (%.4f)" % [key, other])
-	return Common.report(
-		"trees",
-		failures,
-		"correlation %.4f over %d trees; with the photo read %s" % [right, count, ", ".join(others)]
+	var drawn_words := (
+		"%d of %d crowns drawn (a disc %.1f or more from the bare ground's, the least %.1f)"
+		% [drawn, count, CROWN_MIN_DIFF, least]
 	)
+	var numbers := (
+		"correlation %.4f over %d trees, %s; with the photo read %s"
+		% [right, count, drawn_words, ", ".join(others)]
+	)
+	return Common.report("trees", failures, numbers)
 
 
 ## The mean luminance of the pixels within CROWN_READ_M, in metres at the crown's axis, of the
