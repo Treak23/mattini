@@ -31,7 +31,7 @@
 # river's ripples drift against the flow (briefs v0.5.0-09 and v0.5.0-12), so that a flipped,
 # shifted or swapped placement in a shader or a loader fails the gate with the check's own
 # result line ("RENDER <check>: FAIL ..."). Of the classes only the water is checked: the
-# classes check reads the water class, and not rock, path or road. Every script runs at
+# classes check reads the water only, and not rock, path or road. Every script runs at
 # --fixed-fps 60, so that shader TIME advances exactly 1/60 s per drawn frame whatever
 # llvmpipe's speed and the flow check's two frames are a known time apart (brain.md H29). It
 # proves where those land and the drift's direction and speed on three synthetic bands, never
