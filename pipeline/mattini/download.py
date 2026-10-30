@@ -68,7 +68,6 @@ import json
 import math
 import os
 import re
-import shutil
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -138,6 +137,10 @@ Progress = Callable[[str], None]
 
 class DownloadError(RuntimeError):
     """A download could not be completed or verified; the message names the tile and URL."""
+
+
+class CutTransfer(OSError):
+    """A body that ended before the Content-Length the answer announced (a dropped connection)."""
 
 
 class ResumeMismatch(OSError):
@@ -779,10 +782,21 @@ def urllib_fetch_json(url: str) -> object:
 
 
 def urllib_fetch_file(url: str, dest: Path) -> None:
-    """GET a file with the standard library, streaming it to `dest`."""
+    """GET a file with the standard library, streaming it to `dest`.
+
+    A body cut before its Content-Length ends without an error in urllib (brain.md H9), so the
+    bytes written are compared with the announced length: fewer is a CutTransfer. An answer with
+    no Content-Length, or one that is not digits, is not checked here (the SHA-256 still is).
+    """
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    written = 0
     with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response, open(dest, "wb") as out:
-        shutil.copyfileobj(response, out, 1 << 20)
+        length = response.headers.get("Content-Length")
+        while chunk := response.read(1 << 20):
+            out.write(chunk)
+            written += len(chunk)
+    if length is not None and length.isdigit() and written < int(length):
+        raise CutTransfer(f"cut at {written} of {int(length)} bytes")
 
 
 def urllib_head(url: str) -> tuple[int | None, str | None]:
@@ -917,7 +931,9 @@ def _fetch_verified(fetch_file: FetchFile, url: str, dest: Path, sha256: str, wh
     """Fetch `url` to `dest` via `<dest>.part`, keeping it only if its SHA-256 matches."""
     part = dest.with_name(dest.name + ".part")
     problem = ""
+    cut = False
     for _ in range(ATTEMPTS):
+        cut = False
         try:
             fetch_file(url, part)
             actual = _sha256(part)
@@ -927,9 +943,11 @@ def _fetch_verified(fetch_file: FetchFile, url: str, dest: Path, sha256: str, wh
             problem = f"SHA-256 {actual} does not match the published {sha256}"
         except FETCH_ERRORS as exc:
             problem = f"fetch failed: {exc}"
+            cut = isinstance(exc, CutTransfer)
         finally:
             part.unlink(missing_ok=True)
-    raise DownloadError(f"{where}: {url}: {problem} (after {ATTEMPTS} attempts)")
+    hint = "; a dropped connection heals on a rerun: run the command again" if cut else ""
+    raise DownloadError(f"{where}: {url}: {problem} (after {ATTEMPTS} attempts){hint}")
 
 
 def _sha256(path: Path) -> str:
