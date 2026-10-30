@@ -1,11 +1,10 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-10-29 — version 0.4.0 (the river flows downstream along
-swissTLM3D's lines; the sun and the moon move at the game's time, a physical sky and stars on the Hipparcos Catalogue; built
-from `main` `4bf2d83` by the first release session to run two lanes, recorded in `docs/releases/v0.4.0.md`; no P0 or P1 open) is
-built and audited, its `dist` commit `e2633b6` waits for the owner's "push dist"** (local branch `dist-publish` of the release
-session's container; until pushed, `dist` still holds 0.3.1, `5b51347`, built from `main` `cb5946e`; 0.3.1 stays as
-`mattini-0.3.1/`, the rollback)
+Orientation for any session. Current as of **2026-10-30 — version 0.5.0 (the photo's own shadows softened by a capture-time
+mask, a light haze, the clock's note outside 2020 to 2035; the first release delivered as a GitHub Release, built by
+`.github/workflows/release.yml` on a GitHub runner; built from `main` `af3d5d2`, recorded in `docs/releases/v0.5.0.md`; no P0 or P1
+open) waits as a draft Release for the owner to publish** (0.4.0 was never delivered on its own: 0.5.0 contains it; `dist` holds
+0.1.0 to 0.3.1, `mattini-0.3.1/` the rollback)
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
@@ -45,13 +44,10 @@ Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-The owner's word "push dist" for 0.4.0 (`git push origin dist-publish:dist` from the release session's checkout, or rebuild: the
-export is not byte-reproducible, H15). Then, from a fresh `ultracode design` session: the softened photo shadows (FB-004 item 3;
-M4-03, M4-06, the shadows parts of M4-09 and M4-10, rebuilt on 0.4.0's files per `docs/briefs/v0.4.0-plan.md`'s process note) and
-delivery through GitHub Releases (the owner's "Yes if it makes sense", 2026-10-29), then the far mountains' shadows (M4-01,
-M4-02, M4-07 and their parts of M4-09 and M4-10), the trees' variant the owner picks from the record's table, a clamp or label
-for the clock's range, the move to Godot 4.8 once it is out of beta, M5 scale-up, M6 weather and walking. The board is the live
-version.
+The owner publishes 0.5.0's draft Release and looks at the record's look list on the PC. Then, from a fresh `ultracode design`
+session: the far mountains' shadows (M4-01, M4-02, M4-07 and their parts of M4-09 and M4-10, re-pinned on 0.5.0's files: every
+pinned copy of M4-09 and M4-10 is stale), the move to Godot 4.8 once it and its plugins are out of beta, M5 scale-up, M6 weather
+and walking. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's

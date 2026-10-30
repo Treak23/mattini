@@ -6,24 +6,23 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**Release 0.5.0 — in progress (the go of 2026-10-29, `docs/history/blocked/2026-10-29-2.md`):** the softened photo shadows
-(FB-004 item 3) and delivery through GitHub Releases, built by a GitHub Actions workflow into a draft Release the owner
-publishes (1a); and, by the owner's "question A OK", the trees' haze (FB-004 item 5), the clock's note outside 2020 to 2035, a RENDER check of the river's direction and four residue groups (tests and messages); the list is frozen. **0.4.0 was never delivered:** its
-audited `dist` commit `e2633b6` lived only in the previous session's container and is lost; the owner's "2c": 0.5.0, which
-contains 0.4.0, is the next build the owner gets. `dist` stays at 0.3.1 (`5b51347`), the rollback record.
+**Release 0.5.0 — built, checked and recorded 2026-10-30 (`docs/releases/v0.5.0.md`); a draft GitHub Release waits for the
+owner to publish it: https://github.com/Treak23/mattini/releases.** The photo's own shadows softened (FB-004 item 3), the haze (item 5), the clock's note, delivery
+through GitHub Releases (the first real run of `.github/workflows/release.yml`), the gate's flow, lift and trees-drawn checks and
+four residue groups; fifteen briefs DONE in two lanes (`docs/briefs/v0.5.0-plan.md`); the whole-range review's two P1 (the Release
+notes) fixed; the release gate from a fresh clone green (pytest 2839, GUT 70 scripts, 463 tests, 19'590 asserts; the manifest
+`f68275a1…`, 326'124 bytes). 0.4.0 was never delivered on its own (the owner's "2c"): 0.5.0 contains it. `dist` stays at 0.3.1
+(`5b51347`), the rollback.
 
-**Next release (the owner's order):** the softened photo shadows (FB-004 item 3; M4-03, M4-06, the shadows parts of M4-09 and
-M4-10, rebuilt on 0.4.0's files: the plan's process note), and **delivery through GitHub Releases** (assets up to 2 GB; `dist`
-kept as the rollback record; `tools/export.sh`, RELEASE.md §C, the README, SPEC §11 and §14 rewritten; the owner's "Yes if it
-makes sense", 2026-10-29; the 100 MiB per-file limit of a push stays, public or not); then the far mountains' shadows; the trees'
-variant the owner chooses (the record's table); a clamp or label for the clock's 2020 to 2035; the move to Godot 4.8 once it is
-out of beta.
+**Next release:** the far mountains' shadows (M4-01, M4-02, M4-07 and their parts of M4-09 and M4-10; about five tier-1 batches,
+re-pinned on 0.5.0's files), then the move to Godot 4.8 once it is out of beta (beta 2 on 2026-10-29; GUT and Terrain3D must
+follow), M5 scale-up, M6 weather and walking.
 
 **The owner's first look at 0.3.1 (2026-10-26):** it starts with 4× MSAA, 60 fps and 15 paused, the GPU at
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
 river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
 
-**Waiting on the owner:** nothing for 0.5.0 until its record. A
+**Waiting on the owner:** publishing 0.5.0's draft Release (https://github.com/Treak23/mattini/releases), and the record's look list on the PC. A
 second developer may join: how a person works beside the release sessions (the process assumes only agents commit to `main`)
 and the licence of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
 the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks deletion and
@@ -34,7 +33,9 @@ non-fast-forward pushes on `main` and `dist` with no bypass actors.
 files removed. The Yale catalogue was refused (no licence; the ADC's recorded word forbids altered copies). Known limits (v0.4.0-06): positions are J1991.25, not precessed to the date (0.13 to 0.35°); no star colours. The licence's §7(b) reinstates it if a breach is cured within 30 days (the triage said otherwise).
 
 **Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session
-decides 2; all below kept by the owner's "6a yes", 2026-10-29), release 0.4.0 (the plan): SkyClock (v0.4.0-04) at tier 1 although it reads no world config; the sky rig and
+decides 2), release 0.5.0 (the plan's audit list, the record's Question 2): the clock note stays shown while outside 2020 to
+2035; the render checks at a fixed 60 fps; the flow check's 5° and 0.5 to 1 m/s; the trees drawn at 20 of 20 crowns 8.0 from bare
+ground; the classes check's gaps 100 and 10; 06's two Release-notes findings raised to P1. Kept by the owner's "6a yes", 2026-10-29, release 0.4.0 (the plan): SkyClock (v0.4.0-04) at tier 1 although it reads no world config; the sky rig and
 the stars (05, 06) at tier 2, their frame reviewed in 08 at tier 1; the river's ripples run in real time whatever the
 game clock does. Release 0.3.1, kept at 0.4.0's go (2026-10-27, shown to the owner, no objection): four water screenshots instead of M4-06's two (v0.3.1-01); the copied
 pins' comments re-pinned with the 0.3.1 brief ids (v0.3.1-02 to -05); if a render check fails under
@@ -44,10 +45,10 @@ permanent in `docs/RELEASE.md` §C. The briefs' Findings carry both options of e
 pushed without a separate "push dist" (DESIGN.md step 6 publishes; it added 21 MB, `mattini.pck`, every
 other file 0.3.0's; RULINGS 2026-10-26); `mattini-0.1.0/` left `dist`'s tree (the last three kept).
 
-**Last shipped:** 0.3.1, 2026-10-26: the 0.3.0 test's fixes (`docs/releases/v0.3.1.md`; `dist` `5b51347`,
-built from `main` `cb5946e`). Before it: 0.3.0, 2026-10-16, the village in a realistic look made from the data
-(`docs/releases/v0.3.0.md`; `dist` `5f08379`), kept on `dist` as `mattini-0.3.0/`, the rollback; 0.2.0 as
-`mattini-0.2.0/`.
+**Last shipped:** 0.5.0, 2026-10-30: the softened photo shadows, the haze, the first GitHub Release (`docs/releases/v0.5.0.md`;
+built from `main` `af3d5d2`; the draft Release waits for the owner to publish). Before it: 0.4.0, 2026-10-29, recorded but never
+delivered on its own; 0.3.1, 2026-10-26 (`dist` `5b51347`), kept as `mattini-0.3.1/`, the rollback; 0.3.0 and 0.2.0 as their
+folders on `dist`.
 
 Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in full is `docs/history/ARCS.md` §M3. Arc M2 — Buildings: closed 2026-09-26, shipped 0.2.0; the close in full is
 `docs/history/ARCS.md` §M2. Arc M1 — Terrain: closed 2026-09-25, shipped 0.1.0 (ARCS §M1).
@@ -72,8 +73,8 @@ are closed.
 The project's direction (the owner, 2026-10-27; SPEC §13 row 50): this repository is the map, as detailed and
 accurate as the data allows; each game is a branch or fork that takes what it needs.
 
-1. (0.4.0, shipped: the river's direction per stretch and the moving sun; the `dist` push waits)
-2. The softened photo shadows (FB-004 item 3) and delivery through GitHub Releases, then the far mountains' shadows (the rest of M4)
+1. (0.4.0 and 0.5.0, shipped: the river's direction, the moving sun, the softened photo shadows, the haze, GitHub Releases)
+2. The far mountains' shadows (the rest of M4)
 3. M5 Scale up
 4. M6 Weather and walking
 - When Godot 4.8 is out of beta: the move to it (the owner, 2026-10-27), a release of its own once Terrain3D and
@@ -81,10 +82,9 @@ accurate as the data allows; each game is a branch or fork that takes what it ne
 
 ## DEFERRED, said out loud
 
-0.3.1's list (shipped; its deferrals carry into 0.4.0's triage), with reasons and costs, is in `docs/briefs/v0.3.1-plan.md` §DEFERRED (M4's in
-`docs/briefs/M4-plan.md`, M3's in `docs/briefs/M3-plan.md`). Every Open inbox entry (FB-003 to
-FB-007) is in 0.3.1 or on its DEFERRED list (FB-004 items 1, 3, 5 and the look items); FB-001 is
-closed (0.3.0, ARCHIVE).
+0.5.0's list, with reasons and costs, is in `docs/briefs/v0.5.0-plan.md` §DEFERRED (0.4.0's in its plan, M4's in
+`docs/briefs/M4-plan.md`). FB-004 stays Open for its look items (the photo stretched on steep walls, bridges, detail below 30 m)
+and the Windows first start (deferred by the owner); every other inbox entry is closed.
 
 ## Residues and hazards
 
@@ -188,8 +188,10 @@ Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified,
 
 ## Shipped
 
+- **0.5.0** — 2026-10-30 — the photo's own shadows softened, the haze, the clock's note, the first GitHub Release
+  (`docs/releases/v0.5.0.md`).
 - **0.4.0** — 2026-10-29 — the river flows downstream; the sun and the moon move, a physical sky, the stars
-  (`docs/releases/v0.4.0.md`; built, recorded, the `dist` push waits for the owner).
+  (`docs/releases/v0.4.0.md`; never delivered on its own: 0.5.0 contains it).
 - **0.3.1** — 2026-10-26 — the 0.3.0 test's fixes: the river, the frame cap, the log, MSAA, a missing
   pack named (`docs/releases/v0.3.1.md`).
 - **0.3.0** — 2026-10-16 — arc M3: the village in a realistic look made from the data
