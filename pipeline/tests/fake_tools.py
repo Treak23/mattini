@@ -47,6 +47,11 @@ sky block, as `python -m mattini sky` writes it for the real village (config/sky
 values and config/world.json's SHA-256). The sky prints no startup line: the started build
 still prints the six.
 
+Since brief v0.5.0-04 (M4-06 decision 8; only RENDER_PASSING, `run_gate`'s docstring and this
+paragraph change): the gate's render step runs three scripts, so the stand-in's lift script
+prints its PASS line too, the line render_lift.gd printed in the pin author's rehearsal
+(2026-10-30).
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -173,6 +178,13 @@ RENDER_PASSING = {
             "RENDER classes: PASS agreement 83091 of 83427, mirrored 70472, water "
             '{ "both": 8678, "render_only": 333, "data_only": 3, "neither": 74413 }'
         ),
+    ],
+    "render_lift": [
+        (
+            'RENDER lift: PASS correlation 1.0000 { "north-south-mirrored": 0.1912, '
+            '"east-west-mirrored": 0.0, "transposed": 0.0, "nearest": 0.9829 }; lift 3.060 '
+            "inside the mask (6244), 1.000 outside (15717), over 29688 pixels"
+        )
     ],
     "render_trees": [
         (
@@ -404,8 +416,8 @@ def run_gate(
 ):
     """tools/gate.sh in `root`, its GUT run printing `output` (bytes as given) and exiting
     `status`. Its render scripts print their PASS lines (RENDER_PASSING) or, for a script named
-    in `render` ("render_photo", "render_trees"), the lines given, and exit `render_status`;
-    `xvfb=False` hides xvfb-run from PATH; `env` adds variables (MATTINI_SKIP_RENDER).
+    in `render` ("render_photo", "render_lift", "render_trees"), the lines given, and exit
+    `render_status`; `xvfb=False` hides xvfb-run from PATH; `env` adds variables (MATTINI_SKIP_RENDER).
     Returns the CompletedProcess (stdout and stderr together in stdout)."""
     bin_dir = _stand_ins(tmp_path, xvfb=xvfb)
     gut = tmp_path / "gut-output.txt"

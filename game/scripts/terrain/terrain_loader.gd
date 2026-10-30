@@ -17,7 +17,10 @@ extends RefCounted
 ## also draws swissTLM3D's classes on the photo (rock, water, path, road) with the CC0
 ## textures under res://textures/ and two generated water normal maps, which drift downstream
 ## along the SurfaceGrid's flow texture (brief v0.4.0-03; placed by the classes' own rectangle,
-## whose box the flow grid shares); the classes alone, without a photo, change nothing.
+## whose box the flow grid shares); the classes alone, without a photo, change nothing. Given a
+## CaptureShadowGrid as well (brief v0.5.0-04) the shader lifts the photo where it lay in shadow
+## when it was flown: the mask's own texture and rect() are handed whether or not there are
+## classes; without a mask the shader gets one texel of 0 and lifts nothing.
 
 const TERRAIN_NAME := "Terrain"
 const REGION_WIDTH_M := 1024.0
@@ -48,9 +51,15 @@ const NO_FLOW := [128, 128, 0]
 ## its viewport) and returns it with the grid's heights loaded. The parent must be in the
 ## tree: Terrain3D builds its material and data only on entering it. With [param photo] the
 ## terrain shows that photo, otherwise the clay look; with [param surfaces] too, the classes
-## are drawn on the photo.
+## are drawn on the photo. With [param shadows] (and a photo) the photo is lifted inside the
+## capture-shadow mask; without one the shader's mask is one texel of 0, no lift. Without a photo
+## the mask is not used.
 static func create(
-	grid: TerrainGrid, parent: Node, photo: PhotoGrid = null, surfaces: SurfaceGrid = null
+	grid: TerrainGrid,
+	parent: Node,
+	photo: PhotoGrid = null,
+	surfaces: SurfaceGrid = null,
+	shadows: CaptureShadowGrid = null
 ) -> Terrain3D:
 	var terrain := Terrain3D.new()
 	terrain.name = TERRAIN_NAME
@@ -74,10 +83,24 @@ static func create(
 	if photo != null:
 		material.set_shader_param("photo", photo.texture)
 		material.set_shader_param("photo_rect", photo.rect())
+		_set_capture_shadow(material, shadows)
 		if surfaces != null:
 			_set_surfaces(material, surfaces)
 	_import(terrain, grid, region_vertices)
 	return terrain
+
+
+## Hands the photo shader the capture-shadow mask and its own rectangle, or with no mask one
+## 1 × 1 L8 texel of 0 (no lift; every sampler the shader declares is set) and the rectangle
+## (0, 0, 1, 1).
+static func _set_capture_shadow(material: Terrain3DMaterial, shadows: CaptureShadowGrid) -> void:
+	if shadows != null:
+		material.set_shader_param("capture_shadow", shadows.texture)
+		material.set_shader_param("capture_shadow_rect", shadows.rect())
+		return
+	var image := Image.create_from_data(1, 1, false, Image.FORMAT_L8, PackedByteArray([0]))
+	material.set_shader_param("capture_shadow", ImageTexture.create_from_image(image))
+	material.set_shader_param("capture_shadow_rect", Vector4(0.0, 0.0, 1.0, 1.0))
 
 
 ## Hands the photo shader the classes, their own rectangle (not the photo's), the flow (placed by

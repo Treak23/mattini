@@ -6,7 +6,13 @@
 // terrain_clay.gdshader, its vertex() and the terrain normals in fragment() unchanged, without
 // the contour lines. The albedo is the aerial photo (SWISSIMAGE 2023): photo_rect holds the
 // local x and z of its north-west corner, its width and its depth in metres, and the photo is
-// sampled by world position; outside it the neutral colour of the clay look. On it the surface
+// sampled by world position; outside it the neutral colour of the clay look. Where the photo lay
+// in shadow when it was flown the photo is lifted (brief v0.5.0-04; SPEC §13 rows 41 and 47): the
+// first rule on the photo multiplies its linear colour by 1 + (shadow_lift - 1) * m, m the
+// capture-shadow mask (CaptureShadowGrid) filtered at the world point, 0 outside the mask's
+// rectangle and wherever no mask is given, clipped at 1 per channel, so the baked shadows do not
+// darken the ground a second time under the game's own sun; the neutral colour outside the photo
+// is never lifted. On it the surface
 // classes (swissTLM3D: one byte per texel, placed by surfaces_rect, read with texelFetch and
 // never filtered) add: on rock, a triplanar CC0 rock texture weighted by smoothstep(35°, 55°,
 // slope), its luminance relative to its mean tinting the photo's colour; on roads and paths,
@@ -65,6 +71,21 @@ uniform sampler2D photo : source_color, filter_linear_mipmap_anisotropic, repeat
 uniform vec4 photo_rect = vec4(0.0, 0.0, 1.0, 1.0);
 // Outside the photo: the clay's neutral colour, never an invented ground.
 uniform vec3 outside_albedo : source_color = vec3(0.52, 0.50, 0.47);
+
+group_uniforms capture_shadow;
+// The capture-shadow mask (CaptureShadowGrid): where the photo lay in shadow when it was flown,
+// one byte per texel (255 in shadow, 0 not), 0.5 m texels with a full mip chain, placed like the
+// photo: local x0, z0 (the north-west corner), width, depth (m), rows from the north. It is data,
+// not a colour: no source_color. Filtered linearly with its mipmaps, as the photo: close up that
+// is the bilinear feather between the texel centres that the mask's inset keeps inside the
+// shadow; in the distance a mip level's mean m lifts a pixel by the mean of its texels' lifts
+// (the lift is linear in m, before the clip), so the binary mask does not alias. Unset reads
+// black (hint_default_black): no lift (an unset sampler without the hint reads white). repeat_disable
+// clamps to the edge texel, hence the explicit 0 outside the rectangle in fragment().
+uniform sampler2D capture_shadow : hint_default_black, filter_linear_mipmap_anisotropic, repeat_disable;
+uniform vec4 capture_shadow_rect = vec4(0.0, 0.0, 1.0, 1.0);
+// The lift's factor in full shadow (the owner's G = 3, SPEC §13 row 47).
+uniform float shadow_lift = 3.0;
 
 group_uniforms surfaces;
 // The surface classes, one byte per texel (0 none, 1 rock, 2 water, 3 path, 4 road), placed
@@ -428,6 +449,12 @@ void fragment() {
 	// valid); outside it the neutral colour.
 	vec2 puv = (v_vertex.xz - photo_rect.xy) / photo_rect.zw;
 	vec3 albedo = texture(photo, puv).rgb;
+	vec2 muv = (v_vertex.xz - capture_shadow_rect.xy) / capture_shadow_rect.zw;
+	float m = texture(capture_shadow, muv).r;
+	if (any(lessThan(muv, vec2(0.0))) || any(greaterThan(muv, vec2(1.0)))) {
+		m = 0.0;
+	}
+	albedo = min(albedo * (1.0 + (shadow_lift - 1.0) * m), vec3(1.0));
 	if (any(lessThan(puv, vec2(0.0))) || any(greaterThan(puv, vec2(1.0)))) {
 		albedo = outside_albedo;
 	}

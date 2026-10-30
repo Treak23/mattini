@@ -24,10 +24,10 @@
 # exist). Every output is read with the ANSI codes and a CR at the end of a line removed, so
 # a CR LF run (a Windows console) reads as an LF one (V1-G-07).
 #
-# The render step runs last (SPEC §12, §13 row 38; brief M3-R1-fix-3): two SceneTree scripts
+# The render step runs last (SPEC §12, §13 row 38; brief M3-R1-fix-3): three SceneTree scripts
 # under game/tests/render/ render a synthetic world (Compatibility renderer on Mesa's llvmpipe,
-# under xvfb-run) and measure, by number, where the photo, the surface classes and the crowns'
-# colour land, so that a flipped, shifted or swapped placement in a shader or a loader fails the
+# under xvfb-run) and measure, by number, where the photo, the surface classes, the capture-shadow
+# lift and the crowns' colour land, so that a flipped, shifted or swapped placement in a shader or a loader fails the
 # gate with the check's own result line ("RENDER <check>: FAIL ..."). It proves where those land,
 # never the look, Forward+, the colour encoding or the owner's GPU. The step passes only when
 # every check prints its "RENDER <check>: PASS" line and none a FAIL line, besides the scans and
@@ -364,11 +364,11 @@ gut_run() {
 	return "$status"
 }
 
-# The render step's two scripts and the checks each prints; the timeout, in seconds, kills a
+# The render step's three scripts and the checks each prints; the timeout, in seconds, kills a
 # script that hangs (a SceneTree script that fails in _initialize can run on with no output,
 # brain.md H25), 10 s later by force.
 RENDER_TIMEOUT=180
-RENDER_SKIP_LINE="== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the classes and the crowns' colour land is not checked"
+RENDER_SKIP_LINE="== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the classes, the lift and the crowns' colour land is not checked"
 
 # One render script ($1, a res:// path) under xvfb-run, its output scanned for engine errors as
 # the other Godot steps are (the allowlist's global entries apply); then each check named in the
@@ -411,6 +411,7 @@ render_step() {
 		echo "== render: MATTINI_SKIP_RENDER=$MATTINI_SKIP_RENDER is set but xvfb-run is here, so the step runs: the variable excuses only a machine without xvfb-run"
 	fi
 	render_script res://tests/render/render_photo.gd photo classes || return 1
+	render_script res://tests/render/render_lift.gd lift || return 1
 	render_script res://tests/render/render_trees.gd trees
 }
 

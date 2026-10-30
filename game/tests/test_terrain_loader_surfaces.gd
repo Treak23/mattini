@@ -26,6 +26,11 @@ extends GutTest
 ## ImageTextures, made from the generated files the manifest names; every other texture is one of
 ## the two generated normal maps or a pinned CC0 file.
 ##
+## Since brief v0.5.0-04 (the lift; M4-06 decision 2 and its census line): the shader also declares
+## capture_shadow, the capture shadows' mask. No mask is given here, so the loader sets it to one L8
+## texel of 0 (no lift; test_m4_06_terrain_look.gd pins it and the mask given): data made in
+## memory, neither a CC0 file nor a generated normal map, so the texture census counts it apart.
+##
 ## Read back from Terrain3DMaterial's stored parameters, as in test_terrain_loader_photo.gd:
 ## headless get_shader_param() returns null, and the store keeps only the uniforms the active
 ## shader declares.
@@ -259,9 +264,16 @@ func test_the_textures_are_the_pinned_cc0_files_or_generated() -> void:
 	var used := {}
 	var generated := 0
 	var read := 0
+	var masks := 0
 	for uniform in _texture_uniforms():
 		var texture: Variant = params.get(uniform)
 		if not (texture is Texture2D):
+			continue
+		# Brief v0.5.0-04: the capture shadows' mask (none given here: one texel of 0), data, no file.
+		if uniform == "capture_shadow":
+			masks += 1
+			assert_true(texture is ImageTexture, "capture_shadow: an ImageTexture made in memory")
+			assert_eq(texture.get_size(), Vector2(1, 1), "capture_shadow: one texel, no mask given")
 			continue
 		if data.has(uniform):
 			read += 1
@@ -278,6 +290,7 @@ func test_the_textures_are_the_pinned_cc0_files_or_generated() -> void:
 		)
 		used[path.get_file()] = true
 	assert_eq(read, data.size(), "the photo, the classes and the flow are the readers' textures")
+	assert_eq(masks, 1, "the capture shadows' sampler is set, to the loader's one texel")
 	assert_eq(used.keys().size(), PINNED.size(), "every pinned texture is used, and no other")
 	assert_eq(generated, 2, "the water's two normal maps are generated (no file)")
 	var note := FileAccess.get_file_as_string(LICENCE_NOTE)

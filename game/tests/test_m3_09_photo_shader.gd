@@ -21,6 +21,13 @@ extends GutTest
 ## rectangle, surfaces_rect (the flow grid covers the same box), and is sampled at one line, which
 ## the same census pins: the flow read through the photo's rectangle, or half a cell off, fails
 ## here.
+##
+## Since brief v0.5.0-04 (the lift; M4-06 decision 3): the capture shadows' mask is placed by its
+## own rectangle, capture_shadow_rect, at the mask's uv muv, and sampled at one line; the census
+## pins its declaration, the line that assigns muv, the sampling line and the line that zeroes the
+## mask outside its rectangle (Hard Rule 4: the mask's placement on the ground). The mask read
+## through the photo's or the classes' rectangle, or half a texel off, fails here, and so does a
+## second statement that assigns muv.
 
 const CLAY := "res://shaders/terrain_clay.gdshader"
 const PHOTO := "res://shaders/terrain_photo.gdshader"
@@ -29,13 +36,17 @@ const PRIVATE_TO := "// Public Uniforms"
 const TERRAIN_FROM := "// Varyings & Types"
 const CLAY_LOOK := "\t// Apply PBR: clay with contour lines of the real height H."
 const PHOTO_LOOK := "\t// The photo look."
-## Every code line (comments cut, blanks dropped) of the photo shader that names the photo's or
-## the classes' rectangle, the photo's uv, or the world position the classes are read at, and the
-## line that samples the flow.
-const PLACEMENT_NAMES := "\\b(puv|photo_rect|surfaces_rect)\\b"
-const PLACEMENT_CALLS := "class_weights\\(|texture\\(photo|texture\\(water_flow|vec2 xz ="
+## Every code line (comments cut, blanks dropped) of the photo shader that names the photo's, the
+## classes' or the capture shadows' rectangle, the photo's or the mask's uv, or the world position
+## the classes are read at, and the lines that sample the flow and the mask.
+const PLACEMENT_NAMES := "\\b(puv|muv|photo_rect|surfaces_rect|capture_shadow_rect)\\b"
+## The calls that sample the photo, the flow and the mask.
+const PLACEMENT_SAMPLES := "texture\\(photo|texture\\(water_flow|texture\\(capture_shadow"
+const PLACEMENT_CALLS := "class_weights\\(|vec2 xz =|" + PLACEMENT_SAMPLES
 const PLACEMENT_LINES := [
 	"uniform vec4 photo_rect = vec4(0.0, 0.0, 1.0, 1.0);",
+	# Brief v0.5.0-04: the capture shadows' rectangle, declared in its group after the photo's.
+	"uniform vec4 capture_shadow_rect = vec4(0.0, 0.0, 1.0, 1.0);",
 	"uniform vec4 surfaces_rect = vec4(0.0, 0.0, 1.0, 1.0);",
 	"vec4 class_weights(vec2 xz) {",
 	"vec2 t = (xz - surfaces_rect.xy) / surfaces_rect.zw * vec2(size) - 0.5;",
@@ -44,6 +55,10 @@ const PLACEMENT_LINES := [
 	"vec2 xz = v_vertex.xz;",
 	"vec2 puv = (v_vertex.xz - photo_rect.xy) / photo_rect.zw;",
 	"vec3 albedo = texture(photo, puv).rgb;",
+	# Brief v0.5.0-04: the mask at its own uv, its texel centres the texture's, 0 outside it.
+	"vec2 muv = (v_vertex.xz - capture_shadow_rect.xy) / capture_shadow_rect.zw;",
+	"float m = texture(capture_shadow, muv).r;",
+	"if (any(lessThan(muv, vec2(0.0))) || any(greaterThan(muv, vec2(1.0)))) {",
 	"if (any(lessThan(puv, vec2(0.0))) || any(greaterThan(puv, vec2(1.0)))) {",
 	"vec4 classes = class_weights(xz);",
 	# Brief v0.4.0-03: the flow is read on the classes' rectangle, its texel centres the cells'.
@@ -72,6 +87,10 @@ const CLASS_WEIGHTS_LINES := [
 	"return w;",
 	"}",
 ]
+
+## The photo's uv and the mask's uv, each assigned once (their indices in PLACEMENT_LINES).
+const PUV_LINE := 7
+const MUV_LINE := 9
 
 
 ## The text of [param path] from [param from] up to (not including) [param to].
@@ -142,7 +161,7 @@ func test_the_photo_and_the_classes_are_placed_by_the_pinned_expressions() -> vo
 	assert_eq(
 		_code_lines_matching(PHOTO, PLACEMENT_NAMES + "|" + PLACEMENT_CALLS),
 		PackedStringArray(PLACEMENT_LINES),
-		"the lines that name puv, photo_rect, surfaces_rect or the class position are the pinned ones"
+		"the lines that place the photo, the mask, the classes and the flow are the pinned ones"
 	)
 	assert_eq(
 		_function_lines(PHOTO, "vec4 class_weights("),
@@ -156,4 +175,17 @@ func test_exactly_one_statement_assigns_the_photo_uv() -> void:
 	# puv.x -= 0.1 / photo_rect.z, puv = puv.yx) is an assignment to puv or to one of its parts.
 	var assignments := _code_lines_matching(PHOTO, "\\bpuv\\b[.a-z]*\\s*([-+*/]?=)[^=]")
 	assert_eq(assignments.size(), 1, "one assignment to puv: %s" % [assignments])
-	assert_eq(assignments, PackedStringArray([PLACEMENT_LINES[6]]), "and it is the pinned one")
+	assert_eq(
+		assignments, PackedStringArray([PLACEMENT_LINES[PUV_LINE]]), "and it is the pinned one"
+	)
+
+
+func test_exactly_one_statement_assigns_the_mask_uv() -> void:
+	# Brief v0.5.0-04: the same census for the capture shadows' mask (Hard Rule 4). A statement
+	# added after the pinned one (muv.y = 1.0 - muv.y, muv += 0.5 / vec2(textureSize(...)),
+	# muv = muv.yx) is an assignment to muv or to one of its parts.
+	var assignments := _code_lines_matching(PHOTO, "\\bmuv\\b[.a-z]*\\s*([-+*/]?=)[^=]")
+	assert_eq(assignments.size(), 1, "one assignment to muv: %s" % [assignments])
+	assert_eq(
+		assignments, PackedStringArray([PLACEMENT_LINES[MUV_LINE]]), "and it is the pinned one"
+	)
