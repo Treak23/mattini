@@ -1,0 +1,77 @@
+{
+  "buildings": null,
+  "photo": null,
+  "roofs": null,
+  "schema": 1,
+  "shadows": null,
+  "sky": null,
+  "surfaces": {
+    "area": "fixture",
+    "cell_m": 0.2,
+    "classes": {
+      "0": "none",
+      "1": "rock",
+      "2": "water",
+      "3": "path",
+      "4": "road"
+    },
+    "columns": 200,
+    "file": "surfaces/fixture.png",
+    "flow": {
+      "cell_m": 2.0,
+      "columns": 20,
+      "encoding": "downstream-bearing-1.5deg",
+      "file": "surfaces/fixture-flow.png",
+      "pixels_sha256": "39b24ba38c1f3ab1a4d8deea684a9825f9f231c142c6cb0e114117d4e6b43858",
+      "rows": 15,
+      "sha256": "65ddc2fd4ba715f068d1774047f7c1313db556d534226957f5fd3b80a23a40cb"
+    },
+    "format": "png-l8",
+    "lv95_box": {
+      "e_max": 2700052.0,
+      "e_min": 2700012.0,
+      "n_max": 1200001.0,
+      "n_min": 1199971.0
+    },
+    "pixels_sha256": "c11c39dea9d53be85a330c48a9ff3b2912929bf2b9cbc28a4b4e6617e2ccb851",
+    "rows": 150,
+    "sha256": "ef3828f91d98d0a68309981621e0fd706f0e07c1dbd3767dace243b83775e347",
+    "source": {
+      "attribution": "© swisstopo",
+      "collection": "ch.swisstopo.swisstlm3d",
+      "dataset": "swisstlm3d",
+      "edition": "2026-02",
+      "file": "source.json",
+      "sha256": "a8791c92950a0ea8bf48f5c33ba244cbbc6c37a0aca30b64c5ce2e753c09014e"
+    },
+    "world_sha256": "8c509e115b47833170401f7395fff298f769a18deddb6ad51009ba26ca70e801"
+  },
+  "terrain": null,
+  "trees": null,
+  "world": {
+    "areas": {
+      "fixture": {
+        "e_max": 2700052.0,
+        "e_min": 2700012.0,
+        "n_max": 1200001.0,
+        "n_min": 1199971.0
+      }
+    },
+    "axes": {
+      "x": "+e",
+      "y": "+h",
+      "z": "-n"
+    },
+    "crs": {
+      "horizontal": "EPSG:2056",
+      "vertical": "EPSG:5728"
+    },
+    "height_offset_m": 750.0,
+    "origin_lv95": {
+      "e": 2700000.0,
+      "n": 1200000.0
+    },
+    "schema": 1
+  },
+  "world_sha256": "8c509e115b47833170401f7395fff298f769a18deddb6ad51009ba26ca70e801"
+}

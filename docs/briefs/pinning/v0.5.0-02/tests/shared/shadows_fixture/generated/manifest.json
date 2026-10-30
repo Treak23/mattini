@@ -1,0 +1,74 @@
+{
+  "buildings": null,
+  "photo": null,
+  "roofs": null,
+  "schema": 1,
+  "shadows": {
+    "area": "fixture",
+    "cell_m": 0.5,
+    "columns": 64,
+    "file": "shadows/fixture.png",
+    "format": "png-l8",
+    "lv95_box": {
+      "e_max": 2651018.0,
+      "e_min": 2650986.0,
+      "n_max": 1150026.0,
+      "n_min": 1149978.0
+    },
+    "pixels_sha256": "b7e9e94b6e49ee95bf652d4125cd302ddc87c48d0f9a8f2094b46070fdc6f6f7",
+    "rows": 96,
+    "sha256": "4387adbe8081862bd3310351ebf97b79fa83fed4c2a009e753c61420439b5a47",
+    "source": {
+      "attribution": "© swisstopo",
+      "collection": "ch.swisstopo.swisssurface3d-raster",
+      "dataset": "swisssurface3d",
+      "editions": [
+        "2021",
+        "2022"
+      ],
+      "entry_sha256": "a1d43ed8882f20232c28529142e25b4fa32f0bf1fb5290336daf78f608bb91eb"
+    },
+    "sun": {
+      "azimuth_grid_deg": 184.67,
+      "elevation_deg": 50.1,
+      "note": "the flight's mean sun, 2023-09-06/07 11:25-11:55 UTC (m4-design §0): true azimuth 184.9 deg, minus 0.226 deg because LV95 grid north lies 0.226 deg east of true north at the village (config/sky.json true_to_grid_deg -0.2258); elevation 50.1 deg"
+    },
+    "world_sha256": "729e9f5edd9c1aee7d33ace6cddf177ad276ff43e8341ac08dc33adac116165e"
+  },
+  "sky": {
+    "area": "fixture",
+    "latitude_deg": 46.4993906,
+    "longitude_deg": 8.1030272,
+    "true_to_grid_deg": -0.4849,
+    "world_sha256": "729e9f5edd9c1aee7d33ace6cddf177ad276ff43e8341ac08dc33adac116165e"
+  },
+  "surfaces": null,
+  "terrain": null,
+  "trees": null,
+  "world": {
+    "areas": {
+      "fixture": {
+        "e_max": 2651018.0,
+        "e_min": 2650986.0,
+        "n_max": 1150026.0,
+        "n_min": 1149978.0
+      }
+    },
+    "axes": {
+      "x": "+e",
+      "y": "+h",
+      "z": "-n"
+    },
+    "crs": {
+      "horizontal": "EPSG:2056",
+      "vertical": "EPSG:5728"
+    },
+    "height_offset_m": 1250.0,
+    "origin_lv95": {
+      "e": 2650012.0,
+      "n": 1149988.0
+    },
+    "schema": 1
+  },
+  "world_sha256": "729e9f5edd9c1aee7d33ace6cddf177ad276ff43e8341ac08dc33adac116165e"
+}
