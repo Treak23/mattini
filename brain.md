@@ -35,9 +35,9 @@ copies it into the generated manifest, and the game learns the origin only from 
 ## 4. STACK
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
 4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
-from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (the
-0.4.0 release gate, 2026-10-29): pytest 2407 passed, 5 network tests deselected; GUT 64 scripts, 395 tests, 18196 asserts; the
-gate's render step passes (RENDER trees 0.8615, repeating exactly).
+from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (v0.5.0-13's
+batch gate at `e9c6f5f`, 2026-10-30): pytest 2830 passed, 5 network tests deselected; GUT 70 scripts, 463 tests, 19590
+asserts; the gate's render step passes, five RENDER lines (RENDER trees 0.8637, 20 of 20 crowns drawn, repeating exactly).
 
 ## 5. HISTORY
 Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
@@ -116,7 +116,9 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   an import has refreshed the class cache (Findings 9). gdtoolkit reads its config from the
   working directory upward, so `gdlint game` lints the vendored GUT; pass the file list
   (Findings 8). Python 3.13's urllib ends a body cut short before its `Content-Length`
-  without an error; only the checksum catches it (M0-04 Findings 6). A worktree does not
+  without an error (M0-04 Findings 6); from v0.5.0-10 `download.urllib_fetch_file` compares the bytes it wrote with
+  the answer's `Content-Length` and names a cut ("cut at N of M bytes", and after the last retry "run the command
+  again"); a body with no announced length still loads unchecked, and its SHA-256 is its only check. A worktree does not
   isolate Godot's `user://` (`~/.local/share/godot/app_userdata/mattini` for every
   checkout): two gates at once in one container collide unless `XDG_DATA_HOME` differs
   (G-10).
@@ -321,19 +323,30 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   design's data: `config/surfaces.json` holds `expected_png_sha256` per cell, and the step refuses
   another deflate before writing, naming the machine's zlib. Python 3.14's Windows builds move to
   zlib-ng; the project's `requires-python` pin is below 3.14.
-- **H28 — The gate's render step (measured at M3-R1-fix-3 and round R2, 2026-10-16).** `tools/gate.sh` ends
-  with `render`: two SceneTree scripts in `game/tests/render/` (names without `test_`, so GUT does not count
-  them) run under `xvfb-run -a` with Compatibility on Mesa llvmpipe, 12 to 19 s, and print one `RENDER <check>:
-  PASS|FAIL …` line each (photo, classes, trees). Under Xvfb a Godot run needs `--audio-driver Dummy`, or ALSA's
-  probe prints an `ERROR` line the gate's scan refuses. From 0.3.1 the classes check switches the light's highlight
-  off and every number repeats exactly between runs (15 runs at v0.3.1-01's rehearsal): a count that moves is a
-  defect to read, not drift. From v0.4.0-08 the main scene's clock runs, so the render scripts stop it
-  (`main.set_process(false)` right after `add_child`, v0.4.0-11): without that RENDER trees moved in its fourth decimal;
-  with it the number repeats exactly again (0.8615). The step cannot see the river's direction (it zeroes the ripples). Where `xvfb-run` is missing the step
-  fails unless `MATTINI_SKIP_RENDER=1`, which skips and says so on both streams and excuses nothing where `xvfb-run`
-  exists. It proves where the photo, the water class and the crowns' colour land on a flat 16 m test world with
-  positive coordinates (a shift of 0.1 m, a flip, swapped axes); it does not see an empty forest, rock, road or path,
-  distance, or the terrain's mesh (round R2 P-01 to P-04), and it is not the look.
+- **H28 — The gate's render step (measured at M3-R1-fix-3 and round R2, 2026-10-16; rewritten for 0.5.0, 2026-10-30).**
+  `tools/gate.sh` ends with `render`: four SceneTree scripts in `game/tests/render/` (names without `test_`, so GUT does not
+  count them) run under `xvfb-run -a` with Compatibility on Mesa llvmpipe, each at `--fixed-fps 60` (shader `TIME` then moves
+  exactly 1/60 s per drawn frame, H29), and print five `RENDER <check>: PASS|FAIL …` lines: **photo** and **classes**
+  (`render_photo.gd`), **lift** (`render_lift.gd`, v0.5.0-04), **flow** (`render_flow.gd`, v0.5.0-09), **trees**
+  (`render_trees.gd`). The classes check reads the water class only, never rock, road or path, and prints its gaps: the
+  agreement at no shift may lie at most 100 samples in x and 10 in z below its scan's best (clean: 0 and 5); z resolves the
+  water's placement to about 0.2 m only (v0.5.0-12). The lift: where the capture-shadow lift lands and its strength (3 in the
+  full mask, 1 outside; RENDER lift 1.0000); its east-west and transposed comparators read 0.0 and never decide. The flow:
+  three bands (east, north, south-west), each within 5° at 0.50 to 1.00 m/s (east +0.2° at 0.71 m/s, north +0.2° at 0.77,
+  south-west +0.4° at 0.72); it does not see where the flow is read (a north-south shift that keeps the windows on band rows
+  passes, and so does an east-west shift within the bands), nor ripple map b reversed alone (only the 0.60 correlation floor),
+  nor a dropped validity factor. The trees: the crowns' colour where the shader reads it (correlation 0.8637 since v0.5.0-05's
+  lifted ground) and, from v0.5.0-12, a second render with the Trees node hidden: `20 of 20 crowns drawn`, each disc at least
+  8.0 from the bare ground's (the least 23.8); an empty forest now fails (it passed at 0.7513). Under Xvfb a Godot run needs
+  `--audio-driver Dummy`, or ALSA's probe prints an `ERROR` line the gate's scan refuses. The main scene's clock is stopped in
+  the render scripts (`main.set_process(false)` right after `add_child`, v0.4.0-11), and the two that draw the main scene
+  switch off ambient light and, from v0.5.0-07, the haze (`fog_enabled = false`); the classes check also the light's
+  highlight. Every number repeats exactly between runs: a count that moves is a defect to read, not drift. Timings: the four
+  scripts in a row about 50 s (49.3 s at v0.5.0-09's rehearsal: the flow script 14.8 s alone, up to 24 s beside two other
+  gates; the trees' two renders 9 s), inside the 180 s timeout per script; the whole gate 380 to 424 s. Where `xvfb-run` is
+  missing the step fails unless `MATTINI_SKIP_RENDER=1`, which skips and says so on both streams and excuses nothing where
+  `xvfb-run` exists. It proves placement and the drift on a flat 16 m test world with positive coordinates; it does not see
+  distance, the terrain's mesh or relief, the real village's grids, Forward+, the colour encoding, or the look (SPEC §12).
 - **H29 — The river's shader and the sky (measured in 0.4.0, 2026-10-27 to 29).** Shader `TIME` advances by
   `process_step * Engine.time_scale` per drawn frame (with `--fixed-fps 60` each step is exactly 1/60 s and two software renders
   are byte-identical), so a use of `Engine.time_scale` would speed the river: M4-10 forbids it for the game clock, which moves the
@@ -349,6 +362,15 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   (docs/history/blocked/2026-10-29-1.md). The auto-mode classifier refused `git push origin dist-publish:dist` once, without a
   reason: a 21 MB binary into a public branch needs the owner's word, as at 0.3.0. GitHub refuses a file over 100 MiB on a push, public
   repository or not; 2 GB is the limit for Release assets and Git LFS.
+- **H31 — Two builders in one container (measured 2026-10-30, 0.5.0's two lanes).** Builders of two lanes rebase over
+  each other's commits; three batches recorded commit-gate counts of the tree before the rebase (BUILD.md card 6: gate again
+  after a rebase that brings commits in; the batch gate at the pushed head covers the combined tree). Two builders at once
+  shared one commit-message file under `/tmp` and v0.5.0-05's subject landed on v0.5.0-11's commit `1634a0b` (all of 11's code
+  and pins; a pushed commit is never amended): builders write their message files inside their own worktree. The GitHub
+  runner reproduces design's bytes: the session's dry run of `release.yml` (run 41013012718, 0.4.0's tree, 7 min 35 s on
+  `ubuntu-24.04`, the pipeline 2 min 34 s with shadows 60 s) wrote the manifest `f68275a1…`, design's pair, the surfaces PNG's
+  zlib included, although its uv-managed CPython 3.13.14 is not this container's system 3.13.17 (the workflow does not pin
+  the interpreter: residue, R1-CD-04).
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 
@@ -380,5 +402,6 @@ holds builds). State lives in the repo, never in chat. Pinning tests travel with
    `RELEASE-WORKFLOW.js` (the per-batch helper-agent script).
 9. `docs/LESSONS.md` — lessons by role tag.
 10. `tools/gate.sh` — the standard gate (from M0-01 on).
-11. `docs/releases/` — one record per version; the builds are on the `dist` branch
-    (`README.md` there says how to start and roll back).
+11. `docs/releases/` — one record per version; from 0.5.0 the builds are GitHub Releases made by
+    `.github/workflows/release.yml` (`docs/RELEASE.md` §C), 0.1.0 to 0.3.1 on the `dist` branch
+    (`README.md` there says how to start them).
