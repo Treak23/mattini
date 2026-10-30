@@ -13,6 +13,10 @@ extends GutTest
 ## Brief v0.4.0-08 (M4-10 decision 10, cut to the sky): a refused manifest names seven, the
 ## sun's and the moon's course after the roof colours.
 ##
+## Brief v0.5.0-05 (M4-10 decision 10, cut to the capture mask; only the not-JSON case's first
+## line, its message and this paragraph change): a refused manifest names eight, the photo's
+## softened shadows after the roof colours and before the sun's and the moon's course.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); how the controls feel.
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
@@ -197,11 +201,11 @@ func test_a_manifest_that_is_not_json_shows_its_refusal_and_the_manifest_command
 		message.begins_with(
 			(
 				"mattini cannot show the terrain, the buildings, the aerial photo, the surfaces"
-				+ " (roads, paths, water and rock), the trees, the roof colours and the sun's and"
-				+ " the moon's course.\n"
+				+ " (roads, paths, water and rock), the trees, the roof colours, the photo's"
+				+ " softened shadows and the sun's and the moon's course.\n"
 			)
 		),
-		"a refused manifest shows nothing: all seven are named (M2-05, M3-14, v0.4.0-08)"
+		"a refused manifest shows nothing: all eight are named (M2-05, M3-14, v0.4.0-08, v0.5.0-05)"
 	)
 	assert_null(main.get_node_or_null("Terrain"))
 	assert_null(main.get_node_or_null("Buildings"))

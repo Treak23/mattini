@@ -28,8 +28,21 @@ extends GutTest
 ## manifest's test and this paragraph change): a refused manifest names all seven, M3's six and
 ## then "the sun's and the moon's course".
 ##
+## Since brief v0.5.0-05 (M4-10 decisions 4 and 10, cut to the capture mask; the refused
+## manifest's test, three new tests, two constants and this paragraph change): after the roof
+## colours the main scene reads CaptureShadowGrid through the same catcher as the others, whether
+## or not the terrain or the photo was read (one cause, one entry), and hands it to
+## TerrainLoader.create as its fifth argument. Its name on the panel's first line, after the roof
+## colours and before the sun's and the moon's course (its entry before the sky's when both are
+## refused): "the photo's softened shadows"; its commands: download surface, shadows.
+## With the mask, the terrain's photo shader holds CaptureShadowGrid's texture (64 x 96 cells in
+## the complete world) and its rectangle, SHADOWS_RECT, computed by hand from complete_world.gd's
+## SHADOWS_BOX, not the photo's. Without it the photo stays, unlifted (TerrainLoader's one texel
+## of 0), and so does everything else. A refused manifest names all eight.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); that an exported build
-## reaches the panel (tools/export.sh step 6 starts one with its packs, not without them).
+## reaches the panel (tools/export.sh step 6 starts one with its packs, not without them); the
+## lift's look (render_lift.gd checks where it lands, under Compatibility).
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
 const MAIN_SCRIPT := "res://scripts/main.gd"
@@ -37,6 +50,11 @@ const SCRATCH_DIR := "user://test_main_scene_refusals"
 const DEPRECATION := "instance_reset_physics_interpolation() is deprecated"
 const CLAY_SHADER := "res://shaders/terrain_clay.gdshader"
 const PHOTO_SHADER := "res://shaders/terrain_photo.gdshader"
+## The complete world's capture mask, local x0, z0, width, depth: SHADOWS_BOX's north-west corner
+## (E 2'601'019, N 1'200'004.5) through its world config (x = E - 2'600'000, z = 1'200'000 - N),
+## 32 m by 48 m; and the photo's (PHOTO_BOX), which it must not be.
+const SHADOWS_RECT := Vector4(1019.0, -4.5, 32.0, 48.0)
+const PHOTO_RECT := Vector4(1017.0, 11.5, 16.0, 8.0)
 const RUN := "uv run --project pipeline python -m mattini "
 const IN_ORDER := "To fix it, run these in the mattini folder, in this order:"
 const EXPORTED := (
@@ -206,7 +224,137 @@ func test_without_the_buildings_their_roofs_are_not_read() -> void:
 	assert_not_null(main.get_node_or_null("Trees"), "the trees stay")
 
 
-func test_a_refused_manifest_names_all_seven() -> void:
+func test_the_mask_reaches_the_terrain() -> void:
+	var path := _write(Callable())
+	var main := _main_with(path)
+	assert_false(main.get_node("UI/ErrorPanel").visible, "the complete world opens no panel")
+	var terrain: Terrain3D = main.get_node_or_null("Terrain")
+	assert_not_null(terrain, "the terrain")
+	if terrain == null:
+		return
+	assert_eq(_shader_path(terrain), PHOTO_SHADER, "in the photo look")
+	var params := _params(terrain)
+	var mask: Variant = params.get("capture_shadow")
+	assert_true(mask is Texture2D, "the terrain holds the capture mask")
+	var world := WorldConfig.from_manifest(path)
+	var grid := CaptureShadowGrid.from_manifest(path, world)
+	assert_not_null(grid, "the complete world's mask is read")
+	if mask is Texture2D and grid != null:
+		assert_eq(mask.get_size(), Vector2(64, 96), "the mask's 64 x 96 cells")
+		var image: Image = mask.get_image()
+		image.clear_mipmaps()
+		assert_eq(
+			image.get_data(), grid.texture.get_image().get_data().slice(0, 64 * 96), "its texels"
+		)
+	assert_eq(params.get("capture_shadow_rect"), SHADOWS_RECT, "its own rectangle")
+	assert_ne(params.get("capture_shadow_rect"), PHOTO_RECT, "not the photo's")
+	assert_eq(params.get("photo_rect"), PHOTO_RECT, "and the photo's stays the photo's")
+
+
+func test_without_the_mask_the_photo_stays_unlifted() -> void:
+	var path := _write(func(m: Dictionary) -> void: m["shadows"]["sha256"] = "0".repeat(64))
+	var main := _main_with(path)
+	var message := _message(main)
+	var what := "the photo's softened shadows"
+	_assert_one_refusal(message, what, ["download surface", "shadows"])
+	assert_string_contains(message, "\nCaptureShadowGrid: " + path, "the refusal itself")
+	assert_push_error("CaptureShadowGrid: " + path, "CaptureShadowGrid logs its refusal")
+	assert_push_error_count(1, "once, and nothing else is refused")
+	var terrain: Terrain3D = main.get_node_or_null("Terrain")
+	assert_not_null(terrain, "the terrain stays")
+	if terrain != null:
+		assert_eq(_shader_path(terrain), PHOTO_SHADER, "in the photo look")
+		var params := _params(terrain)
+		assert_true(params.get("photo") is Texture2D, "with the photo")
+		var mask: Variant = params.get("capture_shadow")
+		assert_true(mask is Texture2D, "a mask is still set (every sampler is)")
+		if mask is Texture2D:
+			assert_eq(mask.get_size(), Vector2(1, 1), "one texel of 0: nothing lifted")
+	assert_not_null(main.get_node_or_null("Trees"), "the trees stay")
+	assert_not_null(main.get_node_or_null("Buildings"), "the buildings stay")
+
+
+func test_without_the_photo_the_mask_is_still_read_after_the_roof_colours() -> void:
+	var path := _write(
+		func(m: Dictionary) -> void:
+			m["photo"] = null
+			m["roofs"] = null
+			m["shadows"]["sha256"] = "0".repeat(64)
+	)
+	var main := _main_with(path)
+	var first := (
+		"mattini cannot show the aerial photo, the roof colours and the photo's softened"
+		+ " shadows.\n"
+	)
+	var message := _message(main)
+	assert_true(message.begins_with(first), "one entry each, the mask's after the roofs'")
+	var mask_fix := IN_ORDER.replace("fix it,", "fix the photo's softened shadows,")
+	assert_true(
+		message.ends_with("\n%s\n    %sdownload surface\n    %sshadows" % [mask_fix, RUN, RUN]),
+		"the mask's commands, last"
+	)
+	assert_push_error("PhotoGrid: " + path, "PhotoGrid logs its refusal")
+	assert_push_error("BuildingRoofs: " + path, "BuildingRoofs logs its refusal")
+	assert_push_error("CaptureShadowGrid: " + path, "the mask is read without the photo")
+	assert_push_error_count(3, "each once")
+	var terrain: Terrain3D = main.get_node_or_null("Terrain")
+	assert_not_null(terrain, "the terrain stays")
+	if terrain != null:
+		assert_eq(_shader_path(terrain), CLAY_SHADER, "in M2's clay look, which reads no mask")
+
+
+func test_without_the_terrain_the_mask_is_still_read() -> void:
+	# The mask is read whatever else was refused: a refused terrain hides no broken mask.
+	var path := _write(
+		func(m: Dictionary) -> void:
+			m["terrain"] = null
+			m["photo"] = null
+			m["roofs"] = null
+			m["shadows"]["sha256"] = "0".repeat(64)
+	)
+	var main := _main_with(path)
+	var first := (
+		"mattini cannot show the terrain, the aerial photo, the roof colours and the photo's"
+		+ " softened shadows.\n"
+	)
+	var message := _message(main)
+	assert_true(message.begins_with(first), "one entry each, the mask's last")
+	var mask_fix := IN_ORDER.replace("fix it,", "fix the photo's softened shadows,")
+	assert_true(
+		message.ends_with("\n%s\n    %sdownload surface\n    %sshadows" % [mask_fix, RUN, RUN]),
+		"the mask's commands, last"
+	)
+	assert_push_error("TerrainGrid: " + path, "TerrainGrid logs its refusal")
+	assert_push_error("PhotoGrid: " + path, "PhotoGrid logs its refusal")
+	assert_push_error("BuildingRoofs: " + path, "BuildingRoofs logs its refusal")
+	assert_push_error("CaptureShadowGrid: " + path, "the mask is read without the terrain")
+	assert_push_error_count(4, "each once")
+	assert_null(main.get_node_or_null("Terrain"), "no terrain")
+	assert_not_null(main.get_node_or_null("Buildings"), "the buildings stay")
+
+
+func test_the_mask_s_entry_comes_before_the_sky_s() -> void:
+	var path := _write(
+		func(m: Dictionary) -> void:
+			m["shadows"]["sha256"] = "0".repeat(64)
+			m["sky"]["world_sha256"] = "0".repeat(64)
+	)
+	var main := _main_with(path)
+	var message := _message(main)
+	var first := (
+		"mattini cannot show the photo's softened shadows and the sun's and the moon's"
+		+ " course.\n"
+	)
+	assert_true(message.begins_with(first), "the mask named before the sky")
+	var mask_fix := message.find("To fix the photo's softened shadows,")
+	var sky_fix := message.find("To fix the sun's and the moon's course,")
+	assert_true(mask_fix >= 0 and sky_fix > mask_fix, "the mask's entry, then the sky's")
+	assert_push_error("CaptureShadowGrid: " + path, "CaptureShadowGrid logs its refusal")
+	assert_push_error("SkySite: " + path, "SkySite logs its refusal")
+	assert_push_error_count(2, "each once")
+
+
+func test_a_refused_manifest_names_all_eight() -> void:
 	DirAccess.make_dir_recursive_absolute(SCRATCH_DIR)
 	var path := SCRATCH_DIR.path_join("not_json.json")
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -215,10 +363,10 @@ func test_a_refused_manifest_names_all_seven() -> void:
 	var main := _main_with(path)
 	var first := (
 		"mattini cannot show the terrain, the buildings, the aerial photo, the surfaces (roads,"
-		+ " paths, water and rock), the trees, the roof colours and the sun's and the moon's"
-		+ " course.\n"
+		+ " paths, water and rock), the trees, the roof colours, the photo's softened shadows and"
+		+ " the sun's and the moon's course.\n"
 	)
-	assert_true(_message(main).begins_with(first), "nothing is shown: all seven are named")
+	assert_true(_message(main).begins_with(first), "nothing is shown: all eight are named")
 	assert_push_error("not valid JSON", "WorldConfig logs its refusal")
 	assert_push_error_count(1, "once")
 

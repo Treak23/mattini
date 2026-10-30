@@ -10,7 +10,8 @@ extends Node3D
 ## the version (shown nowhere else, owner 2026-09-25), the controls, the credits, Resume and
 ## Quit. While it is open the frame rate is capped at PAUSED_MAX_FPS (15); closing it, or the
 ## scene leaving the tree, gives back the project's cap (application/run/max_fps). A missing,
-## refused or stale manifest or block (the terrain, buildings, photo, surfaces, trees, roofs or sky)
+## refused or stale manifest or block (the terrain, buildings, photo, surfaces, trees, roofs, the
+## capture mask or the sky)
 ## opens UI/ErrorPanel: its first line names what cannot be shown, then each refusal with the
 ## commands that fix it, or in an exported build the release folder (Hard Rule 2). In an
 ## exported build (ReleaseBuild.is_exported()) the data packs missing beside the executable
@@ -19,21 +20,24 @@ extends Node3D
 ## "mattini cannot find every data pack."; main logs nothing more about them (DataPacks logged
 ## them at start). What can be shown still is: without the photo the terrain in M2's clay look
 ## and the trees in their placeholder green, without the surfaces the photo without their
-## classes, without the trees no "Trees", without the roof colours M2's roofs; the terrain
+## classes, without the trees no "Trees", without the roof colours M2's roofs, without the capture
+## mask the photo unlifted (the mask is read after the roof colours and handed to the terrain as
+## TerrainLoader.create's fifth argument, brief v0.5.0-05; without a photo or a terrain it is
+## still read, so its refusal is its own entry); the terrain
 ## without its buildings, and the buildings without their terrain, the camera then starting
 ## START_ABOVE_M above the highest of their vertices, over the centre of their bounds, with
 ## the same bearing and pitch (brief M2-08, M2 R1 G-02). Without the buildings the roof
 ## colours are not read: one cause, one entry. With nothing, the camera starts at the scene's
 ## origin. It flies either way. Each refusal is logged once, by the reader that refuses it
 ## (WorldConfig, TerrainGrid, BuildingChunks, PhotoGrid, SurfaceGrid, TreeChunks,
-## BuildingRoofs, SkySite); the panel shows what they logged. Every direction (the start view,
-## the sun and the moon) is measured through WorldConfig, never assumed, and the buildings and
-## the trees stand
+## BuildingRoofs, CaptureShadowGrid, SkySite); the panel shows what they logged. Every direction
+## (the start view, the sun and the moon) is measured through WorldConfig, never assumed, and the
+## buildings and the trees stand
 ## where the pipeline placed them for the world config the manifest pins (Hard Rule 4): the
 ## Buildings and Trees nodes and their meshes sit at the scene's origin, unturned and
 ## unscaled (test_scene_placement.gd). Once everything is built, one startup line per block
 ## its reader accepted is printed, in the order terrain, buildings, photo, surfaces, trees,
-## roofs (tools/export.sh checks them in an exported build).
+## roofs, shadows (tools/export.sh checks them in an exported build).
 ##
 ## The sky (brief v0.4.0-08, from M4-10): the clock, time_unix, starts at SkyClock.START_UNIX (the
 ## photo's moment) and runs at 1x (SPEEDS), standing still while the pause screen is
@@ -93,6 +97,7 @@ const PHOTO_FIX := [RUN + "download photo", RUN + "photo"]
 const SURFACES_FIX := [RUN + "download tlm", RUN + "surfaces"]
 const TREES_FIX := [RUN + "download surface", RUN + "download tlm", RUN + "trees"]
 const ROOFS_FIX := [RUN + "download photo", RUN + "roofs"]
+const SHADOWS_FIX := [RUN + "download surface", RUN + "shadows"]
 const SKY_FIX := [RUN + "sky"]
 ## What the error panel's first line names when it cannot be shown.
 const TERRAIN_WHAT := "the terrain"
@@ -101,6 +106,7 @@ const PHOTO_WHAT := "the aerial photo"
 const SURFACES_WHAT := "the surfaces (roads, paths, water and rock)"
 const TREES_WHAT := "the trees"
 const ROOFS_WHAT := "the roof colours"
+const SHADOWS_WHAT := "the photo's softened shadows"
 const SKY_WHAT := "the sun's and the moon's course"
 ## In an exported build a player has no pipeline: every fix is the release folder.
 const EXPORTED_FIX := (
@@ -336,6 +342,7 @@ func _load_world() -> PackedStringArray:
 			SURFACES_WHAT,
 			TREES_WHAT,
 			ROOFS_WHAT,
+			SHADOWS_WHAT,
 			SKY_WHAT
 		]
 		_show_error([[_names(every), read_world[1], MANIFEST_FIX]])
@@ -369,6 +376,12 @@ func _load_world() -> PackedStringArray:
 		roofs = read_roofs[0]
 		if roofs == null:
 			refusals.append([ROOFS_WHAT, read_roofs[1], ROOFS_FIX])
+	# The capture mask is read whether or not the terrain or the photo was: its refusal is its own
+	# entry (without a photo the loader ignores it, without a terrain nothing takes it).
+	var read_shadows := _caught(CaptureShadowGrid.from_manifest.bind(manifest_path, world))
+	var shadows: CaptureShadowGrid = read_shadows[0]
+	if shadows == null:
+		refusals.append([SHADOWS_WHAT, read_shadows[1], SHADOWS_FIX])
 	var read_sky := _caught(SkySite.from_manifest.bind(manifest_path, world))
 	_site = read_sky[0]
 	if _site == null:
@@ -377,17 +390,17 @@ func _load_world() -> PackedStringArray:
 	# One texture object for the photo, shared by the terrain and the trees: it is decoded
 	# once (the village's is about 600 MiB of texture).
 	if grid != null:
-		_show_terrain(grid, photo, surfaces)
+		_show_terrain(grid, photo, surfaces, shadows)
 	if trees != null:
 		_show_trees(trees, photo)
 	if buildings != null:
 		var node := _show_buildings(buildings, roofs)
 		if grid == null:
 			_start_view_over(node)
-	_print_startup_lines(grid, buildings, photo, surfaces, trees, roofs)
+	_print_startup_lines(grid, buildings, photo, surfaces, trees, roofs, shadows)
 	if not refusals.is_empty() or not _missing_packs.is_empty():
 		_show_error(refusals)
-	return _credited(grid, buildings, photo, surfaces, trees, roofs)
+	return _credited(grid, buildings, photo, surfaces, trees, roofs, shadows)
 
 
 ## Calls [param read] while an ErrorCatcher listens; returns [its result, the errors logged
@@ -401,9 +414,12 @@ static func _caught(read: Callable) -> Array:
 
 
 ## Builds the terrain (in the photo look when there is a photo, with the surfaces drawn on it
-## when there are surfaces) and starts the view over it.
-func _show_terrain(grid: TerrainGrid, photo: PhotoGrid, surfaces: SurfaceGrid) -> void:
-	_terrain = TerrainLoader.create(grid, self, photo, surfaces)
+## when there are surfaces and the photo's baked shadows lifted when there is a capture mask) and
+## starts the view over it.
+func _show_terrain(
+	grid: TerrainGrid, photo: PhotoGrid, surfaces: SurfaceGrid, shadows: CaptureShadowGrid
+) -> void:
+	_terrain = TerrainLoader.create(grid, self, photo, surfaces, shadows)
 	move_child(_terrain, _ui.get_index())
 	_camera.height_at = _ground_height
 	_start_view(grid)
@@ -426,7 +442,7 @@ func _show_buildings(chunks: BuildingChunks, roofs: BuildingRoofs) -> Node3D:
 
 
 ## Prints one startup line per block that was read, together, in the order terrain,
-## buildings, photo, surfaces, trees, roofs: an exported build is checked by them, headless
+## buildings, photo, surfaces, trees, roofs, shadows: an exported build is checked by them, headless
 ## (tools/export.sh step 6; briefs M1-06, M2-05, M3-14). The numbers are written as _number
 ## writes them.
 func _print_startup_lines(
@@ -435,7 +451,8 @@ func _print_startup_lines(
 	photo: PhotoGrid,
 	surfaces: SurfaceGrid,
 	trees: TreeChunks,
-	roofs: BuildingRoofs
+	roofs: BuildingRoofs,
+	shadows: CaptureShadowGrid
 ) -> void:
 	var v := _version()
 	if grid != null:
@@ -471,17 +488,22 @@ func _print_startup_lines(
 					coloured += 1
 		var text := "mattini %s: roofs %s loaded, %d of %d buildings coloured"
 		print(text % [v, roofs.area, coloured, count])
+	if shadows != null:
+		var text := "mattini %s: shadows %s loaded, %d x %d cells at %s m"
+		print(text % [v, shadows.area, shadows.columns, shadows.rows, _number(shadows.cell_m)])
 
 
 ## The credits' line of each dataset a block that was read comes from, once each, sorted:
-## the photo and the roof colours share one.
+## the photo and the roof colours share one, and the capture mask's is the trees' when their
+## attribution agrees.
 func _credited(
 	grid: TerrainGrid,
 	buildings: BuildingChunks,
 	photo: PhotoGrid,
 	surfaces: SurfaceGrid,
 	trees: TreeChunks,
-	roofs: BuildingRoofs
+	roofs: BuildingRoofs,
+	shadows: CaptureShadowGrid
 ) -> PackedStringArray:
 	var lines := {}
 	if grid != null:
@@ -490,6 +512,13 @@ func _credited(
 	for block: Variant in [buildings, photo, surfaces, trees, roofs]:
 		if block != null:
 			lines[_dataset_line(block.dataset, block.edition, block.attribution)] = true
+	if shadows != null:
+		# The editions as the trees' line writes them: the first and the last, or the one alone.
+		var editions := shadows.editions
+		var edition := editions[0]
+		if editions.size() > 1 and editions[editions.size() - 1] != edition:
+			edition += "-" + editions[editions.size() - 1]
+		lines[_dataset_line(shadows.dataset, edition, shadows.attribution)] = true
 	var sorted := PackedStringArray(lines.keys())
 	sorted.sort()
 	return sorted

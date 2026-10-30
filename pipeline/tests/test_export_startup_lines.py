@@ -34,6 +34,20 @@ startup line, so step 6 still requires exactly the packs' lines and the six (M4-
 of the far mountains and the capture mask belong to a later release): the first test passes on
 a manifest with all seven blocks, and fails if step 6 expects another count.
 
+Since brief v0.5.0-05 (M4-10 decision 10, cut to the capture mask; only MANIFEST, LINES, the
+cases and this paragraph change): the build ships eight blocks, so step 2 also refuses a
+manifest without the shadows block, naming `python -m mattini download surface`, then
+`python -m mattini shadows`, before anything is exported, and step 6 requires one more line
+after the roofs':
+    mattini <v>: shadows <area> loaded, <columns> x <rows> cells at <cell> m
+The test manifest's shadows hold 2000 x 3000 cells at 1 m, numbers no other block holds (the
+real village's 4000 x 6000 at 0.5 m are the surfaces' too, so a line computed from the surfaces'
+block would pass there; fake_tools.MANIFEST keeps the real numbers); the twins are a line with
+the columns and rows swapped, the surfaces' cell, the line missing, and the line before the
+roofs'. The far
+mountains' line (M4-10) belongs to a later release: step 6 requires exactly the packs' lines
+and the seven.
+
 Does NOT prove: that the real build prints these lines (the release gate's export run does,
 docs/RELEASE.md §C); the Windows build (the owner's PC).
 """
@@ -72,6 +86,7 @@ MANIFEST = {
         ],
     },
     "schema": 1,
+    "shadows": {"area": "village", "cell_m": 1.0, "columns": 2000, "rows": 3000},
     "sky": {
         "area": "village",
         "latitude_deg": 46.0196233,
@@ -97,6 +112,7 @@ LINES = (
     f"mattini {V}: surfaces village loaded, 4000 x 6000 cells at 0.5 m",
     f"mattini {V}: trees village loaded, 34423 trees in 3 chunks",
     f"mattini {V}: roofs village loaded, 3 of 4 buildings coloured",
+    f"mattini {V}: shadows village loaded, 2000 x 3000 cells at 1 m",
 )
 # Godot's pack tool, as the stand-in Godot runs it: `-s res://tools/pack.gd -- <pack>
 # res://assets/generated/<folder>` writes every file of the folder, in name order, at its
@@ -176,8 +192,20 @@ def test_every_startup_line_in_order_after_the_pack_lines_passes(tmp_path):
         (LINES[4], f"mattini {V}: trees village loaded, 3 trees in 3 chunks"),
         (LINES[5], f"mattini {V}: roofs village loaded, 4 of 4 buildings coloured"),
         (LINES[5], None),
+        (LINES[6], f"mattini {V}: shadows village loaded, 3000 x 2000 cells at 1 m"),
+        (LINES[6], f"mattini {V}: shadows village loaded, 2000 x 3000 cells at 0.5 m"),
+        (LINES[6], None),
     ],
-    ids=["photo-swapped", "surfaces-photo-cell", "trees-chunks", "roofs-total", "roofs-missing"],
+    ids=[
+        "photo-swapped",
+        "surfaces-photo-cell",
+        "trees-chunks",
+        "roofs-total",
+        "roofs-missing",
+        "shadows-swapped",
+        "shadows-cell",
+        "shadows-missing",
+    ],
 )
 def test_a_missing_or_wrong_line_fails(tmp_path, line, twin):
     root = _tree(tmp_path, MANIFEST)
@@ -190,11 +218,12 @@ def test_a_missing_or_wrong_line_fails(tmp_path, line, twin):
 @pytest.mark.parametrize(
     "order",
     [
-        (*PACK_LINES, *LINES[:3], LINES[4], LINES[3], LINES[5]),
+        (*PACK_LINES, *LINES[:3], LINES[4], LINES[3], *LINES[5:]),
         (*LINES[:2], *PACK_LINES, *LINES[2:]),
         (*PACK_LINES, *LINES[2:], *LINES[:2]),
+        (*PACK_LINES, *LINES[:5], LINES[6], LINES[5]),
     ],
-    ids=["trees-before-surfaces", "packs-after-m2", "m3-before-m2"],
+    ids=["trees-before-surfaces", "packs-after-m2", "m3-before-m2", "shadows-before-roofs"],
 )
 def test_a_line_out_of_order_fails(tmp_path, order):
     root = _tree(tmp_path, MANIFEST)
@@ -210,6 +239,7 @@ def test_a_line_out_of_order_fails(tmp_path, order):
         ("surfaces", ["download tlm", "surfaces"]),
         ("trees", ["download surface", "download tlm", "trees"]),
         ("roofs", ["download photo", "roofs"]),
+        ("shadows", ["download surface", "shadows"]),
         ("sky", ["sky"]),
     ],
 )

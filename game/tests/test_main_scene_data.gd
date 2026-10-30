@@ -41,6 +41,18 @@ extends GutTest
 ## an argument, _credits_text(datasets, stars), read here both ways whichever the tree holds. The
 ## sky prints no startup line.
 ##
+## Since brief v0.5.0-05 (M4-10 decisions 7 and 8, cut to the capture mask; the startup lines'
+## test, one new test and this paragraph change): the terrain is built with the mask as the fifth
+## argument, TerrainLoader.create(grid, self, photo, surfaces, shadows) (null when CaptureShadowGrid
+## refused it; test_main_scene_refusals.gd reads what the terrain holds); one more startup line
+## follows the roofs' line when CaptureShadowGrid accepted the mask,
+##   mattini <version>: shadows <area> loaded, <columns> x <rows> cells at <cell> m
+## (the complete world's: 64 x 96 cells at 0.5 m; the real village's: 4000 x 6000 cells at 0.5 m),
+## and the credits' "Data" carries the mask's dataset line, "swisssurface3d <edition>,
+## <attribution>", its edition the first and last of the block's source.editions joined by "-"
+## ("2021-2022"; of three, "2019-2022"), or the one edition alone, as the trees' line writes the
+## editions of their tiles: with the same attribution it is the trees' line, listed once.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); what the shaders do with
 ## the textures; the real village's numbers (tools/export.sh step 6 does, on the exported
 ## build); that the catalogue's licence allows a sale (SPEC §13 row 51: it does not without ESA's
@@ -230,6 +242,7 @@ func test_the_startup_lines_name_every_block_in_order() -> void:
 		"mattini %s: surfaces fixture loaded, 200 x 150 cells at 0.2 m" % version,
 		"mattini %s: trees fixture loaded, %d trees in %d chunks" % [version, count, trees.size()],
 		"mattini %s: roofs fixture loaded, 1 of 1 buildings coloured" % version,
+		"mattini %s: shadows fixture loaded, 64 x 96 cells at 0.5 m" % version,
 	]
 	assert_gt(count, trees.size(), "the fixture's tree count differs from its chunk count")
 	# The same world with the box's roof uncoloured: "0 of 1".
@@ -252,7 +265,7 @@ func test_the_startup_lines_name_every_block_in_order() -> void:
 	for line in complete_lines:
 		if line.begins_with("mattini %s: " % version):
 			startup.append(line)
-	assert_eq(startup, PackedStringArray(expected), "the six lines, exactly, in this order")
+	assert_eq(startup, PackedStringArray(expected), "the seven lines, exactly, in this order")
 	var roofs_line := "mattini %s: roofs fixture loaded, 0 of 1 buildings coloured" % version
 	assert_has(plain_lines, roofs_line, "a building without a colour is not counted")
 
@@ -315,3 +328,38 @@ func test_the_credits_name_the_sky_s_sources_and_the_stars_only_with_their_table
 	assert_string_contains(none, sky + "\n\n", "and the sky's two sources still")
 	var some: String = main._credits_text(PackedStringArray(), true)
 	assert_string_contains(some, sky + "\n" + STARS_NOTE + "\n", "with them, the credit")
+
+
+func test_the_mask_is_credited_with_its_editions_and_listed_once() -> void:
+	# The complete world: the mask's line is the trees' (both "swisssurface3d 2021-2022, ©
+	# swisstopo"), so it is there once (the datasets test above reads the whole list).
+	var credits: String = _main_with(_complete).get_node("UI/PauseMenu/Credits").text
+	var line := "\nswisssurface3d 2021-2022, © swisstopo\n"
+	assert_eq(credits.count(line), 1, "the trees' and the mask's line, once")
+	# The mask's own attribution (test data): its own line, beside the trees'.
+	var own := func(m: Dictionary) -> void:
+		m["shadows"]["source"]["attribution"] = "© swisstopo (the mask's test attribution)"
+	_cases += 1
+	var path := CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), own)
+	credits = _main_with(path).get_node("UI/PauseMenu/Credits").text
+	var mask_line := "swisssurface3d 2021-2022, © swisstopo (the mask's test attribution)"
+	assert_string_contains(credits, "\n" + mask_line + "\n", "the mask, credited on its own")
+	assert_eq(credits.count(line), 1, "and the trees' line")
+	# One edition: written alone.
+	var one := func(m: Dictionary) -> void:
+		m["shadows"]["source"]["attribution"] = "© swisstopo (the mask's test attribution)"
+		m["shadows"]["source"]["editions"] = ["2022"]
+	_cases += 1
+	path = CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), one)
+	credits = _main_with(path).get_node("UI/PauseMenu/Credits").text
+	mask_line = "swisssurface3d 2022, © swisstopo (the mask's test attribution)"
+	assert_string_contains(credits, "\n" + mask_line + "\n", "one edition, alone")
+	# Three editions: the first and the last, not the first two.
+	var three := func(m: Dictionary) -> void:
+		m["shadows"]["source"]["attribution"] = "© swisstopo (the mask's test attribution)"
+		m["shadows"]["source"]["editions"] = ["2019", "2021", "2022"]
+	_cases += 1
+	path = CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), three)
+	credits = _main_with(path).get_node("UI/PauseMenu/Credits").text
+	mask_line = "swisssurface3d 2019-2022, © swisstopo (the mask's test attribution)"
+	assert_string_contains(credits, "\n" + mask_line + "\n", "three editions, first to last")

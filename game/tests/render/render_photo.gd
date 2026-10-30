@@ -31,6 +31,12 @@ extends SceneTree
 ## The numbers on each line are what a failure points at: the scans tell a flip from a shift
 ## and a shift's size.
 ##
+## Since brief v0.5.0-05 (M4-10 decision 9, re-cut on v0.4.0-11's file; one override and this
+## paragraph change): the main scene hands the terrain the complete world's capture mask, so both
+## views set shadow_lift to 1 (no lift: the photo is read as the data; render_lift.gd checks the
+## lift). Measured in the pin author's rehearsal: with the mask handed and no override, the photo's
+## correlation fell to 0.6584 (FAIL); with it, the base's 0.9752.
+##
 ## Proves where, not how it looks: not Forward+, not the colour encoding (brain.md H21), not
 ## the owner's GPU, not any shader on the real village, not the water's roughness, ripples or
 ## drift (switched off or cancelled here). The flat terrain means the photo is seen from above at
@@ -117,6 +123,10 @@ func _check() -> bool:
 	# The water's ripples off in both views (brief M4-06): they drift with TIME and shade the water
 	# unevenly; the check is about where the water lies and how it eases, not its ripples.
 	terrain.material.set_shader_param("water_normal_strength", 0.0)
+	# And no lift (brief v0.5.0-05, M4-10 decision 9): the main scene hands the terrain the complete
+	# world's capture mask, which would lift the photo threefold over the mask's block, so the
+	# photo would no longer be the data; render_lift.gd checks the lift.
+	terrain.material.set_shader_param("shadow_lift", 1.0)
 	# And no highlight from the sun or the sky, no ambient light and a linear tone map: the
 	# water's roughness (0.3, the ground's 0.95) changes the highlights unevenly over the view and
 	# a filmic curve bends a ratio, so the ratio below would not be the albedo's alone. The photo

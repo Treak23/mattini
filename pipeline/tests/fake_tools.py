@@ -52,6 +52,12 @@ paragraph change): the gate's render step runs three scripts, so the stand-in's 
 prints its PASS line too, the line render_lift.gd printed in the pin author's rehearsal
 (2026-10-30).
 
+Since brief v0.5.0-05 (M4-10 decision 10's capture mask; only MANIFEST, STARTUP_LINES,
+`export_tree`'s docstring and this paragraph change): the export ships eight blocks, so the
+stand-in manifest also holds the shadows block (the four keys tools/export.sh reads: area,
+cell_m, columns and rows, at the real village's 4000 x 6000 cells of 0.5 m), and the started
+build prints its startup line after the roofs'.
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -473,6 +479,7 @@ MANIFEST = {
         ],
     },
     "schema": 1,
+    "shadows": {"area": "village", "cell_m": 0.5, "columns": 4000, "rows": 6000},
     "sky": {
         "area": "village",
         "latitude_deg": 46.0196233,
@@ -499,12 +506,13 @@ STARTUP_LINES = (
     f"mattini {VERSION}: surfaces village loaded, 4000 x 6000 cells at 0.5 m",
     f"mattini {VERSION}: trees village loaded, 34423 trees in 3 chunks",
     f"mattini {VERSION}: roofs village loaded, 1485 of 1486 buildings coloured",
+    f"mattini {VERSION}: shadows village loaded, 4000 x 6000 cells at 0.5 m",
 )
 
 
 def export_tree(tmp_path: Path, templates_dir: Path | None) -> Path:
     """A scratch repository for tools/export.sh: the script, game/project.godot,
-    game/scripts/data_packs.gd (its EXPECTED_PACKS), a manifest with the seven blocks (step
+    game/scripts/data_packs.gd (its EXPECTED_PACKS), a manifest with the eight blocks (step
     1's rewrite is the stand-in uv's no-op), a small stand-in file in each packed folder
     (PACKED_FOLDERS), and, unless None, Godot's export templates installed in
     `templates_dir`."""
