@@ -1,0 +1,464 @@
+extends GutTest
+## Pinning tests for brief v0.4.0-05 (M4-05 without its stars section, and the sky's ground of
+## SPEC §13 row 52): the sky rig turns the sun's and the moon's directions into the scene's
+## lights, exposure and sky.
+## Re-pinned whole by brief v0.5.0-11: one line of GODOT_LINES, the night sky's repeat_enable.
+##
+## Pinned decisions (m4-design §6, as decided on 2026-10-17): SkyRig
+## (game/scripts/sky/sky_rig.gd) is made by SkyRig.create(sun, moon, environment, frame,
+## latitude_deg, stars: Image = null), frame a Basis whose columns are the scene's local east,
+## north and up (main measures them through WorldConfig, as M3's sun). rig.apply(to_sun,
+## to_moon, moon_fraction, sidereal_deg) takes unit vectors towards the sun and the moon and
+## measures each elevation against the frame's up, never the scene's y.
+## - Sun: energy smoothstep(-1, 10, elevation): 1.0 at 10 degrees and above, 0 at -1; hidden
+##   below -1; colour white at 10 and above, mixed linearly to (1.0, 0.72, 0.50) at 0 and kept
+##   below; shadows on, max distance 3000 m. The light shines along its -z, from the sun.
+## - Moon (a second DirectionalLight3D, sky mode light only, shadows on): energy 0.03 times the
+##   illuminated fraction times smoothstep(0, 5, elevation); colour (0.80, 0.85, 1.0); hidden
+##   below 0.
+## - Exposure 0.70 at a sun elevation of 10 degrees and above, 4.0 at -12 and below,
+##   interpolated in log space against the elevation (at -1 degrees: sqrt(0.70 * 4.0) = 1.6733;
+##   linear would be 2.35). 0.70, not m4-design §6's 0.54: design's rehearsal measured flat
+##   sunlit ground at the photo's sun at 0.766 of the photo's brightness with 0.54 and 1.001
+##   with 0.70 (software Forward+, lavapipe; Compatibility 0.736 and 0.967), and §6 asks for
+##   1.0 +- 10 % in Forward+. Ambient light from the sky, contribution 0.25; Filmic, as M3 was
+##   calibrated; the sky is the background.
+## - The sky: a ShaderMaterial of res://shaders/sky_physical.gdshader, Godot 4.6.3's
+##   PhysicalSkyMaterial converted (debanding and the night sky on) with its code kept, plus
+##   `uniform float stars_strength`: 0 at a sun elevation of -6 degrees and above, 1 at -12 and
+##   below, smoothstep between (0.5 at -9), multiplying both lines that add the night sky.
+## - Twilight and the night sky's glow (design's rulings of 2026-10-17): the shader adds
+##   twilight_and_glow(EYEDIR) to COLOR just before each `COLOR *= exposure;`:
+##   twilight_colour * twilight_energy * (0.3 + 0.7 * max(0, dot of the horizontal eye and sun
+##   directions)^3) * exp(-max(0, eye elevation in degrees) / 12) + skyglow. The rig sets
+##   `sun_direction` (the unit vector towards the sun) every frame, also while the sun light is
+##   hidden: measured in Forward+ and Compatibility, a hidden DirectionalLight3D is not the sky's
+##   LIGHT0 (LIGHT0_ENABLED false), a visible one below the horizon is. The rig computes
+##   `twilight_colour` = t(e) * colour(e) in GDScript (so it is tested here, not a mirror of
+##   shader code): t = smoothstep(-12, -4, e) * (1 - smoothstep(0, 6, e)); colour (1.00, 0.55,
+##   0.30) at 0 and above, linear to (0.35, 0.30, 0.55) at -6, linear to (0.05, 0.06, 0.12) at
+##   -12. Defaults in the shader: twilight_energy 0.3 (measured in Forward+ at a sun of -3
+##   degrees and the rig's exposure 1.96: 5 degrees above the horizon towards the sun sRGB
+##   (184, 150, 158), away from it (114, 84, 100)), skyglow (0.004, 0.005, 0.009). Godot's
+##   dummy renderer returns no uniform defaults headless (measured: null for every one), so the
+##   declarations' text is the census of the defaults.
+## - The sun's disk (design's ruling of 2026-10-17, reversing an angular distance of 0.5): the
+##   sun light keeps light_angular_distance 0, so its shadows stay sharp (measured in Forward+:
+##   0.5 degrees lifted a 20 m wide box's shadow from 0.054 to 0.306 near the camera and
+##   widened its edge from 0.68 m to 11.6 m at 2 km). The shader draws the disk from its own
+##   `uniform float sun_disk_deg : hint_range(0, 5) = 0.53;` in place of Godot's LIGHT0_SIZE,
+##   at sun_direction in place of cos_theta: Godot's three disk lines are replaced by
+##   DISK_LINES, and LIGHT0_SIZE appears nowhere.
+## - The sky's ground (SPEC §13 row 52, the owner's "3a" of 2026-10-27): the rig sets the shader's
+##   ground_color, whose declaration keeps Godot's default (0.1, 0.07, 0.034) (GODOT_LINES), to
+##   the valley's own colour, SkyRig.GROUND_COLOUR = GROUND below: the village photo's mean linear
+##   colour (0.148308, 0.166591, 0.119924) times K, the radiance of flat white ground over the
+##   horizon's radiance at the start's sun per channel (7.6400, 6.9994, 6.4102, software Forward+),
+##   raised 2.6 times, the smallest step of 0.1 at which a shaded vertical face keeps 0.3.1's
+##   ratio to lit flat ground (both at the start's sun, the moon light off: 0.0400 against
+##   0.0391; at K itself 0.0195; Godot's default 0.0094). create sets it; apply leaves it.
+## The frame here is turned off every axis (no vector of it lies on x, y or z), so a rig that
+## reads the scene's y as up or builds the light from fixed axes fails.
+##
+## Does NOT prove: that the sky or the lights render or look right (no GPU), that the shader
+## draws what its text says (the census reads the text), the calibration, or that the ground's
+## value keeps a shaded face's light (the brief's Forward+ measurements).
+
+const SHADER_PATH := "res://shaders/sky_physical.gdshader"
+const EPS := 0.0001
+## Godot 4.6.3's PhysicalSkyMaterial shader (scene/resources/3d/sky_material.cpp:735-819),
+## every line but the comment naming the version, the three lines its code fills in
+## (render_mode, the two night sky lines) and its three lines of the sun's disk (replaced: see
+## DISK_LINES), stripped: each must appear in this order. One is Godot's with a hint added: the
+## night sky's declaration carries repeat_enable after Godot's three hints (brief v0.5.0-11, the
+## 0.4.0 review's CD-3; test_v050_11_sky_guards.gd holds its comment).
+const GODOT_LINES: Array[String] = [
+	"shader_type sky;",
+	"uniform float rayleigh : hint_range(0, 64) = 2.0;",
+	"uniform vec4 rayleigh_color : source_color = vec4(0.3, 0.405, 0.6, 1.0);",
+	"uniform float mie : hint_range(0, 1) = 0.005;",
+	"uniform float mie_eccentricity : hint_range(-1, 1) = 0.8;",
+	"uniform vec4 mie_color : source_color = vec4(0.69, 0.729, 0.812, 1.0);",
+	"uniform float turbidity : hint_range(0, 1000) = 10.0;",
+	"uniform float sun_disk_scale : hint_range(0, 360) = 1.0;",
+	"uniform vec4 ground_color : source_color = vec4(0.1, 0.07, 0.034, 1.0);",
+	"uniform float exposure : hint_range(0, 128) = 1.0;",
+	"uniform sampler2D night_sky : filter_linear, source_color, hint_default_black, repeat_enable;",
+	"const vec3 UP = vec3( 0.0, 1.0, 0.0 );",
+	"const float rayleigh_zenith_size = 8.4e3;",
+	"const float mie_zenith_size = 1.25e3;",
+	"float henyey_greenstein(float cos_theta, float g) {",
+	"const float k = 0.0795774715459;",
+	"return k * (1.0 - g * g) / (pow(1.0 + g * g - 2.0 * g * cos_theta, 1.5));",
+	"void sky() {",
+	"if (LIGHT0_ENABLED) {",
+	"float zenith_angle = clamp( dot(UP, normalize(LIGHT0_DIRECTION)), -1.0, 1.0 );",
+	"float sun_energy = max(0.0, 0.757 * zenith_angle) * LIGHT0_ENERGY;",
+	"float sun_fade = 1.0 - clamp(1.0 - exp(LIGHT0_DIRECTION.y), 0.0, 1.0);",
+	"float rayleigh_coefficient = rayleigh - ( 1.0 * ( 1.0 - sun_fade ) );",
+	"vec3 rayleigh_beta = rayleigh_coefficient * rayleigh_color.rgb * 0.0001;",
+	"vec3 mie_beta = turbidity * mie * mie_color.rgb * 0.000434;",
+	"float zenith = max(0.0, dot(UP, EYEDIR));",
+	"float optical_mass = 1.0 / (zenith + 0.15 * pow(3.885 + 54.5 * zenith, -1.253));",
+	"float rayleigh_scatter = rayleigh_zenith_size * optical_mass;",
+	"float mie_scatter = mie_zenith_size * optical_mass;",
+	"vec3 extinction = exp(-(rayleigh_beta * rayleigh_scatter + mie_beta * mie_scatter));",
+	"float cos_theta = dot(EYEDIR, normalize(LIGHT0_DIRECTION));",
+	"float rayleigh_phase = (3.0 / (16.0 * PI)) * (1.0 + pow(cos_theta * 0.5 + 0.5, 2.0));",
+	"vec3 betaRTheta = rayleigh_beta * rayleigh_phase;",
+	"float mie_phase = henyey_greenstein(cos_theta, mie_eccentricity);",
+	"vec3 betaMTheta = mie_beta * mie_phase;",
+	(
+		"vec3 Lin = pow(sun_energy * ((betaRTheta + betaMTheta) / (rayleigh_beta + mie_beta))"
+		+ " * (1.0 - extinction), vec3(1.5));"
+	),
+	(
+		"Lin *= mix(vec3(1.0), pow(sun_energy * ((betaRTheta + betaMTheta) / (rayleigh_beta"
+		+ " + mie_beta)) * extinction, vec3(0.5)), clamp(pow(1.0 - zenith_angle, 5.0), 0.0,"
+		+ " 1.0));"
+	),
+	"Lin  *= mix(ground_color.rgb, vec3(1.0), smoothstep(-0.1, 0.1, dot(UP, EYEDIR)));",
+	"vec3 L0 = (sun_energy * extinction) * sundisk * LIGHT0_COLOR;",
+	"vec3 color = Lin + L0;",
+	"COLOR = pow(color, vec3(1.0 / (1.2 + (1.2 * sun_fade))));",
+	"COLOR *= exposure;",
+	"} else {",
+	"COLOR *= exposure;",
+]
+## Godot's uniforms and the one this brief adds, with their types (Variant.Type).
+const UNIFORMS := {
+	"rayleigh": TYPE_FLOAT,
+	"rayleigh_color": TYPE_COLOR,
+	"mie": TYPE_FLOAT,
+	"mie_eccentricity": TYPE_FLOAT,
+	"mie_color": TYPE_COLOR,
+	"turbidity": TYPE_FLOAT,
+	"sun_disk_scale": TYPE_FLOAT,
+	"ground_color": TYPE_COLOR,
+	"exposure": TYPE_FLOAT,
+	"night_sky": TYPE_OBJECT,
+	"stars_strength": TYPE_FLOAT,
+	"sun_direction": TYPE_VECTOR3,
+	"twilight_colour": TYPE_VECTOR3,
+	"twilight_energy": TYPE_FLOAT,
+	"skyglow": TYPE_VECTOR3,
+	"sun_disk_deg": TYPE_FLOAT,
+}
+## The sun's disk, in place of Godot's three lines (which read LIGHT0_SIZE and cos_theta).
+const DISK_LINES: Array[String] = [
+	"float sunAngularDiameterCos = cos(radians(sun_disk_deg) * sun_disk_scale);",
+	"float sunAngularDiameterCos2 = cos(radians(sun_disk_deg) * sun_disk_scale * 0.5);",
+	(
+		"float sundisk = smoothstep(sunAngularDiameterCos, sunAngularDiameterCos2,"
+		+ " dot(EYEDIR, normalize(sun_direction)));"
+	),
+	"vec3 L0 = (sun_energy * extinction) * sundisk * LIGHT0_COLOR;",
+]
+## The declarations of the twilight, the glow and the disk, with their defaults, exactly.
+const TWILIGHT_DECLARATIONS: Array[String] = [
+	"uniform float sun_disk_deg : hint_range(0, 5) = 0.53;",
+	"uniform vec3 sun_direction = vec3(0.0, 1.0, 0.0);",
+	"uniform vec3 twilight_colour = vec3(0.0);",
+	"uniform float twilight_energy : hint_range(0, 16) = 0.3;",
+	"uniform vec3 skyglow = vec3(0.004, 0.005, 0.009);",
+]
+## The function's lines, exactly (the brief's decision 4).
+const TWILIGHT_LINES: Array[String] = [
+	"vec3 twilight_and_glow(vec3 dir) {",
+	"vec2 eye_h = dir.xz;",
+	"vec2 sun_h = sun_direction.xz;",
+	"float facing = 0.0;",
+	"if (length(eye_h) > 1e-5 && length(sun_h) > 1e-5) {",
+	"facing = max(0.0, dot(normalize(eye_h), normalize(sun_h)));",
+	"float eye_elevation = degrees(asin(clamp(dir.y, -1.0, 1.0)));",
+	"float shape = (0.3 + 0.7 * pow(facing, 3.0)) * exp(-max(0.0, eye_elevation) / 12.0);",
+	"return twilight_colour * twilight_energy * shape + skyglow;",
+]
+## The sky's ground below the horizon, a source_color value as the uniform takes it (brief
+## v0.4.0-05; the header's sky's ground).
+const GROUND := Color(2.946, 3.032, 1.999)
+## t(e) * colour(e) of the twilight at a sun elevation (design's values).
+const TWILIGHT := {
+	10.0: Vector3(0.0, 0.0, 0.0),
+	6.0: Vector3(0.0, 0.0, 0.0),
+	3.0: Vector3(0.5, 0.275, 0.15),
+	0.0: Vector3(1.0, 0.55, 0.3),
+	-3.0: Vector3(0.675, 0.425, 0.425),
+	-4.0: Vector3(0.56667, 0.38333, 0.46667),
+	-6.0: Vector3(0.29531, 0.25312, 0.46406),
+	-9.0: Vector3(0.06328, 0.05695, 0.106),
+	-12.0: Vector3(0.0, 0.0, 0.0),
+	-20.0: Vector3(0.0, 0.0, 0.0),
+}
+
+var _root: Node3D
+var _sun: DirectionalLight3D
+var _moon: DirectionalLight3D
+var _environment: Environment
+var _frame: Basis
+var _rig: SkyRig
+
+
+## The owner's axes (east +x, north -z, up +y) turned about (1, 2, 3) by 0.7 rad: no axis of
+## the frame lies on x, y or z.
+func _turned_frame() -> Basis:
+	var turn := Basis(Vector3(1.0, 2.0, 3.0).normalized(), 0.7)
+	return Basis(turn * Vector3(1, 0, 0), turn * Vector3(0, 0, -1), turn * Vector3(0, 1, 0))
+
+
+## The unit vector towards azimuth [param az] (clockwise from north) and elevation [param el].
+func _towards(az: float, el: float) -> Vector3:
+	var a := deg_to_rad(az)
+	var e := deg_to_rad(el)
+	return (_frame.x * sin(a) + _frame.y * cos(a)) * cos(e) + _frame.z * sin(e)
+
+
+func before_each() -> void:
+	_root = Node3D.new()
+	_sun = DirectionalLight3D.new()
+	_moon = DirectionalLight3D.new()
+	_root.add_child(_sun)
+	_root.add_child(_moon)
+	add_child_autofree(_root)
+	_environment = Environment.new()
+	_frame = _turned_frame()
+	_rig = SkyRig.create(_sun, _moon, _environment, _frame, 46.02)
+
+
+## Applies the sun at elevation [param sun_el] (azimuth 140) and the moon at [param moon_el]
+## (azimuth 250) with fraction [param fraction].
+func _apply(sun_el: float, moon_el := 30.0, fraction := 1.0) -> void:
+	_rig.apply(_towards(140.0, sun_el), _towards(250.0, moon_el), fraction, 77.0)
+
+
+func _stars_strength() -> float:
+	return float(_rig.sky_material.get_shader_parameter("stars_strength"))
+
+
+func test_the_lights_point_from_the_sun_and_the_moon() -> void:
+	var to_sun := _towards(184.9, 50.3)
+	var to_moon := _towards(296.0, 9.2)
+	_rig.apply(to_sun, to_moon, 0.55, 168.06)
+	var sun_z := _sun.global_transform.basis.z.normalized()
+	var moon_z := _moon.global_transform.basis.z.normalized()
+	assert_almost_eq(sun_z.distance_to(to_sun), 0.0, EPS, "the sun shines from the sun (+z)")
+	assert_almost_eq(moon_z.distance_to(to_moon), 0.0, EPS, "the moon shines from the moon")
+	assert_true(_sun.shadow_enabled, "the sun casts shadows")
+	assert_almost_eq(_sun.directional_shadow_max_distance, 3000.0, EPS, "3000 m, as M3")
+	assert_true(_moon.shadow_enabled, "the moon casts shadows")
+	assert_eq(_moon.sky_mode, DirectionalLight3D.SKY_MODE_LIGHT_ONLY, "the moon lights only")
+	assert_eq(_moon.light_color, Color(0.80, 0.85, 1.0), "the moon's colour")
+
+
+func test_the_sun_light_at_its_pinned_points() -> void:
+	var energies := {20.0: 1.0, 10.0: 1.0, 4.5: 0.5, 0.0: 0.0233, -0.5: 0.0060, -1.0: 0.0}
+	for el in energies:
+		_apply(el)
+		assert_almost_eq(_sun.light_energy, energies[el], 0.0001, "sun energy at %.1f" % el)
+	var warm := Color(1.0, 0.72, 0.50)
+	var colours := {
+		30.0: Color.WHITE,
+		10.0: Color.WHITE,
+		5.0: Color(1.0, 0.86, 0.75),
+		0.0: warm,
+		-0.5: warm,
+	}
+	for el in colours:
+		_apply(el)
+		var got := _sun.light_color
+		var want: Color = colours[el]
+		for c in 3:
+			assert_almost_eq(got[c], want[c], 0.0001, "sun colour at %.1f, channel %d" % [el, c])
+
+
+func test_the_sky_draws_the_disk_and_the_shadows_stay_sharp() -> void:
+	assert_eq(_sun.light_angular_distance, 0.0, "the sun light's angular distance 0: sharp")
+	var shader: Shader = load(SHADER_PATH)
+	var lines: Array[String] = []
+	for line in shader.code.split("\n"):
+		lines.append(line.get_slice("//", 0).strip_edges())
+	var at := 0
+	for want in DISK_LINES:
+		var found := lines.find(want, at)
+		assert_true(found >= 0, "the disk's line, in order: %s" % want)
+		if found >= 0:
+			at = found + 1
+	for line in lines:
+		assert_false(line.contains("LIGHT0_SIZE"), "no LIGHT0_SIZE: %s" % line)
+
+
+func test_the_twilight_follows_the_sun() -> void:
+	for el in TWILIGHT:
+		_apply(el)
+		var got: Vector3 = _rig.sky_material.get_shader_parameter("twilight_colour")
+		var want: Vector3 = TWILIGHT[el]
+		for c in 3:
+			assert_almost_eq(got[c], want[c], 0.0001, "twilight at %.1f, channel %d" % [el, c])
+		var direction: Vector3 = _rig.sky_material.get_shader_parameter("sun_direction")
+		assert_almost_eq(
+			direction.distance_to(_towards(140.0, el)), 0.0, 0.00001, "sun_direction at %.1f" % el
+		)
+
+
+func test_the_lights_hide_below_their_horizons() -> void:
+	_apply(-0.9)
+	assert_true(_sun.visible, "the sun at -0.9 degrees is shown")
+	_apply(-1.1)
+	assert_false(_sun.visible, "the sun below -1 degree is hidden")
+	_apply(-30.0, 0.1)
+	assert_true(_moon.visible, "the moon at 0.1 degrees is shown")
+	_apply(-30.0, -0.1)
+	assert_false(_moon.visible, "the moon below 0 is hidden")
+
+
+func test_the_moon_light_follows_its_phase_and_height() -> void:
+	var cases := [
+		[30.0, 1.0, 0.03],
+		[30.0, 0.5, 0.015],
+		[5.0, 1.0, 0.03],
+		[2.5, 1.0, 0.015],
+		[2.5, 0.2, 0.003],
+		[0.0, 1.0, 0.0]
+	]
+	for c in cases:
+		_apply(-30.0, c[0], c[1])
+		assert_almost_eq(
+			_moon.light_energy, c[2], 0.00001, "moon at %.1f, fraction %.1f" % [c[0], c[1]]
+		)
+
+
+func test_the_exposure_is_interpolated_in_log_space() -> void:
+	var exposures := {30.0: 0.70, 10.0: 0.70, -1.0: 1.6733, 4.5: 1.0823, -12.0: 4.0, -40.0: 4.0}
+	for el in exposures:
+		_apply(el)
+		assert_almost_eq(
+			_environment.tonemap_exposure, exposures[el], 0.0001, "exposure at %.1f" % el
+		)
+
+
+func test_the_stars_fade_in_with_the_sun_below_minus_6() -> void:
+	var strengths := {
+		10.0: 0.0, -6.0: 0.0, -7.0: 0.0741, -9.0: 0.5, -11.0: 0.9259, -12.0: 1.0, -40.0: 1.0
+	}
+	for el in strengths:
+		_apply(el)
+		assert_almost_eq(_stars_strength(), strengths[el], 0.0001, "stars at %.1f" % el)
+
+
+func test_the_curves_are_monotonic() -> void:
+	var last := {}
+	for step in range(-160, 161):
+		var el := step * 0.25
+		_apply(el, el, 0.7)
+		var now := {
+			"sun energy": _sun.light_energy,
+			"sun green": _sun.light_color.g,
+			"sun blue": _sun.light_color.b,
+			"moon energy": _moon.light_energy,
+			"minus exposure": -_environment.tonemap_exposure,
+			"minus stars": -_stars_strength(),
+		}
+		for key in now:
+			if last.has(key):
+				assert_true(now[key] >= last[key] - 1e-6, "%s does not fall at %.2f" % [key, el])
+		last = now
+
+
+func test_the_environment_is_lit_by_the_physical_sky() -> void:
+	_apply(50.0)
+	assert_eq(_environment.background_mode, Environment.BG_SKY, "the sky is the background")
+	assert_eq(_environment.ambient_light_source, Environment.AMBIENT_SOURCE_SKY, "lit by the sky")
+	assert_almost_eq(_environment.ambient_light_sky_contribution, 0.25, EPS, "the sky's share")
+	assert_eq(_environment.tonemap_mode, Environment.TONE_MAPPER_FILMIC, "Filmic, as calibrated")
+	assert_not_null(_environment.sky, "a sky")
+	if _environment.sky == null:
+		return
+	var material := _environment.sky.sky_material as ShaderMaterial
+	assert_not_null(material, "a ShaderMaterial draws the sky")
+	if material == null:
+		return
+	assert_eq(material, _rig.sky_material, "the rig's sky material")
+	assert_eq(material.shader.resource_path, SHADER_PATH, "the converted physical sky")
+
+
+func test_the_ground_below_the_horizon_is_the_valleys_colour() -> void:
+	var constant: Color = SkyRig.GROUND_COLOUR
+	for c in 3:
+		assert_almost_eq(constant[c], GROUND[c], 0.0005, "SkyRig.GROUND_COLOUR, channel %d" % c)
+	var stages := ["created", "sun at 50", "sun at -3", "sun at -30"]
+	var elevations := [null, 50.0, -3.0, -30.0]
+	for i in stages.size():
+		if elevations[i] != null:
+			_apply(elevations[i])
+		var got: Variant = _rig.sky_material.get_shader_parameter("ground_color")
+		assert_true(got is Color, "the rig sets ground_color (%s)" % stages[i])
+		if not got is Color:
+			continue
+		var colour: Color = got
+		for c in 3:
+			assert_almost_eq(
+				colour[c],
+				GROUND[c],
+				0.0005,
+				"the valley's colour (%s), channel %d" % [stages[i], c]
+			)
+
+
+func test_the_sky_shader_declares_the_physical_skys_uniforms() -> void:
+	var shader: Shader = load(SHADER_PATH)
+	var declared := {}
+	for uniform in shader.get_shader_uniform_list():
+		declared[uniform["name"]] = uniform["type"]
+	for name in UNIFORMS:
+		assert_true(declared.has(name), "declares %s" % name)
+		assert_eq(declared.get(name), UNIFORMS[name], "%s's type" % name)
+
+
+func test_the_sky_shader_keeps_godots_code() -> void:
+	var shader: Shader = load(SHADER_PATH)
+	var lines: Array[String] = []
+	for line in shader.code.split("\n"):
+		lines.append(line.strip_edges())
+	assert_true(lines.has("render_mode use_debanding;"), "debanding on, as Godot's default")
+	var at := 0
+	for want in GODOT_LINES:
+		var found := lines.find(want, at)
+		assert_true(found >= 0, "Godot's line, in order: %s" % want)
+		if found >= 0:
+			at = found + 1
+	var night: Array[String] = []
+	for line in lines:
+		if line.contains("texture(night_sky"):
+			night.append(line)
+	assert_eq(night.size(), 2, "the night sky is added in two places, as Godot's")
+	for line in night:
+		assert_true(line.contains("* stars_strength"), "times stars_strength: %s" % line)
+	assert_true(
+		night[0].begins_with("L0 += texture(night_sky,") if night.size() == 2 else false,
+		"the sun's branch adds it to L0"
+	)
+	assert_true(
+		night[1].begins_with("COLOR = texture(night_sky,") if night.size() == 2 else false,
+		"the night's branch"
+	)
+
+
+func test_the_sky_shader_adds_twilight_and_glow_before_each_exposure() -> void:
+	var shader: Shader = load(SHADER_PATH)
+	var lines: Array[String] = []
+	for line in shader.code.split("\n"):
+		lines.append(line.get_slice("//", 0).strip_edges())
+	for want in TWILIGHT_DECLARATIONS:
+		assert_true(lines.has(want), "declared with its default: %s" % want)
+	var at := 0
+	for want in TWILIGHT_LINES:
+		var found := lines.find(want, at)
+		assert_true(found >= 0, "the twilight's line, in order: %s" % want)
+		if found >= 0:
+			at = found + 1
+	var exposures := 0
+	for i in lines.size():
+		if lines[i] == "COLOR *= exposure;":
+			exposures += 1
+			assert_eq(lines[i - 1], "COLOR += twilight_and_glow(EYEDIR);", "added before exposure")
+	assert_eq(exposures, 2, "both branches: the sun's and the night's")
