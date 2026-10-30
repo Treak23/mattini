@@ -52,8 +52,9 @@ polled.
 **What the gate cannot see:** containers have no GPU. Nothing here proves that anything
 looks right or renders on a GPU; the owner's PC is the visual test (brain.md §Hazards). From
 brief M3-R1-fix-3 on, the gate's render step (Compatibility renderer, Mesa llvmpipe under
-Xvfb) proves one thing a render can: where the photo, the water class and the crowns'
-colour land, a number, not a look (SPEC §12, §13 row 38). It refuses where `xvfb-run` is
+Xvfb) proves by number, never by look, five checks (SPEC §12, §13 row 38): where the photo, the
+water class and the capture-shadow lift land, which way and how fast the ripples drift, and
+where the crowns' colour lands with the crowns drawn. It refuses where `xvfb-run` is
 missing unless `MATTINI_SKIP_RENDER=1`, which it prints.
 
 ## Stack
@@ -77,6 +78,7 @@ config/datasets.lock.json  the pinned tile checksums, written by `mattini lock` 
 config/terrain.json  the in-game terrain spacing per area, its expected heights (from M2-01)
 config/buildings.json the expected building chunks per area (from M2-04)
 config/sky.json     the sun's site (latitude, longitude, grid convergence), design's data (from 0.4.0)
+config/shadows.json  the flight's sun and the capture-shadow mask's expected values, design's data (its step from 0.5.0)
 config/photo.json, roofs.json, surfaces.json, trees.json  the M3 steps' expected values,
                      design's data (the steps from M3-04 to M3-07)
 pipeline/            Python data pipeline (offline, re-runnable); package `mattini`
@@ -89,6 +91,11 @@ game/assets/generated/  pipeline output: terrain, buildings + manifest (photo, r
 build/               exports made by tools/export.sh — git-ignored (from M1-06)
 tests/shared/        fixtures read by both pipeline and game tests (the seam)
 tools/gate.sh        the standard gate
+tools/pins.sh        the Godot and uv pins' one home, sourced by the session-start hook and the workflow (from 0.5.0)
+tools/release_checks.sh, release_pack.sh, release_notes.md  a release build's runtime checks, its
+                     archives and SHA256SUMS, the Release notes' template (from 0.5.0)
+.github/workflows/release.yml  builds a release on a GitHub runner into a draft Release the
+                     owner publishes (from 0.5.0; docs/RELEASE.md §C); `dist` holds 0.1.0 to 0.3.1
 docs/SPEC.md         design of record
 docs/WORKFLOW.md     the process skeleton; docs/roles/ the role docs
 docs/briefs/RELEASE-WORKFLOW.js  the per-batch helper-agent script the release session runs
