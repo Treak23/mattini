@@ -109,7 +109,9 @@ container colliding on Godot's `user://` (brain.md H9).
   `ultracode` switch); until it is, more parallelism comes from these two lanes only.
 - Any agent that runs the gate works in its own `git worktree`, with its own
   `XDG_DATA_HOME` (brain.md H9) and leaves the tree clean (lesson 20); the Workflow harness
-  removes an unchanged worktree, and keeps one that holds commits.
+  removes an unchanged worktree, and keeps one that holds commits. A builder writes its
+  commit-message files inside its own worktree, never in a shared folder such as `/tmp` (brain.md
+  H31: two builders shared one, and a commit landed under another brief's subject).
 
 ## Gates — three levels
 
@@ -206,8 +208,8 @@ never-happen rule, so full discipline applies to Hard Rules 4 and 5 only.
   for. Its builder also commits a few software screenshots (Compatibility renderer,
   `tools/shot.sh`, SPEC §12) under `docs/briefs/shots/` and names them in Findings: evidence
   of what is drawn and where, never a gate, and not the Forward+ look (the owner's choice,
-  2026-09-25). The gate's render step (from M3-R1-fix-3, SPEC §12) is the one exception:
-  it measures where the photo, the water class and the crowns' colour land, never the look.
+  2026-09-25). The gate's render step (from M3-R1-fix-3) is the one exception: it measures by
+  number what SPEC §12 lists, never the look.
 - **When the owner designs** (files in `docs/design/`): the design files are the spec;
   a designed surface is DONE only when every element is built or on a "NOT BUILT — needs
   owner decision" list. Nothing is silently simplified.
@@ -215,8 +217,8 @@ never-happen rule, so full discipline applies to Hard Rules 4 and 5 only.
   rule, mutation proofs, zero unannounced behaviour change. The licence rule (Hard Rule 3)
   is soft by the owner's choice: a test and `docs/RELEASE.md` enforce it, reviewed at
   Tier 2. Everything else is priced by recoverability.
-- **Rollback:** the previous version's named folder on the `dist` shelf
-  (`mattini-<version>/`, RELEASE.md §C; delivery (b), the owner's choice on 2026-09-24).
+- **Rollback:** the previous version's Release; for 0.5.0, the `dist` shelf's `mattini-0.3.1/`
+  (RELEASE.md §E; delivery through GitHub Releases, the owner's "1a", 2026-10-29).
 
 ## The reading list per role
 
