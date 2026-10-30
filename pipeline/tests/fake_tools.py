@@ -62,6 +62,20 @@ Since brief v0.5.0-09 (only RENDER_PASSING, `run_gate`'s docstring and this para
 the gate's render step runs four scripts, so the stand-in's flow script prints its PASS line
 too, the line render_flow.gd printed in the pin author's rehearsal (2026-10-30).
 
+Since brief v0.5.0-13 (R1-06 and G-05; only `FAKE_GODOT`'s export, `run_export`,
+`packed_files`, `pack_problem`, `_damaged`, the `pck` and `pack` commands at the end and this
+paragraph change): the stand-in pack tool refuses as game/tools/pack.gd does, with its words: a
+folder that does not exist, holds a folder, or holds no file to pack gets `pack: <problem>` on
+stderr, exit 1 and no pack (it used to write an empty pack the real tool refuses). It packs the
+names pack.gd packs (not a name starting with ".", ending with ".part" or ".import"; a folder
+whose name starts with "." is not seen) and prints pack.gd's line. And a test can damage what
+the stand-ins pack: `leave_out` (a path under res://, without it) is left out of every pack
+written, `change` is written with its last byte changed (its size kept); `export_output` is
+printed by each export. So tools/export.sh's steps 4, 4b and 4c refuse here as they would on a
+real export that did that. Measured on Godot 4.6.3 (pin author, 2026-10-30): pack.gd's three
+refusals, exit 1, no pack; a folder holding only `.part`, `.import` and hidden files holds no
+file to pack; a hidden subfolder is not seen.
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -126,6 +140,7 @@ for ((i = 0; i < ${#args[@]}; i++)); do
 			preset="${args[$((i + 1))]}"
 			out="${args[$((i + 2))]}"
 			mkdir -p "$(dirname "$out")"
+			[ -z "${FAKE_EXPORT_OUTPUT:-}" ] || cat "$FAKE_EXPORT_OUTPUT"
 			if [ "$preset" = "Linux" ]; then
 				printf '#!/usr/bin/env bash\ncat "$FAKE_START_OUTPUT"\n' > "$out"
 				chmod +x "$out"
@@ -556,15 +571,35 @@ def export_tree(tmp_path: Path, templates_dir: Path | None) -> Path:
     return root
 
 
-def run_export(tmp_path: Path, root: Path, start_output: str, *, system: str | None = None):
+def run_export(
+    tmp_path: Path,
+    root: Path,
+    start_output: str,
+    *,
+    system: str | None = None,
+    leave_out: str | None = None,
+    change: str | None = None,
+    export_output: str | None = None,
+):
     """tools/export.sh in `root`; the exported Linux build prints `start_output`. With
-    `system`, `uname` says that system and `curl` fails. APPDATA points into tmp_path."""
+    `system`, `uname` says that system and `curl` fails. APPDATA points into tmp_path.
+    `leave_out` and `change` (a path under res://, without it, e.g.
+    "assets/generated/manifest.json") damage every pack the stand-ins write: the file left out,
+    or its last byte changed; `export_output` is printed by each stand-in export."""
     bin_dir = _stand_ins(tmp_path, system=system)
     start = tmp_path / "start-output.txt"
     start.write_bytes(start_output.encode("utf-8"))
     extra = {"FAKE_START_OUTPUT": start, "APPDATA": tmp_path / "appdata"}
     if system is not None:
         extra["FAKE_UNAME"] = system
+    if leave_out is not None:
+        extra["FAKE_PACK_LEAVE_OUT"] = leave_out
+    if change is not None:
+        extra["FAKE_PACK_CHANGE"] = change
+    if export_output is not None:
+        printed = tmp_path / "export-output.txt"
+        printed.write_bytes(export_output.encode("utf-8"))
+        extra["FAKE_EXPORT_OUTPUT"] = printed
     return subprocess.run(  # the caller checks the status
         [BASH, str(root / "tools" / "export.sh")],
         cwd=tmp_path,
@@ -595,16 +630,67 @@ def start_output(lines=STARTUP_LINES) -> str:
     )
 
 
+NOT_PACKED_SUFFIXES = (".part", ".import")  # game/tools/pack.gd's, and "." in front
+
+
+def _packed_names(source: Path) -> list[str]:
+    """The names game/tools/pack.gd packs from `source`, in code-point order: its files, but a
+    name starting with "." (DirAccess does not list it) or ending with a NOT_PACKED_SUFFIXES."""
+    return sorted(
+        path.name
+        for path in source.iterdir()
+        if path.is_file()
+        and not path.name.startswith(".")
+        and not path.name.endswith(NOT_PACKED_SUFFIXES)
+    )
+
+
+def pack_problem(game: Path, folder: str) -> str:
+    """What game/tools/pack.gd refuses `folder` (res://assets/generated/<x>) for, in its words,
+    or "": a folder that does not exist, that holds a folder (one whose name starts with "." is
+    not seen), or that holds no file to pack."""
+    source = game / folder.removeprefix("res://")
+    if not source.is_dir():
+        return f"{folder} does not exist"
+    if any(path.is_dir() and not path.name.startswith(".") for path in source.iterdir()):
+        return f"{folder} holds a folder, which a pack of its files would leave out"
+    if not _packed_names(source):
+        return f"{folder} holds no file to pack"
+    return ""
+
+
 def packed_files(game: Path, folder: str) -> list[tuple[str, bytes]]:
-    """What game/tools/pack.gd puts into a data pack from `folder` (res://assets/generated/<x>):
-    every file of the folder, in name order, at its path without res://."""
+    """What game/tools/pack.gd puts into a data pack from `folder` (res://assets/generated/<x>)
+    that it does not refuse (pack_problem): the names it packs, in name order, each at its path
+    without res://."""
     rel = folder.removeprefix("res://")
-    files = sorted(path for path in (game / rel).iterdir() if path.is_file())
-    return [(f"{rel}/{path.name}", path.read_bytes()) for path in files]
+    return [
+        (f"{rel}/{name}", (game / rel / name).read_bytes()) for name in _packed_names(game / rel)
+    ]
+
+
+def _damaged(files: list[tuple[str, bytes]]) -> list[tuple[str, bytes]]:
+    """`files` as a test asked the stand-ins to damage them (run_export's `leave_out` and
+    `change`): the one left out, the other with its last byte changed, its size kept."""
+    leave_out = os.environ.get("FAKE_PACK_LEAVE_OUT")
+    change = os.environ.get("FAKE_PACK_CHANGE")
+    damaged = []
+    for name, data in files:
+        if name == leave_out:
+            continue
+        if name == change and data:
+            data = data[:-1] + bytes([data[-1] ^ 0x01])
+        damaged.append((name, data))
+    return damaged
 
 
 if __name__ == "__main__" and sys.argv[1:2] == ["pck"]:  # the stand-in Godot's export
-    write_pck(Path(sys.argv[2]), exported_files(Path(sys.argv[3])))
+    write_pck(Path(sys.argv[2]), _damaged(exported_files(Path(sys.argv[3]))))
 if __name__ == "__main__" and sys.argv[1:2] == ["pack"]:  # the stand-in Godot's pack tool
-    write_pck(Path(sys.argv[2]), packed_files(Path(sys.argv[3]), sys.argv[4]))
-    print("pack: wrote " + sys.argv[2])
+    problem = pack_problem(Path(sys.argv[3]), sys.argv[4])
+    if problem:
+        print("pack: " + problem, file=sys.stderr)
+        sys.exit(1)
+    packed = packed_files(Path(sys.argv[3]), sys.argv[4])
+    write_pck(Path(sys.argv[2]), _damaged(packed))
+    print(f"pack: wrote {sys.argv[2]}, {len(packed)} files of {sys.argv[4]}")

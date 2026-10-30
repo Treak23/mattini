@@ -68,6 +68,10 @@
 #      is refused there too, with step 2's message; the sky block is required there but prints
 #      no startup line (brief v0.4.0-09).
 #      Nothing here starts the Windows build (the owner's PC is its test).
+# Once step 4 has begun (its first act deletes build/linux and build/windows), every refusal
+# ends with the line "export: build/ is unfinished, do not ship it" on stderr: build/ is then
+# half this export. A refusal before step 4 leaves build/ as it was and does not say it
+# (brief v0.5.0-13).
 # Godot's output is read with ANSI colours and a CR at the end of a line removed, so a CR LF
 # run reads as an LF one (brief M3-02, V1-G-07).
 set -euo pipefail
@@ -124,8 +128,13 @@ START_TIMEOUT_S=300
 SCRATCH="$(mktemp -d)"
 trap 'rm -rf "$SCRATCH"' EXIT
 
+STARTED_BUILD=0
+
 fail() {
 	echo "export: $1" >&2
+	if [ "$STARTED_BUILD" = 1 ]; then
+		echo "export: build/ is unfinished, do not ship it" >&2
+	fi
 	exit 1
 }
 
@@ -441,6 +450,7 @@ else
 	echo "installed ${TEMPLATES[*]} in $DIR"
 fi
 
+STARTED_BUILD=1
 step "4. the exports"
 for entry in "${PRESETS[@]}"; do
 	preset="${entry%%|*}"
