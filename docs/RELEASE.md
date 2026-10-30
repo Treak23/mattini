@@ -135,7 +135,11 @@ build on GitHub's machine, and its log is the delivery's proof.
 - [ ] The draft audited before the owner hears of it: its three asset names and sizes, and
       each archive's SHA-256 against its line in `SHA256SUMS` as this run's log printed it; the
       notes name the version, the source sha, every credit the pause screen shows (§A) and the
-      rollback that exists (§E). The record carries the draft's URL and the audit's result.
+      rollback that exists (§E). The record carries the draft's URL and the audit's result. The
+      session reads the draft through its GitHub tools (`get_release_by_tag`: names, sizes and,
+      where GitHub gives one, each asset's `digest`); a container cannot download a Release asset
+      (brain.md H6), so where no digest is given the audit is names and sizes against the log's
+      `SHA256SUMS` and the record says so.
 - [ ] Each archive holds the five files that belong together: the game, `mattini.pck`, the two
       data packs and Terrain3D's library (`tools/release_pack.sh`; their names never change per
       version: an executable finds its `.pck` by its own name, its data packs by the pattern

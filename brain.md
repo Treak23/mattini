@@ -361,7 +361,9 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   (53'316'318 bytes, `58ceabb1…16e0`), so the session keeps a verified copy in its checkout's git-ignored `data/raw/hipparcos/`
   (docs/history/blocked/2026-10-29-1.md). The auto-mode classifier refused `git push origin dist-publish:dist` once, without a
   reason: a 21 MB binary into a public branch needs the owner's word, as at 0.3.0. GitHub refuses a file over 100 MiB on a push, public
-  repository or not; 2 GB is the limit for Release assets and Git LFS.
+  repository or not; 2 GB is the limit for Release assets and Git LFS. From 0.5.0 no session pushes to `dist`: a release is a
+  draft GitHub Release that `.github/workflows/release.yml` builds and the owner publishes (SPEC §13 row 54); the `dist-publish`
+  push above is history (0.4.0's audited commit was lost with its container and never delivered).
 - **H31 — Two builders in one container (measured 2026-10-30, 0.5.0's two lanes).** Builders of two lanes rebase over
   each other's commits; three batches recorded commit-gate counts of the tree before the rebase (BUILD.md card 6: gate again
   after a rebase that brings commits in; the batch gate at the pushed head covers the combined tree). Two builders at once

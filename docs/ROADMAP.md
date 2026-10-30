@@ -60,7 +60,8 @@ Arc M3 — Surfaces and trees: closed 2026-10-16, shipped 0.3.0; the close in fu
 - Weather: simulated or real data — OPEN (M6).
 - Backdrop and larger-area extents and resolutions — OPEN (M5), with the buildings' missing
   sheets near Zermatt (M2 R1 I-07, SPEC §14).
-- Delivery when the data outgrows packs on `dist` — OPEN (M5; SPEC §13 rows 23, 32).
+- Delivery when the data outgrows packs on `dist` — settled in 0.5.0 by GitHub Releases (SPEC §13 row 54, §14): each file
+  under 2 GB; M5's extents keep that constraint.
 - Game type — OPEN (later; the owner: "keep open, lets just build the map first", §13 row 34).
 
 ## Next, in order (confirmed by the owner, 2026-09-24)
