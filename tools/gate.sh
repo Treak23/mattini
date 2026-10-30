@@ -24,12 +24,16 @@
 # exist). Every output is read with the ANSI codes and a CR at the end of a line removed, so
 # a CR LF run (a Windows console) reads as an LF one (V1-G-07).
 #
-# The render step runs last (SPEC §12, §13 row 38; brief M3-R1-fix-3): three SceneTree scripts
+# The render step runs last (SPEC §12, §13 row 38; brief M3-R1-fix-3): four SceneTree scripts
 # under game/tests/render/ render a synthetic world (Compatibility renderer on Mesa's llvmpipe,
 # under xvfb-run) and measure, by number, where the photo, the surface classes, the capture-shadow
-# lift and the crowns' colour land, so that a flipped, shifted or swapped placement in a shader or a loader fails the
-# gate with the check's own result line ("RENDER <check>: FAIL ..."). It proves where those land,
-# never the look, Forward+, the colour encoding or the owner's GPU. The step passes only when
+# lift and the crowns' colour land, and which way and how fast the river's ripples drift against
+# the flow (brief v0.5.0-09), so that a flipped, shifted or swapped placement in a shader or a
+# loader fails the gate with the check's own result line ("RENDER <check>: FAIL ..."). Every
+# script runs at --fixed-fps 60, so that shader TIME advances exactly 1/60 s per drawn frame
+# whatever llvmpipe's speed and the flow check's two frames are a known time apart (brain.md
+# H29). It proves where those land and the drift's direction and speed on three synthetic
+# bands, never the look, Forward+, the colour encoding or the owner's GPU. The step passes only when
 # every check prints its "RENDER <check>: PASS" line and none a FAIL line, besides the scans and
 # the exit status every Godot step has (a timeout kills a script that hangs: brain.md H25). Where
 # xvfb-run is missing it fails, naming it and MATTINI_SKIP_RENDER=1; with that variable set it
@@ -364,11 +368,14 @@ gut_run() {
 	return "$status"
 }
 
-# The render step's three scripts and the checks each prints; the timeout, in seconds, kills a
-# script that hangs (a SceneTree script that fails in _initialize can run on with no output,
-# brain.md H25), 10 s later by force.
+# The render step's four scripts (the photo and the classes, the lift, the flow, the trees) and
+# the checks each prints; the timeout, in seconds, kills a script that hangs (a SceneTree script
+# that fails in _initialize can run on with no output, brain.md H25), 10 s later by force.
+# RENDER_FPS is the fixed frame rate every script runs at (--fixed-fps), so that shader TIME is
+# the drawn frames / 60 and the flow check's frames are 0.25 s apart on every machine.
 RENDER_TIMEOUT=180
-RENDER_SKIP_LINE="== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the classes, the lift and the crowns' colour land is not checked"
+RENDER_FPS=60
+RENDER_SKIP_LINE="== render: SKIPPED (MATTINI_SKIP_RENDER=1): where the photo, the classes, the lift and the crowns' colour land and which way the ripples drift are not checked"
 
 # One render script ($1, a res:// path) under xvfb-run, its output scanned for engine errors as
 # the other Godot steps are (the allowlist's global entries apply); then each check named in the
@@ -382,7 +389,7 @@ render_script() {
 	shift
 	run_scanned '^(ERROR|SCRIPT ERROR)' "" \
 		env XDG_DATA_HOME="$SCRATCH/data" xvfb-run -a timeout --kill-after=10 "$RENDER_TIMEOUT" \
-		"$GODOT" --path game --audio-driver Dummy --rendering-method gl_compatibility \
+		"$GODOT" --path game --audio-driver Dummy --fixed-fps "$RENDER_FPS" --rendering-method gl_compatibility \
 		--resolution 1280x720 -s "$script" || return 1
 	for check in "$@"; do
 		if ! grep -a -q -E "^RENDER $check: PASS( |\$)" "$SCRATCH/out.log"; then
@@ -412,6 +419,7 @@ render_step() {
 	fi
 	render_script res://tests/render/render_photo.gd photo classes || return 1
 	render_script res://tests/render/render_lift.gd lift || return 1
+	render_script res://tests/render/render_flow.gd flow || return 1
 	render_script res://tests/render/render_trees.gd trees
 }
 

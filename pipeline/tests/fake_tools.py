@@ -58,6 +58,10 @@ stand-in manifest also holds the shadows block (the four keys tools/export.sh re
 cell_m, columns and rows, at the real village's 4000 x 6000 cells of 0.5 m), and the started
 build prints its startup line after the roofs'.
 
+Since brief v0.5.0-09 (only RENDER_PASSING, `run_gate`'s docstring and this paragraph change):
+the gate's render step runs four scripts, so the stand-in's flow script prints its PASS line
+too, the line render_flow.gd printed in the pin author's rehearsal (2026-10-30).
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -190,6 +194,17 @@ RENDER_PASSING = {
             'RENDER lift: PASS correlation 1.0000 { "north-south-mirrored": 0.1912, '
             '"east-west-mirrored": 0.0, "transposed": 0.0, "nearest": 0.9829 }; lift 3.060 '
             "inside the mask (6244), 1.000 outside (15717), over 29688 pixels"
+        )
+    ],
+    "render_flow": [
+        (
+            "RENDER flow: PASS the ripples' shift in 0.25 s (15 frames at 60 fps) against each "
+            "band's flow: east +0.2° off at 0.71 m/s (shift +0.178 m east +0.000 m south, "
+            "correlation 0.872, unmoved 0.359, 27950 samples), north +0.2° off at 0.77 m/s "
+            "(shift +0.001 m east -0.193 m south, correlation 0.797, unmoved 0.121, 36335 "
+            "samples), south-west +0.4° off at 0.72 m/s (shift -0.129 m east +0.127 m south, "
+            "correlation 0.757, unmoved 0.013, 27951 samples); allowed 5° off and 0.50 to 1.00 "
+            "m/s"
         )
     ],
     "render_trees": [
@@ -422,8 +437,9 @@ def run_gate(
 ):
     """tools/gate.sh in `root`, its GUT run printing `output` (bytes as given) and exiting
     `status`. Its render scripts print their PASS lines (RENDER_PASSING) or, for a script named
-    in `render` ("render_photo", "render_lift", "render_trees"), the lines given, and exit
-    `render_status`; `xvfb=False` hides xvfb-run from PATH; `env` adds variables (MATTINI_SKIP_RENDER).
+    in `render` ("render_photo", "render_lift", "render_flow", "render_trees"), the lines given,
+    and exit `render_status`; `xvfb=False` hides xvfb-run from PATH; `env` adds variables
+    (MATTINI_SKIP_RENDER).
     Returns the CompletedProcess (stdout and stderr together in stdout)."""
     bin_dir = _stand_ins(tmp_path, xvfb=xvfb)
     gut = tmp_path / "gut-output.txt"
