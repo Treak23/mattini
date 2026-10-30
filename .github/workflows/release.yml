@@ -1,0 +1,164 @@
+# The release workflow (brief v0.5.0-06; the owner's 1a, 2026-10-29): builds one commit of main on
+# a GitHub-hosted runner exactly as the release gate builds it in a container, from the pinned
+# inputs, and keeps the result either as a workflow artifact (a dry run, the default) or as a
+# DRAFT Release the owner publishes. Started by hand only, with the commit, the version and the
+# manifest pair the release's plan names. The only token is the runner's GITHUB_TOKEN.
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "the commit to build, 40 lower-case hex digits"
+        required: true
+        type: string
+      version:
+        description: "the version, X.Y.Z (game/project.godot's)"
+        required: true
+        type: string
+      manifest_bytes:
+        description: "the generated manifest.json's size in bytes, from the release's plan"
+        required: true
+        type: string
+      manifest_sha256:
+        description: "the generated manifest.json's SHA-256, from the release's plan"
+        required: true
+        type: string
+      dry_run:
+        description: "a dry run keeps the archives for three days and makes no Release"
+        required: true
+        type: boolean
+        default: true
+permissions:
+  contents: write
+defaults:
+  run:
+    shell: bash
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      RELEASE_SHA: ${{ inputs.sha }}
+      RELEASE_VERSION: ${{ inputs.version }}
+      MANIFEST_BYTES: ${{ inputs.manifest_bytes }}
+      MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+    steps:
+      - name: check the inputs
+        run: |
+          bad=0
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "sha is not 40 lower-case hex digits"; bad=1; }
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version is not X.Y.Z"; bad=1; }
+          [[ "$MANIFEST_BYTES" =~ ^[1-9][0-9]*$ ]] || { echo "manifest_bytes is not a positive whole number"; bad=1; }
+          [[ "$MANIFEST_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "manifest_sha256 is not 64 lower-case hex digits"; bad=1; }
+          [ "$bad" -eq 0 ] || exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
+      - name: the checkout is the sha
+        run: |
+          head="$(git rev-parse HEAD)"
+          if [ "$head" != "$RELEASE_SHA" ]; then
+            echo "the checkout is $head, not $RELEASE_SHA"
+            exit 1
+          fi
+      - name: free disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Godot, from the pins
+        run: |
+          . tools/pins.sh
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/godot.zip" "$GODOT_URL"
+          echo "$GODOT_SHA256  $RUNNER_TEMP/godot.zip" | sha256sum -c -
+          mkdir -p "$HOME/godot"
+          unzip -q -o "$RUNNER_TEMP/godot.zip" -d "$HOME/godot"
+          mv -f "$HOME"/godot/Godot_v*_linux.x86_64 "$HOME/godot/godot"
+          chmod +x "$HOME/godot/godot"
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+          echo "GODOT=$HOME/godot/godot" >> "$GITHUB_ENV"
+          "$HOME/godot/godot" --version
+      - name: uv, from the pins
+        run: |
+          . tools/pins.sh
+          python3 -m pip install --user --break-system-packages "uv==$UV_VERSION"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/uv" --version
+          "$HOME/.local/bin/uv" sync --project pipeline --frozen
+      - name: download the inputs
+        run: |
+          uv run --project pipeline --frozen python -m mattini download terrain
+          uv run --project pipeline --frozen python -m mattini download buildings
+          uv run --project pipeline --frozen python -m mattini download photo
+          uv run --project pipeline --frozen python -m mattini download surface
+          uv run --project pipeline --frozen python -m mattini download tlm
+      - name: pipeline, terrain
+        run: uv run --project pipeline --frozen python -m mattini terrain
+      - name: pipeline, buildings
+        run: uv run --project pipeline --frozen python -m mattini buildings
+      - name: pipeline, photo
+        run: uv run --project pipeline --frozen python -m mattini photo
+      - name: pipeline, roofs
+        run: uv run --project pipeline --frozen python -m mattini roofs
+      - name: pipeline, surfaces
+        run: uv run --project pipeline --frozen python -m mattini surfaces
+      - name: pipeline, trees
+        run: uv run --project pipeline --frozen python -m mattini trees
+      - name: pipeline, shadows
+        run: uv run --project pipeline --frozen python -m mattini shadows
+      - name: pipeline, sky
+        run: uv run --project pipeline --frozen python -m mattini sky
+      - name: pipeline, manifest
+        run: uv run --project pipeline --frozen python -m mattini manifest
+      - name: the manifest is the plan's
+        run: |
+          size="$(wc -c < game/assets/generated/manifest.json)"
+          if [ "$size" -ne "$MANIFEST_BYTES" ]; then
+            echo "game/assets/generated/manifest.json has $size bytes, the plan names $MANIFEST_BYTES"
+            exit 1
+          fi
+          echo "$MANIFEST_SHA256  game/assets/generated/manifest.json" | sha256sum -c -
+      - name: first import
+        run: |
+          mkdir -p game/.godot build
+          find game/addons -name '*.gdextension' -print | LC_ALL=C sort | sed 's|^game/|res://|' > game/.godot/extension_list.cfg
+          cat game/.godot/extension_list.cfg
+          godot --headless --path game --import 2>&1 | tee build/import.log
+          if grep -a -E '^(ERROR|SCRIPT ERROR)' build/import.log; then
+            echo "the import printed error lines"
+            exit 1
+          fi
+          if grep -a -r -l --include='*.import' --exclude-dir=.godot '^valid=false' game; then
+            echo "imports marked valid=false"
+            exit 1
+          fi
+      - name: export
+        run: |
+          tools/export.sh 2>&1 | tee build/export.log
+          grep -F ", as written here" build/export.log
+      - name: release checks
+        run: tools/release_checks.sh 2>&1 | tee build/release-checks.log
+      - name: pack
+        run: tools/release_pack.sh "$RELEASE_VERSION" "$RELEASE_SHA"
+      - name: keep the archives (dry run)
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mattini-${{ inputs.version }}-dry-run
+          path: |
+            build/release/mattini-${{ inputs.version }}-linux.tar.gz
+            build/release/mattini-${{ inputs.version }}-windows.zip
+            build/release/SHA256SUMS
+            build/release/release-notes.md
+          retention-days: 3
+          if-no-files-found: error
+      - name: draft the Release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v$RELEASE_VERSION" --draft --target "$RELEASE_SHA" \
+            --title "mattini $RELEASE_VERSION" --notes-file build/release/release-notes.md \
+            "build/release/mattini-$RELEASE_VERSION-linux.tar.gz" \
+            "build/release/mattini-$RELEASE_VERSION-windows.zip" \
+            build/release/SHA256SUMS
