@@ -11,6 +11,10 @@ other entry (brief M2-03).
 datasets that `download` fetched, and a step without its download ends in one
 `mattini: error:` line naming the `download` command.
 
+`shadows` builds the capture shadows mask of the configured area from the downloaded
+swissSURFACE3D tiles and config/shadows.json, then writes the manifest (brief v0.5.0-02); a
+`shadows` without `download surface` ends in one `mattini: error:` line naming that command.
+
 `sky` writes the sun's place for the configured area from config/sky.json, then the manifest
 (brief v0.4.0-07); it reads no download, so it has no `--raw`.
 
@@ -28,7 +32,18 @@ import argparse
 import sys
 from pathlib import Path
 
-from mattini import buildings, download, lock, photo, roofs, sky, surfaces, terrain, trees
+from mattini import (
+    buildings,
+    download,
+    lock,
+    photo,
+    roofs,
+    shadows,
+    sky,
+    surfaces,
+    terrain,
+    trees,
+)
 from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.manifest import DEFAULT_OUT, write_manifest
 from mattini.world import WorldConfigError, load_world
@@ -48,6 +63,7 @@ STEPS = {
     "roofs": "measure each building's roof colour from the photo",
     "surfaces": "classify roads, paths, water and rock from swissTLM3D",
     "trees": "find the trees in the surface model",
+    "shadows": "build the capture shadows mask from the surface model",
 }
 DATASETS_HELP = (
     "terrain: swissALTI3D; buildings: swissBUILDINGS3D 3.0, its map sheets; photo: "
@@ -147,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         roofs.RoofsError,
         surfaces.SurfacesError,
         trees.TreesError,
+        shadows.ShadowsError,
         sky.SkyError,
         OSError,
     ) as exc:
@@ -280,7 +297,7 @@ def _build_buildings(raw_root: Path, out_dir: Path) -> Path:
 
 
 def _build_step(step: str, raw_root: Path, out_dir: Path) -> Path:
-    """Build one of the M3 steps (`STEPS`) for the configured area, then the manifest.
+    """Build one of the steps (`STEPS`) for the configured area, then the manifest.
 
     Each loads config/world.json, datasets.json, datasets.lock.json and its own config, the
     roofs and the trees config/terrain.json too, and calls its module's `build_<step>`
@@ -312,6 +329,16 @@ def _build_step(step: str, raw_root: Path, out_dir: Path) -> Path:
             datasets,
             pinned,
             surfaces.load_surfaces_config(),
+            raw_root,
+            out_dir,
+            progress=progress,
+        )
+    elif step == "shadows":
+        shadows.build_shadows(
+            world,
+            datasets,
+            pinned,
+            shadows.load_shadows_config(),
             raw_root,
             out_dir,
             progress=progress,

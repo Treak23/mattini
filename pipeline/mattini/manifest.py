@@ -1,7 +1,7 @@
 """The generated manifest: the game's only source of generated data (docs/SPEC.md §8).
 
-Its top level is exactly `buildings`, `photo`, `roofs`, `schema`, `sky`, `surfaces`,
-`terrain`, `trees`, `world` and `world_sha256`. Its `world` block is config/world.json verbatim, with
+Its top level is exactly `buildings`, `photo`, `roofs`, `schema`, `shadows`, `sky`,
+`surfaces`, `terrain`, `trees`, `world` and `world_sha256`. Its `world` block is config/world.json verbatim, with
 the SHA-256 of the file's bytes, so the game learns the origin and axes only from here (Hard
 Rule 4). Every other block is the description its step wrote next to its files, copied
 verbatim, or null when that step has not been run in this folder (brief M3-13): a block is
@@ -21,7 +21,8 @@ their chunk files or the chunks design expects (config/buildings.json) are refus
 `python -m mattini buildings`, and nothing is written (brief M2-04). The `photo` and
 `surfaces` blocks are those steps' descriptions for the area their own config names
 (config/photo.json, config/surfaces.json), the `roofs` and `trees` blocks for the terrain
-config's area (briefs M3-04 to M3-07, M3-13). The `sky` block (brief v0.4.0-07) has no lock: it is
+config's area (briefs M3-04 to M3-07, M3-13); the `shadows` block is the description
+`shadows/<area>.json` for the area config/shadows.json names (brief v0.5.0-02). The `sky` block (brief v0.4.0-07) has no lock: it is
 checked world, then area, then block, by `sky.built_sky_block`. Every step config is loaded and checked even
 when its step has not run.
 
@@ -32,8 +33,8 @@ area exactly (`lock.fit_problem`), or the manifest is refused naming `python -m 
 lock <x>` and no other command; then `computed_for` is compared with the lock's entry, and
 a difference names design's step instead, since a rebuild would be refused too (brief
 M2-07); only then is the block itself checked. For the four new blocks this module makes
-those checks itself, in the same order whatever the steps' block functions check, the
-refusal in the step's error class:
+those checks itself (the shadows' too, whose lock entry is the surface model's), in the same
+order whatever the steps' block functions check, the refusal in the step's error class:
 
 1. `computed_for.world_sha256` against config/world.json (design's step);
 2. the lock's fit for every dataset the step reads, in sorted order, through
@@ -81,6 +82,13 @@ from mattini.roofs import (
     built_roofs_block,
     load_roofs_config,
 )
+from mattini.shadows import (
+    SHADOWS_CONFIG_NAME,
+    SHADOWS_CONFIG_PATH,
+    ShadowsError,
+    built_shadows_block,
+    load_shadows_config,
+)
 from mattini.sky import SKY_CONFIG_PATH, built_sky_block, load_sky_config
 from mattini.surfaces import (
     SURFACES_CONFIG_NAME,
@@ -127,6 +135,7 @@ _SURFACES = _Step("surfaces", SURFACES_CONFIG_NAME, (TLM,), SurfacesError)
 _TREES = _Step(
     "trees", TREES_CONFIG_NAME, tuple(sorted((DATASET, BUILDINGS, SURFACE, TLM))), TreesError
 )
+_SHADOWS = _Step("shadows", SHADOWS_CONFIG_NAME, (SURFACE,), ShadowsError)
 
 
 def build_manifest(
@@ -141,6 +150,7 @@ def build_manifest(
     roofs_config_path: Path | str = ROOFS_CONFIG_PATH,
     surfaces_config_path: Path | str = SURFACES_CONFIG_PATH,
     trees_config_path: Path | str = TREES_CONFIG_PATH,
+    shadows_config_path: Path | str = SHADOWS_CONFIG_PATH,
     sky_config_path: Path | str = SKY_CONFIG_PATH,
 ) -> dict:
     """The manifest's contents; refuses a world config the loader refuses and any built block
@@ -156,6 +166,7 @@ def build_manifest(
     roofs_config = load_roofs_config(roofs_config_path)
     surfaces_config = load_surfaces_config(surfaces_config_path)
     trees_config = load_trees_config(trees_config_path)
+    shadows_config = load_shadows_config(shadows_config_path)
     sky_config = load_sky_config(sky_config_path)
 
     @functools.cache
@@ -216,11 +227,18 @@ def build_manifest(
         if checked(_TREES, area, trees_config)
         else None
     )
+    area = configured_area(shadows_config)
+    shadows = (
+        built_shadows_block(out_dir, shadows_config, world, world_sha256, datasets, lock())
+        if checked(_SHADOWS, area, shadows_config)
+        else None
+    )
     return {
         "buildings": buildings,
         "photo": photo,
         "roofs": roofs,
         "schema": SCHEMA,
+        "shadows": shadows,
         "sky": built_sky_block(out_dir, sky_config, world, world_sha256),
         "surfaces": surfaces,
         "terrain": terrain,
@@ -242,6 +260,7 @@ def write_manifest(
     roofs_config_path: Path | str = ROOFS_CONFIG_PATH,
     surfaces_config_path: Path | str = SURFACES_CONFIG_PATH,
     trees_config_path: Path | str = TREES_CONFIG_PATH,
+    shadows_config_path: Path | str = SHADOWS_CONFIG_PATH,
     sky_config_path: Path | str = SKY_CONFIG_PATH,
 ) -> Path:
     """Write `<out_dir>/manifest.json` and return its path; a refusal writes nothing.
@@ -261,6 +280,7 @@ def write_manifest(
         roofs_config_path=roofs_config_path,
         surfaces_config_path=surfaces_config_path,
         trees_config_path=trees_config_path,
+        shadows_config_path=shadows_config_path,
         sky_config_path=sky_config_path,
     )
     text = json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False)

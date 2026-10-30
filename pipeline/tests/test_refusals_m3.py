@@ -12,7 +12,8 @@ status 1, nothing on stdout and no traceback; with no download under `--raw` it 
 step is caught: one line on stderr starting `mattini: ` that names the step's command to
 run again, exit status 130 (as the shell reports an interrupted command), no traceback.
 The help lists the commands in pipeline order: lock, download, terrain, buildings, photo,
-roofs, surfaces, trees, manifest (since brief v0.4.0-07 with sky before manifest).
+roofs, surfaces, trees, manifest (since brief v0.4.0-07 with sky before manifest, since brief
+v0.5.0-02 with shadows before sky).
 
 Each command runs as the owner runs it, `python -m mattini`'s `main` in a process of its
 own (an uncaught exception prints its traceback there), with the network refused. The
@@ -63,6 +64,7 @@ PIPELINE_ORDER = [
     "roofs",
     "surfaces",
     "trees",
+    "shadows",
     "sky",
     "manifest",
 ]

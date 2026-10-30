@@ -242,8 +242,8 @@ def test_the_fixture_is_what_its_files_say():
             }
         },
     }
-    # the manifest the game reads: M3's shape and since v0.4.0-07 the sky block, both blocks
-    # verbatim, the others null, in the text manifest.py writes (the wiring brief reproduces
+    # the manifest the game reads: M3's shape, since v0.4.0-07 the sky block and since v0.5.0-02
+    # the shadows block, both built blocks verbatim, the others null, in the text manifest.py writes (the wiring brief reproduces
     # it byte for byte)
     text = (GENERATED / "manifest.json").read_bytes()
     manifest = json.loads(text.decode("utf-8"))
@@ -252,6 +252,7 @@ def test_the_fixture_is_what_its_files_say():
         "photo",
         "roofs",
         "schema",
+        "shadows",
         "sky",
         "surfaces",
         "terrain",
@@ -261,6 +262,7 @@ def test_the_fixture_is_what_its_files_say():
     }
     assert [key for key in sorted(manifest) if manifest[key] is None] == [
         "photo",
+        "shadows",
         "sky",
         "surfaces",
         "terrain",

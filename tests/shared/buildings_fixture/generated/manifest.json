@@ -51,6 +51,7 @@
   "photo": null,
   "roofs": null,
   "schema": 1,
+  "shadows": null,
   "sky": null,
   "surfaces": null,
   "terrain": null,
