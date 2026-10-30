@@ -38,7 +38,10 @@
 # the look, Forward+, the colour encoding or the owner's GPU. The flow check does not see where
 # the flow is read from north to south (a northward shift of any size reads the clamped first
 # row, a band row, and a southward one under about 1.6 m keeps the direction), so a flow read
-# shifted north-south is not gated (brief v0.5.0-09 decision 5). The step passes only when
+# shifted north-south is not gated (brief v0.5.0-09 decision 5), and an east-west shift within
+# the bands passes too. Its data cannot see ripple map b reversed alone (only the 0.60
+# correlation floor) nor a dropped validity factor (every test texel has B = 255; brief
+# v0.5.0-15). The step passes only when
 # every check prints its "RENDER <check>: PASS" line and none a FAIL line, besides the scans and
 # the exit status every Godot step has (a timeout kills a script that hangs: brain.md H25). Where
 # xvfb-run is missing it fails, naming it and MATTINI_SKIP_RENDER=1; with that variable set it

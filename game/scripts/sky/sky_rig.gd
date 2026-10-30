@@ -138,9 +138,9 @@ static func create(
 ## right ascension not in [0, 360) degrees or a declination not strictly between -90 and 90 is an
 ## error (push_error, naming the file and the line) and null (brief v0.5.0-11). The declination
 ## guard is not optional: at exactly 90 the run is about 8e15 texels and the loop never returns,
-## and beyond 90 the run is negative and the star vanished without a word; a right ascension out
-## of range was drawn at a wrong column. NaN and the infinities fail both checks. The positions are
-## not precessed: see the class comment.
+## and beyond 90 the run is negative and the star vanished without a word; a right ascension
+## out of range is refused by name, not silently wrapped to the equivalent column. NaN and the
+## infinities fail both checks. The positions are not precessed: see the class comment.
 static func star_image(path: String) -> Image:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:

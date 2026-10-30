@@ -69,9 +69,11 @@
 #      no startup line (brief v0.4.0-09).
 #      Nothing here starts the Windows build (the owner's PC is its test).
 # Once step 4 has begun (its first act deletes build/linux and build/windows), every refusal
-# ends with the line "export: build/ is unfinished, do not ship it" on stderr: build/ is then
-# half this export. A refusal before step 4 leaves build/ as it was and does not say it
-# (brief v0.5.0-13).
+# fail() makes ends with the line "export: build/ is unfinished, do not ship it" on stderr:
+# build/ is then half this export. A refusal before step 4 leaves build/ as it was and does not
+# say it (brief v0.5.0-13). A command that dies on its own under set -e (a file that cannot be
+# removed, a full disk) ends the export with its own error and exit 1 and no such line, and
+# build/ is then unfinished too (brief v0.5.0-15).
 # Godot's output is read with ANSI colours and a CR at the end of a line removed, so a CR LF
 # run reads as an LF one (brief M3-02, V1-G-07).
 set -euo pipefail

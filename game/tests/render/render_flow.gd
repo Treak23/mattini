@@ -43,7 +43,10 @@ extends SceneTree
 ## looks, not Forward+, not the real village's flow grid or its streams, not that the loader hands
 ## the SurfaceGrid's own flow (replaced here; test_terrain_loader_surfaces.gd pins it), not the
 ## crossfade's restarts, the phase field or the TIME rollover (test_m4_06_terrain_look.gd's
-## census), not the owner's GPU.
+## census), not the owner's GPU. It does not see where the flow is read: a north-south shift
+## that keeps the windows on band rows passes, and so does an east-west shift within the
+## bands. Its data cannot see ripple map b reversed alone (only the MIN_CORR floor) nor a
+## dropped validity factor (every test texel has B = 255) (brief v0.5.0-15).
 const CompleteWorld := preload("res://tests/complete_world.gd")
 const Common := preload("res://tests/render/render_common.gd")
 const COLUMNS := 41

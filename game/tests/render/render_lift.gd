@@ -1,11 +1,12 @@
 extends SceneTree
 ## The gate's render check of where the photo shader lifts the photo inside the capture
-## shadows' mask (brief M4-06; m4-design §8). Run by tools/gate.sh under xvfb-run, Compatibility
-## renderer (Mesa's llvmpipe), never in GUT.
+## shadows' mask (brief M4-06; m4-design §8). The main scene hands the mask to the terrain from
+## brief v0.5.0-05 on; this script builds its own terrain on purpose. Run by tools/gate.sh under
+## xvfb-run, Compatibility renderer (Mesa's llvmpipe), never in GUT.
 ##
 ## The complete test world (complete_world.gd) with its terrain replaced by one flat level, its
 ## terrain built by TerrainLoader with the world's PhotoGrid, SurfaceGrid and CaptureShadowGrid
-## (the main scene does not read the mask before brief M4-10), lit by one light from straight
+## (the mask is set here, as the check needs it), lit by one light from straight
 ## above, seen by a camera straight above the photo's middle. The photo's texture is replaced by
 ## one uniform grey of GREY (sRGB 0.2) in both views, so that no texel of the photo clips under
 ## the lift and the photo's own pattern does not enter the comparison: the check is about WHERE

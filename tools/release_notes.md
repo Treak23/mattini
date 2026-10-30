@@ -36,13 +36,15 @@ folder with their names unchanged.
    Delete the file to have MSAA again.
 4. Send the log and a screenshot to the `feedback` session.
 
-The rollback is the Release of the version before this one: download its archive and unpack
-it into a folder of its own. Up to 0.3.1 the earlier builds are the named folders of the
-`dist` branch (`mattini-0.3.1/`, and so on).
+The rollback is the previous version's Release: download its archive and unpack it into a
+folder of its own. For 0.5.0, the first version delivered as a Release, it is the `dist`
+branch's folder `mattini-0.3.1/`
+(https://github.com/Treak23/mattini/tree/dist/mattini-0.3.1), because 0.4.0 was never
+delivered. A later release's session rewrites this line.
 
 ## Checksums
 
-SHA-256 of the two archives and of the ten files inside them (`sha256sum -c SHA256SUMS`
+SHA-256 of the two archives and of the ten files inside them (`sha256sum -c --ignore-missing SHA256SUMS`
 beside the unpacked archives checks them; `SHA256SUMS` is also attached to this Release):
 
 ```
@@ -63,12 +65,16 @@ swisssurface3d 2021-2022, © swisstopo
 swisstlm3d 2026-02, © swisstopo
 ```
 
-Stars:
+Sky:
+
+Sun: NOAA's solar position calculations (Meeus, Astronomical Algorithms), https://gml.noaa.gov/grad/solcalc/calcdetails.html
+
+Moon: Paul Schlyter, How to compute planetary positions, https://stjarnhimlen.se/comp/ppcomp.html
 
 Stars derived from the Hipparcos Catalogue (ESA 1997, ESA SP-1200): stars to V 6.0, positions rounded and reformatted. Credit: ESA. CC BY-NC 3.0 IGO, https://creativecommons.org/licenses/by-nc/3.0/igo/
 
 Detail textures for rock, roads and paths: Poly Haven, CC0 1.0 Universal (public domain).
 
-Software: Godot Engine, Terrain3D and GUT (MIT); their licences, and the other components'
+Software: Godot Engine, Terrain3D and godot-cpp (compiled into Terrain3D's library), all MIT; their licences, and the other components'
 copyright notices, are shown on the game's pause screen (Escape) and sit in the repository
 beside each addon (`game/addons/`).
