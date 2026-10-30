@@ -8,8 +8,10 @@ extends RefCounted
 ## Time is Unix seconds UTC, latitude and longitude are degrees (longitude east-positive),
 ## angles come back in true-north, clockwise-from-north terms. Nothing here converts them
 ## to the game's grid. The vectors in tests/shared/sky_vectors.json cover 2020 to 2035;
-## nothing here claims more. The game's day keys can leave that range; the clock's output there
-## is unvalidated (nothing is clamped).
+## nothing here claims more: VALID_FROM_UNIX and VALID_TO_UNIX round that range out to whole
+## years and in_validated_range says whether a time lies inside. The game's day keys can leave
+## that range; the clock's output there is unvalidated (nothing is clamped), and the game's
+## clock label (main.gd) shows a note while its clock is outside the range.
 ##
 ## Sources:
 ##  - the sun: NOAA's solar calculator, "General Solar Position Calculations" and its
@@ -23,12 +25,25 @@ extends RefCounted
 ##  - dates from a day count: Howard Hinnant's days_from_civil and civil_from_days
 ##    ("chrono-compatible low-level date algorithms").
 
+## The start of the range the sun, the moon and the stars were checked in, Unix seconds UTC:
+## 2020-01-01T00:00:00Z. The first vector of tests/shared/sky_vectors.json is 27 days later.
+const VALID_FROM_UNIX := 1577836800.0
+## The end of that range (exclusive), Unix seconds UTC: 2036-01-01T00:00:00Z. The last vector
+## is 7 days earlier.
+const VALID_TO_UNIX := 2082758400.0
+
 ## 2023-09-06T11:40:00Z, 13:40 CEST: the photo's moment (SPEC section 13 row 43).
 const START_UNIX := 1694000400.0
 
 const _MONTHS := [
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ]
+
+
+## True when `unix` lies in the validated range: from VALID_FROM_UNIX (inclusive) up to
+## VALID_TO_UNIX (exclusive). False for NaN and for both infinities. It clamps nothing.
+static func in_validated_range(unix: float) -> bool:
+	return unix >= VALID_FROM_UNIX and unix < VALID_TO_UNIX
 
 
 ## Zurich's UTC offset in seconds at `unix`: 7200 from 01:00 UTC on the last Sunday of

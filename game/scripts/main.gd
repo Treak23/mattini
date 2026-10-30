@@ -56,7 +56,9 @@ extends Node3D
 ## stopped) and time_now sets the computer's clock; they do nothing while the pause screen is
 ## open. UI/Clock says
 ## the time and the speed (clock_text) for CLOCK_SHOWN_S real seconds after a key, and always while
-## the pause screen is open.
+## the pause screen is open. While the clock is outside the range the sky was checked in
+## (SkyClock.in_validated_range is false) the label also carries CLOCK_NOTE and stays shown at
+## every frame, however the clock got there; the keys are not clamped.
 
 
 ## Collects the errors logged while the generated data is read, so that the error panel
@@ -171,6 +173,8 @@ const TIME_STEP_S := 900.0
 const DAY_STEP_S := 86400.0
 ## How long UI/Clock stays shown after a time key, in real seconds.
 const CLOCK_SHOWN_S := 4.0
+## What UI/Clock adds to its text while the clock is outside the range SkyClock checked the sky in.
+const CLOCK_NOTE := " · the sky is unchecked outside 2020 to 2035 UTC"
 ## The pause screen's list of controls: each InputMap action and what it does.
 const CONTROLS := [
 	[&"fly_forward", "fly forward, along the view"],
@@ -246,15 +250,19 @@ func _ready() -> void:
 	($UI/PauseMenu/Credits as RichTextLabel).text = _credits_text(datasets, stars_drawn)
 
 
-## The clock runs at SPEEDS[_speed] unless the pause screen is open; the label counts down in real
-## time and follows the clock while shown; then the sky is placed for it.
+## The clock runs at SPEEDS[_speed] unless the pause screen is open; then, with the time after that
+## step, the label is shown while the clock is outside the validated range and does not count down
+## there; inside, it counts down in real time. It follows the clock while shown; then the sky is
+## placed for it.
 func _process(delta: float) -> void:
 	if not _pause_menu.visible:
 		time_unix += delta * SPEEDS[_speed]
-		if _clock.visible:
-			_clock_left -= delta
-			if _clock_left <= 0.0:
-				_clock.hide()
+	if not SkyClock.in_validated_range(time_unix):
+		_clock.show()
+	elif not _pause_menu.visible and _clock.visible:
+		_clock_left -= delta
+		if _clock_left <= 0.0:
+			_clock.hide()
 	if _clock.visible:
 		_clock.text = clock_text()
 	_place_sky()
@@ -292,11 +300,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	_place_sky()
 
 
-## The label's text: the clock's local time and the speed, "6 Sep 2023 13:40 CEST · 1×".
+## The label's text: the clock's local time and the speed, "6 Sep 2023 13:40 CEST · 1×"; outside
+## the validated range (SkyClock.in_validated_range), at every speed, CLOCK_NOTE follows.
 func clock_text() -> String:
 	var speed: float = SPEEDS[_speed]
 	var speed_text := "stopped" if speed == 0.0 else _number(speed) + "×"
-	return "%s · %s" % [SkyClock.local_text(time_unix), speed_text]
+	var text := "%s · %s" % [SkyClock.local_text(time_unix), speed_text]
+	if not SkyClock.in_validated_range(time_unix):
+		text += CLOCK_NOTE
+	return text
 
 
 ## Opens the pause screen, or closes it when it is open. While it is open the camera
