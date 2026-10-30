@@ -76,5 +76,5 @@ Stars derived from the Hipparcos Catalogue (ESA 1997, ESA SP-1200): stars to V 6
 Detail textures for rock, roads and paths: Poly Haven, CC0 1.0 Universal (public domain).
 
 Software: Godot Engine, Terrain3D and godot-cpp (compiled into Terrain3D's library), all MIT; their licences, and the other components'
-copyright notices, are shown on the game's pause screen (Escape) and sit in the repository
-beside each addon (`game/addons/`).
+copyright notices, are shown on the game's pause screen (Escape) and sit in the repository:
+Terrain3D's beside its addon (`game/addons/terrain_3d/`), godot-cpp's in `game/credits/`.

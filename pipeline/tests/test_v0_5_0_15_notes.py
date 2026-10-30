@@ -72,3 +72,18 @@ def test_export_header_narrow_words():
         "the header must say a command dying under set -e ends without the line"
     )
     assert "no such line" in head
+
+
+def test_software_paragraph_names_both_licence_homes():
+    """Every `game/...` path the notes name exists in the tree; godot-cpp's licence home is named.
+
+    godot-cpp's licence is game/credits/godot-cpp-LICENSE.txt (main.gd GODOT_CPP_LICENSE), not
+    beside an addon, so "beside each addon" alone would be untrue (review R15-01).
+    """
+    text = _template()
+    paths = [p for p in re.findall(r"`(game/[^`]*)`", text)]
+    assert paths, "the notes name no repository path under game/"
+    for path in paths:
+        assert (REPO / path).exists(), f"the notes name `{path}`, which is not in the tree"
+    assert "game/credits/" in text, "the notes must name where godot-cpp's licence sits"
+    assert "game/addons/terrain_3d/" in text
