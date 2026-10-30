@@ -246,7 +246,9 @@ def test_the_hint_follows_the_last_attempt(swisstopo, capsys, script, hinted):
     assert code == 1
     assert message.endswith("(after 2 attempts)" + (HINT if hinted else "")), message
     assert ("cut at" in message) == hinted
-    assert ("503" in message) == (not hinted)
+    # The status as download.py writes it ("HTTP Error 503: ..."), not a bare "503": a random
+    # local port such as 45039 also holds those digits.
+    assert ("HTTP Error 503" in message) == (not hinted)
 
 
 def test_a_cut_then_another_sha256_has_no_rerun_hint(swisstopo, capsys):
