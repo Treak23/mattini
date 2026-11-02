@@ -1,5 +1,5 @@
 # Brief: M4-03 — The capture shadows step: where the photo lay in shadow when it was flown
-Status: OPEN
+Status: SUPERSEDED by v0.5.0-01 (DONE bbb9b1b; docs/briefs/v0.5.0-plan.md): built as written on 0.4.0's tree
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane C of wave 1 (`docs/briefs/sketches/m4-design.md` §3).

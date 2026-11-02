@@ -1,5 +1,5 @@
 # Brief: M4-06 — The terrain's look: the photo's softened shadows and the water
-Status: OPEN
+Status: SUPERSEDED by v0.5.0-03 (decision 1, 81a1605) and v0.5.0-04 (decisions 2, 3, 5, 8, 9, 01d246b); decisions 4 and 6 shipped in v0.3.1-01 and were replaced by v0.4.0-03
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane F of wave 1 (`docs/briefs/sketches/m4-design.md` §8).

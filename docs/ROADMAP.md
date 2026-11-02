@@ -6,23 +6,23 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**Release 0.5.0 — built, checked and recorded 2026-10-30 (`docs/releases/v0.5.0.md`); a draft GitHub Release waits for the
-owner to publish it: https://github.com/Treak23/mattini/releases.** The photo's own shadows softened (FB-004 item 3), the haze (item 5), the clock's note, delivery
-through GitHub Releases (the first real run of `.github/workflows/release.yml`), the gate's flow, lift and trees-drawn checks and
-four residue groups; fifteen briefs DONE in two lanes (`docs/briefs/v0.5.0-plan.md`); the whole-range review's two P1 (the Release
-notes) fixed; the release gate from a fresh clone green (pytest 2839, GUT 70 scripts, 463 tests, 19'590 asserts; the manifest
-`f68275a1…`, 326'124 bytes). 0.4.0 was never delivered on its own (the owner's "2c"): 0.5.0 contains it. `dist` stays at 0.3.1
-(`5b51347`), the rollback.
+**Release 0.6.0 — GO 2026-11-02 (`docs/history/blocked/2026-11-02-1.md`; the plan `docs/briefs/v0.6.0-plan.md`).** The far
+mountains drawn from swissALTIRegio (SPEC §13 row 59; re-scoped from M4-01, -02, -07 and the surroundings parts of M4-09 and
+M4-10) and the release-reproducibility batch. Builders on Sonnet, two days, two lanes. The list is frozen.
 
-**Next release:** the far mountains' shadows (M4-01, M4-02, M4-07 and their parts of M4-09 and M4-10; about five tier-1 batches,
-re-pinned on 0.5.0's files), then the move to Godot 4.8 once it is out of beta (beta 2 on 2026-10-29; GUT and Terrain3D must
-follow), M5 scale-up, M6 weather and walking.
+**After 0.6.0:** M5 staged (SPEC §13 row 58): stage 1, the per-tile source map of the municipality of Zermatt plus 2 km and a
+derive step (about 2 releases, nothing changes on screen); stage 2, the mixed-resolution game of the whole municipality (about 2
+to 3); bridges as decks from swissTLM3D (about 3 batches); the move to Godot 4.8 when it is stable and GUT supports it (Terrain3D
+1.1.0-stable, 2026-10-30, supports 4.5 to 4.8; GUT's latest 9.7.1 names no 4.8; Godot 4.8 beta 2, 2026-10-29); M6 weather and
+walking.
+
+**Release 0.5.0 — published by the owner 2026-10-31 (https://github.com/Treak23/mattini/releases/tag/v0.5.0; `docs/releases/v0.5.0.md`).**
 
 **The owner's first look at 0.3.1 (2026-10-26):** it starts with 4× MSAA, 60 fps and 15 paused, the GPU at
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
 river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
 
-**Waiting on the owner:** publishing 0.5.0's draft Release (https://github.com/Treak23/mattini/releases), and the record's look list on the PC. A
+**Waiting on the owner:** the 0.5.0 record's look list on the PC. A
 second developer may join: how a person works beside the release sessions (the process assumes only agents commit to `main`)
 and the licence of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
 the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks deletion and
@@ -46,7 +46,7 @@ pushed without a separate "push dist" (DESIGN.md step 6 publishes; it added 21 M
 other file 0.3.0's; RULINGS 2026-10-26); `mattini-0.1.0/` left `dist`'s tree (the last three kept).
 
 **Last shipped:** 0.5.0, 2026-10-30: the softened photo shadows, the haze, the first GitHub Release (`docs/releases/v0.5.0.md`;
-built from `main` `af3d5d2`; the draft Release waits for the owner to publish). Before it: 0.4.0, 2026-10-29, recorded but never
+built from `main` `af3d5d2`; published by the owner 2026-10-31). Before it: 0.4.0, 2026-10-29, recorded but never
 delivered on its own; 0.3.1, 2026-10-26 (`dist` `5b51347`), kept as `mattini-0.3.1/`, the rollback; 0.3.0 and 0.2.0 as their
 folders on `dist`.
 
@@ -74,8 +74,8 @@ The project's direction (the owner, 2026-10-27; SPEC §13 row 50): this reposito
 accurate as the data allows; each game is a branch or fork that takes what it needs.
 
 1. (0.4.0 and 0.5.0, shipped: the river's direction, the moving sun, the softened photo shadows, the haze, GitHub Releases)
-2. The far mountains' shadows (the rest of M4)
-3. M5 Scale up
+2. The far mountains, drawn (0.6.0; the rest of M4, re-scoped by SPEC §13 row 59)
+3. M5 Scale up, staged (SPEC §13 row 58): the municipality plus 2 km as a per-tile source map, then a mixed-resolution game
 4. M6 Weather and walking
 - When Godot 4.8 is out of beta: the move to it (the owner, 2026-10-27), a release of its own once Terrain3D and
   GUT support it (SPEC §4's pins)
@@ -87,14 +87,6 @@ accurate as the data allows; each game is a branch or fork that takes what it ne
 and the Windows first start (deferred by the owner); every other inbox entry is closed.
 
 ## Residues and hazards
-
-Closed in 0.5.0 and struck below (each checked against the code at `805223c`): 0.4.0's S-01 (the stars in the pack are checked
-by `tools/release_checks.sh` check 1 on every Release build), S-02, S-03, S-05, S-06 (the clock's note), CD-3, TG-09, `png_l8`'s
-words, the float32 360.0 note, the river's direction (RENDER flow); 0.3.1's R1-05, R1-06; M3's I-02, I-04, I-05, R2 P-01, P-03,
-P-04 (replaced by the measured gaps, the z limit below), R2 S-01, and G-05 in part (briefs v0.5.0-09 to -13). Found already fixed by
-0.5.0's triage: 0.3.1's R1-03 (the crossfade's 3600 s is a whole number of phases) and F6 (the census skips no reader, v0.4.0-09);
-M3's I-03 (`OSError` in `main()`'s tuple, v0.4.0-07), V1-1 (the render step catches both edits, M3-R1-fix-3), V1-5, and the stale
-zlib line of `tests/shared/surfaces_vectors.json`. This paragraph moves to 0.5.0's record at the publish.
 
 - Terrain3D 1.0.2's traps (brain.md H11) and its deprecation warning, printed once per
   process (H4). Collision over holes prints ERROR lines: M1 runs without collision, and
@@ -178,6 +170,15 @@ Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified,
   world on every machine (true already: Hard Rule 5, every file checked by SHA-256), each
   building's id in the game (from M3-05 and M3-12), then saved edits as a layer over the
   read-only world, and networking.
+
+## The tester's look notes (FB-004, not the owner's report; triaged 2026-10-31)
+
+- The photo stretched on steep walls (top-down projection; options: slope-driven triplanar grain on any steep face, plus
+  de-streaking; about 1 to 1.5 batches, tier 2; a reach beyond SPEC §13 row 29's "steep rock" needs the owner's word).
+- The bridge as a hump (no bridge geometry; the open bridge's road is painted onto the river): decks from swissTLM3D's 3D lines,
+  a height measurement first; about 3 batches, partly tier 1 (after 0.6.0, on the board above).
+- The blur near the ground (0.2 m bilinear): bicubic magnification, 1 batch, tier 2; a generic CC0 ground detail would reopen row
+  29's "not taken (b)".
 
 ## Not planned (with the reason)
 

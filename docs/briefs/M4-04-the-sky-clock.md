@@ -1,5 +1,5 @@
 # Brief: M4-04 — The sky clock
-Status: OPEN
+Status: SUPERSEDED by v0.4.0-04 (DONE 62d6c03; docs/briefs/v0.4.0-plan.md)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane D of wave 1 of arc M4.

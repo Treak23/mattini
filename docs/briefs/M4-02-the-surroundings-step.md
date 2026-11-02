@@ -1,5 +1,5 @@
 # Brief: M4-02 — The surroundings step: the mountains' heights around the area
-Status: OPEN
+Status: SUPERSEDED by 0.6.0's briefs (docs/briefs/v0.6.0-plan.md; SPEC §13 row 59): its rule re-scoped for a drawn far terrain
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane B of wave 1 (m4-design §2; the arc plan names the waves).

@@ -1,5 +1,5 @@
 # Brief: M4-10 — The main scene: the clock, the sky and the keys
-Status: OPEN
+Status: SUPERSEDED: the clock, keys, SkySite, sky and stars by v0.4.0-08 and -09; the mask by v0.5.0-03 and -05 (775d2fd); the far mountains by 0.6.0's briefs (docs/briefs/v0.6.0-plan.md); its pinned copies are stale
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane I of wave 2, after wave 1 has landed and been integrated

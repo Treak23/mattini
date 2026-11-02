@@ -1,5 +1,5 @@
 # Brief: M4-09 — The new steps on the command line and in the manifest
-Status: OPEN
+Status: SUPERSEDED: the sky by v0.4.0-07 (ec820f7), the shadows by v0.5.0-02 (aee3f19), the surroundings by 0.6.0's briefs (docs/briefs/v0.6.0-plan.md); its pinned copies are stale
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane I of wave 2, after wave 1 has landed and been integrated (M4-01,

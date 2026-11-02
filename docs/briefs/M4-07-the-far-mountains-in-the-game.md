@@ -1,5 +1,5 @@
 # Brief: M4-07 — The far mountains in the game
-Status: OPEN
+Status: SUPERSEDED by 0.6.0's briefs (docs/briefs/v0.6.0-plan.md): the shadows-only mesh is not built; the far terrain is drawn (SPEC §13 row 59)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane G of wave 1 (m4-design §7; the arc plan names the waves).

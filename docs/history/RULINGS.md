@@ -14,6 +14,11 @@ numbered D1–D12 there.
 The M1 close's rulings (2026-09-25) have theirs in `docs/history/ARCS.md` §M1, numbered
 D13–D21 there.
 
+2026-11-02 · owner's word, in the release session · 0.6.0 · M5's direction (the map to the whole municipality, a source map)? → (a) staged: a per-tile full-resolution source map of the municipality plus 2 km, a derive step making the game's files (first today's village), then a mixed-resolution game; streaming only when a game needs it (SPEC §13 row 58; docs/history/blocked/2026-11-02-1.md)
+2026-11-02 · owner's word, in the release session · 0.6.0 · the far mountains? → (a) drawn, not shadows-only, re-scoped from M4-01/02/07/09/10; coloured from a coarse SWISSIMAGE where Swiss, plain shading elsewhere (SPEC §13 row 59, amends row 42)
+2026-11-02 · owner's word, in the release session · M5 · the source map's photo and buffer? → the 0.1 m tiles kept as downloaded, 0.2 m the finest the game's files use; a 2 km buffer past the boundary (SPEC §13 row 58)
+2026-11-02 · owner's word, in the release session · 0.6.0 · the list? → the drawn far mountains and the release-reproducibility batch, frozen at the go; builders and fixers on Sonnet, two days and about half a week's allowance, two lanes
+2026-11-02 · owner's word, in the release session · FB-004 · its three open look items? → the tester agent's READ notes, not the owner's report: they leave the owner's list and wait among the ideas; the Windows first start stays deferred
 2026-10-30 · release · v0.5.0-03 · the fixer's scoped allowlist line for the gaps test, in a pinned copy? → kept; v0.5.0-05's pinned allowlist re-cut to hold it, per BUILD.md rule 4 (a compile-forced file named in the commit) and WORKFLOW §Brief lifecycle (after DONE the live copies may evolve; the later brief re-pins)
 2026-10-29 · owner's word, in the release session · 0.5.0 · the deferred items (question A)? → all join: the trees' haze, the clock's note, a RENDER flow check, four residue groups (tests and messages); the far mountains stay next; the list frozen (docs/history/blocked/2026-10-29-2.md)
 2026-10-29 · owner's word, in the release session · 0.5.0 · the board's audit list of reversible calls (0.4.0, 0.3.1)? → kept, all (docs/history/blocked/2026-10-29-2.md)

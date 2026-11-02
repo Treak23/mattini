@@ -1,5 +1,5 @@
 # Brief: M4-05 — The sky rig
-Status: OPEN
+Status: SUPERSEDED by v0.4.0-05 (DONE dbb1a54) and, section S, v0.4.0-06 (DONE c3edac6)
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane E of wave 1 of arc M4.

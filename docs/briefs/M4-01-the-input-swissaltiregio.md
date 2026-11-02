@@ -1,5 +1,5 @@
 # Brief: M4-01 — The input: swissALTIRegio
-Status: OPEN
+Status: SUPERSEDED by 0.6.0's briefs (docs/briefs/v0.6.0-plan.md; SPEC §13 row 59): its decisions and data stand where the 0.6.0 briefs cite them
 
 Written in the design realm; executed by one fresh builder session under
 `docs/roles/BUILD.md`. Lane A of wave 1 (m4-design §1; the arc plan names the waves).

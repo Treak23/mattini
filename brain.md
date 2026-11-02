@@ -1,9 +1,9 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-10-30 — version 0.5.0 (the photo's own shadows softened by a capture-time
+Orientation for any session. Current as of **2026-11-02 — version 0.5.0 (the photo's own shadows softened by a capture-time
 mask, a light haze, the clock's note outside 2020 to 2035; the first release delivered as a GitHub Release, built by
 `.github/workflows/release.yml` on a GitHub runner; built from `main` `af3d5d2`, recorded in `docs/releases/v0.5.0.md`; no P0 or P1
-open) waits as a draft Release for the owner to publish** (0.4.0 was never delivered on its own: 0.5.0 contains it; `dist` holds
+open) published by the owner 2026-10-31 as GitHub Release `v0.5.0`**; 0.6.0 is in build (its plan: `docs/briefs/v0.6.0-plan.md`) (0.4.0 was never delivered on its own: 0.5.0 contains it; `dist` holds
 0.1.0 to 0.3.1, `mattini-0.3.1/` the rollback)
 (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
@@ -40,14 +40,16 @@ asserts; the gate's render step passes, five RENDER lines (RENDER trees 0.8637, 
 
 ## 5. HISTORY
 Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
-0.2.0, 2026-09-26; 0.3.0, 2026-10-16, `dist` `5f08379`).
+0.2.0, 2026-09-26; 0.3.0, 2026-10-16, `dist` `5f08379`; 0.3.1, 2026-10-26, `dist` `5b51347`; 0.4.0, 2026-10-29,
+recorded, never delivered on its own; 0.5.0, 2026-10-31, GitHub Release `v0.5.0`).
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-The owner publishes 0.5.0's draft Release and looks at the record's look list on the PC. Then, from a fresh `ultracode design`
-session: the far mountains' shadows (M4-01, M4-02, M4-07 and their parts of M4-09 and M4-10, re-pinned on 0.5.0's files: every
-pinned copy of M4-09 and M4-10 is stale), the move to Godot 4.8 once it and its plugins are out of beta, M5 scale-up, M6 weather
-and walking. The board is the live version.
+0.6.0 (go 2026-11-02): the far mountains drawn from swissALTIRegio (SPEC §13 row 59, re-scoped from M4-01, -02, -07 and the
+surroundings parts of M4-09 and M4-10) and the release-reproducibility batch. Then M5 staged (row 58): stage 1, a per-tile
+full-resolution source map of the municipality plus 2 km and a derive step; stage 2, a mixed-resolution game of the whole
+municipality. The move to Godot 4.8 once it is stable and GUT follows (Terrain3D 1.1.0 already supports it); M6 weather and
+walking. The board is the live version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's

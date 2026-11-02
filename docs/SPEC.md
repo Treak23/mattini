@@ -248,7 +248,7 @@ N 1'095'445–1'097'750; the hamlets (Furi, Zmutt, Findeln and others) form sepa
 clusters. The box holds the whole main cluster and 1'524 of the 1'913 buildings (80%).
 The register was used only to measure the box; it is not a game input.
 
-**Backdrop and the larger area (M5):** extents and resolutions **OPEN**.
+**Backdrop and the larger area (M5):** the municipality of Zermatt plus 2 km, staged: a per-tile source map, then a mixed-resolution game (§13 row 58); the far mountains drawn from swissALTIRegio (§13 row 59).
 **In-game terrain resolution for the village: 0.5 m** (owner, 2026-09-25: "just do 0.5
 first for the demo at least, I want to see the capabilities, then I can still soften it
 later if needed"). It is one value in `config/terrain.json`; for the terrain, 1 or 2 m is a
@@ -946,8 +946,9 @@ M3-12, M3-14):**
   exposure 0.70 by day (measured in software Forward+), 4.0 at night, between them by the sun's
   height. No auto exposure. From 0.5.0 a light haze: exponential fog coloured by the sky's radiance
   (aerial perspective), about 10 % at 2 km, the sky itself unfogged (§13 row 56).
-- *The far mountains:* a shadows-only mesh from the `surroundings` block casts the mountains'
-  shadows (Forward+; Compatibility draws none); nothing of it is visible until M5.
+- *The far mountains:* from 0.6.0 a drawn far terrain from the `surroundings` block, which also
+  casts the mountains' shadows (Forward+; Compatibility draws none); the shadows-only mesh M4 designed
+  is not built (§13 row 59).
 - *The photo's baked shadows* lifted 3× inside the capture mask (§13 rows 41, 47; built in 0.5.0, the
   mask mipmapped, row 55: the main scene reads it after the roof colours, prints `shadows <area>
   loaded, <columns> x <rows> cells at 0.5 m`, and a missing or refused mask opens the error panel
@@ -955,7 +956,7 @@ M3-12, M3-14):**
   photo's colour × 0.9, roughness 0.3, ripples flowing downstream (0.4.0), a soft bank.
 - *The machine:* a frame cap of 60 (15 while paused), the log flushed per line, MSAA 4×; in an
   export a missing data pack is named, and the readers say to download the release folder again.
-- *Not in M4:* the far mountains drawn (M5), weather and snow (M6), lit windows, bridges.
+- *Not in M4:* the far mountains drawn (0.6.0, row 59), weather and snow (M6), lit windows, bridges.
 
 ## 11. Delivery (from 0.5.0 GitHub Releases, the owner's "1a"; day one to 0.3.1 the `dist` shelf)
 
@@ -1145,6 +1146,8 @@ not distance or the terrain's mesh, not the owner's GPU.
 | 55 | The softened photo shadows built (rows 41, 47) | Shipped in 0.5.0 (briefs v0.5.0-01 to -05): the `shadows` step writes the capture-shadow mask (`config/shadows.json`, §8), the main scene reads it (`CaptureShadowGrid`) and the photo shader lifts the photo inside it, G = 3 in linear light, clipped at 1. The mask has a full mip chain like the photo's, by the session's call on the owner's "3a": a distant software render of the village, with mipmaps against without, measured the speckle beyond 350 m 23 to 28 % lower and the frame-to-frame flicker 6 to 7.5 % lower. Not taken: the mask without mipmaps, as M4-06 pinned it | Owner ("3a", 2026-10-29); the mipmaps the session's, from the measurement |
 | 56 | The trees' haze (FB-004 item 5) | Variant V2: an aerial-perspective haze, Godot's exponential fog of density 5.27e-5 per metre (`SkyRig.HAZE_DENSITY`, measured in software Forward+ so ground 2 km away is about 10 % the sky's colour: 0.0999), aerial perspective 1.0 (its colour the sky's radiance, following the sun, dark at night), sky affect 0 (the sky itself unfogged); the gate's render checks switch it off (§12), and their numbers did not move (brief v0.5.0-07) | Owner ("question A OK", 2026-10-29) |
 | 57 | The sky's clock outside the validated 2020 to 2035 (0.4.0 review S-06) | A note, not a clamp: outside `SkyClock`'s validated range the clock label reads its usual text followed by " · the sky is unchecked outside 2020 to 2035 UTC" and stays shown until the clock is back inside; every key keeps working (brief v0.5.0-08). The label staying shown is the session's reversible call (the board's audit list). Not taken: a clamp | Owner ("question A OK", 2026-10-29) |
+| 58 | M5's direction: the whole municipality and a source map (0.6.0's go, 2026-11-02; answers §14's extents) | Staged. Stage 1: the pipeline, rebuilt to work per 1 km tile, writes a full-resolution source map of the municipality of Zermatt (swissBOUNDARIES3D, BFS 6300, 242.72 km²) plus a 2 km buffer (the east side under 2.9 km, inside Terrain3D's ±16.384 km), deterministic and pinned like every output; a derive step makes the game's files from it, first exactly today's area. The 0.1 m photo tiles are kept as downloaded; 0.2 m is the finest the game's files use. Stage 2: a mixed-resolution game of the whole municipality, all in memory (full detail over the village and the valley floor, about 2 m terrain and 1 m photo elsewhere). Stage 3, only when a game needs it: streaming or per-game derived versions (row 50). The origin stays (`config/world.json`; the municipality spans x −12.4 to +13.4 km, z −5.5 to +10.9 km, float32 under 1 mm). The source map is built on the owner's PC (about 24 GB of inputs); still to decide at stage 1: the 2020 building sheets without an item, nodata at the Italian border. Not taken: full detail everywhere, streamed, from the start (6 to 8 releases); mixed resolution without the source-map stage; an 8 × 8 km box | Owner ("I follow your recommendations for everything"; RULINGS 2026-11-02; docs/history/blocked/2026-11-02-1.md) |
+| 59 | The far mountains drawn (0.6.0's go, 2026-11-02; amends row 42) | swissALTIRegio's heights around the area are drawn as a far terrain, not a shadows-only mesh; drawn, it also casts the shadows that row 42 asked for. Coloured from a coarse SWISSIMAGE where the data is Swiss, a plain shading elsewhere. Its cut is today's area box; at M5's stage 2 it grows to the municipality plus buffer and the mesh becomes the backdrop beyond it (measured: with the municipality drawn, outside terrain changes the village's direct sun by 0 to 2 minutes a day, while 60 to 84 % of the skyline from the high points lies outside). Not taken: the shadows-only mesh as briefed in M4-07; no far terrain | Owner (same answer) |
 
 Readings the design realm took from those answers (the owner may reverse any):
 "soft rule" = the licence rule is an ordinary rule (the owner's word can override it), not
@@ -1162,10 +1165,11 @@ Asked when the milestone that needs them is planned; each is also on the board.
   reserved" and there is no licence file; games will be branches or forks, §13 row 50, and a second
   developer may join: a `design` conversation when they do).
 - Weather: simulated, or real data (MeteoSwiss open data, Open-Meteo) — M6.
-- Backdrop and larger-area extents and resolutions — M5. With them: the 2020 per-sheet
+- Backdrop and larger-area extents and resolutions — answered 2026-11-02 (§13 rows 58, 59): the
+  municipality plus 2 km, staged. Still open inside it, for M5's stage 1: the 2020 per-sheet
   buildings have gaps near Zermatt (1348-22, -32, -34, -43 have no item), and `lock
   buildings` refuses a sheet without one as a failed read; M5 decides whether such a
-  sheet means "no buildings" (M2 R1 I-07).
+  sheet means "no buildings" (M2 R1 I-07); and how nodata at the Italian border is filled.
 - Game type — later (§13 row 34).
 
 Answered at M1 planning (2026-09-25; §13 rows 14–19): the terrain resolution, where the
