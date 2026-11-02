@@ -1,0 +1,35 @@
+{
+  "areas": {
+    "fixture": {
+      "colour": {
+        "band_m": 100,
+        "cell_m": 100,
+        "computed_for": {
+          "inputs_sha256": "db6e87d2d2a4ce91e7778eb86b730e76916db7c3f8e3c9dfc35881a36a67ed78",
+          "world_sha256": "16a33fa5549cb04214a08d37bc53ea743d608962678d00bc4820ce3438424a21"
+        },
+        "expected_columns": 30,
+        "expected_filled_fraction": 0.3333333333333333,
+        "expected_pixels_sha256": "ddea5d44c6a30aae16e9391ae0b8f7b2db0dd7eccdabaaeb7ab80b44cd935fa0",
+        "expected_rows": 30,
+        "expected_sha256": "c028e3690ae73ebacd2d5b662162e589c15234796ad08edf9024ba713cade7f0"
+      },
+      "computed_for": {
+        "inputs_sha256": "4bc356c6a2f172842fb7ecf28b6f57a9a03f322b76908893a6ba5abbe54c37e1",
+        "world_sha256": "16a33fa5549cb04214a08d37bc53ea743d608962678d00bc4820ce3438424a21"
+      },
+      "expected_columns": 7,
+      "expected_lv95_box": {
+        "e_max": 2618000.0,
+        "e_min": 2615000.0,
+        "n_max": 1097000.0,
+        "n_min": 1094000.0
+      },
+      "expected_rows": 7,
+      "expected_sha256": "51251441472173ea054f35b66cfea9b85941669cfe2e14ec5efde5dd1333e6fc",
+      "margin_m": 1000,
+      "spacing_m": 500
+    }
+  },
+  "schema": 2
+}

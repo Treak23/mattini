@@ -761,9 +761,14 @@ Tier 2 elsewhere.
 and `computed_for` like every step above; their rules in full are `docs/briefs/sketches/m4-design.md`
 §1 to §4 and the briefs' Decisions:
 - `surroundings`: swissALTIRegio's 10 km XYZ tiles (30 for the village, edition 2026-06, locked by
-  `lock regio`, fetched by `download regio`) to a 100 m grid of local heights over the area grown by
-  20 km, each vertex the highest sample of its square, the area box cut out as NaN;
-  `surroundings/<area>.f32` and `.json` (`config/surroundings.json`).
+  `lock regio`, fetched by `download regio`) to a 50 m grid of local heights over the area grown by
+  20 km, each vertex the mean of the 25 samples of its half-open square computed exactly from whole
+  centimetres, the area box cut out as NaN (from 0.6.0, §13 row 59, `docs/briefs/sketches/v0.6.0/design.md`
+  §1; M4 designed a 100 m grid of maxima for a shadows-only mesh); `surroundings/<area>.f32` and `.json`
+  (`config/surroundings.json`). From 0.6.0 also `farcolour`: SWISSIMAGE 2023's 2 m tiles over the same box
+  (`swissimage_far`, `lock farphoto`, `download farphoto`) to a 10 m colour JPEG, every cell without an item
+  filled by the photo's mean colour of its 100 m altitude band, a labelled placeholder (design §2);
+  `surroundings/<area>_colour.jpg`.
 - `shadows`: where the photo was in shadow when flown (the flight's sun, grid azimuth 184.67°,
   elevation 50.1°), marched over swissSURFACE3D on a 1 m grid, written at 0.5 m with a 0.5 m inset;
   `shadows/<area>.png` (8-bit, the surfaces' zlib rule) and `.json` (`config/shadows.json`).
@@ -773,8 +778,8 @@ and `computed_for` like every step above; their rules in full are `docs/briefs/s
 The manifest gains the `surroundings`, `shadows` and `sky` blocks (twelve keys at the top); 0.4.0 adds `sky`
 alone (ten keys) and the surfaces block's `flow` object (briefs v0.4.0-01, -07); 0.5.0 adds `shadows`
 (eleven keys: `buildings`, `photo`, `roofs`, `schema`, `shadows`, `sky`, `surfaces`, `terrain`, `trees`,
-`world`, `world_sha256`; null until built; briefs v0.5.0-01, -02). `surroundings` waits for the far
-mountains' shadows.
+`world`, `world_sha256`; null until built; briefs v0.5.0-01, -02). 0.6.0 adds `surroundings` (twelve keys;
+briefs v0.6.0-07, its shape in v0.6.0-08).
 
 **Determinism (Hard Rule 5):** pinned editions and checksummed inputs; outputs carry no
 wall-clock times and no absolute paths; stable ordering; running a step twice on the same

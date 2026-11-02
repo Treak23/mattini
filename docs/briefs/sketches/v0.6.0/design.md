@@ -54,7 +54,7 @@ marked "measured" are reproducible from the pinned inputs; the scripts' logic is
 
 ## 2. The colour
 
-- **The input:** a sixth swisstopo input, the dataset `swissimage_far` in `config/datasets.json`: collection
+- **The input:** a seventh swisstopo input (swissALTIRegio is the sixth), the dataset `swissimage_far` in `config/datasets.json`: collection
   `ch.swisstopo.swissimage-dop10`, edition `2023`, `resolution_m` 2, attribution `© swisstopo`; its tiles are
   every 1 km cell of the surroundings box ([e_min, e_max) × [n_min, n_max), the box itself, no half-spacing
   border) that has an item of the edition; the cells without one are recorded in the lock as absent (so a new
@@ -141,3 +141,18 @@ measured at the integration rehearsal.
 | v0.6.0-09 | The main scene: the far terrain loaded, the camera's far, the line, the panel, the credits | B | 07, 08 | 1 |
 | v0.6.0-10 | The export and the release workflow: the new inputs and steps, the startup line, the manifest pair | A | 03, 07, 09 | 2 |
 | v0.6.0-11 | The version 0.6.0 and the release notes' rollback line | A | all | 2 |
+
+## 7. Amended at the pins' review (2026-11-02, the session; the checkers' findings)
+
+- **The skirt is double-sided** (§3 amended): its own material (the same albedo, `CULL_DISABLED`), shadows off,
+  100 m deep. Facing out of the cut with back-face culling it would never be seen from the village, where the crack
+  is seen. The chunks share one material; the skirt has its own.
+- **The reader checks the heights' NaN layout** (§3 kept): NaN exactly at the vertices strictly inside `cut_box`,
+  finite elsewhere.
+- **The fixtures** (§5 amended): `tests/shared/surroundings_fixture/`'s colour JPEG and manifest block are game-only
+  design data, hand-made, labelled and pinned by SHA-256; the colour step proves itself on its own fixture,
+  `tests/shared/farcolour_fixture/`. The render checks' test world (`complete_world.gd`) cuts its far-terrain hole
+  by its own grid, not by its 20 m area box (labelled test data), so the far mesh never covers the tiny test
+  terrain and the five RENDER numbers stay as they were.
+- **The fill of the cells without a photo** (§2) departs from the owner's "plain shading" (SPEC §13 row 59): put to
+  the owner with the plan; until answered, the pins keep §2's altitude-band fill.

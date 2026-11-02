@@ -165,9 +165,9 @@ build on GitHub's machine, and its log is the delivery's proof.
 ## E. When the owner reports a broken build
 
 Point at the rollback immediately, in the first reply, before any diagnosis: the previous
-version's Release, as the Release notes' rollback line names it. For 0.5.0, the first version
-delivered as a Release, it is the `dist` branch's folder `mattini-0.3.1/`
-(https://github.com/Treak23/mattini/tree/dist/mattini-0.3.1): 0.4.0 was never delivered. Each
+version's Release, as the Release notes' rollback line names it (for 0.5.0, the first version
+delivered as a Release, it was the `dist` branch's folder `mattini-0.3.1/`; from 0.6.0 it is a
+Release). Each
 later release rewrites that line in `tools/release_notes.md` so that it names the Release before
 it: the session decides the words, a builder writes them (`tools/` is production code, DESIGN.md
 §Identity). Then diagnose.

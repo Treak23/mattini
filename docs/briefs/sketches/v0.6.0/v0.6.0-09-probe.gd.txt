@@ -1,0 +1,73 @@
+extends SceneTree
+## Scratch probe for brief v0.6.0-09's rehearsal (never committed as code): the main scene on the
+## real village's manifest of v0.6.0-07's real run (surroundings only), its _ready timed, the far
+## terrain's line, chunks, panel and credit; with a folder argument, Compatibility frames.
+
+class Lines:
+	extends Logger
+	var lines := PackedStringArray()
+	func _log_message(message: String, error: bool) -> void:
+		if not error:
+			lines.append(message.strip_edges())
+
+func _initialize() -> void:
+	await process_frame
+	var args := OS.get_cmdline_user_args()
+	var path: String = args[0]
+	var out: String = args[1] if args.size() > 1 else ""
+	var catcher := Lines.new()
+	OS.add_logger(catcher)
+	var main: Node3D = load("res://main.tscn").instantiate()
+	main.manifest_path = path
+	var t0 := Time.get_ticks_usec()
+	root.add_child(main)
+	var t1 := Time.get_ticks_usec()
+	OS.remove_logger(catcher)
+	main.set_process(false)
+	print("PROBE ready ms ", (t1 - t0) / 1000.0)
+	for line in catcher.lines:
+		if line.begins_with("mattini "):
+			print("PROBE line ", line)
+	var far: Node3D = main.get_node_or_null("Surroundings")
+	var chunks := 0
+	var tris := 0
+	for child in far.get_children():
+		var mi := child as MeshInstance3D
+		var n: int = (mi.mesh.surface_get_arrays(0)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+		if String(mi.name) == "Skirt":
+			print("PROBE skirt triangles ", n)
+		else:
+			chunks += 1
+			tris += n
+	print("PROBE chunks ", chunks, " triangles ", tris, " transform ", far.global_transform)
+	print("PROBE camera far ", (main.get_node("Camera") as Camera3D).far)
+	var message: String = main.get_node("UI/ErrorPanel/Message").text
+	print("PROBE panel first line ", message.get_slice("\n", 0))
+	var credits: String = main.get_node("UI/PauseMenu/Credits").text
+	for line in credits.split("\n"):
+		if line.begins_with("swiss"):
+			print("PROBE credit ", line)
+	if not out.is_empty():
+		main.get_node("UI/ErrorPanel").hide()
+		var world := WorldConfig.from_manifest(path)
+		var camera: FreeFlyCamera = main.get_node("Camera")
+		# [name, E, N, h, bearing, pitch down]
+		var views := [
+			["village-to-matterhorn", 2624000.0, 1096500.0, 2600.0, 235.0, 8.0],
+			["gornergrat", 2626900.0, 1092700.0, 3300.0, 250.0, 6.0],
+			["top", 2624000.0, 1096500.0, 60000.0, 0.0, 89.9],
+		]
+		for v: Array in views:
+			var at := world.to_local(v[1], v[2], v[3])
+			var b := deg_to_rad(v[4])
+			var facing := Vector3(sin(b), 0.0, -cos(b))
+			camera.set_view(at, atan2(-facing.x, -facing.z), -deg_to_rad(v[5]))
+			if v[0] == "top":
+				camera.far = 100000.0
+			for i in 20:
+				await process_frame
+			var image := root.get_texture().get_image()
+			image.convert(Image.FORMAT_RGB8)
+			image.save_jpg(out.path_join("%s.jpg" % v[0]), 0.9)
+			print("PROBE saved ", v[0])
+	quit()

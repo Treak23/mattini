@@ -1,0 +1,80 @@
+{
+  "buildings": null,
+  "photo": null,
+  "roofs": null,
+  "schema": 1,
+  "shadows": null,
+  "sky": null,
+  "surfaces": null,
+  "surroundings": {
+    "area": "fixture",
+    "colour_cell_m": 1000.0,
+    "colour_columns": 15,
+    "colour_file": "surroundings/fixture_colour.jpg",
+    "colour_format": "jpeg",
+    "colour_pixels_sha256": "a37504bf495ebf170e2b3505b5a240df7e7ed06d826cbfee9036e7d59447b728",
+    "colour_rows": 18,
+    "colour_sha256": "c1d7cf77c72e23a70f650dce87e9027020353ff2cca63cfacdcebdcc64797781",
+    "colour_source": {
+      "attribution": "© swisstopo (synthetic test colours, not SWISSIMAGE data)",
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "dataset": "swissimage_far",
+      "edition": "2023"
+    },
+    "columns": 6,
+    "cut_box": {
+      "e_max": 2625000.0,
+      "e_min": 2616000.0,
+      "n_max": 1107000.0,
+      "n_min": 1095000.0
+    },
+    "file": "surroundings/fixture.f32",
+    "filled_fraction": 0.2,
+    "format": "f32-le",
+    "lv95_box": {
+      "e_max": 2628000.0,
+      "e_min": 2613000.0,
+      "n_max": 1110000.0,
+      "n_min": 1092000.0
+    },
+    "rows": 7,
+    "sha256": "5758119c921825ee96c8f57e524e470807010661277d6f5ce19693e72dc3bb6d",
+    "source": {
+      "attribution": "© swisstopo (synthetic test heights, not swissALTIRegio data)",
+      "collection": "ch.swisstopo.swissaltiregio",
+      "dataset": "swissaltiregio",
+      "edition": "2026-06",
+      "entry_sha256": "3457f1c20b2c1d9182be02743b6ddac32dd7910dc6f4ab977f2d36ce203dff84"
+    },
+    "spacing_m": 3000.0,
+    "world_sha256": "24bb18b6b076740d83111e08f8d1303ee763106694a1d8e3954e9fed31279cbf"
+  },
+  "terrain": null,
+  "trees": null,
+  "world": {
+    "areas": {
+      "fixture": {
+        "e_max": 2625000.0,
+        "e_min": 2616000.0,
+        "n_max": 1107000.0,
+        "n_min": 1095000.0
+      }
+    },
+    "axes": {
+      "x": "+e",
+      "y": "+h",
+      "z": "-n"
+    },
+    "crs": {
+      "horizontal": "EPSG:2056",
+      "vertical": "EPSG:5728"
+    },
+    "height_offset_m": 1250.25,
+    "origin_lv95": {
+      "e": 2618250.0,
+      "n": 1101750.0
+    },
+    "schema": 1
+  },
+  "world_sha256": "24bb18b6b076740d83111e08f8d1303ee763106694a1d8e3954e9fed31279cbf"
+}

@@ -1,0 +1,45 @@
+extends SceneTree
+
+func _init() -> void:
+	var path := "/tmp/claude-0/-home-user-mattini/2df1b92e-a4c1-5fe4-978f-0932f23f43fb/scratchpad/pins/work08/real/manifest.json"
+	var t0 := Time.get_ticks_usec()
+	var world := WorldConfig.from_manifest(path)
+	var grid := SurroundingsGrid.from_manifest(path, world)
+	var t1 := Time.get_ticks_usec()
+	print("PROBE read ms ", (t1 - t0) / 1000.0, " grid ", grid.columns, " x ", grid.rows, " colour ", grid.colour_columns, " x ", grid.colour_rows)
+	var parent := Node3D.new()
+	var root := SurroundingsLoader.create(grid, parent)
+	var t2 := Time.get_ticks_usec()
+	print("PROBE create ms ", (t2 - t1) / 1000.0)
+	var chunks := 0
+	var tris := 0
+	var verts := 0
+	var top := -1.0e9
+	var top_v := Vector3.ZERO
+	for child in root.get_children():
+		var mi := child as MeshInstance3D
+		var arrays := mi.mesh.surface_get_arrays(0)
+		var n: int = (arrays[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+		if String(mi.name) == "Skirt":
+			print("PROBE skirt triangles ", n, " vertices ", (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())
+			continue
+		chunks += 1
+		tris += n
+		verts += (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+		for v: Vector3 in arrays[Mesh.ARRAY_VERTEX]:
+			if v.y > top:
+				top = v.y
+				top_v = v
+	print("PROBE chunks ", chunks, " triangles ", tris, " vertices ", verts)
+	var hi := -1.0e9
+	var hk := -1
+	for k in grid.heights.size():
+		if not is_nan(grid.heights[k]) and grid.heights[k] > hi:
+			hi = grid.heights[k]
+			hk = k
+	var c := hk % grid.columns
+	var r := hk / grid.columns
+	print("PROBE highest grid vertex c ", c, " r ", r, " h ", hi, " E ", 2603000 + 50 * c, " N ", 1118000 - 50 * r)
+	print("PROBE highest mesh vertex ", top_v, " lv95 ", world.to_lv95(top_v))
+	parent.free()
+	quit()
