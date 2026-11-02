@@ -8,7 +8,7 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 **Release 0.6.0 — GO 2026-11-02 (`docs/history/blocked/2026-11-02-1.md`; the plan `docs/briefs/v0.6.0-plan.md`).** The far
 mountains drawn from swissALTIRegio (SPEC §13 row 59; re-scoped from M4-01, -02, -07 and the surroundings parts of M4-09 and
-M4-10) and the release-reproducibility batch. Builders on Sonnet, two days, two lanes. The list is frozen.
+M4-10) and the release-reproducibility batch. Builders on Sonnet, two lanes; no size limit this release and no build before the owner's second go (the owner's overrides, 2026-11-02). The list is frozen.
 
 **After 0.6.0:** M5 staged (SPEC §13 row 58): stage 1, the per-tile source map of the municipality of Zermatt plus 2 km and a
 derive step (about 2 releases, nothing changes on screen); stage 2, the mixed-resolution game of the whole municipality (about 2
