@@ -1,14 +1,15 @@
 """Command line: `python -m mattini <command>`.
 
-`lock` and `download` take terrain, buildings, photo, surface or tlm, and `lock` takes `regio`
-too (swissALTIRegio, brief v0.6.0-01; its download is brief v0.6.0-02's, so `download regio`
-is an invalid choice); they, `terrain` and `buildings` all serve the one area
-config/terrain.json names (briefs M2-01, M2-03, M2-04, M3-03; M1 R1 T-06): the area has one
+`lock` and `download` take the same six choices: terrain, buildings, photo, surface, tlm or
+regio (swissALTIRegio, briefs v0.6.0-01 and v0.6.0-02: `lock regio` pins its tiles and
+`download regio` fetches and verifies them); they, `terrain` and `buildings` all serve the one
+area config/terrain.json names (briefs M2-01, M2-03, M2-04, M3-03; M1 R1 T-06): the area has one
 home. swissTLM3D (`tlm`) is national and has none. `lock <dataset>` writes that dataset's
 entry of config/datasets.lock.json and keeps every other entry (brief M2-03); the six lock
-entries are written by the six `lock` choices. `lock regio` takes the tiles' margin and
-spacing for that area from config/surroundings.json and ends in one `mattini: error:` line
-naming the file when it cannot (`download.surroundings_settings`).
+entries are written by the six `lock` choices. `lock regio` and `download regio` take the
+tiles' margin and spacing for that area from config/surroundings.json
+(`download.surroundings_settings`; the download through the lock's fit) and end in one
+`mattini: error:` line naming the file when they cannot, before swisstopo is asked anything.
 
 `photo`, `roofs`, `surfaces` and `trees` build the M3 steps' outputs as `terrain` and
 `buildings` build theirs (brief M3-13); each then writes the manifest. They read the
@@ -57,13 +58,14 @@ from mattini.world import WorldConfigError, load_world
 DATASETS = {
     "buildings": (download.BUILDINGS, "sheets"),
     "photo": (download.PHOTO, "tiles"),
+    "regio": (download.REGIO, "tiles"),
     "surface": (download.SURFACE, "tiles"),
     "terrain": (download.DATASET, "tiles"),
     "tlm": (download.TLM, "file"),
 }
-# `lock` serves one dataset more than `download` does: swissALTIRegio's download is
-# brief v0.6.0-02's
-LOCK_DATASETS = {**DATASETS, "regio": (download.REGIO, "tiles")}
+# `lock` serves the same six datasets as `download` (swissALTIRegio's download is brief
+# v0.6.0-02's): one table, under both its names
+LOCK_DATASETS = DATASETS
 # the M3 steps, in pipeline order: what each builds from the downloads
 STEPS = {
     "photo": "build the aerial photo of the area from the downloaded tiles",
@@ -72,14 +74,11 @@ STEPS = {
     "trees": "find the trees in the surface model",
     "shadows": "build the capture shadows mask from the surface model",
 }
-DOWNLOAD_HELP = (
-    "terrain: swissALTI3D; buildings: swissBUILDINGS3D 3.0, its map sheets; photo: "
-    "SWISSIMAGE 10 cm; surface: the swissSURFACE3D raster; all for the area "
-    "config/terrain.json names; tlm: swissTLM3D, national (2.9 GB)"
-)
 DATASETS_HELP = (
-    f"{DOWNLOAD_HELP}; regio (lock only): swissALTIRegio, its 10 km tiles for the area "
-    "config/terrain.json names, grown by the margin and spacing config/surroundings.json gives it"
+    "terrain: swissALTI3D; buildings: swissBUILDINGS3D 3.0, its map sheets; photo: "
+    "SWISSIMAGE 10 cm; surface: the swissSURFACE3D raster; regio: swissALTIRegio, its 10 km "
+    "tiles around the area, grown by the margin and spacing config/surroundings.json gives it; "
+    "all for the area config/terrain.json names; tlm: swissTLM3D, national (2.9 GB)"
 )
 
 
@@ -89,9 +88,9 @@ def main(argv: list[str] | None = None) -> int:
     pin = commands.add_parser(
         "lock", help="pin the published SHA-256 of the inputs in config/datasets.lock.json"
     )
-    pin.add_argument("dataset", choices=sorted(LOCK_DATASETS), help=DATASETS_HELP)
+    pin.add_argument("dataset", choices=sorted(DATASETS), help=DATASETS_HELP)
     fetch = commands.add_parser("download", help="fetch and verify pinned swisstopo inputs")
-    fetch.add_argument("dataset", choices=sorted(DATASETS), help=DOWNLOAD_HELP)
+    fetch.add_argument("dataset", choices=sorted(DATASETS), help=DATASETS_HELP)
     fetch.add_argument(
         "--out", default=download.DEFAULT_OUT, help="download root (default: data/raw)"
     )
@@ -230,7 +229,9 @@ def _download(dataset: str, out_root: Path) -> int:
     """Fetch the files of the terrain config's area that the committed lock vouches for.
 
     With urllib; progress on stderr, the provenance path on stdout. swissTLM3D is one national
-    file, resumed when a transfer is cut (`download.download_tlm`).
+    file, resumed when a transfer is cut (`download.download_tlm`). swissALTIRegio's tiles
+    (`download.download_regio`) are the area's surroundings, whose margin and spacing the lock's
+    fit reads from config/surroundings.json before swisstopo is asked anything.
     """
     name, unit = DATASETS[dataset]
     fetched = []
@@ -268,6 +269,7 @@ def _download(dataset: str, out_root: Path) -> int:
             "terrain": download.download_terrain,
             "buildings": download.download_buildings,
             "photo": download.download_photo,
+            "regio": download.download_regio,
             "surface": download.download_surface,
         }[dataset]
         count = len(

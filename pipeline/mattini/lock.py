@@ -34,9 +34,11 @@ M3-13): the one home of that rule.
 Whether a lock *fits* the configs has one home, `fit_problem` (brief M3-01, M2 V1-P-01):
 the entry is for the datasets config's collection, edition (swissSURFACE3D: every tile's
 edition one of `editions`) and resolution and pins exactly the area's tiles or map sheets,
-no more and no fewer (swissTLM3D is national: no area; swissALTIRegio has no fit rule yet, brief v0.6.0-02's).
-`download`, the steps and `manifest` all ask it, so each refuses a lock that does not fit with the same words, naming
-`python -m mattini lock <dataset>` and no other command.
+no more and no fewer (swissTLM3D is national: no area; swissALTIRegio's tiles are those
+`download.regio_tiles` gives with the margin and spacing config/surroundings.json has for the area
+when the fit is asked, brief v0.6.0-02). `download`, the steps and `manifest` all ask it, so each
+refuses a lock that does not fit with the same words, naming `python -m mattini lock <dataset>` and
+no other command.
 """
 
 from __future__ import annotations
@@ -228,6 +230,17 @@ class _Fit:
     editions: bool = False  # every file's `edition` must be one of the config's `editions`
 
 
+def _regio_ids(world: World, area: str) -> list[str]:
+    """The swissALTIRegio tiles the surroundings of `area` need, by the config as it is now.
+
+    `download.regio_tiles` with the `(margin_m, spacing_m)` that `download.surroundings_settings`
+    reads from config/surroundings.json when the fit is asked, so the fit follows the config
+    (brief v0.6.0-02); a config that reader refuses is its DownloadError.
+    """
+    margin_m, spacing_m = download.surroundings_settings(area)
+    return download.regio_tiles(world, area, margin_m=margin_m, spacing_m=spacing_m)
+
+
 _FITS = {
     download.DATASET: _Fit(("collection", "edition", "resolution_m"), "tiles", download.area_tiles),
     download.BUILDINGS: _Fit(("collection", "edition"), "sheets", download.area_sheets),
@@ -236,6 +249,7 @@ _FITS = {
         ("collection", "resolution_m"), "tiles", download.area_tiles, editions=True
     ),
     download.TLM: _Fit(("collection", "edition"), None),
+    download.REGIO: _Fit(("collection", "edition", "resolution_m"), "tiles", _regio_ids),
 }
 
 
@@ -256,7 +270,9 @@ def fit_problem(
     other command. A datasets config without `dataset` is a DownloadError naming
     config/datasets.json (`download.dataset_of`), and so is one that lists `editions` where the
     dataset needs one `edition` or the other way round (`download.edition_of`); an area the
-    sheet grid cannot place is one too.
+    sheet grid cannot place is one too. swissALTIRegio's tiles depend on the margin and
+    spacing of config/surroundings.json, read when this is asked: a config
+    `download.surroundings_settings` refuses is a DownloadError naming the file.
     """
     if dataset not in _FITS:
         raise ValueError(f"no fit rule for dataset {dataset!r}: the lock knows {sorted(_FITS)}")

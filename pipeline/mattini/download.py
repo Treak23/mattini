@@ -54,9 +54,15 @@ error (brain.md H9) and only the part's size shows the cut. The part is kept whe
 cannot finish (also on Ctrl-C), and the file takes its name only when its SHA-256 equals
 the lock's. Every refusal of the TLM starts `swisstlm3d <edition>: `.
 
-swissALTIRegio (brief v0.6.0-01; SPEC §5) is swisstopo's 10 m terrain model of Switzerland and
-its neighbours in 10 km tiles of zipped XYZ text, the input of the far terrain. Only its lock
-is written here (`python -m mattini lock regio`); no file of it is downloaded yet.
+swissALTIRegio (briefs v0.6.0-01 and v0.6.0-02; SPEC §5) is swisstopo's 10 m terrain model of
+Switzerland and its neighbours in 10 km tiles of zipped XYZ text, the input of the far terrain.
+`python -m mattini lock regio` writes its lock and `download regio` (`download_regio`) is the
+terrain's flow for its tiles: the lock must fit (`lock.fit_problem`, which asks for the tiles
+`regio_tiles` gives with the margin and spacing config/surroundings.json has when the fit is
+asked), every STAC item is compared with the lock before any file is fetched, and a republished
+tile is refused naming `lock regio` and config/surroundings.json, the config whose expected
+values design recomputes (`EXPECTED_CONFIG_NAMES`). The zips go to `swissaltiregio/<edition>/`
+under the root with their provenance.json; no step reads them yet.
 `regio_tiles` lists the tiles whose square meets the samples that the surroundings of an area
 need (the area's box grown by `margin_m`, and by half of `spacing_m` for the samples a vertex
 takes its height from); the two numbers are the area's in config/surroundings.json, which
@@ -141,6 +147,7 @@ EXPECTED_CONFIG_NAMES = {
     PHOTO: "config/photo.json and config/roofs.json",
     SURFACE: "config/trees.json",
     TLM: "config/surfaces.json and config/trees.json",
+    REGIO: "config/surroundings.json",
 }
 _RECOMPUTE = {
     name: f"then design recomputes the expected values in {config} (docs/SPEC.md §8)"
@@ -534,6 +541,31 @@ def download_photo(
     return _download_tiles(PHOTO, world, datasets, out_root, fetch_json, fetch_file, lock, area)
 
 
+def download_regio(
+    world: World,
+    datasets: dict,
+    out_root: Path | str,
+    fetch_json: FetchJson,
+    fetch_file: FetchFile,
+    *,
+    lock: dict,
+    area: str,
+) -> list[dict]:
+    """Fetch and verify the swissALTIRegio tiles of `area` into `<out_root>/swissaltiregio/<edition>/`.
+
+    As `download_terrain`, for the lock's `swissaltiregio` entry (brief v0.6.0-02). The lock
+    must fit (`lock.fit_problem`, naming `lock regio`): the collection, edition and resolution
+    of the datasets config and exactly the tiles `regio_tiles` gives with the margin and
+    spacing config/surroundings.json has for `area` when the fit is asked; a config that
+    reader refuses is a DownloadError naming the file, before swisstopo is asked anything.
+    Then every item's datetime must lie in the edition and every published name and SHA-256
+    equal the lock's, before any file is fetched or anything on disk changes; a republished
+    tile is refused naming `lock regio` and config/surroundings.json. The files and the
+    provenance.json (exactly the terrain's keys) are the shared flow's.
+    """
+    return _download_tiles(REGIO, world, datasets, out_root, fetch_json, fetch_file, lock, area)
+
+
 def _download_tiles(
     dataset: str,
     world: World,
@@ -552,7 +584,13 @@ def _download_tiles(
     if problem:
         raise DownloadError(problem)
     pinned = lock["datasets"][dataset]["tiles"]
-    assets = _published_tiles(dataset, world, datasets, fetch_json, area)
+    if dataset == REGIO:  # its tiles are the surroundings', not the area's 1 km tiles
+        margin_m, spacing_m = surroundings_settings(area)
+        assets = published_regio(
+            world, datasets, fetch_json, area=area, margin_m=margin_m, spacing_m=spacing_m
+        )
+    else:
+        assets = _published_tiles(dataset, world, datasets, fetch_json, area)
     _compare_with_lock(assets, pinned, dataset, area)
     out_dir = Path(out_root) / dataset / edition_of(datasets, dataset)
     entries = _fetch_tiles(out_dir, assets, fetch_file, area)
