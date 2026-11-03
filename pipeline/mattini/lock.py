@@ -5,8 +5,10 @@ does not pin the inputs. The lock holds one entry per dataset, each recording, f
 pinned edition, every file's published name and SHA-256, read from the STAC items only (no
 file is fetched):
 
-- `swissalti3d` and `swissimage`: exactly {collection, edition, resolution_m,
-  tiles: {<tile>: {file, sha256}}};
+- `swissalti3d`, `swissimage` and `swissaltiregio` (brief v0.6.0-01): exactly {collection,
+  edition, resolution_m, tiles: {<tile>: {file, sha256}}}; swissALTIRegio's tiles are the 10 km
+  items the far terrain's surroundings need (`download.regio_tiles`), its edition a year and
+  month (`2026-06`) that only the items' `properties.datetime` names;
 - `swissbuildings3d`: exactly {collection, edition, sheets: {<sheet>: {file, sha256}}}, every
   sheet id an LK25 sixteenth (`sheets.SHEET_ID`);
 - `swisssurface3d` (brief M3-03): exactly {collection, resolution_m,
@@ -15,8 +17,8 @@ file is fetched):
 - `swisstlm3d`: exactly {collection, edition, file, sha256}, the one national file.
 
 Any other dataset is refused. The lock is written only by `python -m mattini lock terrain`,
-`lock buildings`, `lock photo`, `lock surface` and `lock tlm`, each of which replaces its
-own entry and keeps every other (`with_entry`), and committed, like `uv.lock`; the
+`lock buildings`, `lock photo`, `lock surface`, `lock tlm` and `lock regio`, each of which
+replaces its own entry and keeps every other (`with_entry`), and committed, like `uv.lock`; the
 `download` commands refuse a published checksum that differs from it (Hard Rule 5). Written
 deterministically: sorted keys, 2-space indent, UTF-8, LF, a final newline. A malformed
 lock is a LockError naming the file (Hard Rule 2). `file:checksum` is published in upper-case
@@ -32,8 +34,8 @@ M3-13): the one home of that rule.
 Whether a lock *fits* the configs has one home, `fit_problem` (brief M3-01, M2 V1-P-01):
 the entry is for the datasets config's collection, edition (swissSURFACE3D: every tile's
 edition one of `editions`) and resolution and pins exactly the area's tiles or map sheets,
-no more and no fewer (swissTLM3D is national: no area). `download`, the steps and
-`manifest` all ask it, so each refuses a lock that does not fit with the same words, naming
+no more and no fewer (swissTLM3D is national: no area; swissALTIRegio has no fit rule yet, brief v0.6.0-02's).
+`download`, the steps and `manifest` all ask it, so each refuses a lock that does not fit with the same words, naming
 `python -m mattini lock <dataset>` and no other command.
 """
 
@@ -55,7 +57,7 @@ from mattini.world import REPO, World
 
 LOCK_PATH = REPO / "config" / "datasets.lock.json"
 LOCK_COMMAND = download.LOCK_COMMAND
-LOCK_COMMANDS = tuple(  # the five commands that write the lock, in the order the help lists them
+LOCK_COMMANDS = tuple(  # the six commands that write the lock, in the order the help lists them
     download.LOCK_COMMAND_OF[name]
     for name in (
         download.DATASET,
@@ -63,6 +65,7 @@ LOCK_COMMANDS = tuple(  # the five commands that write the lock, in the order th
         download.PHOTO,
         download.SURFACE,
         download.TLM,
+        download.REGIO,
     )
 )
 SCHEMA = 1
@@ -73,6 +76,7 @@ DATASET_KEYS = {  # every dataset the lock knows, with its entry's exact key set
     download.PHOTO: {"collection", "edition", "resolution_m", "tiles"},
     download.SURFACE: {"collection", "resolution_m", "tiles"},
     download.TLM: {"collection", "edition", "file", "sha256"},
+    download.REGIO: {"collection", "edition", "resolution_m", "tiles"},
 }
 TILE_ENTRY_KEYS = {"file", "sha256"}  # one file of a tile or a sheet
 SURFACE_TILE_ENTRY_KEYS = {"edition", "file", "sha256"}  # a swissSURFACE3D tile: its edition too
@@ -177,6 +181,43 @@ def tlm_entry(datasets: dict, fetch_json: download.FetchJson) -> dict:
     }
 
 
+def regio_entry(
+    world: World,
+    datasets: dict,
+    fetch_json: download.FetchJson,
+    *,
+    area: str,
+    margin_m: int,
+    spacing_m: int,
+) -> dict:
+    """The lock's swissALTIRegio entry: the 10 km tiles the surroundings of `area` need.
+
+    From the STAC items only (brief v0.6.0-01): no request goes to the file host, not even a
+    HEAD. The tiles are `download.regio_tiles` for the `margin_m` and `spacing_m` the caller
+    read from config/surroundings.json; `collection`, `edition` and `resolution_m` are the
+    datasets config's, read when this runs. An item whose datetime is not in the pinned
+    edition, or a tile without an item, is a DownloadError and nothing is returned; the
+    checksum is stored in lower case.
+    """
+    regio = download.dataset_of(datasets, download.REGIO)
+    return {
+        "collection": regio["collection"],
+        "edition": download.edition_of(datasets, download.REGIO),
+        "resolution_m": regio["resolution_m"],
+        "tiles": {
+            asset.tile: {"file": asset.name, "sha256": asset.sha256}
+            for asset in download.published_regio(
+                world,
+                datasets,
+                fetch_json,
+                area=area,
+                margin_m=margin_m,
+                spacing_m=spacing_m,
+            )
+        },
+    }
+
+
 @dataclass(frozen=True)
 class _Fit:
     """What `fit_problem` compares for one dataset."""
@@ -270,7 +311,7 @@ def shape_problem(lock: object) -> str | None:
     For the steps, which are given a lock in memory and refuse it in their own error class
     (brief M3-13): `fit_problem` asks whether the entries fit the configs and the area, this
     asks whether the lock is the lock's exact structure, every entry's key set, file name and
-    SHA-256 included. It names `the lock` and all five lock commands, as `validate_lock` does.
+    SHA-256 included. It names `the lock` and all six lock commands, as `validate_lock` does.
     """
     try:
         validate_lock(lock, "the lock")

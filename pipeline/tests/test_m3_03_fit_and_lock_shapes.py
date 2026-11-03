@@ -3,8 +3,9 @@
 Pinned decisions (docs/SPEC.md §5, brief M3-03 decisions 3 and 5): the lock holds five
 entries with exact key sets: `swissimage` {collection, edition, resolution_m, tiles:
 {<tile>: {file, sha256}}}, `swisssurface3d` {collection, resolution_m, tiles: {<tile>:
-{edition, file, sha256}}} and `swisstlm3d` {collection, edition, file, sha256}. A malformed
-lock is a LockError naming the file and all five lock commands. `fit_problem` (M3-01's one
+{edition, file, sha256}}} and `swisstlm3d` {collection, edition, file, sha256} (and since
+brief v0.6.0-01 a sixth, `swissaltiregio`, test_m4_01_lock_regio.py). A malformed lock is a
+LockError naming the file and all six lock commands. `fit_problem` (M3-01's one
 rule) gets a row each: the photo as the terrain, the surface model with every tile's edition
 one of the config's `editions`, the TLM national (no area in its refusal), each naming its own
 `lock <x>` command and no other.
@@ -201,16 +202,16 @@ def test_the_committed_lock_is_valid_and_written_back_byte_for_byte(tmp_path):
         (lambda d: d.update(swissnothing=d["swisstlm3d"]), "unknown dataset 'swissnothing'"),
     ],
 )
-def test_a_malformed_entry_is_refused_naming_the_file_and_all_five_commands(change, complaint):
+def test_a_malformed_entry_is_refused_naming_the_file_and_all_six_commands(change, complaint):
     message = _invalid(change)
     assert message.startswith("lock.json: ") and complaint in message, message
     for command in LOCK_COMMANDS:
         assert f"`{command}`" in message, (command, message)
-    assert len(LOCK_COMMANDS) == 5
+    assert len(LOCK_COMMANDS) == 6
 
 
-def test_the_five_commands_are_the_five_lock_datasets():
+def test_the_six_commands_are_the_six_lock_datasets():
     assert sorted(LOCK_COMMANDS) == sorted(
         f"python -m mattini lock {name}"
-        for name in ("terrain", "buildings", "photo", "surface", "tlm")
+        for name in ("terrain", "buildings", "photo", "surface", "tlm", "regio")
     )

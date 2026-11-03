@@ -2,8 +2,8 @@
 
 Pinned decisions: each command writes its dataset's entry of config/datasets.lock.json from
 the STAC items only (no request for a file, not even a HEAD) and keeps every other entry as
-it was; the file stays sorted, 2-space indented, UTF-8, LF, with a final newline. The
-entries, exact key sets (lesson 33):
+it was (swissALTIRegio's, since brief v0.6.0-01, among them); the file stays sorted, 2-space
+indented, UTF-8, LF, with a final newline. The entries, exact key sets (lesson 33):
 
 - `swissimage`: {collection, edition, resolution_m, tiles: {<tile>: {file, sha256}}}, item
   `swissimage-dop10_<edition>_<tile>`, the one asset ending `_0.1_2056.tif`;
@@ -91,7 +91,8 @@ def test_each_command_writes_its_exact_entry_and_keeps_every_other(swisstopo, ca
         assert (code, out) == (0, f"{swisstopo.lock_path}\n"), err
         expected["datasets"][dataset] = swisstopo.expected_entries()[dataset]
         assert swisstopo.lock_path.read_bytes() == _text(expected), command
-    assert set(expected["datasets"]) == {
+    assert set(expected["datasets"]) == {  # swissaltiregio: brief v0.6.0-01's lock regio
+        "swissaltiregio",
         "swissalti3d",
         "swissbuildings3d",
         "swissimage",

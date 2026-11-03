@@ -1,10 +1,14 @@
 """Command line: `python -m mattini <command>`.
 
-`lock` and `download` take terrain, buildings, photo, surface or tlm; they, `terrain` and
-`buildings` all serve the one area config/terrain.json names (briefs M2-01, M2-03, M2-04,
-M3-03; M1 R1 T-06): the area has one home. swissTLM3D (`tlm`) is national and has none.
-`lock <dataset>` writes that dataset's entry of config/datasets.lock.json and keeps every
-other entry (brief M2-03).
+`lock` and `download` take terrain, buildings, photo, surface or tlm, and `lock` takes `regio`
+too (swissALTIRegio, brief v0.6.0-01; its download is brief v0.6.0-02's, so `download regio`
+is an invalid choice); they, `terrain` and `buildings` all serve the one area
+config/terrain.json names (briefs M2-01, M2-03, M2-04, M3-03; M1 R1 T-06): the area has one
+home. swissTLM3D (`tlm`) is national and has none. `lock <dataset>` writes that dataset's
+entry of config/datasets.lock.json and keeps every other entry (brief M2-03); the six lock
+entries are written by the six `lock` choices. `lock regio` takes the tiles' margin and
+spacing for that area from config/surroundings.json and ends in one `mattini: error:` line
+naming the file when it cannot (`download.surroundings_settings`).
 
 `photo`, `roofs`, `surfaces` and `trees` build the M3 steps' outputs as `terrain` and
 `buildings` build theirs (brief M3-13); each then writes the manifest. They read the
@@ -57,6 +61,9 @@ DATASETS = {
     "terrain": (download.DATASET, "tiles"),
     "tlm": (download.TLM, "file"),
 }
+# `lock` serves one dataset more than `download` does: swissALTIRegio's download is
+# brief v0.6.0-02's
+LOCK_DATASETS = {**DATASETS, "regio": (download.REGIO, "tiles")}
 # the M3 steps, in pipeline order: what each builds from the downloads
 STEPS = {
     "photo": "build the aerial photo of the area from the downloaded tiles",
@@ -65,10 +72,14 @@ STEPS = {
     "trees": "find the trees in the surface model",
     "shadows": "build the capture shadows mask from the surface model",
 }
-DATASETS_HELP = (
+DOWNLOAD_HELP = (
     "terrain: swissALTI3D; buildings: swissBUILDINGS3D 3.0, its map sheets; photo: "
     "SWISSIMAGE 10 cm; surface: the swissSURFACE3D raster; all for the area "
     "config/terrain.json names; tlm: swissTLM3D, national (2.9 GB)"
+)
+DATASETS_HELP = (
+    f"{DOWNLOAD_HELP}; regio (lock only): swissALTIRegio, its 10 km tiles for the area "
+    "config/terrain.json names, grown by the margin and spacing config/surroundings.json gives it"
 )
 
 
@@ -78,9 +89,9 @@ def main(argv: list[str] | None = None) -> int:
     pin = commands.add_parser(
         "lock", help="pin the published SHA-256 of the inputs in config/datasets.lock.json"
     )
-    pin.add_argument("dataset", choices=sorted(DATASETS), help=DATASETS_HELP)
+    pin.add_argument("dataset", choices=sorted(LOCK_DATASETS), help=DATASETS_HELP)
     fetch = commands.add_parser("download", help="fetch and verify pinned swisstopo inputs")
-    fetch.add_argument("dataset", choices=sorted(DATASETS), help=DATASETS_HELP)
+    fetch.add_argument("dataset", choices=sorted(DATASETS), help=DOWNLOAD_HELP)
     fetch.add_argument(
         "--out", default=download.DEFAULT_OUT, help="download root (default: data/raw)"
     )
@@ -178,12 +189,27 @@ def _lock(dataset: str) -> Path:
     The tile and sheet datasets read the terrain config's area; swissTLM3D is national. Every
     other dataset's entry of the committed lock is kept; with no lock yet, the new one holds
     this entry alone. A lock that exists but cannot be read is refused before swisstopo is
-    asked anything.
+    asked anything. swissALTIRegio's tiles also depend on the margin and spacing that
+    config/surroundings.json gives the area (`download.surroundings_settings`): a config that
+    reader refuses ends the command before swisstopo is asked anything.
     """
     if dataset == "tlm":
         datasets = load_datasets()
         current = lock.load_lock_or_none(lock.LOCK_PATH)
         entry = lock.tlm_entry(datasets, download.urllib_fetch_json)
+    elif dataset == "regio":
+        area = terrain.configured_area(terrain.load_terrain_config())
+        world, datasets = load_world(), load_datasets()
+        margin_m, spacing_m = download.surroundings_settings(area)
+        current = lock.load_lock_or_none(lock.LOCK_PATH)
+        entry = lock.regio_entry(
+            world,
+            datasets,
+            download.urllib_fetch_json,
+            area=area,
+            margin_m=margin_m,
+            spacing_m=spacing_m,
+        )
     else:
         area = terrain.configured_area(terrain.load_terrain_config())
         world, datasets = load_world(), load_datasets()
@@ -195,7 +221,9 @@ def _lock(dataset: str) -> Path:
             "surface": lock.surface_entry,
         }[dataset]
         entry = entry_of(world, datasets, download.urllib_fetch_json, area=area)
-    return lock.write_lock(lock.with_entry(current, DATASETS[dataset][0], entry), lock.LOCK_PATH)
+    return lock.write_lock(
+        lock.with_entry(current, LOCK_DATASETS[dataset][0], entry), lock.LOCK_PATH
+    )
 
 
 def _download(dataset: str, out_root: Path) -> int:

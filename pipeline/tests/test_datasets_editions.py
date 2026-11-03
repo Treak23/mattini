@@ -1,9 +1,10 @@
 """Pinning tests for brief M3-03: the datasets config's editions (docs/SPEC.md §5).
 
-Pinned decisions: config/datasets.json holds five datasets: swissALTI3D 2024 and
+Pinned decisions: config/datasets.json holds six datasets: swissALTI3D 2024 and
 swissBUILDINGS3D 2020 unchanged, SWISSIMAGE 10 cm 2023 (`swissimage`), the swissSURFACE3D
 raster in 2021 or 2022 per tile (`swisssurface3d`) and swissTLM3D 2026-02 (`swisstlm3d`),
-each `© swisstopo`. A dataset names its STAC collection, its attribution and exactly one of
+each `© swisstopo`, and swissALTIRegio 2026-06 (`swissaltiregio`, brief v0.6.0-01, its
+attribution the product's whole source text, test_m4_01_regio_config.py). A dataset names its STAC collection, its attribution and exactly one of
 `edition` (a pinned year `YYYY`, or a year and month `YYYY-MM` with the month 01 to 12,
 as the national products are named) or `editions` (a non-empty list of distinct years in
 ascending order: the editions a tile may be published in, exactly one per tile). Never
@@ -29,7 +30,23 @@ from mattini.datasets import DatasetsConfigError, load_datasets
 from mattini.world import REPO
 
 CONFIG = REPO / "config" / "datasets.json"
+REGIO_SOURCE_TEXT = (
+    "Bundesamt für Landestopografie swisstopo; Tarquini S., I. Isola, M. Favalli, "
+    "A. Battistini, G. Dotta (2023). TINITALY, a digital elevation model of Italy with a 10 "
+    "meters cell size (Version 1.1). Istituto Nazionale di Geofisica e Vulcanologia (INGV). "
+    "https://doi.org/10.13127/tinitaly/1.1; DGM Österreich, geoland.at; DGM1, Bayerische "
+    "Vermessungsverwaltung – www.geodaten.bayern.de; DGM1, Baden-Württemberg: LGL, "
+    "www.lgl-bw.de, dl-de/by-2-0; RGEAlti, Institut National de l'information géographique "
+    "et forestière, données originales téléchargées sur "
+    "https://geoservices.ign.fr/rgealti#telechargement5m, mise à jour du juillet 2023"
+)
 EXPECTED = {
+    "swissaltiregio": {
+        "attribution": REGIO_SOURCE_TEXT,
+        "collection": "ch.swisstopo.swissaltiregio",
+        "edition": "2026-06",
+        "resolution_m": 10,
+    },
     "swissalti3d": {
         "attribution": "© swisstopo",
         "collection": "ch.swisstopo.swissalti3d",
@@ -80,7 +97,7 @@ def _with(name, **changes):
     return datasets
 
 
-def test_the_committed_config_holds_the_five_datasets():
+def test_the_committed_config_holds_the_six_datasets():
     assert load_datasets() == EXPECTED
     raw = CONFIG.read_bytes()
     assert raw.endswith(b"}\n") and b"\r" not in raw

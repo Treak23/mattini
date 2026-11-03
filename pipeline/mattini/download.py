@@ -54,6 +54,17 @@ error (brain.md H9) and only the part's size shows the cut. The part is kept whe
 cannot finish (also on Ctrl-C), and the file takes its name only when its SHA-256 equals
 the lock's. Every refusal of the TLM starts `swisstlm3d <edition>: `.
 
+swissALTIRegio (brief v0.6.0-01; SPEC §5) is swisstopo's 10 m terrain model of Switzerland and
+its neighbours in 10 km tiles of zipped XYZ text, the input of the far terrain. Only its lock
+is written here (`python -m mattini lock regio`); no file of it is downloaded yet.
+`regio_tiles` lists the tiles whose square meets the samples that the surroundings of an area
+need (the area's box grown by `margin_m`, and by half of `spacing_m` for the samples a vertex
+takes its height from); the two numbers are the area's in config/surroundings.json, which
+`surroundings_settings` reads. `published_regio` reads the STAC item of each tile
+(`swissaltiregio_<E km>-<N km>`, the id naming the tile's south-west corner in whole
+kilometres, the one asset ending `_2056_5728.xyz.zip`) and refuses an item whose
+`properties.datetime` is not in the pinned edition: the item ids carry no edition.
+
 A datasets config without the dataset, and an area the sheet grid cannot place, are
 DownloadErrors naming config/datasets.json or the world config and the area, never a
 traceback (M2 R1 I-05); so is one that lists `editions` where the command needs one
@@ -82,17 +93,23 @@ BUILDINGS = "swissbuildings3d"
 PHOTO = "swissimage"
 SURFACE = "swisssurface3d"
 TLM = "swisstlm3d"
+REGIO = "swissaltiregio"
 BUILDINGS_ITEM = "swissbuildings3d_3_0_{edition}_{sheet}"  # a STAC item of the collection
 BUILDINGS_SUFFIX = "_2056_5728.gdb.zip"  # the zipped FileGDB; the item also holds a DWG
 PHOTO_ITEM = "swissimage-dop10_{edition}_{tile}"
 SURFACE_ITEM = "swisssurface3d-raster_{year}_{tile}"
 TLM_ITEM = "swisstlm3d_{edition}"
 TLM_SUFFIX = "_2056_5728.gdb.zip"  # the zipped FileGDB; the item also holds three other formats
+REGIO_ITEM = "swissaltiregio_{tile}"  # the id names no edition: only `properties.datetime` does
+REGIO_SUFFIX = "_2056_5728.xyz.zip"  # the zipped XYZ text, the tile item's one asset
 STAC_ITEM = "https://data.geo.admin.ch/api/stac/v1/collections/{collection}/items/{item_id}"
 DEFAULT_OUT = REPO / "data" / "raw"
 PROVENANCE = "provenance.json"
 PROVENANCE_SCHEMA = 1
 TILE_M = 1000  # swissALTI3D tiles are 1 km squares named by their south-west corner in km
+REGIO_TILE_M = 10_000  # swissALTIRegio tiles are 10 km squares, named by their corner in km
+REGIO_ORIGIN_M = (5_000, 4_000)  # their corners lie at E = 5 km + 10 km·i, N = 4 km + 10 km·j
+SURROUNDINGS_PATH = REPO / "config" / "surroundings.json"  # the far terrain's design data
 ATTEMPTS = 2  # the first fetch and the one retry
 TLM_GETS = 5  # the GETs a round of the TLM file may make: a cut transfer is resumed
 SHA256_MULTIHASH = re.compile(r"1220([0-9A-Fa-f]{64})")
@@ -105,6 +122,7 @@ BUILDINGS_LOCK_COMMAND = "python -m mattini lock buildings"
 PHOTO_LOCK_COMMAND = "python -m mattini lock photo"
 SURFACE_LOCK_COMMAND = "python -m mattini lock surface"
 TLM_LOCK_COMMAND = "python -m mattini lock tlm"
+REGIO_LOCK_COMMAND = "python -m mattini lock regio"
 TLM_DOWNLOAD_COMMAND = "python -m mattini download tlm"
 LOCK_COMMAND_OF = {  # dataset -> the command that writes its lock entry
     DATASET: LOCK_COMMAND,
@@ -112,6 +130,7 @@ LOCK_COMMAND_OF = {  # dataset -> the command that writes its lock entry
     PHOTO: PHOTO_LOCK_COMMAND,
     SURFACE: SURFACE_LOCK_COMMAND,
     TLM: TLM_LOCK_COMMAND,
+    REGIO: REGIO_LOCK_COMMAND,
 }
 DATASETS_CONFIG_NAME = "config/datasets.json"  # the home of the datasets, for messages
 # the config whose expected values design recomputes when a dataset's inputs change, and
@@ -223,6 +242,71 @@ def area_sheets(world: World, area: str) -> list[str]:
         raise DownloadError(f"area {area!r} of {world.path}: {exc}") from exc
 
 
+def surroundings_settings(area: str, path: Path | str | None = None) -> tuple[int, int]:
+    """The area's `(margin_m, spacing_m)` from config/surroundings.json (brief v0.6.0-01).
+
+    With `path` None it reads `SURROUNDINGS_PATH` as the module has it when this is called.
+    Each is a JSON integer (not a float, a text or a boolean): `margin_m` 0 or more,
+    `spacing_m` 1 or more. A file that cannot be read or is not JSON, an area it does not
+    list, or any other value is a DownloadError naming the file and the area or the key at
+    fault. It reads nothing else of the file: the surroundings step checks the rest.
+    """
+    path = Path(SURROUNDINGS_PATH if path is None else path)
+
+    def fail(message: str) -> DownloadError:
+        return DownloadError(f"{path}: {message}")
+
+    try:
+        data = json.loads(path.read_bytes().decode("utf-8"))
+    except OSError as exc:
+        raise fail(f"cannot read the surroundings config: {exc}") from exc
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise fail(f"not valid JSON: {exc}") from exc
+    areas = data.get("areas") if isinstance(data, dict) else None
+    settings = areas.get(area) if isinstance(areas, dict) else None
+    if not isinstance(settings, dict):
+        raise fail(f"has no settings object for area {area!r}")
+    margin_m = _whole_metres(settings, "margin_m", 0, area, fail)
+    spacing_m = _whole_metres(settings, "spacing_m", 1, area, fail)
+    return margin_m, spacing_m
+
+
+def _whole_metres(settings: dict, key: str, least: int, area: str, fail) -> int:
+    """`settings[key]` if it is a JSON integer of `least` or more, else the refusal `fail` makes."""
+    value = settings.get(key)
+    if type(value) is not int or value < least:
+        raise fail(
+            f"area {area!r}: {key} must be a whole number of metres, {least} or more, "
+            f"found {value!r}"
+        )
+    return value
+
+
+def regio_tiles(world: World, area: str, *, margin_m: int, spacing_m: int) -> list[str]:
+    """The ids (`<E km>-<N km>`, four digits each) of the swissALTIRegio tiles the surroundings need.
+
+    The surroundings box is the area's box grown by `margin_m`; a vertex every `spacing_m`
+    takes its height from the samples in the half-open square [E - s/2, E + s/2) x
+    [N - s/2, N + s/2), so the samples needed lie in [e_min - s/2, e_max + s/2) x
+    [n_min - s/2, n_max + s/2) of that box. A 10 km tile [E0, E0 + 10 km) x [N0, N0 + 10 km)
+    is needed when it meets that region. The tiles' south-west corners lie at E = 5 km +
+    10 km*i and N = 4 km + 10 km*j (measured on the live STAC items). East outer, north
+    inner, sorted: the order of the lock and of the download.
+    """
+    e_min, e_max, n_min, n_max = world.area(area)
+    border = margin_m + spacing_m / 2
+    east = _regio_corners_km(e_min - border, e_max + border, REGIO_ORIGIN_M[0])
+    north = _regio_corners_km(n_min - border, n_max + border, REGIO_ORIGIN_M[1])
+    return [f"{e:04d}-{n:04d}" for e in east for n in north]
+
+
+def _regio_corners_km(low: float, high: float, origin_m: int) -> list[int]:
+    """The corners, in whole km, of the tile squares that meet [low, high) on one axis."""
+    first = math.floor((low - origin_m) / REGIO_TILE_M)
+    last = math.ceil((high - origin_m) / REGIO_TILE_M)
+    return [(origin_m + i * REGIO_TILE_M) // 1000 for i in range(first, last)]
+
+
 def parse_multihash_sha256(text: object) -> str:
     """The lower-case hex digest of a SHA-256 multihash (`1220` + 64 hex digits)."""
     match = SHA256_MULTIHASH.fullmatch(text) if isinstance(text, str) else None
@@ -325,6 +409,37 @@ def published_surface(
                 f"editions {editions} per tile, found {[asset.edition for asset in found] or 'none'}"
             )
         assets.append(found[0])
+    return assets
+
+
+def published_regio(
+    world: World,
+    datasets: dict,
+    fetch_json: FetchJson,
+    *,
+    area: str,
+    margin_m: int,
+    spacing_m: int,
+) -> list[PublishedAsset]:
+    """Read the STAC item of every swissALTIRegio tile the surroundings of `area` need.
+
+    The tiles are `regio_tiles(world, area, margin_m=..., spacing_m=...)`, in that order; no
+    file is fetched (no HEAD either). Each item `swissaltiregio_<tile>` has exactly one asset
+    ending `_2056_5728.xyz.zip`, and its `properties.datetime` must lie in the pinned edition
+    (it starts `<edition>-`), else it is a DownloadError naming the tile, the datetime and
+    the edition: the item ids carry no edition, so without this check a newer edition would
+    be locked under the old name. A tile with no item is "cannot read the STAC item".
+    """
+    config = dataset_of(datasets, REGIO)
+    edition = edition_of(datasets, REGIO)
+    assets = []
+    for tile in regio_tiles(world, area, margin_m=margin_m, spacing_m=spacing_m):
+        item_id = REGIO_ITEM.format(tile=tile)
+        item_url = STAC_ITEM.format(collection=config["collection"], item_id=item_id)
+        name, href, sha256 = _published_asset(
+            fetch_json, item_url, item_id, tile, area, REGIO_SUFFIX, in_edition=edition
+        )
+        assets.append(PublishedAsset(tile, item_id, name, href, sha256))
     return assets
 
 
@@ -863,13 +978,16 @@ def _published_asset(
     kind: str = "tile",
     where: str | None = None,
     absent_ok: bool = False,
+    in_edition: str | None = None,
 ) -> tuple[str, str, str] | None:
     """The (file name, href, SHA-256) of the one asset of the item whose key ends `suffix`.
 
     `tile` is the item's tile or, with `kind="sheet"`, its map sheet; errors name it, and
     the area, unless `where` replaces that (`swisstlm3d 2026-02`, the national file). With
     `absent_ok`, an item that answers HTTP 404 is None (swissSURFACE3D: a tile is in one
-    edition of several); any other failure to read it is still a refusal.
+    edition of several); any other failure to read it is still a refusal. With `in_edition`
+    (swissALTIRegio, whose item ids name none), the item's `properties.datetime` must be a
+    text starting `<in_edition>-`, else the refusal names the datetime and the edition.
     """
     prefix = where if where is not None else f"{kind} {tile} of area {area!r}"
 
@@ -887,6 +1005,13 @@ def _published_asset(
     if not isinstance(item, dict) or item.get("id") != item_id:
         found = item.get("id") if isinstance(item, dict) else item
         raise fail(f"expected the STAC item {item_id!r}, found {found!r}")
+    if in_edition is not None:
+        properties = item.get("properties")
+        stamp = properties.get("datetime") if isinstance(properties, dict) else None
+        if not (isinstance(stamp, str) and stamp.startswith(f"{in_edition}-")):
+            raise fail(
+                f"the item's datetime is {stamp!r}, not in the pinned edition {in_edition!r}"
+            )
     assets = item.get("assets")
     if not isinstance(assets, dict):
         raise fail("the STAC item has no assets")

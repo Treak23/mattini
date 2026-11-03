@@ -186,6 +186,7 @@ def test_raw_folder_is_the_edition_or_the_editions_joined():
     datasets = load_datasets()
     assert [download.raw_folder(datasets, name) for name in sorted(datasets)] == [
         "2024",  # swissalti3d
+        "2026-06",  # swissaltiregio (brief v0.6.0-01): "swissalti3d" sorts before it
         "2020",  # swissbuildings3d
         "2023",  # swissimage
         "2021-2022",  # swisssurface3d

@@ -73,7 +73,8 @@ EXPECTED = {
 
 def test_the_committed_lock_pins_the_measured_entries():
     datasets = load_lock()["datasets"]
-    assert set(datasets) == {
+    assert set(datasets) == {  # swissaltiregio: test_m4_01_measured_regio.py (v0.6.0-01)
+        "swissaltiregio",
         "swissalti3d",
         "swissbuildings3d",
         "swissimage",

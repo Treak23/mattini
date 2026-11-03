@@ -9,7 +9,9 @@ Release's notes, holds
 - each dataset line the pause screen shows for the real village, `<dataset> <edition>,
   <attribution>` (game/scripts/main.gd `_dataset_line`), computed from config/datasets.json and
   the lock (swissSURFACE3D's edition is the first and last of its tiles' editions, as the trees
-  block gives it) and equal to SPEC §10's list, on a line of its own;
+  block gives it) and equal to SPEC §10's list, on a line of its own; since brief v0.6.0-01
+  the list holds swissALTIRegio's line, `swissaltiregio 2026-06, ` and its whole source text
+  (the session's SPEC edit of 0.6.0 adds it to §10; the pause screen shows it from v0.6.0-09);
 - the stars' credit, game/sky/stars.csv's first line without its "# ", which is also
   main.gd's STARS_NOTE, on a line of its own, word for word;
 - the CC0 textures' source (Poly Haven, CC0);
@@ -27,8 +29,19 @@ import re
 from fake_tools import REPO
 
 TEMPLATE = REPO / "tools" / "release_notes.md"
+REGIO_SOURCE_TEXT = (  # config/datasets.json's swissaltiregio attribution (brief v0.6.0-01)
+    "Bundesamt für Landestopografie swisstopo; Tarquini S., I. Isola, M. Favalli, "
+    "A. Battistini, G. Dotta (2023). TINITALY, a digital elevation model of Italy with a 10 "
+    "meters cell size (Version 1.1). Istituto Nazionale di Geofisica e Vulcanologia (INGV). "
+    "https://doi.org/10.13127/tinitaly/1.1; DGM Österreich, geoland.at; DGM1, Bayerische "
+    "Vermessungsverwaltung – www.geodaten.bayern.de; DGM1, Baden-Württemberg: LGL, "
+    "www.lgl-bw.de, dl-de/by-2-0; RGEAlti, Institut National de l'information géographique "
+    "et forestière, données originales téléchargées sur "
+    "https://geoservices.ign.fr/rgealti#telechargement5m, mise à jour du juillet 2023"
+)
 SPEC_LINES = [
     "swissalti3d 2024, © swisstopo",
+    f"swissaltiregio 2026-06, {REGIO_SOURCE_TEXT}",
     "swissbuildings3d 2020, © swisstopo",
     "swissimage 2023, © swisstopo",
     "swisssurface3d 2021-2022, © swisstopo",
