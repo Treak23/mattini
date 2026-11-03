@@ -24,7 +24,7 @@
       "n_min": 1092000.0
     },
     "rows": 7,
-    "sha256": "f07106285a79517adca87e6d712f73e42ade869f306b36c4519f11f811526c6d",
+    "sha256": "5758119c921825ee96c8f57e524e470807010661277d6f5ce19693e72dc3bb6d",
     "source": {
       "attribution": "© swisstopo (synthetic test heights, not swissALTIRegio data)",
       "collection": "ch.swisstopo.swissaltiregio",

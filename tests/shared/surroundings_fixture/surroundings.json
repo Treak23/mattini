@@ -13,10 +13,10 @@
         "n_min": 1092000.0
       },
       "expected_rows": 7,
-      "expected_sha256": "f07106285a79517adca87e6d712f73e42ade869f306b36c4519f11f811526c6d",
+      "expected_sha256": "5758119c921825ee96c8f57e524e470807010661277d6f5ce19693e72dc3bb6d",
       "margin_m": 3000,
       "spacing_m": 3000
     }
   },
-  "schema": 1
+  "schema": 2
 }
