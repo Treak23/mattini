@@ -94,7 +94,9 @@ and its brief. The `[build]` lessons are the card's sources, opened when the car
 - Gate before every commit, redirected to a log, chained (card 1); rebase before every
   push, gate again after a rebase that brought commits in; never force-push. The gate is
   never polled: run it in the foreground redirected to a log, or as the shell tool's
-  tracked background task, and make no call until it returns.
+  tracked background task, and make no call until it returns. A builder is a subagent and its
+  turn ending is its return: never end a turn while a gate runs (lesson 52); wait in the
+  foreground, in calls under the shell timeout, until the gate's exit file exists.
 - Container facts: Godot and the Python environment come from the session-start hook
   (`.claude/hooks/session-start.sh`); run `godot --headless --path game --import` once
   before the Godot tests in a fresh worktree. Known hazards with their exact signatures

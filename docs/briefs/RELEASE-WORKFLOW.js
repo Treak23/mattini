@@ -125,7 +125,14 @@ const RULES = `Rules that bind you: CLAUDE.md as it stands in your checkout afte
 differs from the copy injected at your start, the file wins), docs/WORKFLOW.md §Gates and
 §Permissions, and brain.md §Hazards for the gate's known traps. Never force-push, never git reset
 --hard, checkout -- ., restore ., clean -fd or stash drop. Run the gate in the foreground redirected
-to a log, or as a tracked background task; never poll it. Leave the tree clean.`
+to a log; never poll it. Leave the tree clean.
+You are a subagent: when your turn ends you have returned, and no notice of a background task ever
+reaches you afterwards (v0.6.0-03's builder started the base gate in the background, ended its turn
+to wait for the notice and was cut off with nothing done). So never end a turn while a gate or any
+run of yours is still going. Run tools/gate.sh in the foreground with the Bash timeout at 600000; if
+it may take longer, start it detached with its exit status written to a file and block on foreground
+calls, each under 600000 ms, that loop until that file exists, repeating the call until it does. That
+is waiting, not polling for a status.`
 
 const READ_ONLY = `You run nothing that builds or tests (no tools/gate.sh, pytest, GUT or Godot): another agent
 holds the container's one build slot. Read with git show, git diff, git log and grep; a claim that

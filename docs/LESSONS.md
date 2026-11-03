@@ -355,3 +355,10 @@ the source project's process review of 2026-10-24 (`docs/history/WORKFLOW-SEED.m
     byte-identical": the release session had to widen the Scope by one new test file and run a second round by hand each
     time (2026-10-29). A tier-1 brief's Scope names one new test file for the prover's findings (`test_<release>_<nn>_gaps.*`);
     the fixer fills it; the pinned copies stay untouched (BUILD.md rule 4; the 0.4.0 plan's process note).
+
+52. `[build]` **A subagent that ends its turn to wait has returned.** In 0.6.0's first wave a builder started the base gate
+    as a background task, set a monitor on it and ended its turn "to wait for the notice": the harness took the turn's end
+    for the agent's result, the structured-output tool was demanded, and the batch came back BLOCKED with nothing built
+    and no question to answer (2026-11-03). A tracked background task wakes a session, never a subagent. A subagent waits
+    inside a call (a foreground gate with the timeout at its maximum, or a foreground loop on the gate's exit file) and
+    ends its turn only on a result (`docs/briefs/RELEASE-WORKFLOW.js` RULES; BUILD.md §Commits and the gate).
