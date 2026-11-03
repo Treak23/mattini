@@ -8,6 +8,19 @@
   "surfaces": null,
   "surroundings": {
     "area": "fixture",
+    "colour_cell_m": 1000.0,
+    "colour_columns": 15,
+    "colour_file": "surroundings/fixture_colour.jpg",
+    "colour_format": "jpeg",
+    "colour_pixels_sha256": "a37504bf495ebf170e2b3505b5a240df7e7ed06d826cbfee9036e7d59447b728",
+    "colour_rows": 18,
+    "colour_sha256": "c1d7cf77c72e23a70f650dce87e9027020353ff2cca63cfacdcebdcc64797781",
+    "colour_source": {
+      "attribution": "© swisstopo (synthetic test colours, not SWISSIMAGE data)",
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "dataset": "swissimage_far",
+      "edition": "2023"
+    },
     "columns": 6,
     "cut_box": {
       "e_max": 2625000.0,
@@ -16,6 +29,7 @@
       "n_min": 1095000.0
     },
     "file": "surroundings/fixture.f32",
+    "filled_fraction": 0.2,
     "format": "f32-le",
     "lv95_box": {
       "e_max": 2628000.0,

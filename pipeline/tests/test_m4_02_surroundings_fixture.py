@@ -1,5 +1,6 @@
 """Pinning tests for brief v0.6.0-04 (brief M4-02 re-scoped by design §1): the shared
 surroundings fixture is what it says, and the step gives its vectors (lessons 34, 42).
+Re-pinned by brief v0.6.0-08: only test_the_committed_manifest_carries_the_description changes.
 
 Re-cut from M4-02's pinned file of the same name for 0.6.0: the height is the MEAN of the
 square's samples in whole centimetres (design §1), no longer the largest; the fixture's world,
@@ -263,12 +264,15 @@ def test_the_likeliest_wrong_twins_give_other_bytes():
 
 
 def test_the_committed_manifest_carries_the_description():
-    """The fixture's own generated/manifest.json (M4-07's form, design data; brief v0.6.0-07
-    writes the manifest's block): its `surroundings` block is the re-cut description, so no
-    committed file still holds M4-02's heights' SHA-256."""
+    """The fixture's own generated/manifest.json (design data; brief v0.6.0-07 writes the
+    manifest's block): its `surroundings` block holds the re-cut description verbatim, so no
+    committed file still holds M4-02's heights' SHA-256. Re-pinned by brief v0.6.0-08 (only this
+    test changes): the block also holds the colour's keys (`colour_*`, `filled_fraction`; their
+    own test is test_v060_08_surroundings_fixture.py), so the description is compared key by
+    key."""
     manifest = json.loads((FIXTURE / "generated" / "manifest.json").read_text(encoding="utf-8"))
     block = json.loads((GENERATED / "fixture.json").read_text(encoding="utf-8"))
-    assert manifest["surroundings"] == block
+    assert {key: manifest["surroundings"][key] for key in block} == block
     assert MAX_RULE_F32 not in (FIXTURE / "generated" / "manifest.json").read_text("utf-8")
 
 
