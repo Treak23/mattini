@@ -558,6 +558,9 @@ def download_regio(
     of the datasets config and exactly the tiles `regio_tiles` gives with the margin and
     spacing config/surroundings.json has for `area` when the fit is asked; a config that
     reader refuses is a DownloadError naming the file, before swisstopo is asked anything.
+    The download reads the config once more for the items it asks swisstopo about (the fit
+    having passed): both reads must give the tiles the lock pins, which
+    test_v060_02_gaps.py holds for a margin, a spacing and an area other than the committed.
     Then every item's datetime must lie in the edition and every published name and SHA-256
     equal the lock's, before any file is fetched or anything on disk changes; a republished
     tile is refused naming `lock regio` and config/surroundings.json. The files and the
@@ -585,6 +588,9 @@ def _download_tiles(
         raise DownloadError(problem)
     pinned = lock["datasets"][dataset]["tiles"]
     if dataset == REGIO:  # its tiles are the surroundings', not the area's 1 km tiles
+        # The config is read here a second time (the fit read it in lock._regio_ids), so the two
+        # reads agree only as long as both follow it: test_v060_02_gaps.py holds them together
+        # until the tile rule has one home (brief v0.6.0-07).
         margin_m, spacing_m = surroundings_settings(area)
         assets = published_regio(
             world, datasets, fetch_json, area=area, margin_m=margin_m, spacing_m=spacing_m
