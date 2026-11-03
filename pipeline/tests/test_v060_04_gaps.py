@@ -13,6 +13,7 @@ with design's SHA-256 does, at v0.6.0-07's real run); the command line and the m
 v0.6.0-07); the game's reading (brief v0.6.0-08).
 """
 
+import copy
 import hashlib
 import json
 
@@ -24,6 +25,7 @@ from mattini.surroundings import (
     SurroundingsError,
     build_surroundings,
     built_surroundings_block,
+    check_surroundings_config,
     load_surroundings_config,
 )
 from mattini.world import load_world
@@ -89,6 +91,37 @@ def _rotated_world(tmp_path):
     path = tmp_path / "world.json"
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
+
+
+# ------------------------------------------------------------------- the config's values
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda d, a: a["expected_lv95_box"].update(e_max=float("nan")),
+        lambda d, a: a["expected_lv95_box"].update(e_max=float("inf")),
+        lambda d, a: a["expected_lv95_box"].update(n_min=-float("inf")),
+        lambda d, a: a["expected_lv95_box"].update(e_max=10**400),  # no float holds it
+        lambda d, a: a["expected_lv95_box"].update(e_min=True),
+        lambda d, a: a["expected_lv95_box"].update(extra=2628000.0),
+        lambda d, a: a.update(expected_columns=True),
+        lambda d, a: a.update(expected_rows=True),
+        lambda d, a: a.update(expected_rows=-7),
+        lambda d, a: a.update(expected_sha256=None),
+        lambda d, a: a.update(expected_sha256="ab" * 31),
+        lambda d, a: a.update(computed_for=[]),
+        lambda d, a: d.update(areas={"Not A Name": a}),
+        lambda d, a: d.update(areas=[a]),
+        lambda d, a: d.pop("schema"),
+    ],
+)
+def test_a_config_value_that_is_not_design_s_kind_is_refused_naming_the_config(change):
+    data = copy.deepcopy(_config())
+    change(data, data["areas"]["fixture"])
+    with pytest.raises(SurroundingsError) as refusal:
+        check_surroundings_config(data, "the config here")
+    assert "the config here" in str(refusal.value), str(refusal.value)
 
 
 # ------------------------------------------------------------------- the owner's axes
@@ -225,16 +258,73 @@ def test_a_member_that_is_not_swisstopo_s_text_is_refused_naming_the_tile(tmp_pa
     assert TILE in message and DOWNLOAD_COMMAND in message, message
 
 
-def test_a_bad_point_is_refused_naming_its_line(tmp_path):
+@pytest.mark.parametrize(
+    ("dx", "dy"),
+    [
+        (100, 0),  # off the lattice to the east, still in its own cell
+        (0, 100),  # off the lattice to the north, still in its own cell
+        (10_000, 0),  # on the lattice, one cell beyond the tile's east edge
+        (-1_000, 0),  # on the lattice, one cell beyond its west edge
+        (0, 10_000),  # beyond its north edge
+        (0, -10_000),  # beyond its south edge
+    ],
+)
+def test_a_point_off_the_cell_centres_is_refused_naming_its_line(tmp_path, dx, dy):
+    """The first sample is the tile's north-west cell: the 100 samples are lines 2 to 101."""
     lines = _lines_of(fixture_source())
     x, y, z = lines[0].split(" ")
-    source = _with_lines(fixture_source(), [f"{int(x) + 100} {y} {z}", *lines[1:]])
+    source = _with_lines(fixture_source(), [f"{int(x) + dx} {int(y) + dy} {z}", *lines[1:]])
     message = _refusal(tmp_path, source)
-    assert "line 2:" in message and TILE in message, message  # the first sample is line 2
+    assert "line 2:" in message and TILE in message and DOWNLOAD_COMMAND in message, message
+
+
+def test_a_point_given_twice_is_refused_naming_the_repeat(tmp_path):
+    lines = _lines_of(fixture_source())
     source = _with_lines(fixture_source(), [*lines, lines[3]])
     message = _refusal(tmp_path, source)
     # the header is line 1, the 100 samples lines 2 to 101: the repeat is line 102
     assert "line 102:" in message and "more than once" in message, message
+
+
+def test_a_world_config_changed_after_it_was_parsed_is_refused(tmp_path):
+    data = json.loads((FIXTURE / "world.json").read_text(encoding="utf-8"))
+    path = tmp_path / "world.json"
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    world = _world(path)
+    data["origin_lv95"]["e"] += 1.0
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    root, lock = raw_regio(tmp_path / "raw")
+    config = recorded(_config(), path, lock, "swissaltiregio")
+    with pytest.raises(SurroundingsError) as refusal:
+        build_surroundings(world, fixture_datasets(), lock, config, root, tmp_path / "out")
+    assert str(path) in str(refusal.value) and "changed while" in str(refusal.value)
+    assert not (tmp_path / "out").exists()
+
+
+def _world_without_the_area(tmp_path):
+    data = json.loads((FIXTURE / "world.json").read_text(encoding="utf-8"))
+    data["areas"] = {"another": data["areas"]["fixture"]}
+    path = tmp_path / "world.json"
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return path
+
+
+def test_an_area_the_world_does_not_have_is_refused_naming_both(tmp_path):
+    path = _world_without_the_area(tmp_path)
+    text = _refusal(tmp_path, world=_world(path))
+    assert str(path) in text and "fixture" in text, text
+
+
+def test_a_built_block_for_a_world_without_the_area_is_refused(tmp_path):
+    _, out = _build(tmp_path)
+    path = _world_without_the_area(tmp_path)
+    lock = _committed_lock()
+    config = recorded(_config(), path, lock, "swissaltiregio")
+    with pytest.raises(SurroundingsError) as refusal:
+        built_surroundings_block(
+            out, config, _world(path), _sha(path.read_bytes()), fixture_datasets(), lock
+        )
+    assert "fixture" in str(refusal.value) and STEP_COMMAND in str(refusal.value)
 
 
 @pytest.mark.parametrize(
@@ -317,6 +407,16 @@ def test_a_built_description_that_cannot_be_read_is_refused_naming_the_step(tmp_
     with pytest.raises(SurroundingsError) as refusal:
         built_surroundings_block(out, _config(), _world(), world_sha256, fixture_datasets(), lock)
     assert STEP_COMMAND in str(refusal.value), str(refusal.value)
+
+
+def test_a_built_heights_file_of_another_size_is_refused_naming_its_size(tmp_path):
+    out, lock, world_sha256 = _built(tmp_path)
+    heights = out / "surroundings" / "fixture.f32"
+    heights.write_bytes(heights.read_bytes() + b"\0\0\0\0")
+    with pytest.raises(SurroundingsError) as refusal:
+        built_surroundings_block(out, _config(), _world(), world_sha256, fixture_datasets(), lock)
+    text = str(refusal.value)
+    assert STEP_COMMAND in text and f"holds {6 * 7 * 4 + 4} bytes" in text, text
 
 
 def test_a_built_heights_file_that_is_not_the_configs_expected_value_is_refused(tmp_path):

@@ -624,9 +624,8 @@ def _provenance_tiles(path: Path, regio: dict, tiles: list[str], locked: dict) -
     if listed != tiles:
         raise fail(f"it lists the tiles {listed}, the surroundings need {tiles}")
     for entry in entries:
+        # the lock's file names are plain (`_fit_problem`), so a name equal to the lock's is too
         tile, name, sha256 = entry["tile"], entry.get("file"), entry.get("sha256")
-        if not (isinstance(name, str) and SAFE_NAME.fullmatch(name)):
-            raise fail(f"tile {tile}: file {name!r} is not a plain file name")
         if name != locked[tile]["file"] or sha256 != locked[tile]["sha256"]:
             raise fail(
                 f"tile {tile}: it lists {name!r} with SHA-256 {sha256!r}, the lock pins "
