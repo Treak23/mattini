@@ -25,6 +25,12 @@ Since the release's checkers (2026-10-30; brief v0.5.0-06 decision 3): the stars
 reader's own words only, its verdict's reason on stdout: what uv itself writes on stderr (a
 deprecation warning, a download note) never lands in the PASS or FAIL line.
 
+Since brief v0.6.0-03 (the 0.5.0 residue N4; this file re-pinned whole, the tests above
+unchanged): when the game exits by itself during check 5, its FAIL line says whether the output
+and godot.log held the startup lines or not: a game that printed every startup line and then
+quit is not reported as one that quit "before the log held the startup lines". The verdict stays
+FAIL either way.
+
 Does NOT prove: that the real exported game passes (the workflow's first live run is that
 proof, the session's step after this batch lands); that the game looks right or starts on a
 GPU; the error panel's text (the release template ignores --script: the owner's eyes); the
@@ -218,3 +224,40 @@ def test_no_executable_is_refused(tmp_path):
     done = run_checks(tmp_path, root)
     assert done.returncode == 1, done.stdout
     assert "mattini.x86_64" in done.stdout
+
+
+def _live_log_line(output):
+    lines = [line for line in output.splitlines() if line.startswith("release check: live log: ")]
+    assert len(lines) == 1, output
+    return lines[0]
+
+
+def test_a_build_that_quits_after_its_startup_lines_is_named_so(tmp_path):
+    """N4: the game printed every startup line, into the output and godot.log, then quit."""
+    root = release_tree(tmp_path)
+    game = root / "build" / "linux" / "mattini.x86_64"
+    text = game.read_text(encoding="utf-8").replace('if [ -n "$quit" ]; then', "if true; then")
+    game.write_text(text, encoding="utf-8")
+    done = run_checks(tmp_path, root)
+    assert done.returncode == 1, done.stdout
+    line = _live_log_line(done.stdout)
+    assert re.match(r"release check: live log: FAIL the process exited by itself\b", line), line
+    assert re.search(r"\bheld all \d+ startup lines\b", line), line
+    assert "before" not in line and "lacked" not in line, line
+
+
+def test_a_build_that_quits_before_its_startup_lines_is_named_so(tmp_path):
+    """Without --quit-after the game quits after Godot's banner, before any startup line (with
+    it, as checks 2 to 4 start it, it prints them: check 5 has lines to expect)."""
+    root = release_tree(tmp_path)
+    game = root / "build" / "linux" / "mattini.x86_64"
+    text = game.read_text(encoding="utf-8")
+    marker = "\nfor pack in $("
+    assert text.count(marker) == 1
+    game.write_text(text.replace(marker, '\n[ -n "$quit" ] || exit 0' + marker), encoding="utf-8")
+    done = run_checks(tmp_path, root)
+    assert done.returncode == 1, done.stdout
+    line = _live_log_line(done.stdout)
+    assert re.match(r"release check: live log: FAIL the process exited by itself\b", line), line
+    assert re.search(r"\b(before|lacked)\b", line), line
+    assert "held all" not in line, line

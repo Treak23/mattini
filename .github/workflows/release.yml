@@ -3,6 +3,9 @@
 # inputs, and keeps the result either as a workflow artifact (a dry run, the default) or as a
 # DRAFT Release the owner publishes. Started by hand only, with the commit, the version and the
 # manifest pair the release's plan names. The only token is the runner's GITHUB_TOKEN.
+# Since brief v0.6.0-03 (the 0.5.0 residue): the Python is pinned in tools/pins.sh (uv's managed
+# CPython only, installed before any sync, logged with its zlib, another one refused), and a
+# commit that is not on main is refused before anything is downloaded.
 name: release
 on:
   workflow_dispatch:
@@ -42,6 +45,7 @@ jobs:
       RELEASE_VERSION: ${{ inputs.version }}
       MANIFEST_BYTES: ${{ inputs.manifest_bytes }}
       MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+      UV_PYTHON_PREFERENCE: only-managed
     steps:
       - name: check the inputs
         run: |
@@ -62,6 +66,15 @@ jobs:
             echo "the checkout is $head, not $RELEASE_SHA"
             exit 1
           fi
+      - name: the sha is on main
+        run: |
+          git fetch --no-tags origin "+refs/heads/main:refs/remotes/origin/main"
+          main="$(git rev-parse refs/remotes/origin/main)"
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" refs/remotes/origin/main; then
+            echo "$RELEASE_SHA is not on main (main is $main): a Release is built only from a commit of main"
+            exit 1
+          fi
+          echo "$RELEASE_SHA is on main (main is $main)"
       - name: free disk
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
@@ -84,7 +97,20 @@ jobs:
           python3 -m pip install --user --break-system-packages "uv==$UV_VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/uv" --version
-          "$HOME/.local/bin/uv" sync --project pipeline --frozen
+      - name: Python, from the pins
+        run: |
+          . tools/pins.sh
+          uv python install "$PYTHON_VERSION"
+          echo "UV_PYTHON=$PYTHON_VERSION" >> "$GITHUB_ENV"
+          export UV_PYTHON="$PYTHON_VERSION"
+          uv sync --project pipeline --frozen
+          uv run --project pipeline --frozen python --version
+          uv run --project pipeline --frozen python -c 'import zlib; print("zlib", zlib.ZLIB_RUNTIME_VERSION)'
+          found="$(uv run --project pipeline --frozen python -c 'import sys; print("%d.%d.%d" % sys.version_info[:3])')"
+          if [ "$found" != "$PYTHON_VERSION" ]; then
+            echo "the pipeline runs on Python $found, the pin is $PYTHON_VERSION (tools/pins.sh)"
+            exit 1
+          fi
       - name: download the inputs
         run: |
           uv run --project pipeline --frozen python -m mattini download terrain

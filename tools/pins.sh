@@ -11,3 +11,8 @@ GODOT_SHA256="d0bc2113065e481c9c2c2b2c37daa4e8be3fe9e27f0ab9ab0b6096e9a37907f3"
 # uv, as the release session's container ran it on 2026-10-30; the release workflow installs
 # exactly this one.
 UV_VERSION="0.11.32"
+# The uv-managed CPython the 0.5.0 Release ran green with (run 41095845807's job log, line 221:
+# "Using CPython 3.13.14"; the dry run's too, R1-CD-04). The release workflow installs exactly
+# this one, logs it and its zlib, and refuses another interpreter; its zlib writes the PNG bytes
+# that are design's data (brain.md H27). The container's hook and gate set no Python pin.
+PYTHON_VERSION="3.13.14"

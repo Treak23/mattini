@@ -23,7 +23,8 @@
 #   5. live log      started with no --quit-after, its output and user://logs/godot.log hold
 #                    every startup line of check 2 while the process is alive (within 120 s,
 #                    or RELEASE_CHECKS_LIVE_TIMEOUT_S seconds); then it is stopped by its PID
-#                    (FB-006).
+#                    (FB-006). A game that exits by itself fails it either way, and the line
+#                    says whether the output and godot.log held every startup line by then.
 # The build folder is left as it was found after a pass and after a failure (a trap puts the
 # pack back and removes the override.cfg this script wrote).
 set -uo pipefail
@@ -261,7 +262,13 @@ check_live_log() {
 	if [ "$both" -eq 1 ] && [ "$alive" -eq 1 ]; then
 		verdict "live log" PASS "the output and godot.log held all ${#STARTUP_LINES[@]} startup lines while the process ran (${waited} s); stopped by its PID"
 	elif [ "$alive" -eq 0 ]; then
-		verdict "live log" FAIL "the process exited by itself before the log held the startup lines (no --quit-after was given)"
+		# The game quit by itself, which fails the check either way; the files are read once more
+		# (the game is gone, they are final) to say whether it had printed its lines first (N4).
+		if all_lines_in "$out" && all_lines_in "$log"; then
+			verdict "live log" FAIL "the process exited by itself after ${waited} s (no --quit-after was given); the output and godot.log held all ${#STARTUP_LINES[@]} startup lines"
+		else
+			verdict "live log" FAIL "the process exited by itself after ${waited} s (no --quit-after was given), before the output and godot.log held the startup lines"
+		fi
 	else
 		verdict "live log" FAIL "after ${waited} s godot.log or the output still lacked startup lines while the process ran"
 	fi

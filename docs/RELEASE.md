@@ -69,7 +69,7 @@ build on GitHub's machine, and its log is the delivery's proof.
       `f68275a1c292f3933944db7daa5231fdad7e42fa16b263b0611a81af857029fe`, 0.4.0's with the
       shadows block; 0.4.0: 324'931 bytes, `a03c5722…`; 0.3.1: 324'359 bytes, `3ca0445c…`),
       compared by a command, its output in the release record:
-      `test "$(wc -c < game/assets/generated/manifest.json)" -eq 326124 && echo "f68275a1c292f3933944db7daa5231fdad7e42fa16b263b0611a81af857029fe  game/assets/generated/manifest.json" | sha256sum -c -`
+      `size="$(wc -c < game/assets/generated/manifest.json)"; echo "manifest.json: $size bytes"; if [ "$size" -eq 326124 ]; then echo "f68275a1c292f3933944db7daa5231fdad7e42fa16b263b0611a81af857029fe  game/assets/generated/manifest.json" | sha256sum -c -; else echo "the size check failed: $size bytes, the plan names 326124"; false; fi`
       (each release's plan names its pair: the last release's when no batch changes a
       generated file, else the pair measured at the go). The same pair goes into the workflow's
       inputs below.
