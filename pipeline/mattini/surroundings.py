@@ -671,9 +671,9 @@ def _tile_samples(
         zipfile.BadZipFile,
         zlib.error,
         EOFError,
-        NotImplementedError,
         OSError,
-        RuntimeError,
+        RuntimeError,  # an encrypted member, and (a subclass) a compression method not supported
+        UnicodeDecodeError,  # a member name flagged UTF-8 that is not (zipfile decodes it)
     ) as exc:
         raise fail(f"cannot read it as a zip: {exc}") from exc
 
