@@ -1,0 +1,25 @@
+{
+  "areas": {
+    "fixture": {
+      "e_max": 2617000.0,
+      "e_min": 2616000.0,
+      "n_max": 1096000.0,
+      "n_min": 1095000.0
+    }
+  },
+  "axes": {
+    "x": "+e",
+    "y": "+h",
+    "z": "-n"
+  },
+  "crs": {
+    "horizontal": "EPSG:2056",
+    "vertical": "EPSG:5728"
+  },
+  "height_offset_m": 1250.25,
+  "origin_lv95": {
+    "e": 2616500.0,
+    "n": 1095500.0
+  },
+  "schema": 1
+}

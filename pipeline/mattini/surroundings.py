@@ -42,6 +42,13 @@ The files: `surroundings/<area>.f32` (little-endian float32, row-major, no heade
 `surroundings/<area>.json`, each written through a `.part` rename; after a success every `*.part`
 left in `surroundings/` is removed. Only the owner's axes (x = +e, y = +h, z = −n) are
 supported: another mapping would place these rows and columns wrongly (Hard Rule 4).
+
+The area may also hold `colour`, the far colour step's design data (brief v0.6.0-06,
+`farcolour.py`): `check_surroundings_config` checks its keys and values, and an area without it is
+still read (the heights need none of it). The far colour step reads swissALTIRegio's samples
+through the code of this module: the public names at its end (`regio_tile_samples` and the
+others) are the very functions the heights use, so there is one parser of the tiles' text, one
+tile rule, one fit of the lock and one check of provenance.json for both steps.
 """
 
 from __future__ import annotations
@@ -89,6 +96,16 @@ AREA_CONFIG_KEYS = {
     "expected_sha256",
     "margin_m",
     "spacing_m",
+}
+COLOUR_CONFIG_KEYS = {  # an area's optional `colour`: the far colour step's design data
+    "band_m",
+    "cell_m",
+    "computed_for",
+    "expected_columns",
+    "expected_filled_fraction",
+    "expected_pixels_sha256",
+    "expected_rows",
+    "expected_sha256",
 }
 BOX_KEYS = {"e_max", "e_min", "n_max", "n_min"}
 BLOCK_KEYS = {
@@ -162,8 +179,12 @@ def check_surroundings_config(data: object, where: Path | str = "the surrounding
     `expected_rows` (positive whole numbers), `expected_lv95_box` (exactly e_max, e_min, n_max and
     n_min, numbers), `expected_sha256` (the heights file's SHA-256, 64 lower-case hex digits),
     `margin_m` (a whole number of metres, 0 or more, a multiple of `spacing_m`) and `spacing_m` (a
-    positive whole number of metres). Schema 1, the 100 m grid of maxima, is refused. The
-    SurroundingsError names `where`.
+    positive whole number of metres). An area may also hold `colour`, exactly the keys `band_m`
+    and `cell_m` (positive whole numbers of metres), `computed_for` (`check_computed_for`),
+    `expected_columns` and `expected_rows` (positive whole numbers), `expected_filled_fraction`
+    (a float from 0 to 1) and `expected_pixels_sha256` and `expected_sha256` (64 lower-case hex
+    digits each); an area without it is read as before. Schema 1, the 100 m grid of maxima, is
+    refused. The SurroundingsError names `where`.
     """
 
     def fail(message: str) -> SurroundingsError:
@@ -180,8 +201,11 @@ def check_surroundings_config(data: object, where: Path | str = "the surrounding
     for name, area in areas.items():
         if not AREA_NAME.fullmatch(name):
             raise fail(f"area name {name!r} must be lower-case letters, digits and '_'")
-        if not isinstance(area, dict) or set(area) != AREA_CONFIG_KEYS:
-            raise fail(f"area {name!r} must have exactly the keys {sorted(AREA_CONFIG_KEYS)}")
+        if not isinstance(area, dict) or set(area) - {"colour"} != AREA_CONFIG_KEYS:
+            raise fail(
+                f"area {name!r} must have exactly the keys {sorted(AREA_CONFIG_KEYS)}, "
+                f"and may also hold 'colour'"
+            )
         spacing, margin = area["spacing_m"], area["margin_m"]
         if type(spacing) is not int or spacing < 1:
             raise fail(
@@ -216,6 +240,39 @@ def check_surroundings_config(data: object, where: Path | str = "the surrounding
                 f"characters, found {expected!r}"
             )
         check_computed_for(area["computed_for"], name, fail)
+        if "colour" in area:
+            _check_colour(area["colour"], name, fail)
+
+
+def _check_colour(colour: object, name: str, fail: Callable[[str], SurroundingsError]) -> None:
+    """Refuse an area's `colour` that is not exactly the far colour step's design data."""
+    if not isinstance(colour, dict) or set(colour) != COLOUR_CONFIG_KEYS:
+        raise fail(f"area {name!r}: colour must have exactly the keys {sorted(COLOUR_CONFIG_KEYS)}")
+    for key in ("band_m", "cell_m"):
+        if type(colour[key]) is not int or colour[key] < 1:
+            raise fail(
+                f"area {name!r}: colour {key} must be a positive whole number of metres, "
+                f"found {colour[key]!r}"
+            )
+    for key in ("expected_columns", "expected_rows"):
+        if type(colour[key]) is not int or colour[key] < 1:
+            raise fail(
+                f"area {name!r}: colour {key} must be a positive whole number, "
+                f"found {colour[key]!r}"
+            )
+    fraction = colour["expected_filled_fraction"]
+    if type(fraction) is not float or not 0.0 <= fraction <= 1.0:
+        raise fail(
+            f"area {name!r}: colour expected_filled_fraction must be a float from 0 to 1, "
+            f"found {fraction!r}"
+        )
+    for key in ("expected_pixels_sha256", "expected_sha256"):
+        if not (isinstance(colour[key], str) and SHA256_HEX.fullmatch(colour[key])):
+            raise fail(
+                f"area {name!r}: colour {key} must be a SHA-256 in 64 lower-case hex "
+                f"characters, found {colour[key]!r}"
+            )
+    check_computed_for(colour["computed_for"], name, lambda message: fail(f"colour: {message}"))
 
 
 def build_surroundings(
@@ -854,3 +911,18 @@ def _replace(path: Path, data: bytes) -> None:
     part = path.with_name(path.name + ".part")
     part.write_bytes(data)
     os.replace(part, path)
+
+
+# Public names for what the far colour step (farcolour.py, brief v0.6.0-06) reads from here: the
+# very functions the heights step calls, not copies, so both steps parse swissALTIRegio's text with
+# one parser and ask one tile rule, one fit and one provenance check of the same download.
+Grid = _Grid
+surroundings_grid = _grid_of
+expected_problem = _expected_problem
+regio_config = _regio_config
+regio_tiles_needed = _tiles_needed
+regio_fit_problem = _fit_problem
+regio_provenance_tiles = _provenance_tiles
+regio_tile_bytes = _read_bytes
+regio_tile_samples = _tile_samples
+read_lock = _lock_of

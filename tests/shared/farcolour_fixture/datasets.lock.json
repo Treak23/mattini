@@ -1,0 +1,64 @@
+{
+  "datasets": {
+    "swissaltiregio": {
+      "collection": "ch.swisstopo.swissaltiregio",
+      "edition": "2026-06",
+      "resolution_m": 100,
+      "tiles": {
+        "2605-1084": {
+          "file": "swissaltiregio_2605-1084_2056_5728.xyz.zip",
+          "sha256": "4150e79f48a77486312da08b83cf738892d2cb09c97c7658933e3b5c6b82b863"
+        },
+        "2605-1094": {
+          "file": "swissaltiregio_2605-1094_2056_5728.xyz.zip",
+          "sha256": "81ffb921ef403405df9802f2cd64df804ea432d9fe471016adfa17f1496e8cad"
+        },
+        "2615-1084": {
+          "file": "swissaltiregio_2615-1084_2056_5728.xyz.zip",
+          "sha256": "aec429548f62f27e5d3bc7dd8b26d5fb52bb43bda804c54f0f837877f33dfc63"
+        },
+        "2615-1094": {
+          "file": "swissaltiregio_2615-1094_2056_5728.xyz.zip",
+          "sha256": "bde8e6802006b92f8a3fabf4119bd1e121cc4d2566812b42526ef246839aa7da"
+        }
+      }
+    },
+    "swissimage_far": {
+      "absent": [
+        "2616-1094",
+        "2617-1094",
+        "2617-1095"
+      ],
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "edition": "2023",
+      "resolution_m": 20,
+      "tiles": {
+        "2615-1094": {
+          "file": "swissimage-dop10_2023_2615-1094_20_2056.tif",
+          "sha256": "a1b10fe5a1353c0b7f30e809834ce2024c63a1f3f0747d75f02a7f386e594a4b"
+        },
+        "2615-1095": {
+          "file": "swissimage-dop10_2023_2615-1095_20_2056.tif",
+          "sha256": "f88850f381e043da6039d90fcc318cfc61ed410b12ce3b05bcc2dc0545839932"
+        },
+        "2615-1096": {
+          "file": "swissimage-dop10_2023_2615-1096_20_2056.tif",
+          "sha256": "ec6d736cb35ee2665525c25ffb7dac890e5be6e1279d51bf8873eabc62aa44fe"
+        },
+        "2616-1095": {
+          "file": "swissimage-dop10_2023_2616-1095_20_2056.tif",
+          "sha256": "ef9de30ad9179188e882c63ee1c8bc1f13c2a4fa506d46286d8654e227fa0532"
+        },
+        "2616-1096": {
+          "file": "swissimage-dop10_2023_2616-1096_20_2056.tif",
+          "sha256": "2312dbc478d13efd3b0847b28efb3a0fcc2a23a490549f21623380e44731ce03"
+        },
+        "2617-1096": {
+          "file": "swissimage-dop10_2023_2617-1096_20_2056.tif",
+          "sha256": "c311e20309c2cc8aeda98f26b0bfd83d0f3642081fb8272248a6018475517cd3"
+        }
+      }
+    }
+  },
+  "schema": 1
+}

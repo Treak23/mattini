@@ -1,0 +1,267 @@
+{
+  "about": "brief v0.6.0-06: named pixels of the far colour fixture (tests/shared/farcolour_fixture/), computed by the pin author in plain Python from source.json and photo.u8 (no numpy, no mattini): pixel (row, column) centred at LV95 (e_min + 50 + 100 column, n_max - 50 - 100 row); band = floor(sample_cm / 10000); a covered pixel is (sum + 12) // 25 of its 5 x 5 source pixels; a filled one the half-up integer mean of its band_taken's covered pixels.",
+  "band_counts": {
+    "21": 300,
+    "23": 300
+  },
+  "band_means": {
+    "21": [
+      57,
+      103,
+      76
+    ],
+    "23": [
+      169,
+      178,
+      203
+    ]
+  },
+  "band_sums": {
+    "21": [
+      16950,
+      30790,
+      22650
+    ],
+    "23": [
+      50550,
+      53380,
+      60800
+    ]
+  },
+  "pixels": [
+    {
+      "band": 23,
+      "band_taken": 23,
+      "column": 0,
+      "covered": true,
+      "lv95": [
+        2615050,
+        1096950
+      ],
+      "name": "the north-west corner",
+      "rgb": [
+        132,
+        156,
+        171
+      ],
+      "row": 0,
+      "sample_cm": 230000
+    },
+    {
+      "band": 23,
+      "band_taken": 23,
+      "column": 29,
+      "covered": true,
+      "lv95": [
+        2617950,
+        1096950
+      ],
+      "name": "the north-east corner",
+      "rgb": [
+        205,
+        155,
+        219
+      ],
+      "row": 0,
+      "sample_cm": 238750
+    },
+    {
+      "band": 21,
+      "band_taken": 21,
+      "column": 0,
+      "covered": true,
+      "lv95": [
+        2615050,
+        1094050
+      ],
+      "name": "the south-west corner",
+      "rgb": [
+        43,
+        158,
+        90
+      ],
+      "row": 29,
+      "sample_cm": 214505
+    },
+    {
+      "band": 21,
+      "band_taken": 21,
+      "column": 15,
+      "covered": true,
+      "lv95": [
+        2616550,
+        1095450
+      ],
+      "name": "inside the area's own box, not cut",
+      "rgb": [
+        68,
+        89,
+        77
+      ],
+      "row": 15,
+      "sample_cm": 214015
+    },
+    {
+      "band": 21,
+      "band_taken": 21,
+      "column": 9,
+      "covered": true,
+      "lv95": [
+        2615950,
+        1095750
+      ],
+      "name": "band 21 covered, by the area",
+      "rgb": [
+        58,
+        73,
+        65
+      ],
+      "row": 12,
+      "sample_cm": 215900
+    },
+    {
+      "band": 25,
+      "band_taken": 23,
+      "column": 25,
+      "covered": false,
+      "lv95": [
+        2617550,
+        1095950
+      ],
+      "name": "band 25, the nearest below with cover is 23",
+      "rgb": [
+        169,
+        178,
+        203
+      ],
+      "row": 10,
+      "sample_cm": 255500
+    },
+    {
+      "band": 22,
+      "band_taken": 21,
+      "column": 20,
+      "covered": false,
+      "lv95": [
+        2617050,
+        1095450
+      ],
+      "name": "2200.00 m: band 22, empty, below first: 21",
+      "rgb": [
+        57,
+        103,
+        76
+      ],
+      "row": 15,
+      "sample_cm": 220000
+    },
+    {
+      "band": 22,
+      "band_taken": 21,
+      "column": 29,
+      "covered": false,
+      "lv95": [
+        2617950,
+        1095050
+      ],
+      "name": "2299.99 m: band 22",
+      "rgb": [
+        57,
+        103,
+        76
+      ],
+      "row": 19,
+      "sample_cm": 229999
+    },
+    {
+      "band": 19,
+      "band_taken": 21,
+      "column": 10,
+      "covered": false,
+      "lv95": [
+        2616050,
+        1094950
+      ],
+      "name": "band 19, none below: the nearest above, 21",
+      "rgb": [
+        57,
+        103,
+        76
+      ],
+      "row": 20,
+      "sample_cm": 193001
+    },
+    {
+      "band": 21,
+      "band_taken": 21,
+      "column": 15,
+      "covered": false,
+      "lv95": [
+        2616550,
+        1094450
+      ],
+      "name": "band 21, its own band",
+      "rgb": [
+        57,
+        103,
+        76
+      ],
+      "row": 25,
+      "sample_cm": 214000
+    },
+    {
+      "band": 23,
+      "band_taken": 23,
+      "column": 20,
+      "covered": false,
+      "lv95": [
+        2617050,
+        1094950
+      ],
+      "name": "band 23, its own band",
+      "rgb": [
+        169,
+        178,
+        203
+      ],
+      "row": 20,
+      "sample_cm": 232050
+    },
+    {
+      "band": 24,
+      "band_taken": 23,
+      "column": 20,
+      "covered": false,
+      "lv95": [
+        2617050,
+        1094450
+      ],
+      "name": "2400.00 m: band 24, empty: 23",
+      "rgb": [
+        169,
+        178,
+        203
+      ],
+      "row": 25,
+      "sample_cm": 240000
+    },
+    {
+      "band": 24,
+      "band_taken": 23,
+      "column": 29,
+      "covered": false,
+      "lv95": [
+        2617950,
+        1094050
+      ],
+      "name": "the south-east corner, band 24",
+      "rgb": [
+        169,
+        178,
+        203
+      ],
+      "row": 29,
+      "sample_cm": 241607
+    }
+  ]
+}
