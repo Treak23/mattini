@@ -32,6 +32,7 @@ const COLOUR_COMMAND := "python -m mattini farcolour"
 const BOX_TOLERANCE_M := 0.001
 ## The widest and tallest texture the Compatibility renderer draws (brain.md H21).
 const MAX_TEXTURE_SIDE := 16384
+const HEX_DIGITS := "0123456789abcdefABCDEF"
 const KEYS := [
 	"area",
 	"colour_cell_m",
@@ -534,14 +535,15 @@ static func _has_exactly(dictionary: Dictionary, keys: Array) -> bool:
 	return true
 
 
-## True for 64 hex digits (is_valid_hex_number alone also takes a leading minus).
+## True for exactly 64 characters, each a hex digit. Every character is looked at:
+## is_valid_hex_number() alone also takes a leading minus or plus.
 static func _is_digest(value: Variant) -> bool:
-	return (
-		typeof(value) == TYPE_STRING
-		and value.length() == 64
-		and value.is_valid_hex_number()
-		and not value.begins_with("-")
-	)
+	if typeof(value) != TYPE_STRING or value.length() != 64:
+		return false
+	for character: String in value:
+		if not HEX_DIGITS.contains(character):
+			return false
+	return true
 
 
 ## True for "a/b.jpg": no scheme, no drive, no backslash, no absolute path, no empty, "." or
