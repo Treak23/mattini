@@ -389,11 +389,14 @@ def _checked(
     if problem:
         raise FarColourError(problem)
     columns, rows = (box[1] - box[0]) // cell, (box[3] - box[2]) // cell
-    for key, built in (("expected_columns", columns), ("expected_rows", rows)):
+    for key, name, built in (
+        ("expected_columns", "columns", columns),
+        ("expected_rows", "rows", rows),
+    ):
         if colour[key] != built:
             raise FarColourError(
                 f"area {area!r}: the world config's area grown by the margin gives {built} "
-                f"{key[9:]} of the colour at {cell} m, {SURROUNDINGS_CONFIG_NAME}'s colour {key} is "
+                f"{name} of the colour at {cell} m, {SURROUNDINGS_CONFIG_NAME}'s colour {key} is "
                 f"{colour[key]!r}. A changed area, margin or cell is a design change: design "
                 f"recomputes the expected values (docs/SPEC.md §8)"
             )
@@ -747,7 +750,7 @@ def _band_means(bands: np.ndarray, rgb: np.ndarray) -> dict[int, np.ndarray]:
     """The half-up integer mean `(total + n // 2) // n` per channel of each band's pixels.
 
     `bands` holds the band of each covered pixel and `rgb` its colour (n × 3, uint8). The totals
-    are 64-bit integers: a band of 255s over 300'000 pixels is far above what 16 bits hold.
+    are 64-bit integers: a band of 255s over 300 pixels is already above what 16 bits hold.
     """
     means = {}
     for band in np.unique(bands).tolist():
