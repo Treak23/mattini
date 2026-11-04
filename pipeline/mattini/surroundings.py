@@ -32,7 +32,8 @@ before any progress line.
 
 The lock's fit is not written here: it is `lock.fit_problem` with the config the step was given
 (`download.regio_tiles` is the tile rule, with the area's margin and spacing in that config), then
-`lock.shape_problem`, and fit_problem's text is the whole refusal. The tiles read are the lock
+`lock.shape_problem`, and the text of whichever refuses is the whole refusal (a lock that is not
+well-formed names every lock command, as every step's does). The tiles read are the lock
 entry's, which that fit has shown to be exactly the surroundings' (the 10 km squares that meet
 the box grown by half a spacing, [e_min − s/2, e_max + s/2) × [n_min − s/2, n_max + s/2), the
 samples a vertex needs). A tile is one zip with one member `<E km>_<N km>.xyz`, ASCII with CRLF

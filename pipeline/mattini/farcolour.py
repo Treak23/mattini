@@ -37,11 +37,11 @@ owner's axes, the area and the box on the spacing lattice, the cell, the world (
 design change), the box, columns and rows against design's, the lock's fit (`lock.fit_problem`
 with the config the step was given: swissALTIRegio's tiles, the heights' own rule, naming `python
 -m mattini lock regio`; then swissimage_far's tiles and absent cells, exactly the box's 1 km
-cells, naming `python -m mattini lock farphoto`; then `lock.shape_problem` once; this module holds
-no copy of either rule), the inputs (a design change again), both downloads' provenance.json,
-then the files. A download that has not
-completed, or is not the locked one by its provenance.json, is refused naming its `download`
-command before any progress line. The files are then read, the far tiles first and
+cells, naming `python -m mattini lock farphoto`; then `lock.shape_problem` once, whose text for a
+lock that is not well-formed names every lock command; this module holds no copy of either rule),
+the inputs (a design change again), both downloads' provenance.json, then the files. A download
+that has not completed, or is not the locked one by its provenance.json, is refused naming its
+`download` command before any progress line. The files are then read, the far tiles first and
 swissALTIRegio's after them: each far tile's bytes against the lock's SHA-256, decoded from the
 very bytes hashed, EPSG:2056, 1000 / resolution pixels a side, three uint8 bands, the transform
 its id gives; each swissALTIRegio tile through the heights step's parser. A file that differs is
