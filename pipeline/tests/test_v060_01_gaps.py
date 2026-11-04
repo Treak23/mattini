@@ -17,7 +17,7 @@ twin; this file closes those, by the class and not by the instance (lesson 9):
   locked and never a KeyError; the refusal names the area and the item's URL;
 - `collection`, in the URLs asked and in the entry, is the datasets config's;
 - a lock that cannot be read ends every `lock` command before swisstopo is asked anything
-  (the order in `__main__._lock`), for each of the six, not only for the dataset whose
+  (the order in `__main__._lock`), for each lock command, not only for the dataset whose
   command the pins run;
 - `validate_lock`'s field checks (collection, edition, resolution, the parts' ids and their
   file names and checksums) hold for every dataset the lock knows, swissALTIRegio included;
@@ -716,7 +716,15 @@ def _credits():
 def test_each_dataset_line_is_in_the_credits_block_once_and_only_there():
     lines, block = _credits()
     wanted = _dataset_lines()
-    assert len(wanted) == len(lock.DATASET_KEYS)
+    # one line per distinct credit (collection, edition, attribution) among the lock's datasets:
+    # the rule `_dataset_lines` applies, so a dataset that shares its product's credit (brief
+    # v0.6.0-05: swissimage_far) needs no line, and a later one no edit here
+    credited = {
+        (entry["collection"], entry.get("edition"), entry["attribution"])
+        for name, entry in DATASETS.items()
+        if name in lock.DATASET_KEYS
+    }
+    assert len(wanted) == len(credited)
     for line in wanted:
         assert block.count(line) == 1, f"not once in the credits block: {line[:60]}"
         assert lines.count(line) == 1, f"more than once in the notes: {line[:60]}"

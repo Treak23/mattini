@@ -25,6 +25,12 @@
       "resolution_m": 0.1,
       "attribution": "© swisstopo"
     },
+    "swissimage_far": {
+      "collection": "ch.swisstopo.swissimage-dop10",
+      "edition": "2023",
+      "resolution_m": 2,
+      "attribution": "© swisstopo"
+    },
     "swisssurface3d": {
       "collection": "ch.swisstopo.swisssurface3d-raster",
       "editions": ["2021", "2022"],

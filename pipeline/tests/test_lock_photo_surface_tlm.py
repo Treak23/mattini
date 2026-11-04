@@ -96,6 +96,7 @@ def test_each_command_writes_its_exact_entry_and_keeps_every_other(swisstopo, ca
         "swissalti3d",
         "swissbuildings3d",
         "swissimage",
+        "swissimage_far",  # brief v0.6.0-05's lock farphoto
         "swisssurface3d",
         "swisstlm3d",
     }

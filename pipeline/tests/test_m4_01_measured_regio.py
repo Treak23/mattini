@@ -9,6 +9,9 @@ host's `x-amz-meta-sha256`; 179'684'396 bytes together). Every item's
 SHA-256 (`lock.entry_sha256`, SPEC §8) is what config/surroundings.json records as
 `computed_for.inputs_sha256` (test_m4_01_expected_inputs.py).
 
+Brief v0.6.0-05 re-cut this file: the committed lock's set of entries gains `swissimage_far`
+(test_v060_05_measured_farphoto.py pins it); nothing else changed.
+
 Does NOT prove: that swisstopo still publishes these files (`pytest -m network` does).
 """
 
@@ -68,6 +71,7 @@ def test_the_committed_lock_pins_the_measured_entry():
         "swissalti3d",
         "swissbuildings3d",
         "swissimage",
+        "swissimage_far",
         "swisssurface3d",
         "swisstlm3d",
     }

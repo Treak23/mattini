@@ -12,6 +12,10 @@ Release's notes, holds
   block gives it) and equal to SPEC §10's list, on a line of its own; since brief v0.6.0-01
   the list holds swissALTIRegio's line, `swissaltiregio 2026-06, ` and its whole source text
   (the session's SPEC edit of 0.6.0 adds it to §10; the pause screen shows it from v0.6.0-09);
+  since brief v0.6.0-05 a dataset that another dataset already credits with the same
+  collection, edition and attribution adds no line: `swissimage_far` (SWISSIMAGE 2023's 2 m
+  asset) is credited by `swissimage 2023, © swisstopo` (design §2: "the far colour adds no
+  new line unless the editions differ"), so the list and tools/release_notes.md do not change;
 - the stars' credit, game/sky/stars.csv's first line without its "# ", which is also
   main.gd's STARS_NOTE, on a line of its own, word for word;
 - the CC0 textures' source (Poly Haven, CC0);
@@ -57,8 +61,12 @@ def _template():
 def _dataset_lines():
     datasets = json.loads((REPO / "config" / "datasets.json").read_text(encoding="utf-8"))
     lock = json.loads((REPO / "config" / "datasets.lock.json").read_text(encoding="utf-8"))
-    lines = []
+    lines, credited = [], set()
     for name, entry in sorted(datasets["datasets"].items()):
+        source = (entry["collection"], entry.get("edition"), entry["attribution"])
+        if source in credited:  # the same product's line is already there (design §2)
+            continue
+        credited.add(source)
         edition = entry.get("edition")
         if edition is None:
             tiles = lock["datasets"][name]["tiles"].values()
@@ -83,6 +91,17 @@ def _main_gd_stars_note():
 
 def test_the_dataset_lines_are_the_configs_and_spec_s():
     assert _dataset_lines() == SPEC_LINES
+
+
+def test_the_far_photo_is_credited_by_the_photo_s_line():
+    datasets = json.loads((REPO / "config" / "datasets.json").read_text(encoding="utf-8"))
+    far, photo = datasets["datasets"]["swissimage_far"], datasets["datasets"]["swissimage"]
+    assert (far["collection"], far["edition"], far["attribution"]) == (
+        photo["collection"],
+        photo["edition"],
+        photo["attribution"],
+    )
+    assert not any(line.startswith("swissimage_far ") for line in _template().splitlines())
 
 
 def test_the_template_carries_swisstopo_and_every_dataset_line():

@@ -7,11 +7,14 @@ products are named, a year and month (`2026-02`, the month 01 to 12), and `editi
 non-empty list of distinct years in ascending order, the editions a tile may be published
 in (swissSURFACE3D: exactly one per tile, brief M3-03). A dataset the pipeline reads at a
 resolution (`RESOLUTION_DATASETS`: swissALTI3D, swissALTIRegio from brief v0.6.0-01,
-SWISSIMAGE and swissSURFACE3D) must name it, `resolution_m`, a positive number of metres:
-every command that reads the config would otherwise end in a KeyError (briefs M3-01 and
-M3-03, M2 V1-P-05). swissALTIRegio's edition is a year and month (`2026-06`: the national
-products are named so, and its STAC item ids carry none). The loader refuses a malformed config with a DatasetsConfigError whose
-message names the file and the dataset (Hard Rule 2).
+SWISSIMAGE, `swissimage_far` from brief v0.6.0-05 and swissSURFACE3D) must name it,
+`resolution_m`, a positive number of metres: every command that reads the config would
+otherwise end in a KeyError (briefs M3-01 and M3-03, M2 V1-P-05). swissALTIRegio's edition is a
+year and month (`2026-06`: the national products are named so, and its STAC item ids carry
+none). `swissimage_far` is SWISSIMAGE's 2 m asset of the same collection and edition as
+`swissimage` (the 10 cm one), read over the surroundings of the area (brief v0.6.0-05). The
+loader refuses a malformed config with a DatasetsConfigError whose message names the file and
+the dataset (Hard Rule 2).
 """
 
 from __future__ import annotations
@@ -31,7 +34,13 @@ REQUIRED_KEYS = ("collection", "attribution")
 YEAR = re.compile(r"[0-9]{4}")
 EDITION = re.compile(r"[0-9]{4}(?:-(?:0[1-9]|1[0-2]))?")  # a year, or a year and month 01-12
 # the datasets whose entry must carry `resolution_m`
-RESOLUTION_DATASETS = ("swissalti3d", "swissaltiregio", "swissimage", "swisssurface3d")
+RESOLUTION_DATASETS = (
+    "swissalti3d",
+    "swissaltiregio",
+    "swissimage",
+    "swissimage_far",
+    "swisssurface3d",
+)
 
 
 class DatasetsConfigError(ValueError):

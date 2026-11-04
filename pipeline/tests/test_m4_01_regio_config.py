@@ -12,6 +12,9 @@ Pinned decisions:
 - `resolution_m` is required for swissaltiregio as for the other datasets read at a
   resolution (`datasets.RESOLUTION_DATASETS`), refused naming the file and the dataset.
 
+Brief v0.6.0-05 re-cut this file: the committed config's set of datasets gains `swissimage_far`
+(test_datasets_editions.py pins its entry); nothing else changed.
+
 Does NOT prove: that the credits show the text (the manifest and the game, wave 2).
 """
 
@@ -49,6 +52,7 @@ def test_the_committed_config_holds_swissaltiregio_as_measured():
         "swissalti3d",
         "swissbuildings3d",
         "swissimage",
+        "swissimage_far",
         "swisssurface3d",
         "swisstlm3d",
     }

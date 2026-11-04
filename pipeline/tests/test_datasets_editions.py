@@ -1,10 +1,12 @@
 """Pinning tests for brief M3-03: the datasets config's editions (docs/SPEC.md §5).
 
-Pinned decisions: config/datasets.json holds six datasets: swissALTI3D 2024 and
+Pinned decisions: config/datasets.json holds seven datasets: swissALTI3D 2024 and
 swissBUILDINGS3D 2020 unchanged, SWISSIMAGE 10 cm 2023 (`swissimage`), the swissSURFACE3D
 raster in 2021 or 2022 per tile (`swisssurface3d`) and swissTLM3D 2026-02 (`swisstlm3d`),
 each `© swisstopo`, and swissALTIRegio 2026-06 (`swissaltiregio`, brief v0.6.0-01, its
-attribution the product's whole source text, test_m4_01_regio_config.py). A dataset names its STAC collection, its attribution and exactly one of
+attribution the product's whole source text, test_m4_01_regio_config.py) and, since brief
+v0.6.0-05, `swissimage_far`: SWISSIMAGE 2023's 2 m asset over the surroundings box
+(test_v060_05_farphoto_cells.py), `© swisstopo`. A dataset names its STAC collection, its attribution and exactly one of
 `edition` (a pinned year `YYYY`, or a year and month `YYYY-MM` with the month 01 to 12,
 as the national products are named) or `editions` (a non-empty list of distinct years in
 ascending order: the editions a tile may be published in, exactly one per tile). Never
@@ -64,6 +66,12 @@ EXPECTED = {
         "edition": "2023",
         "resolution_m": 0.1,
     },
+    "swissimage_far": {
+        "attribution": "© swisstopo",
+        "collection": "ch.swisstopo.swissimage-dop10",
+        "edition": "2023",
+        "resolution_m": 2,
+    },
     "swisssurface3d": {
         "attribution": "© swisstopo",
         "collection": "ch.swisstopo.swisssurface3d-raster",
@@ -97,7 +105,7 @@ def _with(name, **changes):
     return datasets
 
 
-def test_the_committed_config_holds_the_six_datasets():
+def test_the_committed_config_holds_the_seven_datasets():
     assert load_datasets() == EXPECTED
     raw = CONFIG.read_bytes()
     assert raw.endswith(b"}\n") and b"\r" not in raw

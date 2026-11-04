@@ -1,15 +1,18 @@
 """Command line: `python -m mattini <command>`.
 
-`lock` and `download` take the same six choices: terrain, buildings, photo, surface, tlm or
-regio (swissALTIRegio, briefs v0.6.0-01 and v0.6.0-02: `lock regio` pins its tiles and
-`download regio` fetches and verifies them); they, `terrain` and `buildings` all serve the one
+`lock` and `download` take the same seven choices: terrain, buildings, photo, surface, tlm,
+regio or farphoto (swissALTIRegio, briefs v0.6.0-01 and v0.6.0-02: `lock regio` pins its tiles and
+`download regio` fetches and verifies them; SWISSIMAGE's 2 m asset over the surroundings, brief
+v0.6.0-05: `lock farphoto` pins its tiles and the cells that have none, `download farphoto`
+fetches and verifies the tiles, eight at once); they, `terrain` and `buildings` all serve the one
 area config/terrain.json names (briefs M2-01, M2-03, M2-04, M3-03; M1 R1 T-06): the area has one
 home. swissTLM3D (`tlm`) is national and has none. `lock <dataset>` writes that dataset's
-entry of config/datasets.lock.json and keeps every other entry (brief M2-03); the six lock
-entries are written by the six `lock` choices. `lock regio` and `download regio` take the
+entry of config/datasets.lock.json and keeps every other entry (brief M2-03); the seven lock
+entries are written by the seven `lock` choices. `lock regio` and `download regio` take the
 tiles' margin and spacing for that area from config/surroundings.json
-(`download.surroundings_settings`; the download through the lock's fit) and end in one
-`mattini: error:` line naming the file when they cannot, before swisstopo is asked anything.
+(`download.surroundings_settings`; the download through the lock's fit), and `lock farphoto` and
+`download farphoto` its margin (`download.area_farphoto_cells`); each ends in one
+`mattini: error:` line naming the file when it cannot, before swisstopo is asked anything.
 
 `photo`, `roofs`, `surfaces` and `trees` build the M3 steps' outputs as `terrain` and
 `buildings` build theirs (brief M3-13); each then writes the manifest. They read the
@@ -35,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from pathlib import Path
 
 from mattini import (
@@ -57,14 +61,15 @@ from mattini.world import WorldConfigError, load_world
 # they are made of)
 DATASETS = {
     "buildings": (download.BUILDINGS, "sheets"),
+    "farphoto": (download.FARPHOTO, "tiles"),
     "photo": (download.PHOTO, "tiles"),
     "regio": (download.REGIO, "tiles"),
     "surface": (download.SURFACE, "tiles"),
     "terrain": (download.DATASET, "tiles"),
     "tlm": (download.TLM, "file"),
 }
-# `lock` serves the same six datasets as `download` (swissALTIRegio's download is brief
-# v0.6.0-02's): one table, under both its names
+# `lock` serves the same seven datasets as `download` (swissALTIRegio's download is brief
+# v0.6.0-02's, the far photo's brief v0.6.0-05's): one table, under both its names
 LOCK_DATASETS = DATASETS
 # the M3 steps, in pipeline order: what each builds from the downloads
 STEPS = {
@@ -78,6 +83,8 @@ DATASETS_HELP = (
     "terrain: swissALTI3D; buildings: swissBUILDINGS3D 3.0, its map sheets; photo: "
     "SWISSIMAGE 10 cm; surface: the swissSURFACE3D raster; regio: swissALTIRegio, its 10 km "
     "tiles around the area, grown by the margin and spacing config/surroundings.json gives it; "
+    "farphoto: SWISSIMAGE 2 m, its 1 km cells around the area, grown by the margin "
+    "config/surroundings.json gives it; "
     "all for the area config/terrain.json names; tlm: swissTLM3D, national (2.9 GB)"
 )
 
@@ -189,8 +196,10 @@ def _lock(dataset: str) -> Path:
     other dataset's entry of the committed lock is kept; with no lock yet, the new one holds
     this entry alone. A lock that exists but cannot be read is refused before swisstopo is
     asked anything. swissALTIRegio's tiles also depend on the margin and spacing that
-    config/surroundings.json gives the area (`download.surroundings_settings`): a config that
-    reader refuses ends the command before swisstopo is asked anything.
+    config/surroundings.json gives the area (`download.surroundings_settings`), and the far
+    photo's cells on the margin (`download.area_farphoto_cells`, read before the first request,
+    with the 1806 items read eight at once): a config that reader refuses ends the command before
+    swisstopo is asked anything.
     """
     if dataset == "tlm":
         datasets = load_datasets()
@@ -209,6 +218,11 @@ def _lock(dataset: str) -> Path:
             margin_m=margin_m,
             spacing_m=spacing_m,
         )
+    elif dataset == "farphoto":
+        area = terrain.configured_area(terrain.load_terrain_config())
+        world, datasets = load_world(), load_datasets()
+        current = lock.load_lock_or_none(lock.LOCK_PATH)
+        entry = lock.farphoto_entry(world, datasets, download.urllib_fetch_json, area=area)
     else:
         area = terrain.configured_area(terrain.load_terrain_config())
         world, datasets = load_world(), load_datasets()
@@ -231,13 +245,18 @@ def _download(dataset: str, out_root: Path) -> int:
     With urllib; progress on stderr, the provenance path on stdout. swissTLM3D is one national
     file, resumed when a transfer is cut (`download.download_tlm`). swissALTIRegio's tiles
     (`download.download_regio`) are the area's surroundings, whose margin and spacing the lock's
-    fit reads from config/surroundings.json before swisstopo is asked anything.
+    fit reads from config/surroundings.json before swisstopo is asked anything. SWISSIMAGE's 2 m
+    tiles (`download.download_farphoto`) are the surroundings' too, fetched eight at once: one
+    `fetching <url>` line per fetch (the order they start in is not fixed), then `<n> tiles
+    verified, <f> fetches, <a> cells without an item` (the lock's cells that have no item).
     """
     name, unit = DATASETS[dataset]
     fetched = []
+    printing = threading.Lock()  # the far photo's fetches run in several threads: a line at a time
 
     def say(message: str) -> None:
-        print(message, file=sys.stderr, flush=True)
+        with printing:
+            print(message, file=sys.stderr, flush=True)
 
     def fetch_file(url: str, dest: Path) -> None:
         say(f"fetching {url}")
@@ -268,6 +287,7 @@ def _download(dataset: str, out_root: Path) -> int:
         run = {
             "terrain": download.download_terrain,
             "buildings": download.download_buildings,
+            "farphoto": download.download_farphoto,
             "photo": download.download_photo,
             "regio": download.download_regio,
             "surface": download.download_surface,
@@ -284,7 +304,10 @@ def _download(dataset: str, out_root: Path) -> int:
             )
         )
     out_dir = out_root / name / download.raw_folder(datasets, name)
-    print(f"{count} {unit} verified, {len(fetched)} fetches", file=sys.stderr)
+    summary = f"{count} {unit} verified, {len(fetched)} fetches"
+    if dataset == "farphoto":  # the cells the lock records as without an item (all still are)
+        summary += f", {len(pinned['datasets'][name]['absent'])} cells without an item"
+    print(summary, file=sys.stderr)
     print(out_dir / download.PROVENANCE)
     return 0
 

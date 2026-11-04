@@ -71,6 +71,20 @@ takes its height from); the two numbers are the area's in config/surroundings.js
 kilometres, the one asset ending `_2056_5728.xyz.zip`) and refuses an item whose
 `properties.datetime` is not in the pinned edition: the item ids carry no edition.
 
+SWISSIMAGE's 2 m asset over the surroundings (brief v0.6.0-05; `swissimage_far`, the far colour's
+input, SPEC §5) is the same collection and items as the photo's (`swissimage-dop10_<edition>_<cell>`),
+the one asset ending `_2_2056.tif` instead of the 10 cm one. Its cells are `farphoto_cells`: every
+1 km cell that meets the area's box grown by `margin_m` (the area's own in config/surroundings.json,
+which `area_farphoto_cells` reads when it is called), with no half-spacing border. A cell without an
+item (HTTP 404: Italy) is not an error: `published_farphoto` returns it among the absent cells, and
+the lock (`lock farphoto`) records them beside the tiles. `download farphoto` (`download_farphoto`)
+reads the item of every cell first, `FARPHOTO_WORKERS` at once, and refuses before any file is
+fetched or anything on disk changes a republished tile, an item in a cell the lock records as
+absent, an item that vanished and an item of another edition (naming `lock farphoto` and
+config/surroundings.json, the config whose expected values design recomputes); then the files go
+through the shared fetch, `FARPHOTO_WORKERS` at once, into `swissimage_far/<edition>/`, whose
+provenance.json is the terrain's with `absent` added.
+
 A datasets config without the dataset, and an area the sheet grid cannot place, are
 DownloadErrors naming config/datasets.json or the world config and the area, never a
 traceback (M2 R1 I-05); so is one that lists `editions` where the command needs one
@@ -85,9 +99,11 @@ import json
 import math
 import os
 import re
+import threading
 import urllib.error
 import urllib.request
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -100,6 +116,7 @@ PHOTO = "swissimage"
 SURFACE = "swisssurface3d"
 TLM = "swisstlm3d"
 REGIO = "swissaltiregio"
+FARPHOTO = "swissimage_far"  # SWISSIMAGE's 2 m asset over the surroundings (brief v0.6.0-05)
 BUILDINGS_ITEM = "swissbuildings3d_3_0_{edition}_{sheet}"  # a STAC item of the collection
 BUILDINGS_SUFFIX = "_2056_5728.gdb.zip"  # the zipped FileGDB; the item also holds a DWG
 PHOTO_ITEM = "swissimage-dop10_{edition}_{tile}"
@@ -117,6 +134,7 @@ REGIO_TILE_M = 10_000  # swissALTIRegio tiles are 10 km squares, named by their 
 REGIO_ORIGIN_M = (5_000, 4_000)  # their corners lie at E = 5 km + 10 km·i, N = 4 km + 10 km·j
 SURROUNDINGS_PATH = REPO / "config" / "surroundings.json"  # the far terrain's design data
 ATTEMPTS = 2  # the first fetch and the one retry
+FARPHOTO_WORKERS = 8  # the far photo's STAC reads, and its file fetches, run this many at once
 TLM_GETS = 5  # the GETs a round of the TLM file may make: a cut transfer is resumed
 SHA256_MULTIHASH = re.compile(r"1220([0-9A-Fa-f]{64})")
 SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -129,6 +147,7 @@ PHOTO_LOCK_COMMAND = "python -m mattini lock photo"
 SURFACE_LOCK_COMMAND = "python -m mattini lock surface"
 TLM_LOCK_COMMAND = "python -m mattini lock tlm"
 REGIO_LOCK_COMMAND = "python -m mattini lock regio"
+FARPHOTO_LOCK_COMMAND = "python -m mattini lock farphoto"
 TLM_DOWNLOAD_COMMAND = "python -m mattini download tlm"
 LOCK_COMMAND_OF = {  # dataset -> the command that writes its lock entry
     DATASET: LOCK_COMMAND,
@@ -137,6 +156,7 @@ LOCK_COMMAND_OF = {  # dataset -> the command that writes its lock entry
     SURFACE: SURFACE_LOCK_COMMAND,
     TLM: TLM_LOCK_COMMAND,
     REGIO: REGIO_LOCK_COMMAND,
+    FARPHOTO: FARPHOTO_LOCK_COMMAND,
 }
 DATASETS_CONFIG_NAME = "config/datasets.json"  # the home of the datasets, for messages
 # the config whose expected values design recomputes when a dataset's inputs change, and
@@ -148,6 +168,7 @@ EXPECTED_CONFIG_NAMES = {
     SURFACE: "config/trees.json",
     TLM: "config/surfaces.json and config/trees.json",
     REGIO: "config/surroundings.json",
+    FARPHOTO: "config/surroundings.json",
 }
 _RECOMPUTE = {
     name: f"then design recomputes the expected values in {config} (docs/SPEC.md §8)"
@@ -228,10 +249,40 @@ def area_tiles(world: World, area: str) -> list[str]:
     East outer, north inner: the order of the download, provenance.json, the terrain step
     and the manifest's `source.tiles`.
     """
-    e_min, e_max, n_min, n_max = world.area(area)
+    return _km_cells(*world.area(area))
+
+
+def _km_cells(e_min: float, e_max: float, n_min: float, n_max: float) -> list[str]:
+    """The ids (`<e km>-<n km>`) of the 1 km cells that meet the box [e_min, e_max) x [n_min, n_max).
+
+    A cell is named by its south-west corner in whole km; east outer, north inner.
+    """
     east = range(math.floor(e_min / TILE_M), math.ceil(e_max / TILE_M))
     north = range(math.floor(n_min / TILE_M), math.ceil(n_max / TILE_M))
     return [f"{e}-{n}" for e in east for n in north]
+
+
+def farphoto_cells(world: World, area: str, *, margin_m: int) -> list[str]:
+    """The ids (`<E km>-<N km>`) of the 1 km cells SWISSIMAGE's 2 m asset is read for (brief v0.6.0-05).
+
+    Every cell that meets the area's box grown by `margin_m` on every side,
+    [e_min - m, e_max + m) x [n_min - m, n_max + m): the surroundings box itself, with no
+    half-spacing border (swissALTIRegio's tiles have one, `regio_tiles`; these have not). East
+    outer, north inner: the order of the lock, the download and provenance.json.
+    """
+    e_min, e_max, n_min, n_max = world.area(area)
+    return _km_cells(e_min - margin_m, e_max + margin_m, n_min - margin_m, n_max + margin_m)
+
+
+def area_farphoto_cells(world: World, area: str) -> list[str]:
+    """`farphoto_cells` with the area's `margin_m` from config/surroundings.json (as it is now).
+
+    The margin is read by `surroundings_settings` when this is called, so a config with another
+    margin asks for other cells; the spacing is read with it but does not change the cells. A
+    config that reader refuses is its DownloadError naming the file.
+    """
+    margin_m, _ = surroundings_settings(area)
+    return farphoto_cells(world, area, margin_m=margin_m)
 
 
 def area_sheets(world: World, area: str) -> list[str]:
@@ -450,6 +501,89 @@ def published_regio(
     return assets
 
 
+def published_farphoto(
+    world: World,
+    datasets: dict,
+    fetch_json: FetchJson,
+    *,
+    area: str,
+    check: Callable[[str, PublishedAsset | None], None] | None = None,
+) -> tuple[list[PublishedAsset], list[str]]:
+    """Read the STAC item of every cell of the far photo of `area`: `(assets, absent cells)`.
+
+    The cells are `area_farphoto_cells(world, area)`, asked for (so the surroundings config is
+    read, and refused if it is not usable) before the first request; no file is fetched (no HEAD
+    either). Each item `swissimage-dop10_<edition>_<cell>` has exactly one asset ending
+    `_<resolution>_2056.tif` (the 2 m one, not the photo's 10 cm one), and its
+    `properties.datetime` must lie in the pinned edition, else it is a DownloadError naming the
+    cell, the datetime and the edition. A cell whose item answers HTTP 404 is absent (swisstopo
+    covers no ground there); any other failure to read an item is "cannot read the STAC item"
+    naming the cell. The items are read `FARPHOTO_WORKERS` at once; the assets and the absent
+    cells come back in cell order whatever order the answers arrive in, and the first refusal in
+    cell order is the one raised (`_in_parallel`). `check(cell, asset)`, when given, runs in
+    each read right after the item is understood, with `asset` None for an absent cell, and may
+    raise a DownloadError: `download farphoto` compares each cell with the lock there.
+    """
+    config = dataset_of(datasets, FARPHOTO)
+    edition = edition_of(datasets, FARPHOTO)
+    spec = _TILE_SETS[PHOTO]  # the same items and file names as the photo's, at another resolution
+    suffix = spec.suffix.format(tag=_resolution_tag(config["resolution_m"], FARPHOTO))
+    cells = area_farphoto_cells(world, area)
+
+    def read(cell: str) -> PublishedAsset | None:
+        item_id = spec.item.format(edition=edition, tile=cell)
+        item_url = STAC_ITEM.format(collection=config["collection"], item_id=item_id)
+        published = _published_asset(
+            fetch_json, item_url, item_id, cell, area, suffix, absent_ok=True, in_edition=edition
+        )
+        asset = None if published is None else PublishedAsset(cell, item_id, *published)
+        if check is not None:
+            check(cell, asset)
+        return asset
+
+    answers = _in_parallel(read, cells, FARPHOTO_WORKERS)
+    return (
+        [asset for asset in answers if asset is not None],
+        [cell for cell, asset in zip(cells, answers, strict=True) if asset is None],
+    )
+
+
+def _in_parallel(work: Callable, items: list, workers: int) -> list:
+    """`[work(item) for item in items]` with `workers` calls at once; the results in item order.
+
+    With one worker the calls run in this thread, in order. With more, the first refusal in
+    item order is the one raised, whatever order the calls end in: a call is not started once
+    an earlier item has failed (and so never an item before the first failure), the calls under
+    way finish, and the failure of the lowest item is raised. A Ctrl-C cancels what has not
+    started and waits for what has.
+    """
+    if workers == 1:
+        return [work(item) for item in items]
+    results: list = [None] * len(items)
+    failures: dict[int, DownloadError | OSError] = {}
+    guard = threading.Lock()
+
+    def run(index: int) -> None:
+        with guard:
+            if failures and min(failures) < index:
+                return
+        try:
+            results[index] = work(items[index])
+        except (DownloadError, OSError) as exc:  # the refusals: raised below, in item order
+            with guard:
+                failures[index] = exc
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        try:
+            list(pool.map(run, range(len(items))))
+        except BaseException:
+            pool.shutdown(wait=False, cancel_futures=True)
+            raise
+    if failures:
+        raise failures[min(failures)]
+    return results
+
+
 def _published_surface_pinned(
     world: World, datasets: dict, fetch_json: FetchJson, locked: dict, area: str
 ) -> list[PublishedAsset]:
@@ -569,6 +703,63 @@ def download_regio(
     return _download_tiles(REGIO, world, datasets, out_root, fetch_json, fetch_file, lock, area)
 
 
+def download_farphoto(
+    world: World,
+    datasets: dict,
+    out_root: Path | str,
+    fetch_json: FetchJson,
+    fetch_file: FetchFile,
+    *,
+    lock: dict,
+    area: str,
+) -> list[dict]:
+    """Fetch and verify SWISSIMAGE's 2 m tiles of `area` into `<out_root>/swissimage_far/<edition>/`.
+
+    As `download_regio`, for the lock's `swissimage_far` entry (brief v0.6.0-05). The lock must
+    fit (`lock.fit_problem`, naming `lock farphoto`): the collection, edition and resolution of
+    the datasets config, and its tiles and absent cells together exactly `area_farphoto_cells`
+    with the margin config/surroundings.json has for `area` when the fit is asked; a config that
+    reader refuses is a DownloadError naming the file, before swisstopo is asked anything. Then
+    the item of every cell is read (`published_farphoto`, `FARPHOTO_WORKERS` at once) and
+    compared with the lock before any file is fetched or anything on disk changes: a republished
+    tile, an item in a cell the lock records as absent, an item that vanished (HTTP 404 for a
+    pinned tile) and an item of another edition are each refused naming the cell, `lock
+    farphoto` and config/surroundings.json. The files (`FARPHOTO_WORKERS` at once) and the
+    provenance.json (the terrain's keys and `absent`) are the shared flow's. Returns the
+    provenance entries of the tiles, in the lock's order.
+    """
+    return _download_tiles(FARPHOTO, world, datasets, out_root, fetch_json, fetch_file, lock, area)
+
+
+def _farphoto_check(entry: dict, area: str) -> Callable[[str, PublishedAsset | None], None]:
+    """What `download farphoto` asks of each cell's item, against the lock's `entry` (it fits)."""
+    pinned, absent = entry["tiles"], set(entry["absent"])
+
+    def adopt(what: str) -> str:
+        return (
+            f"nothing was fetched. A {what} is adopted only on purpose: "
+            f"`{LOCK_COMMAND_OF[FARPHOTO]}`, then commit the lock, {_RECOMPUTE[FARPHOTO]}"
+        )
+
+    def check(cell: str, asset: PublishedAsset | None) -> None:
+        where = f"tile {cell} of area {area!r}"
+        if asset is None and cell in pinned:
+            raise DownloadError(
+                f"{where}: swisstopo no longer publishes {pinned[cell]['file']} (its STAC item "
+                f"answers HTTP 404), the tile lock pins it with SHA-256 {pinned[cell]['sha256']}; "
+                f"{adopt('vanished item')}"
+            )
+        if asset is not None and cell in absent:
+            raise DownloadError(
+                f"{where}: swisstopo now publishes {asset.name} with SHA-256 {asset.sha256}, "
+                f"the tile lock records the cell as without an item; {adopt('new item')}"
+            )
+        if asset is not None:
+            _compare_with_lock([asset], pinned, FARPHOTO, area)
+
+    return check
+
+
 def _download_tiles(
     dataset: str,
     world: World,
@@ -587,31 +778,46 @@ def _download_tiles(
     if problem:
         raise DownloadError(problem)
     pinned = lock["datasets"][dataset]["tiles"]
-    if dataset == REGIO:  # its tiles are the surroundings', not the area's 1 km tiles
-        # The config is read here a second time (the fit read it in lock._regio_ids), so the two
-        # reads agree only as long as both follow it: test_v060_02_gaps.py holds them together
-        # until the tile rule has one home (brief v0.6.0-07).
-        margin_m, spacing_m = surroundings_settings(area)
-        assets = published_regio(
-            world, datasets, fetch_json, area=area, margin_m=margin_m, spacing_m=spacing_m
+    far = dataset == FARPHOTO
+    absent: list[str] = []  # the far photo's cells without an item
+    if far:  # its cells are the surroundings' too, and some have no item
+        # every cell is compared with the lock as its item is read (`_farphoto_check`), so that
+        # the refusal raised is the first in cell order, whatever kind it is
+        assets, absent = published_farphoto(
+            world,
+            datasets,
+            fetch_json,
+            area=area,
+            check=_farphoto_check(lock["datasets"][dataset], area),
         )
     else:
-        assets = _published_tiles(dataset, world, datasets, fetch_json, area)
-    _compare_with_lock(assets, pinned, dataset, area)
+        if dataset == REGIO:  # its tiles are the surroundings', not the area's 1 km tiles
+            # The config is read here a second time (the fit read it in lock._regio_ids), so the
+            # two reads agree only as long as both follow it: test_v060_02_gaps.py holds them
+            # together until the tile rule has one home (brief v0.6.0-07).
+            margin_m, spacing_m = surroundings_settings(area)
+            assets = published_regio(
+                world, datasets, fetch_json, area=area, margin_m=margin_m, spacing_m=spacing_m
+            )
+        else:
+            assets = _published_tiles(dataset, world, datasets, fetch_json, area)
+        _compare_with_lock(assets, pinned, dataset, area)
     out_dir = Path(out_root) / dataset / edition_of(datasets, dataset)
-    entries = _fetch_tiles(out_dir, assets, fetch_file, area)
-    _write_provenance(
-        out_dir,
-        {
-            "attribution": config["attribution"],
-            "collection": config["collection"],
-            "dataset": dataset,
-            "edition": config["edition"],
-            "resolution_m": config["resolution_m"],
-            "schema": PROVENANCE_SCHEMA,
-            "tiles": entries,
-        },
+    entries = _fetch_tiles(
+        out_dir, assets, fetch_file, area, workers=FARPHOTO_WORKERS if far else 1
     )
+    provenance = {
+        "attribution": config["attribution"],
+        "collection": config["collection"],
+        "dataset": dataset,
+        "edition": config["edition"],
+        "resolution_m": config["resolution_m"],
+        "schema": PROVENANCE_SCHEMA,
+        "tiles": entries,
+    }
+    if far:
+        provenance["absent"] = absent
+    _write_provenance(out_dir, provenance)
     return entries
 
 
@@ -675,12 +881,22 @@ def _compare_with_lock(assets: list[PublishedAsset], pinned: dict, dataset: str,
 
 
 def _fetch_tiles(
-    out_dir: Path, assets: list[PublishedAsset], fetch_file: FetchFile, area: str
+    out_dir: Path,
+    assets: list[PublishedAsset],
+    fetch_file: FetchFile,
+    area: str,
+    *,
+    workers: int = 1,
 ) -> list[dict]:
-    """Make every asset's file the verified file in `out_dir`; return the provenance entries."""
+    """Make every asset's file the verified file in `out_dir`; return the provenance entries.
+
+    `workers` files at once (the far photo's `FARPHOTO_WORKERS`; one: in order, in this thread);
+    the entries are in asset order either way, and a refusal is the first in asset order
+    (`_in_parallel`).
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
-    entries = []
-    for asset in assets:
+
+    def fetch(asset: PublishedAsset) -> dict:
         where = f"tile {asset.tile} of area {area!r}"
         size = _fetch_into(out_dir, asset.name, asset.href, asset.sha256, fetch_file, where)
         entry = {
@@ -693,8 +909,9 @@ def _fetch_tiles(
         }
         if asset.edition is not None:
             entry["edition"] = asset.edition
-        entries.append(entry)
-    return entries
+        return entry
+
+    return _in_parallel(fetch, assets, workers)
 
 
 @dataclass(frozen=True)

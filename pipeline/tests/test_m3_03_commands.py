@@ -189,6 +189,7 @@ def test_raw_folder_is_the_edition_or_the_editions_joined():
         "2026-06",  # swissaltiregio (brief v0.6.0-01): "swissalti3d" sorts before it
         "2020",  # swissbuildings3d
         "2023",  # swissimage
+        "2023",  # swissimage_far (brief v0.6.0-05): its own edition, the same year
         "2021-2022",  # swisssurface3d
         "2026-02",  # swisstlm3d
     ]

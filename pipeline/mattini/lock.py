@@ -9,6 +9,12 @@ file is fetched):
   edition, resolution_m, tiles: {<tile>: {file, sha256}}}; swissALTIRegio's tiles are the 10 km
   items the far terrain's surroundings need (`download.regio_tiles`), its edition a year and
   month (`2026-06`) that only the items' `properties.datetime` names;
+- `swissimage_far` (brief v0.6.0-05): exactly {absent, collection, edition, resolution_m,
+  tiles: {<tile>: {file, sha256}}}: SWISSIMAGE's 2 m asset of every 1 km cell of the area's
+  surroundings box (`download.area_farphoto_cells`) that has an item of the edition, and `absent`,
+  a sorted list of distinct tile ids, the cells that have none (HTTP 404: Italy), none of them in
+  `tiles`, so that an item swisstopo adds or withdraws later is a refusal and never a change of
+  the far colour;
 - `swissbuildings3d`: exactly {collection, edition, sheets: {<sheet>: {file, sha256}}}, every
   sheet id an LK25 sixteenth (`sheets.SHEET_ID`);
 - `swisssurface3d` (brief M3-03): exactly {collection, resolution_m,
@@ -17,8 +23,8 @@ file is fetched):
 - `swisstlm3d`: exactly {collection, edition, file, sha256}, the one national file.
 
 Any other dataset is refused. The lock is written only by `python -m mattini lock terrain`,
-`lock buildings`, `lock photo`, `lock surface`, `lock tlm` and `lock regio`, each of which
-replaces its own entry and keeps every other (`with_entry`), and committed, like `uv.lock`; the
+`lock buildings`, `lock photo`, `lock surface`, `lock tlm`, `lock regio` and `lock farphoto`,
+each of which replaces its own entry and keeps every other (`with_entry`), and committed, like `uv.lock`; the
 `download` commands refuse a published checksum that differs from it (Hard Rule 5). Written
 deterministically: sorted keys, 2-space indent, UTF-8, LF, a final newline. A malformed
 lock is a LockError naming the file (Hard Rule 2). `file:checksum` is published in upper-case
@@ -36,7 +42,9 @@ the entry is for the datasets config's collection, edition (swissSURFACE3D: ever
 edition one of `editions`) and resolution and pins exactly the area's tiles or map sheets,
 no more and no fewer (swissTLM3D is national: no area; swissALTIRegio's tiles are those
 `download.regio_tiles` gives with the margin and spacing config/surroundings.json has for the area
-when the fit is asked, brief v0.6.0-02). `download`, the steps and `manifest` all ask it, so each
+when the fit is asked, brief v0.6.0-02; swissimage_far's `tiles` and `absent` together are exactly
+`download.area_farphoto_cells`, none missing, none beside them, none in both, brief v0.6.0-05).
+`download`, the steps and `manifest` all ask it, so each
 refuses a lock that does not fit with the same words, naming `python -m mattini lock <dataset>` and
 no other command.
 """
@@ -59,7 +67,7 @@ from mattini.world import REPO, World
 
 LOCK_PATH = REPO / "config" / "datasets.lock.json"
 LOCK_COMMAND = download.LOCK_COMMAND
-LOCK_COMMANDS = tuple(  # the six commands that write the lock, in the order the help lists them
+LOCK_COMMANDS = tuple(  # the seven commands that write the lock, in the order the help lists them
     download.LOCK_COMMAND_OF[name]
     for name in (
         download.DATASET,
@@ -68,6 +76,7 @@ LOCK_COMMANDS = tuple(  # the six commands that write the lock, in the order the
         download.SURFACE,
         download.TLM,
         download.REGIO,
+        download.FARPHOTO,
     )
 )
 SCHEMA = 1
@@ -79,6 +88,7 @@ DATASET_KEYS = {  # every dataset the lock knows, with its entry's exact key set
     download.SURFACE: {"collection", "resolution_m", "tiles"},
     download.TLM: {"collection", "edition", "file", "sha256"},
     download.REGIO: {"collection", "edition", "resolution_m", "tiles"},
+    download.FARPHOTO: {"absent", "collection", "edition", "resolution_m", "tiles"},
 }
 TILE_ENTRY_KEYS = {"file", "sha256"}  # one file of a tile or a sheet
 SURFACE_TILE_ENTRY_KEYS = {"edition", "file", "sha256"}  # a swissSURFACE3D tile: its edition too
@@ -220,6 +230,30 @@ def regio_entry(
     }
 
 
+def farphoto_entry(
+    world: World, datasets: dict, fetch_json: download.FetchJson, *, area: str
+) -> dict:
+    """The lock's swissimage_far entry: SWISSIMAGE's 2 m asset over the surroundings of `area`.
+
+    From the STAC items only (brief v0.6.0-05): no request goes to the file host, not even a
+    HEAD. The cells are `download.area_farphoto_cells`, which reads the margin from
+    config/surroundings.json before the first request (a config it refuses is a
+    DownloadError and nothing is returned); `tiles` holds the cells that have an item of the
+    pinned edition, `absent` (sorted) the cells whose item answers HTTP 404. An item whose
+    datetime is not in the pinned edition, or any other failure to read one, is a DownloadError
+    naming the cell and nothing is returned; the checksum is stored in lower case.
+    """
+    far = download.dataset_of(datasets, download.FARPHOTO)
+    assets, absent = download.published_farphoto(world, datasets, fetch_json, area=area)
+    return {
+        "absent": sorted(absent),
+        "collection": far["collection"],
+        "edition": download.edition_of(datasets, download.FARPHOTO),
+        "resolution_m": far["resolution_m"],
+        "tiles": {asset.tile: {"file": asset.name, "sha256": asset.sha256} for asset in assets},
+    }
+
+
 @dataclass(frozen=True)
 class _Fit:
     """What `fit_problem` compares for one dataset."""
@@ -228,6 +262,7 @@ class _Fit:
     files: str | None  # the entry's object of files, "tiles" or "sheets"; None: one national file
     ids: Callable | None = None  # (world, area) -> the ids the area needs, in the order listed
     editions: bool = False  # every file's `edition` must be one of the config's `editions`
+    absent: bool = False  # the entry's `absent` cells and its files are together exactly the ids
 
 
 def _regio_ids(world: World, area: str) -> list[str]:
@@ -250,6 +285,12 @@ _FITS = {
     ),
     download.TLM: _Fit(("collection", "edition"), None),
     download.REGIO: _Fit(("collection", "edition", "resolution_m"), "tiles", _regio_ids),
+    download.FARPHOTO: _Fit(
+        ("collection", "edition", "resolution_m"),
+        "tiles",
+        download.area_farphoto_cells,
+        absent=True,
+    ),
 }
 
 
@@ -272,7 +313,9 @@ def fit_problem(
     dataset needs one `edition` or the other way round (`download.edition_of`); an area the
     sheet grid cannot place is one too. swissALTIRegio's tiles depend on the margin and
     spacing of config/surroundings.json, read when this is asked: a config
-    `download.surroundings_settings` refuses is a DownloadError naming the file.
+    `download.surroundings_settings` refuses is a DownloadError naming the file. swissimage_far's
+    cells depend on the margin alone, read the same way: its `tiles` and its `absent` cells
+    together must be exactly the area's cells, none missing, none beside them and none in both.
     """
     if dataset not in _FITS:
         raise ValueError(f"no fit rule for dataset {dataset!r}: the lock knows {sorted(_FITS)}")
@@ -304,6 +347,8 @@ def fit_problem(
     pinned = entry.get(fit.files)
     if not isinstance(pinned, dict):
         return problem(f"has no {fit.files}")
+    if fit.absent:
+        return _absent_fit_problem(entry, pinned, fit.ids(world, area), fit.files, problem)
     needed = fit.ids(world, area)
     missing = [part for part in needed if part not in pinned]
     if missing:
@@ -321,13 +366,45 @@ def fit_problem(
     return None
 
 
+def _absent_fit_problem(
+    entry: dict, pinned: dict, needed: list[str], files: str, problem: Callable[[str], str]
+) -> str | None:
+    """`fit_problem`'s rest for an entry with `absent` cells: they and the files are the ids.
+
+    Each refusal names the cells at fault (the first few: a margin changed from 0 to 20'000 would
+    otherwise list some 1800 cells in one line).
+    """
+    absent = entry.get("absent")
+    if not isinstance(absent, list) or not all(isinstance(cell, str) for cell in absent):
+        return problem("has no absent list of tile ids")
+    both = [cell for cell in absent if cell in pinned]
+    if both:
+        return problem(f"records the cells {_some(both)} both as pinned {files} and as absent")
+    missing = [cell for cell in needed if cell not in pinned and cell not in absent]
+    if missing:
+        return problem(
+            f"neither pins a checksum for nor records as absent the {files} {_some(missing)} "
+            f"of the area"
+        )
+    wanted = set(needed)
+    extra = sorted(cell for cell in [*pinned, *absent] if cell not in wanted)
+    if extra:
+        return problem(f"holds the {files} {_some(extra)}, which the area does not need")
+    return None
+
+
+def _some(parts: list[str], limit: int = 6) -> str:
+    """`parts` as a list, or its first `limit` and how many more when it is long."""
+    return str(parts) if len(parts) <= limit else f"{parts[:limit]} and {len(parts) - limit} more"
+
+
 def shape_problem(lock: object) -> str | None:
     """Why `lock` is not a well-formed lock (`validate_lock`), as the whole refusal text, or None.
 
     For the steps, which are given a lock in memory and refuse it in their own error class
     (brief M3-13): `fit_problem` asks whether the entries fit the configs and the area, this
     asks whether the lock is the lock's exact structure, every entry's key set, file name and
-    SHA-256 included. It names `the lock` and all six lock commands, as `validate_lock` does.
+    SHA-256 included. It names `the lock` and all seven lock commands, as `validate_lock` does.
     """
     try:
         validate_lock(lock, "the lock")
@@ -489,6 +566,22 @@ def validate_lock(lock: object, path: Path | str) -> None:
                     f"{where}: edition must be a year like '2021', found {entry['edition']!r}"
                 )
             _check_file(where, entry, fail)
+        if name == download.FARPHOTO:
+            _check_absent(f"dataset {name!r}", dataset["absent"], parts, fail)
+
+
+def _check_absent(where: str, absent: object, tiles: dict, fail) -> None:
+    """Refuse an `absent` that is not a sorted list of distinct tile ids, none of them in `tiles`."""
+    if not isinstance(absent, list):
+        raise fail(f"{where}: absent must be a list of tile ids")
+    for cell in absent:
+        if not isinstance(cell, str) or not TILE_ID.fullmatch(cell):
+            raise fail(f"{where}: absent holds {cell!r}, but a tile id is '<e km>-<n km>'")
+    if absent != sorted(set(absent)):
+        raise fail(f"{where}: absent must be sorted and without repeats")
+    for cell in absent:
+        if cell in tiles:
+            raise fail(f"{where}, tile {cell!r}: pinned in tiles and also listed in absent")
 
 
 def _check_file(where: str, entry: dict, fail) -> None:

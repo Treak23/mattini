@@ -78,6 +78,7 @@ def test_the_committed_lock_pins_the_measured_entries():
         "swissalti3d",
         "swissbuildings3d",
         "swissimage",
+        "swissimage_far",  # test_v060_05_measured_farphoto.py (v0.6.0-05)
         "swisssurface3d",
         "swisstlm3d",
     }
