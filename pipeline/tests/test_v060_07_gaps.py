@@ -1,6 +1,6 @@
 """Guards of brief v0.6.0-07 the pinned tests leave open (decision 12; the batch gate's prover).
 
-The pinned copies state what the wiring must do; they leave open six things that no pin tells
+The pinned copies state what the wiring must do; they leave open eight things that no pin tells
 from their absence (each probe changed the code and left the pins green):
 
 - *A surroundings config without the area* is a DownloadError naming config/surroundings.json and
@@ -19,6 +19,16 @@ from their absence (each probe changed the code and left the pins green):
   leaves its place to the builder): a lock that does not fit is refused with the fit's text, not
   with the missing heights.
 
+- *A datasets config without a dataset a built block reads* (the fixer round's X17): the
+  manifest's `_inputs_check` turns `download.dataset_of`'s DownloadError (a RuntimeError, which no
+  step's error class is) into the step's own refusal, naming config/datasets.json and the
+  dataset, for every block the manifest checks and every dataset it reads, the surroundings'
+  two halves included.
+- *A built colour whose area holds no `colour` block* (the fixer round's X27): the colour is
+  optional in config/surroundings.json, so `checked` cannot compare its `computed_for`; the
+  description is still refused (naming config/surroundings.json when the heights are built,
+  the missing heights when they are not), never dropped to a null block.
+
 The manifest's `.part` rename (the pin author's third probe) is held by the full suite:
 test_m3_13_commands.py's two cases for `write_manifest`, which the new key does not touch.
 
@@ -28,6 +38,7 @@ Does NOT prove: that these are the only unpinned orders (the batch gate's prover
 import copy
 import json
 import re
+from pathlib import Path
 
 import pytest
 import synthetic_farphoto
@@ -35,6 +46,7 @@ from computed_for import recorded
 from synthetic_regio import FIXTURE, fixture_datasets, raw_regio
 
 from mattini import download, lock
+from mattini import manifest as manifest_module
 from mattini.farcolour import FarColourError, build_farcolour
 from mattini.lock import shape_problem, write_lock
 from mattini.manifest import build_manifest
@@ -311,3 +323,98 @@ def test_the_step_refuses_a_malformed_lock_that_fits_with_the_lock_s_shape_text(
         )
     assert str(refusal.value) == shape_problem(pinned)
     assert not (tmp_path / "out").exists()
+
+
+# --------------------- the manifest: a datasets config without a dataset a built block reads
+
+_STEPS = sorted(
+    (value for value in vars(manifest_module).values() if isinstance(value, manifest_module._Step)),
+    key=lambda step: (step.key, step.suffix),
+)
+_STEP_DATASETS = [
+    pytest.param(step, dataset, id=f"{step.key}{step.suffix}-without-{dataset}")
+    for step in _STEPS
+    for dataset in step.names
+]
+
+
+def _datasets_without(tmp_path: Path, dataset: str) -> Path:
+    data = json.loads((CONFIG / "datasets.json").read_text(encoding="utf-8"))
+    del data["datasets"][dataset]
+    path = tmp_path / "datasets.json"
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return path
+
+
+def test_the_manifest_s_steps_are_all_asked_about_their_datasets():
+    """The table above follows the manifest's own steps; it must not be empty or lose one."""
+    keys = {(step.key, step.suffix) for step in _STEPS}
+    assert keys >= {
+        ("photo", ""),
+        ("roofs", ""),
+        ("surfaces", ""),
+        ("trees", ""),
+        ("shadows", ""),
+        ("surroundings", ""),
+        ("surroundings", "_colour"),
+    }, keys
+    assert {name for step in _STEPS for name in step.names} >= {REGIO, FAR}
+
+
+@pytest.mark.parametrize(("step", "dataset"), _STEP_DATASETS)
+def test_a_datasets_config_without_a_dataset_a_built_block_reads_is_the_step_s_refusal(
+    tmp_path, step, dataset
+):
+    """The lock's fit raises a DownloadError for it (a RuntimeError, caught by no step's class):
+    the manifest turns it into the step's own refusal with its text, never lets it through."""
+    out = tmp_path / "out"
+    (out / step.key).mkdir(parents=True)
+    (out / step.key / f"{AREA}{step.suffix}.json").write_text("{}\n", encoding="utf-8")
+    with pytest.raises(step.error) as refusal:
+        build_manifest(
+            CONFIG / "world.json", out, datasets_path=_datasets_without(tmp_path, dataset)
+        )
+    text = str(refusal.value)
+    assert type(refusal.value) is step.error and not isinstance(refusal.value, RuntimeError)
+    assert "config/datasets.json" in text and repr(dataset) in text, text
+    assert not (out / "manifest.json").exists()
+
+
+# ------------------------------- the manifest: a built colour, an area that holds no `colour`
+
+
+def _surroundings_without_colour(tmp_path: Path) -> Path:
+    config = json.loads((CONFIG / "surroundings.json").read_text(encoding="utf-8"))
+    del config["areas"][AREA]["colour"]
+    path = tmp_path / "surroundings.json"
+    path.write_text(json.dumps(config, indent=2), encoding="utf-8")
+    return path
+
+
+@pytest.mark.parametrize("heights", ["built", "absent"])
+def test_a_built_colour_whose_area_holds_no_colour_block_is_refused_not_dropped(
+    tmp_path, monkeypatch, heights
+):
+    """`colour` is optional in config/surroundings.json, so the manifest cannot check the colour's
+    `computed_for` without it; the description is refused all the same (the colour block function
+    names the config when the heights are built, the manifest the missing heights when not), and
+    never left out of the block as if no colour were built."""
+    out = tmp_path / "out"
+    (out / "surroundings").mkdir(parents=True)
+    names = [f"{AREA}_colour.json", *([f"{AREA}.json"] if heights == "built" else [])]
+    for name in names:
+        (out / "surroundings" / name).write_text("{}\n", encoding="utf-8")
+    # the heights' own block check is not what is asked: a stand-in that accepts (the manifest's
+    # checks of the heights, against the committed config, still run)
+    monkeypatch.setattr(manifest_module, "built_surroundings_block", lambda *a, **k: {"area": AREA})
+    with pytest.raises(FarColourError) as refusal:
+        build_manifest(
+            CONFIG / "world.json",
+            out,
+            surroundings_config_path=_surroundings_without_colour(tmp_path),
+        )
+    text = str(refusal.value)
+    if heights == "built":
+        assert "config/surroundings.json" in text and "no colour block" in text, text
+    else:
+        assert set(COMMAND.findall(text)) == {"python -m mattini surroundings"}, text
