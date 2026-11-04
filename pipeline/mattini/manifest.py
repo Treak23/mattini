@@ -1,7 +1,7 @@
 """The generated manifest: the game's only source of generated data (docs/SPEC.md §8).
 
 Its top level is exactly `buildings`, `photo`, `roofs`, `schema`, `shadows`, `sky`,
-`surfaces`, `terrain`, `trees`, `world` and `world_sha256`. Its `world` block is config/world.json verbatim, with
+`surfaces`, `surroundings`, `terrain`, `trees`, `world` and `world_sha256`. Its `world` block is config/world.json verbatim, with
 the SHA-256 of the file's bytes, so the game learns the origin and axes only from here (Hard
 Rule 4). Every other block is the description its step wrote next to its files, copied
 verbatim, or null when that step has not been run in this folder (brief M3-13): a block is
@@ -26,15 +26,28 @@ config's area (briefs M3-04 to M3-07, M3-13); the `shadows` block is the descrip
 checked world, then area, then block, by `sky.built_sky_block`. Every step config is loaded and checked even
 when its step has not run.
 
+The `surroundings` block (brief v0.6.0-07) is the far terrain's, for the one area
+config/surroundings.json names: ONE flat object of 20 keys, the heights' description
+`surroundings/<area>.json` (`python -m mattini surroundings`, 11 keys, `surroundings.
+built_surroundings_block`) and the colour's `surroundings/<area>_colour.json` (`python -m mattini
+farcolour`, 9 keys, `farcolour.built_farcolour_block`) side by side, each verbatim. It is null while
+either description is absent from the folder (the heights alone are the state between the two
+commands); the colour's without the heights' is refused, naming `python -m mattini surroundings`.
+Each built half is checked as below, the heights first, in its own error class
+(`SurroundingsError`, `FarColourError`); the lock's fit is asked with the surroundings config
+this module was given, never the committed file.
+
 For a block that is built, the checks come in the steps' own order (briefs M3-01, M3-13).
 For the terrain and the buildings it is the steps': the expected values' `computed_for` is
 compared with the world config first; then the lock must fit the datasets config and the
 area exactly (`lock.fit_problem`), or the manifest is refused naming `python -m mattini
 lock <x>` and no other command; then `computed_for` is compared with the lock's entry, and
 a difference names design's step instead, since a rebuild would be refused too (brief
-M2-07); only then is the block itself checked. For the four new blocks this module makes
-those checks itself (the shadows' too, whose lock entry is the surface model's), in the same
-order whatever the steps' block functions check, the refusal in the step's error class:
+M2-07); only then is the block itself checked. For the other blocks this module makes
+those checks itself (the shadows' too, whose lock entry is the surface model's; the
+surroundings' two halves too, the heights' reading swissALTIRegio and the colour's that and
+SWISSIMAGE's 2 m asset), in the same order whatever the steps' block functions check, the
+refusal in the step's error class:
 
 1. `computed_for.world_sha256` against config/world.json (design's step);
 2. the lock's fit for every dataset the step reads, in sorted order, through
@@ -42,7 +55,8 @@ order whatever the steps' block functions check, the refusal in the step's error
 3. `computed_for.inputs_sha256` against the lock's entries (`lock.entry_sha256` for one
    dataset, `lock.entries_sha256` for several; design's step);
 4. roofs only: built roofs without built buildings are refused, naming
-   `python -m mattini buildings`;
+   `python -m mattini buildings` (and the surroundings' colour without the heights, naming
+   `python -m mattini surroundings`);
 5. the step's own check of the block.
 
 Written deterministically: sorted keys, fixed formatting, LF line endings, no times, no
@@ -65,7 +79,17 @@ from mattini.buildings import (
 )
 from mattini.datasets import DEFAULT_PATH as DATASETS_PATH
 from mattini.datasets import load_datasets
-from mattini.download import BUILDINGS, DATASET, PHOTO, SURFACE, TLM, DownloadError
+from mattini.download import (
+    BUILDINGS,
+    DATASET,
+    FARPHOTO,
+    PHOTO,
+    REGIO,
+    SURFACE,
+    TLM,
+    DownloadError,
+)
+from mattini.farcolour import FarColourError, built_farcolour_block
 from mattini.lock import LOCK_PATH, entries_sha256, fit_problem, load_lock
 from mattini.photo import (
     PHOTO_CONFIG_NAME,
@@ -97,6 +121,16 @@ from mattini.surfaces import (
     built_surfaces_block,
     load_surfaces_config,
 )
+from mattini.surroundings import (
+    STEP_COMMAND as SURROUNDINGS_COMMAND,
+)
+from mattini.surroundings import (
+    SURROUNDINGS_CONFIG_NAME,
+    SURROUNDINGS_CONFIG_PATH,
+    SurroundingsError,
+    built_surroundings_block,
+    load_surroundings_config,
+)
 from mattini.terrain import (
     TERRAIN_CONFIG_PATH,
     built_terrain_block,
@@ -127,6 +161,8 @@ class _Step:
     config_name: str  # the home of the expected values, for messages
     names: tuple[str, ...]  # the lock's datasets the step reads, in sorted order
     error: type[ValueError]  # the step's error class, which the command line catches
+    suffix: str = ""  # the description is `<key>/<area><suffix>.json`
+    part: str | None = None  # the area's config block that holds `computed_for`; None: the area's
 
 
 _PHOTO = _Step("photo", PHOTO_CONFIG_NAME, (PHOTO,), PhotoError)
@@ -136,6 +172,17 @@ _TREES = _Step(
     "trees", TREES_CONFIG_NAME, tuple(sorted((DATASET, BUILDINGS, SURFACE, TLM))), TreesError
 )
 _SHADOWS = _Step("shadows", SHADOWS_CONFIG_NAME, (SURFACE,), ShadowsError)
+# the far terrain's two halves, one block (brief v0.6.0-07): the heights read swissALTIRegio, the
+# colour that and SWISSIMAGE's 2 m asset; the colour's expected values are the area's `colour`
+_HEIGHTS = _Step("surroundings", SURROUNDINGS_CONFIG_NAME, (REGIO,), SurroundingsError)
+_COLOUR = _Step(
+    "surroundings",
+    SURROUNDINGS_CONFIG_NAME,
+    tuple(sorted((REGIO, FARPHOTO))),
+    FarColourError,
+    suffix="_colour",
+    part="colour",
+)
 
 
 def build_manifest(
@@ -151,6 +198,7 @@ def build_manifest(
     surfaces_config_path: Path | str = SURFACES_CONFIG_PATH,
     trees_config_path: Path | str = TREES_CONFIG_PATH,
     shadows_config_path: Path | str = SHADOWS_CONFIG_PATH,
+    surroundings_config_path: Path | str = SURROUNDINGS_CONFIG_PATH,
     sky_config_path: Path | str = SKY_CONFIG_PATH,
 ) -> dict:
     """The manifest's contents; refuses a world config the loader refuses and any built block
@@ -167,6 +215,7 @@ def build_manifest(
     surfaces_config = load_surfaces_config(surfaces_config_path)
     trees_config = load_trees_config(trees_config_path)
     shadows_config = load_shadows_config(shadows_config_path)
+    surroundings_config = load_surroundings_config(surroundings_config_path)
     sky_config = load_sky_config(sky_config_path)
 
     @functools.cache
@@ -175,11 +224,22 @@ def build_manifest(
 
     def checked(step: _Step, area: str, config: dict) -> bool:
         """True when the step's description is built in `out_dir` and passed steps 1 to 3."""
-        if not (Path(out_dir) / step.key / f"{area}.json").exists():
+        if not (Path(out_dir) / step.key / f"{area}{step.suffix}.json").exists():
             return False
         settings = config["areas"].get(area)
+        if settings is not None and step.part is not None:
+            settings = settings.get(step.part)  # a config without it: the step's own check refuses
         if settings is not None:  # a config for another area is refused by the step's own check
-            _inputs_check(step, area, settings["computed_for"], world, world_sha256, datasets, lock)
+            _inputs_check(
+                step,
+                area,
+                settings["computed_for"],
+                world,
+                world_sha256,
+                datasets,
+                lock,
+                surroundings_config,
+            )
         return True
 
     terrain = built_terrain_block(
@@ -233,6 +293,25 @@ def build_manifest(
         if checked(_SHADOWS, area, shadows_config)
         else None
     )
+    area = configured_area(surroundings_config)
+    heights = (
+        built_surroundings_block(
+            out_dir, surroundings_config, world, world_sha256, datasets, lock()
+        )
+        if checked(_HEIGHTS, area, surroundings_config)
+        else None
+    )
+    colour = None
+    if checked(_COLOUR, area, surroundings_config):
+        if heights is None:
+            raise FarColourError(
+                f"{Path(out_dir) / 'surroundings' / f'{area}_colour.json'}: the far colour is "
+                f"built, but no surroundings heights are: it is the colour of the terrain the "
+                f"heights shape; `{SURROUNDINGS_COMMAND}` builds the heights first"
+            )
+        colour = built_farcolour_block(
+            out_dir, surroundings_config, world, world_sha256, datasets, lock()
+        )
     return {
         "buildings": buildings,
         "photo": photo,
@@ -241,6 +320,9 @@ def build_manifest(
         "shadows": shadows,
         "sky": built_sky_block(out_dir, sky_config, world, world_sha256),
         "surfaces": surfaces,
+        "surroundings": (
+            {**heights, **colour} if heights is not None and colour is not None else None
+        ),
         "terrain": terrain,
         "trees": trees,
         "world": json.loads(raw.decode("utf-8")),
@@ -261,6 +343,7 @@ def write_manifest(
     surfaces_config_path: Path | str = SURFACES_CONFIG_PATH,
     trees_config_path: Path | str = TREES_CONFIG_PATH,
     shadows_config_path: Path | str = SHADOWS_CONFIG_PATH,
+    surroundings_config_path: Path | str = SURROUNDINGS_CONFIG_PATH,
     sky_config_path: Path | str = SKY_CONFIG_PATH,
 ) -> Path:
     """Write `<out_dir>/manifest.json` and return its path; a refusal writes nothing.
@@ -281,6 +364,7 @@ def write_manifest(
         surfaces_config_path=surfaces_config_path,
         trees_config_path=trees_config_path,
         shadows_config_path=shadows_config_path,
+        surroundings_config_path=surroundings_config_path,
         sky_config_path=sky_config_path,
     )
     text = json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False)
@@ -300,12 +384,14 @@ def _inputs_check(
     world_sha256: str,
     datasets: dict,
     lock,
+    surroundings: dict,
 ) -> None:
     """Steps 1 to 3 of a built new block, in the module docstring's order; raises `step.error`.
 
     `lock` is the function that reads the lock, so that no lock is read when the world is
     already refused. A world config without the area has no lock to fit: the step's own check
-    of the block refuses it.
+    of the block refuses it. `surroundings` is the surroundings config the manifest was given,
+    which the lock's fit of the far datasets follows (the other datasets ignore it).
     """
     problem = world_refusal(step.config_name, computed_for, world_sha256)
     if problem:
@@ -314,7 +400,7 @@ def _inputs_check(
         return
     for name in step.names:
         try:
-            problem = fit_problem(lock(), datasets, world, area, name)
+            problem = fit_problem(lock(), datasets, world, area, name, surroundings=surroundings)
         except DownloadError as exc:  # a datasets config without the dataset
             raise step.error(str(exc)) from exc
         if problem:

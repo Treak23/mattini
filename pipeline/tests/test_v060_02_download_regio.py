@@ -3,10 +3,11 @@
 Pinned decisions (docs/briefs/v0.6.0-02-download-regio.md, beside M4-01's own in
 test_m4_01_download_regio.py):
 
-- *The fit reads the surroundings config.* `lock.fit_problem(lock, datasets, world, area,
-  "swissaltiregio")` asks for exactly the tiles `download.regio_tiles` gives with the
-  `(margin_m, spacing_m)` that `download.surroundings_settings(area)` reads when it is called
-  (brief v0.6.0-01 decision 3): the committed config's 30 for the village; a config with another
+- *The fit takes the surroundings config it is given.* `lock.fit_problem(lock, datasets, world,
+  area, "swissaltiregio", surroundings=<the config>)` asks for exactly the tiles
+  `download.regio_tiles` gives with the area's `(margin_m, spacing_m)` in that config (brief
+  v0.6.0-07, re-cut: `download regio` reads it through `surroundings.load_surroundings_config`,
+  the config's one reader, when it runs): the committed config's 30 for the village; a config with another
   margin, or another spacing, asks for other tiles, so the committed lock is refused naming
   `python -m mattini lock regio` and the tiles the area needs. At a margin of 20 km every
   spacing from 1 to 2000 m gives the same 30 tiles (the east edge lies on a tile edge), so the
@@ -47,7 +48,7 @@ import pytest
 from local_regio import VILLAGE_TILES, LocalRegio, regio_name
 
 import mattini.__main__ as cli
-from mattini import download, lock
+from mattini import download, lock, surroundings
 from mattini.datasets import load_datasets
 from mattini.world import REPO, load_world
 
@@ -74,6 +75,14 @@ def regio(monkeypatch, tmp_path):
     site.out = tmp_path / "raw"
     yield site
     site.close()
+
+
+def _use_config(monkeypatch, path):
+    """The command line's surroundings config: `surroundings.load_surroundings_config`, its one
+    reader (brief v0.6.0-07), replaced on its module by one that reads `path` with the real
+    reader; a refusal is the reader's own, naming `path`."""
+    real = surroundings.load_surroundings_config
+    monkeypatch.setattr(surroundings, "load_surroundings_config", lambda *a, **k: real(path))
 
 
 def _config(tmp_path, change):
@@ -103,16 +112,27 @@ def _gets(site, path):
 
 def test_the_fit_asks_for_the_tiles_of_the_committed_config(regio):
     world, datasets = load_world(), load_datasets()
-    assert lock.fit_problem(regio.pinned, datasets, world, "village", "swissaltiregio") is None
+    config = surroundings.load_surroundings_config(COMMITTED_CONFIG)
+    assert (
+        lock.fit_problem(
+            regio.pinned, datasets, world, "village", "swissaltiregio", surroundings=config
+        )
+        is None
+    )
     assert download.EXPECTED_CONFIG_NAMES["swissaltiregio"] == "config/surroundings.json"
 
 
 def test_the_fit_follows_the_config_s_margin(regio, capsys, monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        download, "SURROUNDINGS_PATH", _config(tmp_path, lambda v: v.update(margin_m=0))
-    )
+    _use_config(monkeypatch, _config(tmp_path, lambda v: v.update(margin_m=0)))
     world, datasets = load_world(), load_datasets()
-    problem = lock.fit_problem(regio.pinned, datasets, world, "village", "swissaltiregio")
+    problem = lock.fit_problem(
+        regio.pinned,
+        datasets,
+        world,
+        "village",
+        "swissaltiregio",
+        surroundings=surroundings.load_surroundings_config(),
+    )
     assert problem is not None and "['2615-1094', '2625-1094']" in problem, problem
     assert "`python -m mattini lock regio`" in problem, problem
 
@@ -124,11 +144,16 @@ def test_the_fit_follows_the_config_s_margin(regio, capsys, monkeypatch, tmp_pat
 
 
 def test_the_fit_follows_the_config_s_spacing(regio, capsys, monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        download, "SURROUNDINGS_PATH", _config(tmp_path, lambda v: v.update(spacing_m=4000))
-    )
+    _use_config(monkeypatch, _config(tmp_path, lambda v: v.update(spacing_m=4000)))
     world, datasets = load_world(), load_datasets()
-    problem = lock.fit_problem(regio.pinned, datasets, world, "village", "swissaltiregio")
+    problem = lock.fit_problem(
+        regio.pinned,
+        datasets,
+        world,
+        "village",
+        "swissaltiregio",
+        surroundings=surroundings.load_surroundings_config(),
+    )
     assert problem is not None and "2595-1064" in problem and "2645-1064" in problem, problem
     assert "`python -m mattini lock regio`" in problem, problem
 
@@ -143,7 +168,7 @@ def test_a_config_the_reader_refuses_ends_download_regio_before_any_request(
     regio, capsys, monkeypatch, tmp_path
 ):
     path = _config(tmp_path, lambda v: v.update(spacing_m=50.5))
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", path)
+    _use_config(monkeypatch, path)
     code, out, err = _download(regio, capsys)
     assert (code, out) == (1, "")
     assert err.startswith("mattini: error: ") and str(path) in err and "spacing_m" in err, err

@@ -45,7 +45,7 @@ from synthetic_regio import (
     zip_name,
 )
 
-from mattini import surroundings
+from mattini import download, surroundings
 from mattini.surroundings import (
     SurroundingsError,
     build_surroundings,
@@ -1433,7 +1433,9 @@ def test_the_step_s_sums_counts_cut_and_heights_are_the_shared_vectors_vertex_by
     resolution = fixture_datasets()["swissaltiregio"]["resolution_m"]
     sums = np.zeros((grid.rows, grid.columns), dtype=np.int64)
     counts = np.zeros_like(sums)
-    for tile in surroundings._tiles_needed(grid):
+    for tile in download.regio_tiles(
+        world, "fixture", margin_m=settings["margin_m"], spacing_m=settings["spacing_m"]
+    ):  # the tile rule has one home (brief v0.6.0-07)
         path = folder / zip_name(tile)
         x, y, centimetres = surroundings._tile_samples(path.read_bytes(), tile, path, resolution)
         surroundings._accumulate(grid, x, y, centimetres, sums, counts)

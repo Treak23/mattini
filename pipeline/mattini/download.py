@@ -58,15 +58,18 @@ swissALTIRegio (briefs v0.6.0-01 and v0.6.0-02; SPEC §5) is swisstopo's 10 m te
 Switzerland and its neighbours in 10 km tiles of zipped XYZ text, the input of the far terrain.
 `python -m mattini lock regio` writes its lock and `download regio` (`download_regio`) is the
 terrain's flow for its tiles: the lock must fit (`lock.fit_problem`, which asks for the tiles
-`regio_tiles` gives with the margin and spacing config/surroundings.json has when the fit is
-asked), every STAC item is compared with the lock before any file is fetched, and a republished
-tile is refused naming `lock regio` and config/surroundings.json, the config whose expected
-values design recomputes (`EXPECTED_CONFIG_NAMES`). The zips go to `swissaltiregio/<edition>/`
-under the root with their provenance.json; no step reads them yet.
+`regio_tiles` gives with the margin and spacing of the surroundings config it is given), every STAC
+item is compared with the lock before any file is fetched, and a republished tile is refused
+naming `lock regio` and config/surroundings.json, the config whose expected values design
+recomputes (`EXPECTED_CONFIG_NAMES`). The zips go to `swissaltiregio/<edition>/` under the root
+with their provenance.json; the surroundings step reads them (brief v0.6.0-04).
 `regio_tiles` lists the tiles whose square meets the samples that the surroundings of an area
 need (the area's box grown by `margin_m`, and by half of `spacing_m` for the samples a vertex
 takes its height from); the two numbers are the area's in config/surroundings.json, which
-`surroundings_settings` reads. `published_regio` reads the STAC item of each tile
+`surroundings.load_surroundings_config` is the one reader of (brief v0.6.0-07): the command line
+reads it once and gives it to the lock's entry, the download and the lock's fit, as the keyword
+`surroundings` (`surroundings_margin_spacing` takes the two numbers out of it, and refuses a config
+that has no settings for the area). `published_regio` reads the STAC item of each tile
 (`swissaltiregio_<E km>-<N km>`, the id naming the tile's south-west corner in whole
 kilometres, the one asset ending `_2056_5728.xyz.zip`) and refuses an item whose
 `properties.datetime` is not in the pinned edition: the item ids carry no edition.
@@ -75,7 +78,8 @@ SWISSIMAGE's 2 m asset over the surroundings (brief v0.6.0-05; `swissimage_far`,
 input, SPEC §5) is the same collection and items as the photo's (`swissimage-dop10_<edition>_<cell>`),
 the one asset ending `_2_2056.tif` instead of the 10 cm one. Its cells are `farphoto_cells`: every
 1 km cell that meets the area's box grown by `margin_m` (the area's own in config/surroundings.json,
-which `area_farphoto_cells` reads when it is called), with no half-spacing border. A cell without an
+which the surroundings config given to `published_farphoto` and the lock's fit holds), with no
+half-spacing border. A cell without an
 item (HTTP 404: Italy) is not an error: `published_farphoto` returns it among the absent cells, and
 the lock (`lock farphoto`) records them beside the tiles. `download farphoto` (`download_farphoto`)
 reads the item of every cell first, `FARPHOTO_WORKERS` at once, and refuses before any file is
@@ -135,7 +139,6 @@ PROVENANCE_SCHEMA = 1
 TILE_M = 1000  # swissALTI3D tiles are 1 km squares named by their south-west corner in km
 REGIO_TILE_M = 10_000  # swissALTIRegio tiles are 10 km squares, named by their corner in km
 REGIO_ORIGIN_M = (5_000, 4_000)  # their corners lie at E = 5 km + 10 km·i, N = 4 km + 10 km·j
-SURROUNDINGS_PATH = REPO / "config" / "surroundings.json"  # the far terrain's design data
 ATTEMPTS = 2  # the first fetch and the one retry
 FARPHOTO_WORKERS = 8  # the far photo's STAC reads, and its file fetches, run this many at once
 TLM_GETS = 5  # the GETs a round of the TLM file may make: a cut transfer is resumed
@@ -277,17 +280,6 @@ def farphoto_cells(world: World, area: str, *, margin_m: int) -> list[str]:
     return _km_cells(e_min - margin_m, e_max + margin_m, n_min - margin_m, n_max + margin_m)
 
 
-def area_farphoto_cells(world: World, area: str) -> list[str]:
-    """`farphoto_cells` with the area's `margin_m` from config/surroundings.json (as it is now).
-
-    The margin is read by `surroundings_settings` when this is called, so a config with another
-    margin asks for other cells; the spacing is read with it but does not change the cells. A
-    config that reader refuses is its DownloadError naming the file.
-    """
-    margin_m, _ = surroundings_settings(area)
-    return farphoto_cells(world, area, margin_m=margin_m)
-
-
 def area_sheets(world: World, area: str) -> list[str]:
     """The map sheets the named area's buildings are read from, sorted as text.
 
@@ -303,44 +295,21 @@ def area_sheets(world: World, area: str) -> list[str]:
         raise DownloadError(f"area {area!r} of {world.path}: {exc}") from exc
 
 
-def surroundings_settings(area: str, path: Path | str | None = None) -> tuple[int, int]:
-    """The area's `(margin_m, spacing_m)` from config/surroundings.json (brief v0.6.0-01).
+def surroundings_margin_spacing(surroundings: dict, area: str) -> tuple[int, int]:
+    """The area's `(margin_m, spacing_m)` from the surroundings config the caller read.
 
-    With `path` None it reads `SURROUNDINGS_PATH` as the module has it when this is called.
-    Each is a JSON integer (not a float, a text or a boolean): `margin_m` 0 or more,
-    `spacing_m` 1 or more. A file that cannot be read or is not JSON, an area it does not
-    list, or any other value is a DownloadError naming the file and the area or the key at
-    fault. It reads nothing else of the file: the surroundings step checks the rest.
+    `surroundings` is what `surroundings.load_surroundings_config` returned (brief v0.6.0-07: the
+    one reader of config/surroundings.json, which already holds both to be whole numbers of
+    metres); this file reads no config of its own. A config without settings for `area`, the area
+    config/terrain.json names, is a DownloadError naming the file and the area.
     """
-    path = Path(SURROUNDINGS_PATH if path is None else path)
-
-    def fail(message: str) -> DownloadError:
-        return DownloadError(f"{path}: {message}")
-
-    try:
-        data = json.loads(path.read_bytes().decode("utf-8"))
-    except OSError as exc:
-        raise fail(f"cannot read the surroundings config: {exc}") from exc
-    except (UnicodeDecodeError, ValueError) as exc:
-        raise fail(f"not valid JSON: {exc}") from exc
-    areas = data.get("areas") if isinstance(data, dict) else None
+    areas = surroundings.get("areas") if isinstance(surroundings, dict) else None
     settings = areas.get(area) if isinstance(areas, dict) else None
     if not isinstance(settings, dict):
-        raise fail(f"has no settings object for area {area!r}")
-    margin_m = _whole_metres(settings, "margin_m", 0, area, fail)
-    spacing_m = _whole_metres(settings, "spacing_m", 1, area, fail)
-    return margin_m, spacing_m
-
-
-def _whole_metres(settings: dict, key: str, least: int, area: str, fail) -> int:
-    """`settings[key]` if it is a JSON integer of `least` or more, else the refusal `fail` makes."""
-    value = settings.get(key)
-    if type(value) is not int or value < least:
-        raise fail(
-            f"area {area!r}: {key} must be a whole number of metres, {least} or more, "
-            f"found {value!r}"
+        raise DownloadError(
+            f"config/surroundings.json: has no area {area!r}, the area config/terrain.json names"
         )
-    return value
+    return settings["margin_m"], settings["spacing_m"]
 
 
 def regio_tiles(world: World, area: str, *, margin_m: int, spacing_m: int) -> list[str]:
@@ -479,12 +448,13 @@ def published_regio(
     fetch_json: FetchJson,
     *,
     area: str,
-    margin_m: int,
-    spacing_m: int,
+    surroundings: dict,
 ) -> list[PublishedAsset]:
     """Read the STAC item of every swissALTIRegio tile the surroundings of `area` need.
 
-    The tiles are `regio_tiles(world, area, margin_m=..., spacing_m=...)`, in that order; no
+    The tiles are `regio_tiles(world, area, margin_m=..., spacing_m=...)` with the area's two
+    numbers in the `surroundings` config the caller read (`surroundings_margin_spacing`: a config
+    without the area is a DownloadError before the first request), in that order; no
     file is fetched (no HEAD either). Each item `swissaltiregio_<tile>` has exactly one asset
     ending `_2056_5728.xyz.zip`, and its `properties.datetime` must lie in the pinned edition
     (it starts `<edition>-`), else it is a DownloadError naming the tile, the datetime and
@@ -493,6 +463,7 @@ def published_regio(
     """
     config = dataset_of(datasets, REGIO)
     edition = edition_of(datasets, REGIO)
+    margin_m, spacing_m = surroundings_margin_spacing(surroundings, area)
     assets = []
     for tile in regio_tiles(world, area, margin_m=margin_m, spacing_m=spacing_m):
         item_id = REGIO_ITEM.format(tile=tile)
@@ -510,12 +481,14 @@ def published_farphoto(
     fetch_json: FetchJson,
     *,
     area: str,
+    surroundings: dict,
     check: Callable[[str, PublishedAsset | None], None] | None = None,
 ) -> tuple[list[PublishedAsset], list[str]]:
     """Read the STAC item of every cell of the far photo of `area`: `(assets, absent cells)`.
 
-    The cells are `area_farphoto_cells(world, area)`, asked for (so the surroundings config is
-    read, and refused if it is not usable) before the first request; no file is fetched (no HEAD
+    The cells are `farphoto_cells(world, area, margin_m=...)` with the area's margin in the
+    `surroundings` config the caller read, asked for (a config without the area is a
+    DownloadError) before the first request; no file is fetched (no HEAD
     either). Each item `swissimage-dop10_<edition>_<cell>` has exactly one asset ending
     `_<resolution>_2056.tif` (the 2 m one, not the photo's 10 cm one), and its
     `properties.datetime` must lie in the pinned edition, else it is a DownloadError naming the
@@ -531,7 +504,8 @@ def published_farphoto(
     edition = edition_of(datasets, FARPHOTO)
     spec = _TILE_SETS[PHOTO]  # the same items and file names as the photo's, at another resolution
     suffix = spec.suffix.format(tag=_resolution_tag(config["resolution_m"], FARPHOTO))
-    cells = area_farphoto_cells(world, area)
+    margin_m, _ = surroundings_margin_spacing(surroundings, area)
+    cells = farphoto_cells(world, area, margin_m=margin_m)
 
     def read(cell: str) -> PublishedAsset | None:
         item_id = spec.item.format(edition=edition, tile=cell)
@@ -687,23 +661,25 @@ def download_regio(
     *,
     lock: dict,
     area: str,
+    surroundings: dict,
 ) -> list[dict]:
     """Fetch and verify the swissALTIRegio tiles of `area` into `<out_root>/swissaltiregio/<edition>/`.
 
     As `download_terrain`, for the lock's `swissaltiregio` entry (brief v0.6.0-02). The lock
     must fit (`lock.fit_problem`, naming `lock regio`): the collection, edition and resolution
     of the datasets config and exactly the tiles `regio_tiles` gives with the margin and
-    spacing config/surroundings.json has for `area` when the fit is asked; a config that
-    reader refuses is a DownloadError naming the file, before swisstopo is asked anything.
-    The download reads the config once more for the items it asks swisstopo about (the fit
-    having passed): both reads must give the tiles the lock pins, which
-    test_v060_02_gaps.py holds for a margin, a spacing and an area other than the committed.
-    Then every item's datetime must lie in the edition and every published name and SHA-256
+    spacing the `surroundings` config has for `area` (the command line reads
+    config/surroundings.json once, through `surroundings.load_surroundings_config`, and gives it
+    here: the fit and the items asked for follow the same config); a config without the area is a
+    DownloadError naming the file, before swisstopo is asked anything. Then every item's
+    datetime must lie in the edition and every published name and SHA-256
     equal the lock's, before any file is fetched or anything on disk changes; a republished
     tile is refused naming `lock regio` and config/surroundings.json. The files and the
     provenance.json (exactly the terrain's keys) are the shared flow's.
     """
-    return _download_tiles(REGIO, world, datasets, out_root, fetch_json, fetch_file, lock, area)
+    return _download_tiles(
+        REGIO, world, datasets, out_root, fetch_json, fetch_file, lock, area, surroundings
+    )
 
 
 def download_farphoto(
@@ -715,14 +691,15 @@ def download_farphoto(
     *,
     lock: dict,
     area: str,
+    surroundings: dict,
 ) -> list[dict]:
     """Fetch and verify SWISSIMAGE's 2 m tiles of `area` into `<out_root>/swissimage_far/<edition>/`.
 
     As `download_regio`, for the lock's `swissimage_far` entry (brief v0.6.0-05). The lock must
     fit (`lock.fit_problem`, naming `lock farphoto`): the collection, edition and resolution of
-    the datasets config, and its tiles and absent cells together exactly `area_farphoto_cells`
-    with the margin config/surroundings.json has for `area` when the fit is asked; a config that
-    reader refuses is a DownloadError naming the file, before swisstopo is asked anything. Then
+    the datasets config, and its tiles and absent cells together exactly `farphoto_cells`
+    with the margin the `surroundings` config has for `area`; a config without the area is a
+    DownloadError naming the file, before swisstopo is asked anything. Then
     the item of every cell is read (`published_farphoto`, `FARPHOTO_WORKERS` at once) and
     compared with the lock before any file is fetched or anything on disk changes: a republished
     tile, an item in a cell the lock records as absent and an item that vanished (HTTP 404 for a
@@ -733,7 +710,9 @@ def download_farphoto(
     provenance.json (the terrain's keys and `absent`) are the shared flow's. Returns the
     provenance entries of the tiles, in the lock's order.
     """
-    return _download_tiles(FARPHOTO, world, datasets, out_root, fetch_json, fetch_file, lock, area)
+    return _download_tiles(
+        FARPHOTO, world, datasets, out_root, fetch_json, fetch_file, lock, area, surroundings
+    )
 
 
 def _farphoto_check(entry: dict, area: str) -> Callable[[str, PublishedAsset | None], None]:
@@ -774,12 +753,18 @@ def _download_tiles(
     fetch_file: FetchFile,
     lock: dict,
     area: str,
+    surroundings: dict | None = None,
 ) -> list[dict]:
+    """The shared flow: the lock's fit, every item read and compared, then the files.
+
+    `surroundings` is the surroundings config the far datasets' fit and items follow; the others
+    ignore it, and a far dataset without it is `lock.fit_problem`'s TypeError (a caller's bug).
+    """
     from mattini.lock import fit_problem  # lock imports this module
 
     config = dataset_of(datasets, dataset)
     _resolution_tag(config["resolution_m"], dataset)
-    problem = fit_problem(lock, datasets, world, area, dataset)
+    problem = fit_problem(lock, datasets, world, area, dataset, surroundings=surroundings)
     if problem:
         raise DownloadError(problem)
     pinned = lock["datasets"][dataset]["tiles"]
@@ -793,16 +778,13 @@ def _download_tiles(
             datasets,
             fetch_json,
             area=area,
+            surroundings=surroundings,
             check=_farphoto_check(lock["datasets"][dataset], area),
         )
     else:
         if dataset == REGIO:  # its tiles are the surroundings', not the area's 1 km tiles
-            # The config is read here a second time (the fit read it in lock._regio_ids), so the
-            # two reads agree only as long as both follow it: test_v060_02_gaps.py holds them
-            # together until the tile rule has one home (brief v0.6.0-07).
-            margin_m, spacing_m = surroundings_settings(area)
             assets = published_regio(
-                world, datasets, fetch_json, area=area, margin_m=margin_m, spacing_m=spacing_m
+                world, datasets, fetch_json, area=area, surroundings=surroundings
             )
         else:
             assets = _published_tiles(dataset, world, datasets, fetch_json, area)

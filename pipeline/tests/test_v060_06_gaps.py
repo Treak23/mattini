@@ -67,6 +67,7 @@ from synthetic_regio import xyz_zip, zip_name
 
 from mattini import farcolour
 from mattini.farcolour import FarColourError, build_farcolour, built_farcolour_block
+from mattini.lock import shape_problem
 from mattini.photo import encode_jpeg
 from mattini.surroundings import (
     SurroundingsError,
@@ -218,14 +219,27 @@ def test_a_band_s_totals_are_64_bit():
     assert farcolour._band_means(bands, rgb)[0].tolist() == [1, 255, 255]
 
 
-def test_a_grid_without_a_covered_pixel_is_refused(tmp_path):
+def test_a_grid_without_a_covered_pixel_is_refused():
+    """The fill's own refusal, called on its own: since brief v0.6.0-07 the step asks the lock's
+    shape (`lock.shape_problem`) after the fits, so a lock that pins no far tile never reaches it
+    (the next test)."""
+    pixels = np.zeros((4, 4, 3), dtype=np.uint8)
+    covered = np.zeros((4, 4), dtype=bool)
+    cents = np.zeros((4, 4), dtype=np.int64)
+    with pytest.raises(FarColourError) as refusal:
+        farcolour._fill(pixels, covered, cents, 100)
+    assert "no pixel is covered" in str(refusal.value), str(refusal.value)
+
+
+def test_a_lock_that_pins_no_far_tile_is_refused_as_malformed_before_any_grid(tmp_path):
     source = fixture_source()
     source["absent"] = fixture_cells(source)
     root, lock = raw_inputs(tmp_path / "raw", source=source)
     assert lock["datasets"]["swissimage_far"]["tiles"] == {}
     with pytest.raises(FarColourError) as refusal:
         build_farcolour(_world(), fixture_datasets(), lock, _recorded(lock), root, tmp_path / "out")
-    assert "no pixel is covered" in str(refusal.value), str(refusal.value)
+    text = str(refusal.value)
+    assert text == shape_problem(lock) and "tiles must be a non-empty object" in text, text
     assert not (tmp_path / "out").exists()
 
 
@@ -268,9 +282,12 @@ def test_with_both_downloads_missing_swissaltiregio_s_is_refused_first(tmp_path)
 
 
 @pytest.mark.parametrize("case", ["an-absent-cell-twice", "a-pin-with-an-extra-key"])
-def test_a_far_lock_entry_that_is_not_exactly_formed_is_refused_naming_lock_farphoto(
+def test_a_far_lock_entry_that_is_not_exactly_formed_is_refused_with_shape_problem_s_text(
     tmp_path, case
 ):
+    """Re-cut by brief v0.6.0-07: the far entry's shape is the lock's (`lock.shape_problem`, asked
+    once after both fits), whose text names the dataset and, as every step's does, all the lock
+    commands, `lock farphoto` among them."""
     lock = _lock()
     entry = lock["datasets"]["swissimage_far"]
     if case == "an-absent-cell-twice":
@@ -282,7 +299,8 @@ def test_a_far_lock_entry_that_is_not_exactly_formed_is_refused_naming_lock_farp
             _world(), fixture_datasets(), lock, _recorded(lock), tmp_path / "raw", tmp_path / "out"
         )
     text = str(refusal.value)
-    assert LOCK_FAR in text and "python -m mattini lock regio" not in text, text
+    assert text == shape_problem(lock), text
+    assert "'swissimage_far'" in text and LOCK_FAR in text, text
     assert not (tmp_path / "out").exists()
 
 
@@ -850,17 +868,6 @@ def test_a_far_resolution_of_one_metre_is_a_usable_dataset_and_only_the_cell_is_
             lambda e, lock: e["absent"].append("2618-1094"),
             ["2618-1094", "does not need"],
         ),
-        ("a-pin-no-object", lambda e, lock: e["tiles"].update({"2615-1094": "abc"}), ["2615-1094"]),
-        (
-            "a-pin-file-unsafe",
-            lambda e, lock: e["tiles"]["2615-1094"].update(file="../x.tif"),
-            ["2615-1094"],
-        ),
-        (
-            "a-pin-sha256-short",
-            lambda e, lock: e["tiles"]["2615-1094"].update(sha256="ab"),
-            ["2615-1094"],
-        ),
     ],
 )
 def test_a_far_lock_entry_that_does_not_fit_says_what_and_where(tmp_path, case, edit, words):
@@ -870,6 +877,27 @@ def test_a_far_lock_entry_that_does_not_fit_says_what_and_where(tmp_path, case, 
     assert LOCK_FAR in text and "area 'fixture'" in text, text
     for word in words:
         assert word in text, text
+
+
+@pytest.mark.parametrize(
+    "case, edit",
+    [
+        ("a-pin-no-object", lambda e: e["tiles"].update({"2615-1094": "abc"})),
+        ("a-pin-file-unsafe", lambda e: e["tiles"]["2615-1094"].update(file="../x.tif")),
+        ("a-pin-sha256-short", lambda e: e["tiles"]["2615-1094"].update(sha256="ab")),
+    ],
+)
+def test_a_far_pin_that_is_not_a_file_name_and_a_checksum_is_refused_by_the_lock_s_shape(
+    tmp_path, case, edit
+):
+    """The three cases that brief v0.6.0-06's own pin check refused naming `lock farphoto` and the
+    area are `lock.shape_problem`'s since brief v0.6.0-07: its text names the tile, the dataset
+    and all the lock commands."""
+    lock = _lock()
+    edit(lock["datasets"]["swissimage_far"])
+    text = _refused(tmp_path, lock=lock)
+    assert text == shape_problem(lock), text
+    assert "2615-1094" in text and "'swissimage_far'" in text and LOCK_FAR in text, text
 
 
 def test_a_long_list_in_a_refusal_is_cut_after_its_first_six():

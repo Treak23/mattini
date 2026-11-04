@@ -28,9 +28,9 @@ lock never tests.
   `validate_lock` refuses the same lock, but the fit does not rely on it having run.
 - *`absent` is sorted by the entry, not by luck* (E6): the cells are east outer and north inner,
   which for LV95's four-digit kilometres is also the sorted order, so a mutation that drops
-  `sorted()` is equivalent for the village. The tile rule may move (brief v0.6.0-07) and take
-  another order with it; the lock's entry must stay what `validate_lock` accepts, sorted and
-  without repeats, whatever order the cells arrive in.
+  `sorted()` is equivalent for the village. The tile rule is `download.farphoto_cells` since
+  brief v0.6.0-07 and could take another order; the lock's entry must stay what `validate_lock`
+  accepts, sorted and without repeats, whatever order the cells arrive in.
 - *What the docstrings say the edition refusal names* (the review's F1, Hard Rule 2). The two
   docstrings that list the refusals of `download farphoto` promised that one of another edition
   names `lock farphoto` and config/surroundings.json; it names the cell, the datetime and the
@@ -65,6 +65,12 @@ The second fixer round (the prover's findings on the pinned gates; decision 14 a
   the datasets config, the lock's entry and provenance.json carry those, not the committed
   values; and the refusals of a new and of a vanished item name the file and the checksum.
 
+Re-cut by brief v0.6.0-07 onto the config's one reader: the margin comes from the config the
+caller is given (`surroundings=`, read by the command line through
+`surroundings.load_surroundings_config`, which the fixture replaces on its module), and the
+cells are `download.farphoto_cells`; `download.SURROUNDINGS_PATH` and
+`download.area_farphoto_cells` are gone.
+
 Run as the owner runs the commands, against the local stand-in (local_farphoto.py, real urllib,
 the `margin_m` 1000 box: 20 cells, 17 with an item), except the runner's own tests, which call
 `download._in_parallel` with plain functions and events, the fit tests, which call
@@ -97,7 +103,7 @@ from local_farphoto import ABSENT, LocalFarphoto, cells_of, far_name
 from local_swisstopo import PHOTO, photo_name, sha256
 
 import mattini.__main__ as cli
-from mattini import download, lock
+from mattini import download, lock, surroundings
 from mattini.datasets import load_datasets
 from mattini.world import REPO, load_world
 
@@ -122,7 +128,8 @@ def far(monkeypatch, tmp_path):
     config = tmp_path / "surroundings.json"
     config.write_text(json.dumps(data, indent=2), encoding="utf-8")
     monkeypatch.setattr(download, "STAC_ITEM", site.stac_item)
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", config)
+    site.config = surroundings.load_surroundings_config(config)
+    monkeypatch.setattr(surroundings, "load_surroundings_config", lambda *a, **k: site.config)
     site.lock_path = tmp_path / "config" / "datasets.lock.json"
     site.lock_path.parent.mkdir()
     shutil.copyfile(COMMITTED_LOCK, site.lock_path)
@@ -222,7 +229,7 @@ def test_no_more_workers_than_asked_run_at_once():
 def test_the_stac_reads_never_run_more_than_eight_at_once(far):
     meter = Meter(download.urllib_fetch_json)
     assets, absent = download.published_farphoto(
-        load_world(), load_datasets(), meter, area="village"
+        load_world(), load_datasets(), meter, area="village", surroundings=far.config
     )
     assert (len(assets), len(absent)) == (17, 3) and meter.calls == 20
     assert meter.peak <= 8, meter.peak
@@ -238,6 +245,7 @@ def test_the_file_fetches_never_run_more_than_eight_at_once(far):
         meter,
         lock=far.pinned,
         area="village",
+        surroundings=far.config,
     )
     assert len(entries) == 17 and meter.calls == 17
     assert meter.peak <= 8, meter.peak
@@ -287,7 +295,12 @@ def test_the_fit_refuses_an_absent_that_holds_other_than_tile_ids_and_never_rais
     entry["absent"] = [*entry["absent"][:-1], junk]
     lock_data = {"schema": 1, "datasets": {"swissimage_far": entry}}
     problem = lock.fit_problem(
-        lock_data, load_datasets(), load_world(), "village", "swissimage_far"
+        lock_data,
+        load_datasets(),
+        load_world(),
+        "village",
+        "swissimage_far",
+        surroundings=surroundings.load_surroundings_config(COMMITTED_CONFIG),
     )
     assert problem is not None
     assert "has no absent list of tile ids" in problem
@@ -295,12 +308,18 @@ def test_the_fit_refuses_an_absent_that_holds_other_than_tile_ids_and_never_rais
 
 
 def test_the_entry_s_absent_is_sorted_whatever_order_the_cells_come_in(far, monkeypatch, tmp_path):
-    real = download.area_farphoto_cells
+    real = download.farphoto_cells
     monkeypatch.setattr(
-        download, "area_farphoto_cells", lambda world, area: list(reversed(real(world, area)))
+        download,
+        "farphoto_cells",
+        lambda world, area, *, margin_m: list(reversed(real(world, area, margin_m=margin_m))),
     )
     entry = lock.farphoto_entry(
-        load_world(), load_datasets(), download.urllib_fetch_json, area="village"
+        load_world(),
+        load_datasets(),
+        download.urllib_fetch_json,
+        area="village",
+        surroundings=far.config,
     )
     assert entry["absent"] == sorted(ABSENT)
     assert sorted(entry["tiles"]) == sorted(PRESENT)
@@ -441,12 +460,13 @@ def test_the_refusal_of_a_new_item_names_the_file_and_the_checksum_swisstopo_now
 # --- the truncation of the fit's refusals (X34) -----------------------------------------------
 
 
-def _margin(monkeypatch, tmp_path, margin_m):
+def _margin(tmp_path, margin_m):
+    """The committed config with the village's margin changed, read by the config's reader."""
     data = json.loads(COMMITTED_CONFIG.read_text(encoding="utf-8"))
     data["areas"]["village"]["margin_m"] = margin_m
     path = tmp_path / "surroundings.json"
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", path)
+    return surroundings.load_surroundings_config(path)
 
 
 def _entry_of(cells, *, also_absent=()):
@@ -458,9 +478,16 @@ def _entry_of(cells, *, also_absent=()):
     return entry
 
 
-def _fit(entry):
+def _fit(entry, config=None):
     whole = {"schema": 1, "datasets": {"swissimage_far": entry}}
-    return lock.fit_problem(whole, load_datasets(), load_world(), "village", "swissimage_far")
+    return lock.fit_problem(
+        whole,
+        load_datasets(),
+        load_world(),
+        "village",
+        "swissimage_far",
+        surroundings=config or surroundings.load_surroundings_config(COMMITTED_CONFIG),
+    )
 
 
 def _listed(cells, limit=6):
@@ -469,21 +496,21 @@ def _listed(cells, limit=6):
 
 
 @pytest.mark.parametrize("count", [1, 5, 6, 7, 8, 1800])
-def test_the_fit_lists_at_most_six_of_the_cells_it_does_not_need(monkeypatch, tmp_path, count):
+def test_the_fit_lists_at_most_six_of_the_cells_it_does_not_need(tmp_path, count):
     # margin 0 is the village alone: 6 cells, and 1800 of the committed lock's lie beside them
-    _margin(monkeypatch, tmp_path, 0)
+    config = _margin(tmp_path, 0)
     needed = download.farphoto_cells(load_world(), "village", margin_m=0)
     extras = [cell for cell in COMMITTED_CELLS if cell not in needed]
     assert len(needed) == 6 and len(extras) == 1800
     chosen = extras[:count]
-    problem = _fit(_entry_of([*needed, *chosen]))
+    problem = _fit(_entry_of([*needed, *chosen]), config)
     assert f"holds the tiles {_listed(chosen)}, which the area does not need" in problem, problem
     assert LOCK_FARPHOTO in problem and len(problem) < 500, problem
 
 
 @pytest.mark.parametrize("count", [1, 6, 7, 100])
 def test_the_fit_lists_at_most_six_of_the_cells_the_lock_lacks(count):
-    needed = download.area_farphoto_cells(load_world(), "village")
+    needed = download.farphoto_cells(load_world(), "village", margin_m=20_000)
     assert len(needed) == 1806
     problem = _fit(_entry_of(needed[count:]))
     expected = (
@@ -542,7 +569,9 @@ def _help_clause(capsys, command, dataset):
 def test_the_help_of_farphoto_and_regio_says_what_each_reads(capsys, command):
     far_clause = _help_clause(capsys, command, "farphoto")
     regio_clause = _help_clause(capsys, command, "regio")
-    _, spacing_m = download.surroundings_settings("village")
+    spacing_m = surroundings.load_surroundings_config(COMMITTED_CONFIG)["areas"]["village"][
+        "spacing_m"
+    ]
     resolution_m = load_datasets()[download.FARPHOTO]["resolution_m"]
     assert "SWISSIMAGE" in far_clause and f"{resolution_m:g} m" in far_clause, far_clause
     assert "10 cm" not in far_clause, far_clause  # that is the photo's
@@ -587,7 +616,14 @@ def test_the_fit_refuses_a_files_object_that_is_not_an_object_and_never_raises(n
     assert "swissimage_far" in dict(FILE_DATASETS)
     data = copy.deepcopy(COMMITTED)
     data["datasets"][name][files] = junk
-    problem = lock.fit_problem(data, load_datasets(), load_world(), "village", name)
+    problem = lock.fit_problem(
+        data,
+        load_datasets(),
+        load_world(),
+        "village",
+        name,
+        surroundings=surroundings.load_surroundings_config(COMMITTED_CONFIG),
+    )
     assert problem is not None and f"has no {files}" in problem, problem
     assert download.LOCK_COMMAND_OF[name] in problem, problem
 
@@ -607,6 +643,7 @@ def test_download_farphoto_names_an_unusable_resolution_before_anything_else(far
             download.urllib_fetch_file,
             lock=far.pinned,
             area="village",
+            surroundings=far.config,
         )
     message = str(refused.value)
     assert download.FARPHOTO in message and "resolution_m must be a positive number" in message
@@ -620,7 +657,8 @@ def test_the_entry_and_the_provenance_follow_the_datasets_config(tmp_path):
     datasets[download.FARPHOTO].update(
         collection="ch.example.far", edition="2031", resolution_m=5, attribution="© example"
     )
-    world, cells = load_world(), download.area_farphoto_cells(load_world(), "village")
+    config = surroundings.load_surroundings_config(COMMITTED_CONFIG)
+    world, cells = load_world(), download.farphoto_cells(load_world(), "village", margin_m=20_000)
     published = cells[100:103]
     names = {cell: f"swissimage-dop10_2031_{cell}_5_2056.tif" for cell in published}
     bodies = {names[cell]: f"far bytes of {cell}\n".encode() * 3 for cell in published}
@@ -646,7 +684,7 @@ def test_the_entry_and_the_provenance_follow_the_datasets_config(tmp_path):
     def fetch_file(url, dest):
         dest.write_bytes(bodies[url.rsplit("/", 1)[1]])
 
-    entry = lock.farphoto_entry(world, datasets, fetch_json, area="village")
+    entry = lock.farphoto_entry(world, datasets, fetch_json, area="village", surroundings=config)
     assert entry == {
         "absent": sorted(set(cells) - set(published)),
         "collection": "ch.example.far",
@@ -658,7 +696,14 @@ def test_the_entry_and_the_provenance_follow_the_datasets_config(tmp_path):
     }
     whole = lock.with_entry(COMMITTED, download.FARPHOTO, entry)
     download.download_farphoto(
-        world, datasets, tmp_path, fetch_json, fetch_file, lock=whole, area="village"
+        world,
+        datasets,
+        tmp_path,
+        fetch_json,
+        fetch_file,
+        lock=whole,
+        area="village",
+        surroundings=config,
     )
     written = (tmp_path / download.FARPHOTO / "2031" / download.PROVENANCE).read_text("utf-8")
     provenance = json.loads(written)
@@ -704,7 +749,13 @@ def test_the_committed_lock_is_what_the_code_makes_of_its_items_for_all_1806_cel
             raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
         return items[url]
 
-    entry = lock.farphoto_entry(load_world(), load_datasets(), fetch_json, area="village")
+    entry = lock.farphoto_entry(
+        load_world(),
+        load_datasets(),
+        fetch_json,
+        area="village",
+        surroundings=surroundings.load_surroundings_config(COMMITTED_CONFIG),
+    )
     assert len(items) == 1806 and sorted(asked) == sorted(items)
     assert entry == COMMITTED_ENTRY
 

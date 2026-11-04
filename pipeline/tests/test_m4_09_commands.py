@@ -27,7 +27,8 @@ refusal, caught as a ShadowsError). A Ctrl-C during the step names `python -m ma
 exit status 130.
 
 The help lists the commands in pipeline order: lock, download, terrain, buildings, photo, roofs,
-surfaces, trees, shadows, sky, manifest.
+surfaces, trees, surroundings, farcolour, shadows, sky, manifest (brief v0.6.0-07 added
+surroundings and farcolour before shadows; their own cases are test_v060_07_commands.py).
 
 Each command runs as the owner runs it, `python -m mattini`'s `main` in a process of its own
 (an uncaught exception prints its traceback there), with the network refused.
@@ -112,6 +113,8 @@ PIPELINE_ORDER = [
     "roofs",
     "surfaces",
     "trees",
+    "surroundings",
+    "farcolour",
     "shadows",
     "sky",
     "manifest",

@@ -2,7 +2,8 @@
 
 Pinned decisions: the manifest's top level is exactly schema, terrain, world and
 world_sha256 (since M2-04 also buildings, since M3-13 also photo, roofs, surfaces and trees,
-since v0.4.0-07 also sky, since v0.5.0-02 also shadows, all null here: none is built); `terrain` is null until a terrain has been built, and otherwise the
+since v0.4.0-07 also sky, since v0.5.0-02 also shadows, since v0.6.0-07 also surroundings, all
+null here: none is built); `terrain` is null until a terrain has been built, and otherwise the
 description the terrain step wrote next to the heights file, copied verbatim. `manifest`
 refuses a built terrain that no longer matches: another world config (its heights are
 H - height_offset_m, so a changed offset would shift the world vertically, Hard Rule 4),
@@ -30,11 +31,12 @@ FIXTURE = REPO / "tests" / "shared" / "terrain_fixture"
 GENERATED = FIXTURE / "generated"
 TERRAIN_COMMAND = "python -m mattini terrain"
 LOCK_COMMAND = "python -m mattini lock terrain"
-# v0.5.0-02: the v0.4.0-07 bytes (d8c11ede…) with `  "shadows": null,` added (v0.4.0-07: the
+# v0.6.0-07: the v0.5.0-02 bytes (6e39239f…) with `  "surroundings": null,` added (v0.5.0-02:
+# the v0.4.0-07 bytes, d8c11ede…, with `  "shadows": null,` added; v0.4.0-07: the
 # M3-13 bytes, cf4b939c…, with `  "sky": null,` added; M3-13: the M2-04 bytes, ba8383ff…, with
 # `  "photo": null,`, `  "roofs": null,`, `  "surfaces": null,` and `  "trees": null,` added;
 # M2-04: the M1-03 bytes with `  "buildings": null,` added); test_golden_outputs.py's golden
-MANIFEST_WITHOUT_TERRAIN_SHA256 = "6e39239f7eaa5026b636e1b1386bc091f6ccd833f6ea353322d5f2b94b935478"
+MANIFEST_WITHOUT_TERRAIN_SHA256 = "a44cc3d5473058ed41a61e1f5e4d0bd73d9a4652e5d0cff35aed8513e40f82fd"
 
 
 def _fixture_out(tmp_path) -> Path:
@@ -72,6 +74,7 @@ def test_without_a_built_terrain_the_block_is_null(tmp_path):
         "shadows",
         "sky",
         "surfaces",
+        "surroundings",
         "terrain",
         "trees",
         "world",
@@ -91,6 +94,7 @@ def test_the_real_config_without_terrain_gives_a_null_block(tmp_path):
         "shadows",
         "sky",
         "surfaces",
+        "surroundings",
         "terrain",
         "trees",
         "world",

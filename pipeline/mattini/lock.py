@@ -11,7 +11,7 @@ file is fetched):
   month (`2026-06`) that only the items' `properties.datetime` names;
 - `swissimage_far` (brief v0.6.0-05): exactly {absent, collection, edition, resolution_m,
   tiles: {<tile>: {file, sha256}}}: SWISSIMAGE's 2 m asset of every 1 km cell of the area's
-  surroundings box (`download.area_farphoto_cells`) that has an item of the edition, and `absent`,
+  surroundings box (`download.farphoto_cells`) that has an item of the edition, and `absent`,
   a sorted list of distinct tile ids, the cells that have none (HTTP 404: Italy), none of them in
   `tiles`, so that an item swisstopo adds or withdraws later is a refusal and never a change of
   the far colour;
@@ -41,9 +41,11 @@ Whether a lock *fits* the configs has one home, `fit_problem` (brief M3-01, M2 V
 the entry is for the datasets config's collection, edition (swissSURFACE3D: every tile's
 edition one of `editions`) and resolution and pins exactly the area's tiles or map sheets,
 no more and no fewer (swissTLM3D is national: no area; swissALTIRegio's tiles are those
-`download.regio_tiles` gives with the margin and spacing config/surroundings.json has for the area
-when the fit is asked, brief v0.6.0-02; swissimage_far's `tiles` and `absent` together are exactly
-`download.area_farphoto_cells`, none missing, none beside them, none in both, brief v0.6.0-05).
+`download.regio_tiles` gives with the margin and spacing the surroundings config given to the fit
+has for the area, brief v0.6.0-02 and v0.6.0-07; swissimage_far's `tiles` and `absent` together are
+exactly `download.farphoto_cells` with that margin, none missing, none beside them, none in both,
+brief v0.6.0-05). The lock reads no config file: the caller reads config/surroundings.json once
+(`surroundings.load_surroundings_config`) and gives it as the keyword `surroundings`.
 `download`, the steps and `manifest` all ask it, so each
 refuses a lock that does not fit with the same words, naming `python -m mattini lock <dataset>` and
 no other command.
@@ -199,14 +201,14 @@ def regio_entry(
     fetch_json: download.FetchJson,
     *,
     area: str,
-    margin_m: int,
-    spacing_m: int,
+    surroundings: dict,
 ) -> dict:
     """The lock's swissALTIRegio entry: the 10 km tiles the surroundings of `area` need.
 
     From the STAC items only (brief v0.6.0-01): no request goes to the file host, not even a
-    HEAD. The tiles are `download.regio_tiles` for the `margin_m` and `spacing_m` the caller
-    read from config/surroundings.json; `collection`, `edition` and `resolution_m` are the
+    HEAD. The tiles are `download.regio_tiles` for the `margin_m` and `spacing_m` that the
+    `surroundings` config the caller read (`surroundings.load_surroundings_config`) has for
+    `area`; `collection`, `edition` and `resolution_m` are the
     datasets config's, read when this runs. An item whose datetime is not in the pinned
     edition, or a tile without an item, is a DownloadError and nothing is returned; the
     checksum is stored in lower case.
@@ -223,28 +225,35 @@ def regio_entry(
                 datasets,
                 fetch_json,
                 area=area,
-                margin_m=margin_m,
-                spacing_m=spacing_m,
+                surroundings=surroundings,
             )
         },
     }
 
 
 def farphoto_entry(
-    world: World, datasets: dict, fetch_json: download.FetchJson, *, area: str
+    world: World,
+    datasets: dict,
+    fetch_json: download.FetchJson,
+    *,
+    area: str,
+    surroundings: dict,
 ) -> dict:
     """The lock's swissimage_far entry: SWISSIMAGE's 2 m asset over the surroundings of `area`.
 
     From the STAC items only (brief v0.6.0-05): no request goes to the file host, not even a
-    HEAD. The cells are `download.area_farphoto_cells`, which reads the margin from
-    config/surroundings.json before the first request (a config it refuses is a
-    DownloadError and nothing is returned); `tiles` holds the cells that have an item of the
-    pinned edition, `absent` (sorted) the cells whose item answers HTTP 404. An item whose
-    datetime is not in the pinned edition, or any other failure to read one, is a DownloadError
-    naming the cell and nothing is returned; the checksum is stored in lower case.
+    HEAD. The cells are `download.farphoto_cells` with the margin that the `surroundings` config
+    the caller read (`surroundings.load_surroundings_config`) has for `area`, taken before the
+    first request (a config without the area is a DownloadError and nothing is returned);
+    `tiles` holds the cells that have an item of the pinned edition, `absent` (sorted) the cells
+    whose item answers HTTP 404. An item whose datetime is not in the pinned edition, or any
+    other failure to read one, is a DownloadError naming the cell and nothing is returned; the
+    checksum is stored in lower case.
     """
     far = download.dataset_of(datasets, download.FARPHOTO)
-    assets, absent = download.published_farphoto(world, datasets, fetch_json, area=area)
+    assets, absent = download.published_farphoto(
+        world, datasets, fetch_json, area=area, surroundings=surroundings
+    )
     return {
         "absent": sorted(absent),
         "collection": far["collection"],
@@ -263,17 +272,27 @@ class _Fit:
     ids: Callable | None = None  # (world, area) -> the ids the area needs, in the order listed
     editions: bool = False  # every file's `edition` must be one of the config's `editions`
     absent: bool = False  # the entry's `absent` cells and its files are together exactly the ids
+    surrounds: bool = False  # `ids` is asked (world, area, surroundings config): the far datasets
 
 
-def _regio_ids(world: World, area: str) -> list[str]:
-    """The swissALTIRegio tiles the surroundings of `area` need, by the config as it is now.
+def _regio_ids(world: World, area: str, surroundings: dict) -> list[str]:
+    """The swissALTIRegio tiles the surroundings of `area` need, by the config given.
 
-    `download.regio_tiles` with the `(margin_m, spacing_m)` that `download.surroundings_settings`
-    reads from config/surroundings.json when the fit is asked, so the fit follows the config
-    (brief v0.6.0-02); a config that reader refuses is its DownloadError.
+    `download.regio_tiles` (looked up when this runs, so the one rule is the one asked) with the
+    area's `margin_m` and `spacing_m` in the `surroundings` config (brief v0.6.0-02, v0.6.0-07).
     """
-    margin_m, spacing_m = download.surroundings_settings(area)
+    margin_m, spacing_m = download.surroundings_margin_spacing(surroundings, area)
     return download.regio_tiles(world, area, margin_m=margin_m, spacing_m=spacing_m)
+
+
+def _farphoto_ids(world: World, area: str, surroundings: dict) -> list[str]:
+    """The 1 km cells SWISSIMAGE's 2 m asset is read for, by the margin of the config given.
+
+    `download.farphoto_cells` (looked up when this runs) with the area's `margin_m` in the
+    `surroundings` config; the spacing does not change the cells.
+    """
+    margin_m, _ = download.surroundings_margin_spacing(surroundings, area)
+    return download.farphoto_cells(world, area, margin_m=margin_m)
 
 
 _FITS = {
@@ -284,18 +303,27 @@ _FITS = {
         ("collection", "resolution_m"), "tiles", download.area_tiles, editions=True
     ),
     download.TLM: _Fit(("collection", "edition"), None),
-    download.REGIO: _Fit(("collection", "edition", "resolution_m"), "tiles", _regio_ids),
+    download.REGIO: _Fit(
+        ("collection", "edition", "resolution_m"), "tiles", _regio_ids, surrounds=True
+    ),
     download.FARPHOTO: _Fit(
         ("collection", "edition", "resolution_m"),
         "tiles",
-        download.area_farphoto_cells,
+        _farphoto_ids,
         absent=True,
+        surrounds=True,
     ),
 }
 
 
 def fit_problem(
-    lock: object, datasets: dict, world: World | None, area: str | None, dataset: str
+    lock: object,
+    datasets: dict,
+    world: World | None,
+    area: str | None,
+    dataset: str,
+    *,
+    surroundings: dict | None = None,
 ) -> str | None:
     """Why the lock's entry for `dataset` does not fit the configs and `area`, or None.
 
@@ -312,14 +340,24 @@ def fit_problem(
     config/datasets.json (`download.dataset_of`), and so is one that lists `editions` where the
     dataset needs one `edition` or the other way round (`download.edition_of`); an area the
     sheet grid cannot place is one too. swissALTIRegio's tiles depend on the margin and
-    spacing of config/surroundings.json, read when this is asked: a config
-    `download.surroundings_settings` refuses is a DownloadError naming the file. swissimage_far's
-    cells depend on the margin alone, read the same way: its `tiles` and its `absent` cells
-    together must be exactly the area's cells, none missing, none beside them and none in both.
+    spacing of config/surroundings.json, and swissimage_far's cells on the margin alone: the
+    caller reads the file once (`surroundings.load_surroundings_config`) and gives its config as
+    `surroundings`, which is never read from the committed file here (the manifest and the steps
+    pass the one they were given). For those two datasets a call without it is a TypeError, a
+    caller's bug and no refusal; a config without settings for the area is a DownloadError
+    naming config/surroundings.json and the area; every other dataset ignores the keyword.
+    The two rules are `download.regio_tiles` and `download.farphoto_cells`, looked up when the
+    fit runs: swissimage_far's `tiles` and its `absent` cells together must be exactly the area's
+    cells, none missing, none beside them and none in both.
     """
     if dataset not in _FITS:
         raise ValueError(f"no fit rule for dataset {dataset!r}: the lock knows {sorted(_FITS)}")
     fit = _FITS[dataset]
+    if fit.surrounds and surroundings is None:
+        raise TypeError(
+            f"fit_problem for {dataset!r} needs the surroundings config (surroundings=...): the "
+            f"tiles or cells it asks for depend on config/surroundings.json's margin"
+        )
     config = download.dataset_of(datasets, dataset)
     if "edition" in fit.keys:
         download.edition_of(datasets, dataset)  # a config that lists editions is a refusal
@@ -347,9 +385,9 @@ def fit_problem(
     pinned = entry.get(fit.files)
     if not isinstance(pinned, dict):
         return problem(f"has no {fit.files}")
+    needed = fit.ids(world, area, surroundings) if fit.surrounds else fit.ids(world, area)
     if fit.absent:
-        return _absent_fit_problem(entry, pinned, fit.ids(world, area), fit.files, problem)
-    needed = fit.ids(world, area)
+        return _absent_fit_problem(entry, pinned, needed, fit.files, problem)
     missing = [part for part in needed if part not in pinned]
     if missing:
         return problem(f"pins no checksum for the {fit.files} {missing} of the area")

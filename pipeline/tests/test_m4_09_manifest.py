@@ -1,11 +1,12 @@
 """Pinning tests for briefs v0.4.0-07 and v0.5.0-02 (brief M4-09 cut to the sky, then to the
-shadows): the manifest's `sky` and `shadows` blocks.
+shadows): the manifest's `sky` and `shadows` blocks; re-cut by brief v0.6.0-07 for its twelfth
+key, `surroundings` (that block's own cases: test_v060_07_manifest.py).
 
 Pinned decisions (m4-design §2, §3, §4; brief M4-09 decisions 2, 3 and 7, the sky and the
 shadows only; briefs v0.4.0-07 and v0.5.0-02): the manifest's top level is exactly `buildings`,
-`photo`, `roofs`, `schema`, `shadows`, `sky`, `surfaces`, `terrain`, `trees`, `world` and
-`world_sha256` (eleven keys: M3-13's nine, `sky` and `shadows`; no `surroundings` key until the
-far mountains' step exists); `schema` stays 1; the `sky` block is the description
+`photo`, `roofs`, `schema`, `shadows`, `sky`, `surfaces`, `surroundings`, `terrain`, `trees`,
+`world` and `world_sha256` (twelve keys: M3-13's nine, `sky`, `shadows` and, since brief
+v0.6.0-07, `surroundings`); `schema` stays 1; the `sky` block is the description
 `python -m mattini sky` wrote, `sky/<area>.json` for config/sky.json's area, and the `shadows`
 block the description `python -m mattini shadows` wrote, `shadows/<area>.json` for
 config/shadows.json's area, each verbatim, or null when that step has not been run in the
@@ -14,7 +15,8 @@ left out, never an empty object; the text is `json.dumps(manifest, indent=2, sor
 ensure_ascii=False)` and a final LF, in UTF-8.
 
 The seven M2 and M3 fixtures' committed manifests are their 0.4.0 text (v0.4.0-07's, ten keys)
-plus one line, `  "shadows": null,` (between `schema` and `sky`), nothing else: design's copies,
+plus two lines, `  "shadows": null,` (between `schema` and `sky`, brief v0.5.0-02) and
+`  "surroundings": null,` (before `terrain`, brief v0.6.0-07), nothing else: design's copies,
 made two ways (that text edit, and the pin author's throwaway `write_manifest`; identical).
 Their SHA-256 before the line (PREVIOUS: v0.4.0-07's) and after it (test_manifest_m3.py) are both
 pinned, so a fixture rewritten by the code under test fails even where a bytes comparison would
@@ -28,8 +30,9 @@ byte, with the `shadows` and `sky` blocks built and every other block null; made
 file without its `surroundings` line; identical). A folder holding only a fixture's sky
 description, with the fixture's world and sky config, gives a manifest whose `sky` block is the
 description and every other block null, at the SHA-256 pinned here (SKY_FIXTURES, made two
-ways). The surroundings fixture's own committed `generated/manifest.json` (twelve keys, M4-07's,
-read by no test) is not these briefs' and stays as it is.
+ways; re-cut by brief v0.6.0-07: one null line more each). The surroundings fixture's own
+committed `generated/manifest.json` (brief v0.6.0-08's, the game's design data) is not these
+briefs'.
 
 Does NOT prove: that the game reads the blocks (brief v0.4.0-08 the sky; the shadows' reader is
 a later batch of 0.5.0); that the real village's manifest is design's (the release gate, against
@@ -56,6 +59,7 @@ TOP_LEVEL = {
     "shadows",
     "sky",
     "surfaces",
+    "surroundings",
     "terrain",
     "trees",
     "world",
@@ -63,6 +67,7 @@ TOP_LEVEL = {
 }
 BLOCKS = sorted(TOP_LEVEL - {"schema", "world", "world_sha256"})
 SHADOWS_LINE = '  "shadows": null,'
+SURROUNDINGS_LINE = '  "surroundings": null,'  # brief v0.6.0-07's line, before `terrain`
 # Each M2 and M3 fixture's committed manifest before brief v0.5.0-02 (v0.4.0-07's, ten keys).
 PREVIOUS = {
     "terrain_fixture": "998371a52a2f2da3aa2c38c71bd0eaba3294292da188635a9405172ce69c6cad",
@@ -73,16 +78,18 @@ PREVIOUS = {
     "surfaces_fixture": "5e4c63e28a0857fa22c9f39c184fd830fc32067e681655ab3c54b69d64cae278",
     "trees_fixture": "1ab1492704fbff77527264b2207c6db913607c039c54df745a62499abcfcc0c8",
 }
-# A folder holding only the fixture's sky description: the manifest's SHA-256 and size.
+# A folder holding only the fixture's sky description: the manifest's SHA-256 and size (brief
+# v0.6.0-07: v0.5.0-02's ff90b955… 907 and 136685fd… 908 with the surroundings line, two ways).
 SKY_FIXTURES = {
-    "shadows_fixture": ("ff90b955325b9d0b9d8597207928d6cfc038d680acc86cc3e377623930a7c546", 907),
+    "shadows_fixture": ("8d6640a4db91f6d06ad4f2affae37c2cb3e2dd00273549b87cca0d52183b16d7", 931),
     "surroundings_fixture": (
-        "136685fd231e962488726bb96b7dc15d3e0c657c2ccc2d85e2ae9f7c6ebe61e4",
-        908,
+        "d10677511f2ed1340784bd5dcba6f70f478a3b3289cf3619782b2696a0809cc0",
+        932,
     ),
 }
-# The shadows fixture's committed manifest (new in brief v0.5.0-02): its SHA-256 and size.
-SHADOWS_MANIFEST = ("0ffcf8984de34e783aa301d270de6af004dfbb2d0ba74bfd493f6cc90c2b90ea", 2077)
+# The shadows fixture's committed manifest (new in brief v0.5.0-02, 0ffcf898…, 2077 bytes; brief
+# v0.6.0-07 added the surroundings line): its SHA-256 and size.
+SHADOWS_MANIFEST = ("d4bceb8f9c77daf4cd5efa2355b4b4d90df555c98bb04c476bfc854483108993", 2101)
 
 
 def _sky_only(tmp_path, name: str) -> Path:
@@ -117,11 +124,14 @@ def _shadows_fixture_manifest(out: Path) -> Path:
 
 
 @pytest.mark.parametrize("name", sorted(PREVIOUS))
-def test_an_m3_fixture_s_manifest_is_its_previous_text_with_one_null_line(name):
-    """The seven earlier fixtures change by exactly the one line, nothing else (their blocks,
+def test_an_m3_fixture_s_manifest_is_its_previous_text_with_two_null_lines(name):
+    """The seven earlier fixtures change by exactly the two lines, nothing else (their blocks,
     the sky's null, world and world_sha256 stay byte for byte)."""
     raw = (SHARED / name / "generated" / "manifest.json").read_bytes()
     lines = raw.decode("utf-8").split("\n")
+    assert lines.count(SURROUNDINGS_LINE) == 1, name
+    assert lines[lines.index(SURROUNDINGS_LINE) + 1].startswith('  "terrain": '), name
+    lines.remove(SURROUNDINGS_LINE)
     assert lines.count(SHADOWS_LINE) == 1, name
     at = lines.index(SHADOWS_LINE)
     assert lines[at - 1] == '  "schema": 1,' and lines[at + 1] == '  "sky": null,', name
@@ -129,6 +139,7 @@ def test_an_m3_fixture_s_manifest_is_its_previous_text_with_one_null_line(name):
     assert hashlib.sha256(previous).hexdigest() == PREVIOUS[name], name
     manifest = json.loads(raw)
     assert set(manifest) == TOP_LEVEL and manifest["shadows"] is None and manifest["sky"] is None
+    assert manifest["surroundings"] is None
 
 
 def test_with_nothing_built_every_block_is_null(tmp_path):

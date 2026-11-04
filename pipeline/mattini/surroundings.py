@@ -30,13 +30,15 @@ against the lock's, read from the very bytes parsed. A missing or different down
 naming `python -m mattini download regio`, before anything is created under `out_dir` and
 before any progress line.
 
-The lock's fit is written here, not read from `lock.py` or `download.py`: the tiles are the 10 km
-squares (south-west corners at E = 5 km + 10 km·i, N = 4 km + 10 km·j) that meet the box grown by
-half a spacing, [e_min − s/2, e_max + s/2) × [n_min − s/2, n_max + s/2), the samples a vertex
-needs. A tile is one zip with one member `<E km>_<N km>.xyz`, ASCII with CRLF line ends, the
-header `x y z`, then a line `x y z` per sample: whole-metre x and y on the tile's cell centres at
-`resolution_m` (E0 + r/2 + r·i, N0 + r/2 + r·j) inside its square, each at most once, in any
-order. Anything else is refused naming the tile.
+The lock's fit is not written here: it is `lock.fit_problem` with the config the step was given
+(`download.regio_tiles` is the tile rule, with the area's margin and spacing in that config), then
+`lock.shape_problem`, and fit_problem's text is the whole refusal. The tiles read are the lock
+entry's, which that fit has shown to be exactly the surroundings' (the 10 km squares that meet
+the box grown by half a spacing, [e_min − s/2, e_max + s/2) × [n_min − s/2, n_max + s/2), the
+samples a vertex needs). A tile is one zip with one member `<E km>_<N km>.xyz`, ASCII with CRLF
+line ends, the header `x y z`, then a line `x y z` per sample: whole-metre x and y on the tile's
+cell centres at `resolution_m` (E0 + r/2 + r·i, N0 + r/2 + r·j) inside its square, each at most
+once, in any order. Anything else is refused naming the tile.
 
 The files: `surroundings/<area>.f32` (little-endian float32, row-major, no header), then
 `surroundings/<area>.json`, each written through a `.part` rename; after a success every `*.part`
@@ -47,8 +49,10 @@ The area may also hold `colour`, the far colour step's design data (brief v0.6.0
 `farcolour.py`): `check_surroundings_config` checks its keys and values, and an area without it is
 still read (the heights need none of it). The far colour step reads swissALTIRegio's samples
 through the code of this module: the public names at its end (`regio_tile_samples` and the
-others) are the very functions the heights use, so there is one parser of the tiles' text, one
-tile rule, one fit of the lock and one check of provenance.json for both steps.
+others) are the very functions the heights use, so there is one parser of the tiles' text and one
+check of provenance.json for both steps; the tile rules and the fit of the lock have one home
+each, `download.regio_tiles` and `lock.fit_problem`. This module is also the one reader of
+config/surroundings.json, `load_surroundings_config` (brief v0.6.0-07).
 """
 
 from __future__ import annotations
@@ -67,8 +71,8 @@ from pathlib import Path
 
 import numpy as np
 
-from mattini.download import PROVENANCE
-from mattini.lock import entry_sha256
+from mattini.download import PROVENANCE, REGIO_TILE_M, DownloadError
+from mattini.lock import entry_sha256, fit_problem, shape_problem
 from mattini.terrain import (
     AREA_NAME,
     OWNER_AXES,
@@ -123,13 +127,8 @@ BLOCK_KEYS = {
 }
 SOURCE_KEYS = {"attribution", "collection", "dataset", "edition", "entry_sha256"}
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
-SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 TILE_ID = re.compile(r"([0-9]{4})-([0-9]{4})")
-TILE_M = 10_000  # swissALTIRegio tiles are 10 km squares
-TILE_ORIGIN_M = (
-    5_000,
-    4_000,
-)  # their south-west corners lie at E = 5 km + 10 km·i, N = 4 km + 10 km·j
+TILE_M = REGIO_TILE_M  # swissALTIRegio tiles are 10 km squares: the tile reader's own check
 NAN_BITS = 0x7FC00000  # the quiet NaN written in the cut (bytes 00 00 c0 7f)
 DIGITS = 9  # a position or a height of more digits is no sample of this data
 # one sample: x, y, the height's sign, its whole metres, its hundredths (None, one or two digits)
@@ -319,15 +318,15 @@ def build_surroundings(
         raise SurroundingsError(problem)
 
     regio = _regio_config(datasets, SurroundingsError)
-    problem = _fit_problem(lock, regio, grid)
+    problem = _lock_problem(lock, datasets, world, area, surroundings_config)
     if problem:
         raise SurroundingsError(problem)
     entry = lock["datasets"][DATASET]
     problem = inputs_refusal(SURROUNDINGS_CONFIG_NAME, settings["computed_for"], DATASET, entry)
     if problem:
         raise SurroundingsError(f"area {area!r}: {problem}")
-    tiles = _tiles_needed(grid)
     locked = entry["tiles"]
+    tiles = sorted(locked)  # the fit showed them to be the surroundings': east outer, north inner
     raw_dir = Path(raw_root) / DATASET / regio["edition"]
     listed = _provenance_tiles(raw_dir / PROVENANCE, regio, tiles, locked)
 
@@ -439,7 +438,7 @@ def built_surroundings_block(
     if problem:
         raise SurroundingsError(problem)
     regio = _regio_config(datasets, fail)
-    problem = _fit_problem(tile_lock, regio, grid)
+    problem = _lock_problem(tile_lock, datasets, world, area, surroundings_config)
     if problem:
         raise SurroundingsError(problem)
     entry = tile_lock["datasets"][DATASET]
@@ -582,74 +581,23 @@ def _regio_config(datasets: object, fail: Callable[[str], SurroundingsError]) ->
     return config
 
 
-def _tiles_needed(grid: _Grid) -> list[str]:
-    """The ids (`<E km>-<N km>`) of the tiles that meet the box grown by half a spacing, sorted.
+def _lock_problem(
+    lock: object, datasets: dict, world: World, area: str, config: dict
+) -> str | None:
+    """Why the lock does not fit the datasets config and the area's surroundings, or None.
 
-    A tile [E0, E0 + 10 km) × [N0, N0 + 10 km) is needed when it meets [e_min − s/2, e_max + s/2)
-    × [n_min − s/2, n_max + s/2): the samples a vertex takes its height from. East outer, north
-    inner: the order of the lock, provenance.json and the reading.
+    `lock.fit_problem` for swissALTIRegio with the surroundings config the step was given (its
+    margin and spacing; `download.regio_tiles` is the tile rule), then `lock.shape_problem` for
+    the lock's structure. The text is the whole refusal: it names the area and `python -m mattini
+    lock regio`, and no other command, for a fit; a datasets config that fit_problem cannot read
+    (a DownloadError) is refused with its text.
     """
-    e_min, e_max, n_min, n_max = grid.box
-    east = _corners_km(2 * e_min - grid.spacing, 2 * e_max + grid.spacing, TILE_ORIGIN_M[0])
-    north = _corners_km(2 * n_min - grid.spacing, 2 * n_max + grid.spacing, TILE_ORIGIN_M[1])
-    return [f"{e:04d}-{n:04d}" for e in east for n in north]
-
-
-def _corners_km(low2: int, high2: int, origin_m: int) -> list[int]:
-    """The corners, in whole km, of the tile squares meeting [low2/2, high2/2) on one axis."""
-    step = 2 * TILE_M
-    first = (low2 - 2 * origin_m) // step
-    last = -((2 * origin_m - high2) // step)  # the ceiling
-    return [(origin_m + i * TILE_M) // 1000 for i in range(first, last)]
-
-
-def _fit_problem(lock: object, regio: dict, grid: _Grid) -> str | None:
-    """Why the lock's entry does not fit the datasets config and the grid, or None.
-
-    It fits when it exists, is for the datasets config's collection, edition and resolution, and
-    pins exactly the tiles the surroundings need, none missing and none beside them, each as
-    exactly a file name and a SHA-256. The text is the whole refusal: it names the area and
-    `python -m mattini lock regio`, and no other command.
-    """
-
-    def problem(message: str) -> str:
-        return (
-            f"the lock {message} (area {grid.area!r}); `{LOCK_COMMAND}` writes the lock's "
-            f"{DATASET} entry for the config"
+    try:
+        return fit_problem(lock, datasets, world, area, DATASET, surroundings=config) or (
+            shape_problem(lock)
         )
-
-    datasets = lock.get("datasets") if isinstance(lock, dict) else None
-    entry = datasets.get(DATASET) if isinstance(datasets, dict) else None
-    if not isinstance(entry, dict):
-        return problem(f"has no {DATASET!r} entry")
-    for key in ("collection", "edition", "resolution_m"):
-        if entry.get(key) != regio[key]:
-            return problem(
-                f"is for {DATASET} {key} {entry.get(key)!r}, the config pins {regio[key]!r}"
-            )
-    pinned = entry.get("tiles")
-    if not isinstance(pinned, dict):
-        return problem("has no tiles")
-    needed = _tiles_needed(grid)
-    missing = [tile for tile in needed if tile not in pinned]
-    if missing:
-        return problem(f"pins no checksum for the tiles {missing} the surroundings need")
-    if set(pinned) != set(needed):
-        return problem(f"pins the tiles {sorted(pinned)}, the surroundings need exactly {needed}")
-    for tile in needed:
-        pin = pinned[tile]
-        if not (
-            isinstance(pin, dict)
-            and set(pin) == {"file", "sha256"}
-            and isinstance(pin["file"], str)
-            and SAFE_NAME.fullmatch(pin["file"])
-            and isinstance(pin["sha256"], str)
-            and SHA256_HEX.fullmatch(pin["sha256"])
-        ):
-            return problem(
-                f"pins the tile {tile} as {pin!r}, not exactly a file name and a SHA-256"
-            )
-    return None
+    except DownloadError as exc:
+        raise SurroundingsError(str(exc)) from exc
 
 
 def _provenance_tiles(path: Path, regio: dict, tiles: list[str], locked: dict) -> dict[str, dict]:
@@ -681,7 +629,7 @@ def _provenance_tiles(path: Path, regio: dict, tiles: list[str], locked: dict) -
     if listed != tiles:
         raise fail(f"it lists the tiles {listed}, the surroundings need {tiles}")
     for entry in entries:
-        # the lock's file names are plain (`_fit_problem`), so a name equal to the lock's is too
+        # the lock's file names are plain (`lock.shape_problem`), so a name equal to the lock's is too
         tile, name, sha256 = entry["tile"], entry.get("file"), entry.get("sha256")
         if name != locked[tile]["file"] or sha256 != locked[tile]["sha256"]:
             raise fail(
@@ -915,13 +863,12 @@ def _replace(path: Path, data: bytes) -> None:
 
 # Public names for what the far colour step (farcolour.py, brief v0.6.0-06) reads from here: the
 # very functions the heights step calls, not copies, so both steps parse swissALTIRegio's text with
-# one parser and ask one tile rule, one fit and one provenance check of the same download.
+# one parser and make one provenance check of the same download (the tile rule and the lock's fit
+# are not here: `download.regio_tiles` and `lock.fit_problem`, brief v0.6.0-07).
 Grid = _Grid
 surroundings_grid = _grid_of
 expected_problem = _expected_problem
 regio_config = _regio_config
-regio_tiles_needed = _tiles_needed
-regio_fit_problem = _fit_problem
 regio_provenance_tiles = _provenance_tiles
 regio_tile_bytes = _read_bytes
 regio_tile_samples = _tile_samples

@@ -4,12 +4,14 @@ The pinned copies state what swissALTIRegio's lock must do for the village. They
 what the same code must do for any other area, any other config and any other dataset's
 twin; this file closes those, by the class and not by the instance (lesson 9):
 
-- the area is the one asked for, never the village: the reader, `regio_tiles`,
-  `published_regio`, `lock.regio_entry` and `lock regio` all follow `config/terrain.json`'s
-  area, with a second area in the world, the surroundings config and the items;
-- `margin_m` and `spacing_m` reach the tile rule, an odd spacing keeps its half metre, a
-  boolean is not a whole number of metres, and the reader reads nothing but the area's two
-  numbers and refuses what is not UTF-8 JSON, whatever its top level;
+- the area is the one asked for, never the village: the config's lookup
+  (`download.surroundings_margin_spacing`), `regio_tiles`, `published_regio`,
+  `lock.regio_entry` and `lock regio` all follow `config/terrain.json`'s area, with a second
+  area in the world, the surroundings config and the items;
+- `margin_m` and `spacing_m` reach the tile rule, an odd spacing keeps its half metre, the
+  lookup reads nothing but the area's two numbers, and the config's one reader
+  (`surroundings.load_surroundings_config`) refuses a boolean for a whole number of metres
+  and what is not UTF-8 JSON, whatever its top level, naming the file;
 - every tile item is checked the way `_published_asset` checks it for the other datasets (the
   item's id, exactly one asset ending `_2056_5728.xyz.zip`, a plain name, an href, a SHA-256
   multihash), and its `properties.datetime` must be a text in the pinned edition: a missing
@@ -28,6 +30,11 @@ twin; this file closes those, by the class and not by the instance (lesson 9):
   right and name every choice;
 - the Release notes' credit lines sit once each in the credits' code block, swissALTIRegio's
   directly after swissALTI3D's (decision 5).
+
+Re-cut by brief v0.6.0-07 onto the config's one reader: brief v0.6.0-01's small reader in
+download.py (`download.surroundings_settings`, `download.SURROUNDINGS_PATH`) is gone, the
+callers are given the config (`surroundings=`), and the command line reads it through
+`surroundings.load_surroundings_config`, which the tests replace on its module.
 
 Does NOT prove: that the live STAC API serves these items (the network test), the download
 (brief v0.6.0-02), the heights (brief v0.6.0-04); and the docstring and template checks
@@ -50,8 +57,9 @@ from test_release_notes import TEMPLATE, _dataset_lines
 
 import mattini.__main__ as cli
 from mattini import datasets as datasets_module
-from mattini import download, lock, terrain
+from mattini import download, lock, surroundings, terrain
 from mattini.datasets import load_datasets
+from mattini.surroundings import SurroundingsError
 from mattini.world import REPO, load_world
 
 REGIO = download.REGIO
@@ -119,15 +127,19 @@ def _world(tmp_path, box=HERE):
     return load_world(path)
 
 
-def _surroundings(tmp_path, here=HERE_SETTINGS, village=VILLAGE_SETTINGS):
-    """A surroundings config with the village's settings and `here`'s, which differ."""
-    path = tmp_path / "surroundings.json"
+def _surroundings(here=HERE_SETTINGS, village=VILLAGE_SETTINGS):
+    """A surroundings config (as the reader returns it, here without the step's other keys) with
+    the village's settings and `here`'s, which differ."""
     areas = {
         "village": {"margin_m": village[0], "spacing_m": village[1]},
         "here": {"margin_m": here[0], "spacing_m": here[1]},
     }
-    path.write_text(json.dumps({"schema": 2, "areas": areas}, indent=2), encoding="utf-8")
-    return path
+    return {"schema": 2, "areas": areas}
+
+
+def _given(area, margin_m, spacing_m):
+    """The config of one area with the two numbers: what `published_regio` is given."""
+    return {"areas": {area: {"margin_m": margin_m, "spacing_m": spacing_m}}}
 
 
 def _config(tmp_path, change=None, *, raw=None):
@@ -145,7 +157,7 @@ def _config(tmp_path, change=None, *, raw=None):
 
 def _published(world, stac, *, datasets=DATASETS, margin_m=0, spacing_m=100):
     return download.published_regio(
-        world, datasets, stac, area="here", margin_m=margin_m, spacing_m=spacing_m
+        world, datasets, stac, area="here", surroundings=_given("here", margin_m, spacing_m)
     )
 
 
@@ -155,31 +167,35 @@ def _refusal(call):
     return str(refusal.value)
 
 
+def _reader_refusal(path):
+    """What the config's one reader says about a file it refuses."""
+    with pytest.raises(SurroundingsError) as refusal:
+        surroundings.load_surroundings_config(path)
+    return str(refusal.value)
+
+
 # --------------------------------------------------------- the area is the one asked for
 
 
-def test_the_reader_gives_the_area_asked_for_and_never_falls_back_to_another(tmp_path):
-    path = _surroundings(tmp_path)
-    assert download.surroundings_settings("here", path) == HERE_SETTINGS
-    assert download.surroundings_settings("village", path) == VILLAGE_SETTINGS
-    text = _refusal(lambda: download.surroundings_settings("elsewhere", path))
-    assert str(path) in text and "'elsewhere'" in text, text
+def test_the_lookup_gives_the_area_asked_for_and_never_falls_back_to_another():
+    config = _surroundings()
+    assert download.surroundings_margin_spacing(config, "here") == HERE_SETTINGS
+    assert download.surroundings_margin_spacing(config, "village") == VILLAGE_SETTINGS
+    text = _refusal(lambda: download.surroundings_margin_spacing(config, "elsewhere"))
+    assert "config/surroundings.json" in text and "'elsewhere'" in text, text
 
 
-def test_the_reader_reads_nothing_else_of_the_file(tmp_path):
-    raw = json.dumps(
-        {
-            "schema": 99,
-            "areas": {
-                "village": {"margin_m": 7, "spacing_m": 3, "computed_for": 1, "colour": []},
-                "other": "garbage",
-            },
-            "colour": 5,
-            "anything": [1],
-        }
-    )
-    path = _config(tmp_path, raw=raw.encode())
-    assert download.surroundings_settings("village", path) == (7, 3)
+def test_the_lookup_reads_nothing_else_of_the_config():
+    config = {
+        "schema": 99,
+        "areas": {
+            "village": {"margin_m": 7, "spacing_m": 3, "computed_for": 1, "colour": []},
+            "other": "garbage",
+        },
+        "colour": 5,
+        "anything": [1],
+    }
+    assert download.surroundings_margin_spacing(config, "village") == (7, 3)
 
 
 def test_published_regio_follows_the_area_it_is_given(tmp_path):
@@ -192,7 +208,7 @@ def test_published_regio_follows_the_area_it_is_given(tmp_path):
 
 def test_the_entry_follows_the_area_it_is_given(tmp_path):
     entry = lock.regio_entry(
-        _world(tmp_path), DATASETS, Stac(HERE_TILES), area="here", margin_m=0, spacing_m=100
+        _world(tmp_path), DATASETS, Stac(HERE_TILES), area="here", surroundings=_surroundings()
     )
     assert list(entry["tiles"]) == HERE_TILES
 
@@ -205,7 +221,8 @@ def env(monkeypatch, tmp_path):
     lock_path = tmp_path / "datasets.lock.json"
     shutil.copyfile(COMMITTED_LOCK_PATH, lock_path)
     monkeypatch.setattr(lock, "LOCK_PATH", lock_path)
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _surroundings(tmp_path))
+    config = _surroundings()
+    monkeypatch.setattr(surroundings, "load_surroundings_config", lambda *a, **k: config)
     monkeypatch.setattr(download, "urllib_fetch_json", stac)
     monkeypatch.setattr(terrain, "load_terrain_config", lambda *a, **k: {"areas": {"here": {}}})
     monkeypatch.setattr(cli, "load_world", lambda *a, **k: world)
@@ -238,15 +255,12 @@ def test_lock_regio_refuses_a_tile_naming_the_area_the_terrain_config_names(env,
 
 
 def test_lock_regio_refuses_an_area_the_surroundings_config_lacks(env, capsys, monkeypatch):
-    config = env.lock_path.parent / "only-the-village.json"
-    config.write_text(
-        json.dumps({"areas": {"village": {"margin_m": 20000, "spacing_m": 50}}}), encoding="utf-8"
-    )
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", config)
+    only_the_village = {"areas": {"village": {"margin_m": 20000, "spacing_m": 50}}}
+    monkeypatch.setattr(surroundings, "load_surroundings_config", lambda *a, **k: only_the_village)
     before = env.lock_path.read_bytes()
     code, out, err = _run(capsys, "lock", "regio")
     assert (code, out) == (1, "")
-    assert str(config) in err and "'here'" in err, err
+    assert "config/surroundings.json" in err and "'here'" in err, err
     assert env.stac.asked == [] and env.lock_path.read_bytes() == before
 
 
@@ -269,7 +283,7 @@ def test_published_regio_asks_for_exactly_the_tiles_of_its_margin_and_spacing(ma
     tiles = download.regio_tiles(world, "village", margin_m=margin_m, spacing_m=spacing_m)
     stac = Stac(tiles)
     published = download.published_regio(
-        world, DATASETS, stac, area="village", margin_m=margin_m, spacing_m=spacing_m
+        world, DATASETS, stac, area="village", surroundings=_given("village", margin_m, spacing_m)
     )
     assert [asset.tile for asset in published] == tiles
     assert stac.asked_ids() == [f"swissaltiregio_{tile}" for tile in tiles]
@@ -280,7 +294,11 @@ def test_the_entry_locks_exactly_the_tiles_of_its_margin_and_spacing(margin_m, s
     world = load_world()
     tiles = download.regio_tiles(world, "village", margin_m=margin_m, spacing_m=spacing_m)
     entry = lock.regio_entry(
-        world, DATASETS, Stac(tiles), area="village", margin_m=margin_m, spacing_m=spacing_m
+        world,
+        DATASETS,
+        Stac(tiles),
+        area="village",
+        surroundings=_given("village", margin_m, spacing_m),
     )
     assert list(entry["tiles"]) == tiles
 
@@ -300,7 +318,7 @@ def test_an_odd_spacing_keeps_its_half_metre(tmp_path, spacing_m):
 )
 def test_a_boolean_is_not_a_whole_number_of_metres(tmp_path, key, value):
     path = _config(tmp_path, lambda d: d["areas"]["village"].update({key: value}))
-    text = _refusal(lambda: download.surroundings_settings("village", path))
+    text = _reader_refusal(path)
     assert str(path) in text and key in text, text
 
 
@@ -321,7 +339,7 @@ def test_a_boolean_is_not_a_whole_number_of_metres(tmp_path, key, value):
 )
 def test_a_config_that_is_not_utf_8_json_with_the_area_is_refused_naming_the_file(tmp_path, raw):
     path = _config(tmp_path, raw=raw)
-    text = _refusal(lambda: download.surroundings_settings("village", path))
+    text = _reader_refusal(path)
     assert str(path) in text, text
 
 
@@ -451,7 +469,7 @@ def test_the_collection_is_the_datasets_config_s_in_the_urls_asked_and_in_the_en
     datasets[REGIO]["collection"] = "ch.swisstopo.swissaltiregio-another"
     stac = Stac(HERE_TILES)
     entry = lock.regio_entry(
-        _world(tmp_path), datasets, stac, area="here", margin_m=0, spacing_m=100
+        _world(tmp_path), datasets, stac, area="here", surroundings=_surroundings()
     )
     assert entry["collection"] == "ch.swisstopo.swissaltiregio-another"
     assert stac.asked == [

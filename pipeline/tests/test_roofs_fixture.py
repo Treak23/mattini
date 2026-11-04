@@ -242,8 +242,8 @@ def test_the_fixture_is_what_its_files_say():
             }
         },
     }
-    # the manifest the game reads: M3's shape, since v0.4.0-07 the sky block and since v0.5.0-02
-    # the shadows block, both built blocks verbatim, the others null, in the text manifest.py writes (the wiring brief reproduces
+    # the manifest the game reads: M3's shape, since v0.4.0-07 the sky block, since v0.5.0-02
+    # the shadows block and since v0.6.0-07 the surroundings block, both built blocks verbatim, the others null, in the text manifest.py writes (the wiring brief reproduces
     # it byte for byte)
     text = (GENERATED / "manifest.json").read_bytes()
     manifest = json.loads(text.decode("utf-8"))
@@ -255,6 +255,7 @@ def test_the_fixture_is_what_its_files_say():
         "shadows",
         "sky",
         "surfaces",
+        "surroundings",
         "terrain",
         "trees",
         "world",
@@ -265,6 +266,7 @@ def test_the_fixture_is_what_its_files_say():
         "shadows",
         "sky",
         "surfaces",
+        "surroundings",
         "terrain",
         "trees",
     ]

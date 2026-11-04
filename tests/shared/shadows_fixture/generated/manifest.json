@@ -43,6 +43,7 @@
     "world_sha256": "729e9f5edd9c1aee7d33ace6cddf177ad276ff43e8341ac08dc33adac116165e"
   },
   "surfaces": null,
+  "surroundings": null,
   "terrain": null,
   "trees": null,
   "world": {

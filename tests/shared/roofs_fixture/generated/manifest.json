@@ -231,6 +231,7 @@
   "shadows": null,
   "sky": null,
   "surfaces": null,
+  "surroundings": null,
   "terrain": null,
   "trees": null,
   "world": {

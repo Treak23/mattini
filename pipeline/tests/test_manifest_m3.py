@@ -2,9 +2,10 @@
 
 Pinned decisions (docs/SPEC.md §8, *The manifest*; brief M3-13): the manifest's top level
 is exactly `buildings`, `photo`, `roofs`, `schema`, `surfaces`, `terrain`, `trees`, `world`
-and `world_sha256`, since brief v0.4.0-07 `sky` and since brief v0.5.0-02 `shadows` (both null
-in every fixture here: neither step has run in them; their manifests gained the one line
-`  "sky": null,`, then the one line `  "shadows": null,`, test_m4_09_manifest.py); `schema`
+and `world_sha256`, since brief v0.4.0-07 `sky`, since brief v0.5.0-02 `shadows` and since
+brief v0.6.0-07 `surroundings` (null in every fixture here: none of those steps has run in them;
+their manifests gained the one line `  "sky": null,`, then `  "shadows": null,`, then
+`  "surroundings": null,`, test_m4_09_manifest.py and test_v060_07_manifest.py); `schema`
 stays 1; each block is the description its step wrote,
 verbatim, or null when that step has not been run in the folder; the text is
 `json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False)` and a final LF, in
@@ -44,6 +45,7 @@ TOP_LEVEL = {
     "shadows",
     "sky",
     "surfaces",
+    "surroundings",
     "terrain",
     "trees",
     "world",
@@ -59,13 +61,13 @@ FIXTURES = {
         "world": "world.json",
         "configs": {"terrain_config_path": "terrain.json"},
         "built": ["terrain"],
-        "sha256": "3d5d9e353dec37c32a0e0f3aaef90871e5eebcad6f4ee6ffcc03594e44e24fab",
+        "sha256": "7da6238dc7cad625ecab5039be762c7d9518b001f7c5ab5524597fca27f36cd1",
     },
     "terrain_fixture_nw": {
         "world": "world.json",
         "configs": {"terrain_config_path": "terrain.json"},
         "built": ["terrain"],
-        "sha256": "fd2481dffa88ebbc7be198fabc8758a7d7fb6c6a1502fb88c7d6aae91597ca84",
+        "sha256": "d5b2566d7467cc9278bf6ab720869f288432e9947fea18ffbdd51b9a7a46ff97",
     },
     "buildings_fixture": {
         "world": "world.json",
@@ -74,13 +76,13 @@ FIXTURES = {
             "buildings_config_path": "buildings.json",
         },
         "built": ["buildings"],
-        "sha256": "5814d95c2af053eb1955b2762599fbacbe9aabe61859c03e7ebcf925ed67770d",
+        "sha256": "e21c525b8d8c714fd92feec7e8945730a015e62879ded0f54ee697dccaa6e442",
     },
     "photo_fixture": {
         "world": "world.json",
         "configs": {"photo_config_path": "photo.json"},
         "built": ["photo"],
-        "sha256": "252c92a7bc858aa0169cb6eaccc199719f86a46b36c54f6dd4c04cda92ac611f",
+        "sha256": "72a550df79c733392eabbad4dfca3602b4d6e68fc3d73cb2bf78883f0414c1a7",
     },
     "roofs_fixture": {
         # the buildings fixture's world and area (its photo.json describes the synthetic
@@ -92,19 +94,19 @@ FIXTURES = {
             "roofs_config_path": "roofs.json",
         },
         "built": ["buildings", "roofs"],
-        "sha256": "f65abc0b7fc685fa53005bd1e37cc92fb57d24e2ab30a04ba209a18bcb47bea7",
+        "sha256": "396e5b2b70165992d709762bfac7ae9412131df2de7aa14cf0e3a5f7550a3ee6",
     },
     "surfaces_fixture": {
         "world": "world.json",
         "configs": {"surfaces_config_path": "surfaces.json"},
         "built": ["surfaces"],
-        "sha256": "1df51af7602407115ddba5c990c6e02ca8aaabae902fe8f8de40fe12fb8843e5",  # v0.5.0-02
+        "sha256": "6e9300dfccee77d47b2af3a087b0fc0b2f1eed14c6d98337922720fb7adeb22a",  # v0.6.0-07
     },
     "trees_fixture": {
         "world": "world.json",
         "configs": {"terrain_config_path": "terrain.json", "trees_config_path": "trees.json"},
         "built": ["trees"],
-        "sha256": "c9066f6d68ce27cc71c5db1ccb649ea5fa829c1f6d7968fb6b1e75b4dc885645",
+        "sha256": "8bd7a99d986ab30aa98c2eaa8956108d7295ef6d2936ec682526f5ad99a8ff5b",
     },
 }
 

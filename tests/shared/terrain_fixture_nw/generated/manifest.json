@@ -6,6 +6,7 @@
   "shadows": null,
   "sky": null,
   "surfaces": null,
+  "surroundings": null,
   "terrain": {
     "area": "fixture_nw",
     "columns": 13,

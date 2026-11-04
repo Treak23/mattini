@@ -9,15 +9,24 @@ area config/terrain.json names (briefs M2-01, M2-03, M2-04, M3-03; M1 R1 T-06): 
 home. swissTLM3D (`tlm`) is national and has none. `lock <dataset>` writes that dataset's
 entry of config/datasets.lock.json and keeps every other entry (brief M2-03); the seven lock
 entries are written by the seven `lock` choices. `lock regio` and `download regio` take the
-tiles' margin and spacing for that area from config/surroundings.json
-(`download.surroundings_settings`; the download through the lock's fit), and `lock farphoto` and
-`download farphoto` its margin (`download.area_farphoto_cells`); each ends in one
-`mattini: error:` line naming the file when it cannot, before swisstopo is asked anything.
+tiles' margin and spacing for that area from config/surroundings.json, and `lock farphoto` and
+`download farphoto` its margin; the file is read once, by `surroundings.load_surroundings_config`
+(brief v0.6.0-07), and the config goes to the lock's entry, the download and the lock's fit; each
+ends in one `mattini: error:` line naming the file when it cannot, before swisstopo is asked
+anything.
 
 `photo`, `roofs`, `surfaces` and `trees` build the M3 steps' outputs as `terrain` and
 `buildings` build theirs (brief M3-13); each then writes the manifest. They read the
 datasets that `download` fetched, and a step without its download ends in one
 `mattini: error:` line naming the `download` command.
+
+`surroundings` builds the far terrain's heights, a grid of vertices over the area's box grown by
+the margin, from the downloaded swissALTIRegio tiles (`download regio`), and `farcolour` its
+colour, a grid of pixels, from the downloaded SWISSIMAGE 2 m tiles and swissALTIRegio's (`download
+farphoto` and `download regio`); both read config/surroundings.json through
+`surroundings.load_surroundings_config`, and each then writes the manifest, whose `surroundings`
+block is null until both are built (brief v0.6.0-07). A step without its downloads ends in one
+`mattini: error:` line naming the `download` command, and writes nothing.
 
 `shadows` builds the capture shadows mask of the configured area from the downloaded
 swissSURFACE3D tiles and config/shadows.json, then writes the manifest (brief v0.5.0-02); a
@@ -44,12 +53,14 @@ from pathlib import Path
 from mattini import (
     buildings,
     download,
+    farcolour,
     lock,
     photo,
     roofs,
     shadows,
     sky,
     surfaces,
+    surroundings,
     terrain,
     trees,
 )
@@ -77,6 +88,8 @@ STEPS = {
     "roofs": "measure each building's roof colour from the photo",
     "surfaces": "classify roads, paths, water and rock from swissTLM3D",
     "trees": "find the trees in the surface model",
+    "surroundings": "build the far terrain's heights from the swissALTIRegio tiles",
+    "farcolour": "build the far terrain's colour from the 2 m aerial photo",
     "shadows": "build the capture shadows mask from the surface model",
 }
 DATASETS_HELP = (
@@ -180,6 +193,8 @@ def main(argv: list[str] | None = None) -> int:
         roofs.RoofsError,
         surfaces.SurfacesError,
         trees.TreesError,
+        surroundings.SurroundingsError,
+        farcolour.FarColourError,
         shadows.ShadowsError,
         sky.SkyError,
         OSError,
@@ -196,33 +211,24 @@ def _lock(dataset: str) -> Path:
     other dataset's entry of the committed lock is kept; with no lock yet, the new one holds
     this entry alone. A lock that exists but cannot be read is refused before swisstopo is
     asked anything. swissALTIRegio's tiles also depend on the margin and spacing that
-    config/surroundings.json gives the area (`download.surroundings_settings`), and the far
-    photo's cells on the margin (`download.area_farphoto_cells`, read before the first request,
-    with the 1806 items read eight at once): a config that reader refuses ends the command before
-    swisstopo is asked anything.
+    config/surroundings.json gives the area, and the far photo's cells on the margin (with the 1806
+    items read eight at once): the file is read once, through `surroundings.load_surroundings_config`
+    before the first request, and its config goes to the entry; a config that reader refuses ends
+    the command before swisstopo is asked anything.
     """
     if dataset == "tlm":
         datasets = load_datasets()
         current = lock.load_lock_or_none(lock.LOCK_PATH)
         entry = lock.tlm_entry(datasets, download.urllib_fetch_json)
-    elif dataset == "regio":
+    elif dataset in ("regio", "farphoto"):
         area = terrain.configured_area(terrain.load_terrain_config())
         world, datasets = load_world(), load_datasets()
-        margin_m, spacing_m = download.surroundings_settings(area)
+        config = surroundings.load_surroundings_config()
         current = lock.load_lock_or_none(lock.LOCK_PATH)
-        entry = lock.regio_entry(
-            world,
-            datasets,
-            download.urllib_fetch_json,
-            area=area,
-            margin_m=margin_m,
-            spacing_m=spacing_m,
+        entry_of = {"regio": lock.regio_entry, "farphoto": lock.farphoto_entry}[dataset]
+        entry = entry_of(
+            world, datasets, download.urllib_fetch_json, area=area, surroundings=config
         )
-    elif dataset == "farphoto":
-        area = terrain.configured_area(terrain.load_terrain_config())
-        world, datasets = load_world(), load_datasets()
-        current = lock.load_lock_or_none(lock.LOCK_PATH)
-        entry = lock.farphoto_entry(world, datasets, download.urllib_fetch_json, area=area)
     else:
         area = terrain.configured_area(terrain.load_terrain_config())
         world, datasets = load_world(), load_datasets()
@@ -245,7 +251,8 @@ def _download(dataset: str, out_root: Path) -> int:
     With urllib; progress on stderr, the provenance path on stdout. swissTLM3D is one national
     file, resumed when a transfer is cut (`download.download_tlm`). swissALTIRegio's tiles
     (`download.download_regio`) are the area's surroundings, whose margin and spacing the lock's
-    fit reads from config/surroundings.json before swisstopo is asked anything. SWISSIMAGE's 2 m
+    fit takes from config/surroundings.json (read once, through
+    `surroundings.load_surroundings_config`, before swisstopo is asked anything). SWISSIMAGE's 2 m
     tiles (`download.download_farphoto`) are the surroundings' too, fetched eight at once: one
     `fetching <url>` line per fetch (the order they start in is not fixed), then `<n> tiles
     verified, <f> fetches, <a> cells without an item` (the lock's cells that have no item).
@@ -283,6 +290,9 @@ def _download(dataset: str, out_root: Path) -> int:
     else:
         area = terrain.configured_area(terrain.load_terrain_config())
         world, datasets = load_world(), load_datasets()
+        extra = {}
+        if dataset in ("regio", "farphoto"):  # their tiles and cells are the config's
+            extra["surroundings"] = surroundings.load_surroundings_config()
         pinned = lock.load_lock(lock.LOCK_PATH)
         run = {
             "terrain": download.download_terrain,
@@ -301,6 +311,7 @@ def _download(dataset: str, out_root: Path) -> int:
                 fetch_file,
                 lock=pinned,
                 area=area,
+                **extra,
             )
         )
     out_dir = out_root / name / download.raw_folder(datasets, name)
@@ -353,8 +364,10 @@ def _build_step(step: str, raw_root: Path, out_dir: Path) -> Path:
     """Build one of the steps (`STEPS`) for the configured area, then the manifest.
 
     Each loads config/world.json, datasets.json, datasets.lock.json and its own config, the
-    roofs and the trees config/terrain.json too, and calls its module's `build_<step>`
-    through the module, so a step is replaced in one place only. Progress on stderr.
+    roofs and the trees config/terrain.json too (`surroundings` and `farcolour` both read
+    config/surroundings.json, through `surroundings.load_surroundings_config`), and calls its
+    module's `build_<step>` through the module, so a step is replaced in one place only. Progress
+    on stderr.
     """
 
     def progress(message: str) -> None:
@@ -382,6 +395,26 @@ def _build_step(step: str, raw_root: Path, out_dir: Path) -> Path:
             datasets,
             pinned,
             surfaces.load_surfaces_config(),
+            raw_root,
+            out_dir,
+            progress=progress,
+        )
+    elif step == "surroundings":
+        surroundings.build_surroundings(
+            world,
+            datasets,
+            pinned,
+            surroundings.load_surroundings_config(),
+            raw_root,
+            out_dir,
+            progress=progress,
+        )
+    elif step == "farcolour":
+        farcolour.build_farcolour(
+            world,
+            datasets,
+            pinned,
+            surroundings.load_surroundings_config(),
             raw_root,
             out_dir,
             progress=progress,

@@ -6,15 +6,16 @@ refused by the lock's fit before the download reads anything of its own. This fi
 what they leave, by the class and not by the instance (lesson 9): a guard of the regio flow
 that a second, independent read of the same thing could break unseen.
 
-- *The download's own read of the config* (the prover's X4, finding R1). A run reads the
-  surroundings config twice: the fit's (`lock._regio_ids`) and the download's, for the items it
-  asks swisstopo about (`_download_tiles`). A lock that fits a changed config (a margin of 0,
-  a spacing of 4000 m, a margin of 30000 m: 2, 36 and 56 tiles; the stand-in serves the 56) must
+- *The download follows the config it is given* (the prover's X4, finding R1). The command
+  line reads the surroundings config once (`surroundings.load_surroundings_config`, brief
+  v0.6.0-07) and gives it to the fit (`lock.fit_problem`) and to the items the download asks
+  swisstopo about (`_download_tiles`). A lock that fits a changed config (a margin of 0, a
+  spacing of 4000 m, a margin of 30000 m: 2, 36 and 56 tiles; the stand-in serves the 56) must
   be downloaded in full: exactly its tiles fetched, listed in provenance.json and counted, so
   neither number hard-coded, nor halved, nor swapped, nor the area taken as the village, can
   fetch only the committed config's 30 (a subset of the larger locks, which the lock comparison
-  lets through) or fail with a KeyError. Brief v0.6.0-07 gives the tile rule one home; until
-  then these tests are what holds the two reads together.
+  lets through) or fail with a KeyError. The tile rule has one home since brief v0.6.0-07, but
+  these tests still hold the fit's tiles and the items asked for together.
 - *The republish comparison is the name and the SHA-256* (X3a): a tile published under another
   file name with the same bytes is refused as a republish, word for word.
 - *Files go through a `.part`* (X37): every file is fetched into `<name>.part` beside its
@@ -43,7 +44,7 @@ from local_regio import REGIO, RING_TILES, TILE_E, VILLAGE_TILES, LocalRegio, re
 from local_swisstopo import STAC, sha256
 
 import mattini.__main__ as cli
-from mattini import download, lock
+from mattini import download, lock, surroundings
 from mattini.datasets import load_datasets
 from mattini.world import REPO, load_world
 
@@ -102,6 +103,13 @@ def _config(tmp_path, change):
     return path
 
 
+def _use_config(monkeypatch, path):
+    """The command line's surroundings config: `surroundings.load_surroundings_config`, its one
+    reader, replaced on its module by one that reads `path` with the real reader."""
+    real = surroundings.load_surroundings_config
+    monkeypatch.setattr(surroundings, "load_surroundings_config", lambda *a, **k: real(path))
+
+
 def _download(site, capsys):
     code = cli.main(["download", "regio", "--out", str(site.out)])
     captured = capsys.readouterr()
@@ -126,10 +134,14 @@ def test_download_regio_fetches_exactly_the_tiles_a_changed_config_asks_for(
     regio, capsys, monkeypatch, tmp_path, case
 ):
     change, tiles = CONFIGS[case]
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, change))
+    path = _config(tmp_path, change)
+    config = surroundings.load_surroundings_config(path)
+    _use_config(monkeypatch, path)
     _pin(regio, tiles)
     world, datasets = load_world(), load_datasets()
-    fit = lock.fit_problem(regio.pinned, datasets, world, "village", "swissaltiregio")
+    fit = lock.fit_problem(
+        regio.pinned, datasets, world, "village", "swissaltiregio", surroundings=config
+    )
     assert fit is None, fit  # the lock fits this config: the download is the only thing left
 
     code, out, err = _download(regio, capsys)
@@ -147,7 +159,7 @@ def test_download_regio_fetches_exactly_the_tiles_a_changed_config_asks_for(
     ]
 
 
-def test_download_regio_follows_the_area_it_is_given(regio, monkeypatch, tmp_path):
+def test_download_regio_follows_the_area_it_is_given(regio, tmp_path):
     data = json.loads((REPO / "config" / "world.json").read_text(encoding="utf-8"))
     data["areas"]["here"] = dict(zip(("e_min", "e_max", "n_min", "n_max"), HERE, strict=True))
     world_path = tmp_path / "world.json"
@@ -156,9 +168,7 @@ def test_download_regio_follows_the_area_it_is_given(regio, monkeypatch, tmp_pat
         "village": {"margin_m": 20000, "spacing_m": 50},
         "here": {"margin_m": 0, "spacing_m": 100},  # not the village's
     }
-    config = tmp_path / "surroundings_here.json"
-    config.write_text(json.dumps({"schema": 2, "areas": areas}, indent=2), encoding="utf-8")
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", config)
+    config = {"schema": 2, "areas": areas}  # as the reader returns it, here without the step's keys
     _pin(regio, HERE_TILES)
 
     entries = download.download_regio(
@@ -169,6 +179,7 @@ def test_download_regio_follows_the_area_it_is_given(regio, monkeypatch, tmp_pat
         download.urllib_fetch_file,
         lock=regio.pinned,
         area="here",
+        surroundings=config,
     )
     assert [entry["tile"] for entry in entries] == HERE_TILES
     assert _names(regio.out / FOLDER) == sorted(

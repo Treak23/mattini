@@ -25,14 +25,17 @@ Pinned decisions:
   request and the lock unchanged.
 - `lock.validate_lock` knows the entry; a malformed one is refused naming the file and
   `python -m mattini lock farphoto` among the seven lock commands.
-- `lock.fit_problem(lock, datasets, world, area, "swissimage_far")`: the entry is for the
+- `lock.fit_problem(lock, datasets, world, area, "swissimage_far", surroundings=<the
+  surroundings config>)` (brief v0.6.0-07: the config is given, never read by the lock): the
+  entry is for the
   config's collection, edition and resolution, and its tiles and its absent cells together
   are exactly the area's cells, none in both; else the refusal names the area and `python -m
   mattini lock farphoto` and no other command.
 
 Run as the owner runs them, against the local stand-in (local_farphoto.py) through the real
-urllib code; `download.STAC_ITEM`, `download.SURROUNDINGS_PATH` (a copy of the committed
-config with `margin_m` 1000: 20 cells, 3 absent) and `lock.LOCK_PATH` are patched.
+urllib code; `download.STAC_ITEM`, `surroundings.load_surroundings_config` (re-cut by brief
+v0.6.0-07, the config's one reader: it reads a copy of the committed config with `margin_m`
+1000: 20 cells, 3 absent) and `lock.LOCK_PATH` are patched.
 
 Likeliest wrong twins, each caught here: the 10 cm asset locked (the photo's suffix); a server
 error taken for an absent cell; the absent cells not recorded (a new item would be adopted
@@ -53,13 +56,21 @@ from local_farphoto import ABSENT, LocalFarphoto, cells_of, far_name
 from local_swisstopo import PHOTO
 
 import mattini.__main__ as cli
-from mattini import download, lock
+from mattini import download, lock, surroundings
 from mattini.datasets import load_datasets
 from mattini.world import REPO, load_world
 
 COMMITTED_LOCK = REPO / "config" / "datasets.lock.json"
 COMMITTED_CONFIG = REPO / "config" / "surroundings.json"
 LOCK_COMMAND = "python -m mattini lock farphoto"
+
+
+def _use_config(monkeypatch, path):
+    """The command line's surroundings config: `surroundings.load_surroundings_config`, its one
+    reader (brief v0.6.0-07), replaced on its module by one that reads `path` with the real
+    reader; a refusal is the reader's own, naming `path`."""
+    real = surroundings.load_surroundings_config
+    monkeypatch.setattr(surroundings, "load_surroundings_config", lambda *a, **k: real(path))
 
 
 def _config(tmp_path, **settings):
@@ -78,7 +89,7 @@ def far(monkeypatch, tmp_path):
     monkeypatch.setenv("no_proxy", "127.0.0.1")
     site = LocalFarphoto()
     monkeypatch.setattr(download, "STAC_ITEM", site.stac_item)
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, margin_m=1000))
+    _use_config(monkeypatch, _config(tmp_path, margin_m=1000))
     site.lock_path = tmp_path / "config" / "datasets.lock.json"
     site.lock_path.parent.mkdir()
     shutil.copyfile(COMMITTED_LOCK, site.lock_path)
@@ -188,7 +199,7 @@ def test_the_reads_run_eight_at_once(far, capsys, monkeypatch):
 
 
 def test_lock_farphoto_takes_the_config_s_margin(far, capsys, monkeypatch, tmp_path):
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, margin_m=0))
+    _use_config(monkeypatch, _config(tmp_path, margin_m=0))
     code, _, err = _run(capsys, "lock", "farphoto")
     assert code == 0, err
     entry = json.loads(far.lock_path.read_bytes())["datasets"]["swissimage_far"]
@@ -198,7 +209,7 @@ def test_lock_farphoto_takes_the_config_s_margin(far, capsys, monkeypatch, tmp_p
 def test_lock_farphoto_refuses_a_bad_config_before_any_request(far, capsys, monkeypatch, tmp_path):
     before = far.lock_path.read_bytes()
     path = _config(tmp_path, margin_m=1000.0)
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", path)
+    _use_config(monkeypatch, path)
     code, out, err = _run(capsys, "lock", "farphoto")
     assert (code, out) == (1, "")
     assert err.startswith("mattini: error: ") and str(path) in err and "margin_m" in err, err
@@ -287,7 +298,14 @@ def _fit_lock():
 
 
 def _fit(data):
-    return lock.fit_problem(data, load_datasets(), load_world(), "village", "swissimage_far")
+    return lock.fit_problem(
+        data,
+        load_datasets(),
+        load_world(),
+        "village",
+        "swissimage_far",
+        surroundings=surroundings.load_surroundings_config(),
+    )
 
 
 def _far(data):
@@ -318,7 +336,7 @@ def _far(data):
 def test_a_lock_that_does_not_fit_is_refused_naming_lock_farphoto(
     monkeypatch, tmp_path, change, words
 ):
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, margin_m=1000))
+    _use_config(monkeypatch, _config(tmp_path, margin_m=1000))
     data = _fit_lock()
     assert _fit(data) is None
     broken = copy.deepcopy(data)
@@ -331,10 +349,10 @@ def test_a_lock_that_does_not_fit_is_refused_naming_lock_farphoto(
 
 
 def test_the_fit_follows_the_config_s_margin(monkeypatch, tmp_path):
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, margin_m=1000))
+    _use_config(monkeypatch, _config(tmp_path, margin_m=1000))
     data = _fit_lock()
     assert _fit(data) is None
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, margin_m=0))
+    _use_config(monkeypatch, _config(tmp_path, margin_m=0))
     problem = _fit(data)
     assert problem is not None and f"`{LOCK_COMMAND}`" in problem, problem
     assert download.EXPECTED_CONFIG_NAMES["swissimage_far"] == "config/surroundings.json"

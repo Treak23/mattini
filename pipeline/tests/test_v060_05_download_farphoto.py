@@ -26,7 +26,9 @@ Pinned decisions (the flow of `download regio`, brief v0.6.0-02, for the far pho
   stderr, the provenance path alone on stdout; a second run fetches nothing.
 
 Run as the owner runs them, against the local stand-in (local_farphoto.py, real urllib, the
-`margin_m` 1000 box: 20 cells, 17 with an item) through `python -m mattini download farphoto`.
+`margin_m` 1000 box: 20 cells, 17 with an item) through `python -m mattini download farphoto`;
+re-cut by brief v0.6.0-07: the config comes from `surroundings.load_surroundings_config`, its one
+reader, patched on its module (no longer `download.SURROUNDINGS_PATH`).
 
 Likeliest wrong twins, each caught here: the absent cells not read again at download (a new
 item adopted silently by the next lock); the vanished item taken for an absent cell; the lock
@@ -44,7 +46,7 @@ import pytest
 from local_farphoto import ABSENT, LocalFarphoto, cells_of, far_name
 
 import mattini.__main__ as cli
-from mattini import download, lock
+from mattini import download, lock, surroundings
 from mattini.world import REPO
 
 FOLDER = "swissimage_far/2023"
@@ -52,6 +54,14 @@ COMMITTED_CONFIG = REPO / "config" / "surroundings.json"
 LOCK_COMMAND = "python -m mattini lock farphoto"
 STEP = "then design recomputes the expected values in config/surroundings.json (docs/SPEC.md §8)"
 PRESENT = [cell for cell in cells_of(1000) if cell not in ABSENT]
+
+
+def _use_config(monkeypatch, path):
+    """The command line's surroundings config: `surroundings.load_surroundings_config`, its one
+    reader (brief v0.6.0-07), replaced on its module by one that reads `path` with the real
+    reader; a refusal is the reader's own, naming `path`."""
+    real = surroundings.load_surroundings_config
+    monkeypatch.setattr(surroundings, "load_surroundings_config", lambda *a, **k: real(path))
 
 
 def _config(tmp_path, **settings):
@@ -70,7 +80,7 @@ def far(monkeypatch, tmp_path):
     monkeypatch.setenv("no_proxy", "127.0.0.1")
     site = LocalFarphoto()
     monkeypatch.setattr(download, "STAC_ITEM", site.stac_item)
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, margin_m=1000))
+    _use_config(monkeypatch, _config(tmp_path, margin_m=1000))
     site.lock_path = tmp_path / "config" / "datasets.lock.json"
     site.lock_path.parent.mkdir()
     site.pinned = json.loads((REPO / "config" / "datasets.lock.json").read_bytes())
@@ -240,7 +250,7 @@ def test_a_lock_that_does_not_fit_is_refused_naming_lock_farphoto(far, capsys, c
 
 
 def test_the_fit_follows_the_config_s_margin(far, capsys, monkeypatch, tmp_path):
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", _config(tmp_path, margin_m=0))
+    _use_config(monkeypatch, _config(tmp_path, margin_m=0))
     code, out, err = _download(far, capsys)
     assert (code, out) == (1, "")
     assert f"`{LOCK_COMMAND}`" in _error(err)
@@ -251,7 +261,7 @@ def test_a_config_the_reader_refuses_ends_download_farphoto_before_any_request(
     far, capsys, monkeypatch, tmp_path
 ):
     path = _config(tmp_path, margin_m="1000")
-    monkeypatch.setattr(download, "SURROUNDINGS_PATH", path)
+    _use_config(monkeypatch, path)
     code, out, err = _download(far, capsys)
     assert (code, out) == (1, "")
     assert err.startswith("mattini: error: ") and str(path) in err and "margin_m" in err, err

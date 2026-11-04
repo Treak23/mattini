@@ -34,10 +34,12 @@ The checks come in this order, each before the next reads anything, and every re
 FarColourError naming what is wrong and the command or the design step that fixes it: the config
 and the area's `colour` (an area without one is refused naming config/surroundings.json), the
 owner's axes, the area and the box on the spacing lattice, the cell, the world (a difference is a
-design change), the box, columns and rows against design's, the lock's fit (swissALTIRegio's, the
-heights' own rule, naming `python -m mattini lock regio`; then swissimage_far's tiles and absent
-cells, exactly the box's 1 km cells, naming `python -m mattini lock farphoto`), the inputs (a
-design change again), both downloads' provenance.json, then the files. A download that has not
+design change), the box, columns and rows against design's, the lock's fit (`lock.fit_problem`
+with the config the step was given: swissALTIRegio's tiles, the heights' own rule, naming `python
+-m mattini lock regio`; then swissimage_far's tiles and absent cells, exactly the box's 1 km
+cells, naming `python -m mattini lock farphoto`; then `lock.shape_problem` once; this module holds
+no copy of either rule), the inputs (a design change again), both downloads' provenance.json,
+then the files. A download that has not
 completed, or is not the locked one by its provenance.json, is refused naming its `download`
 command before any progress line. The files are then read, the far tiles first and
 swissALTIRegio's after them: each far tile's bytes against the lock's SHA-256, decoded from the
@@ -69,13 +71,11 @@ from rasterio.errors import RasterioError
 from rasterio.io import MemoryFile
 
 from mattini import surroundings
-from mattini.download import FARPHOTO, PROVENANCE, farphoto_cells
-from mattini.lock import LockError, entries_sha256
+from mattini.download import FARPHOTO, PROVENANCE, DownloadError
+from mattini.lock import LockError, entries_sha256, fit_problem, shape_problem
 from mattini.photo import KEEP_IMPORT, encode_jpeg, jpeg_encoder
 from mattini.surroundings import (
     DATASETS_CONFIG_NAME,
-    SAFE_NAME,
-    SHA256_HEX,
     SURROUNDINGS_CONFIG_NAME,
     Grid,
     SurroundingsError,
@@ -83,11 +83,9 @@ from mattini.surroundings import (
     expected_problem,
     read_lock,
     regio_config,
-    regio_fit_problem,
     regio_provenance_tiles,
     regio_tile_bytes,
     regio_tile_samples,
-    regio_tiles_needed,
     surroundings_grid,
 )
 from mattini.terrain import OWNER_AXES, configured_area, world_refusal
@@ -137,7 +135,7 @@ class _Plan:
     rows: int
     regio: dict  # the datasets config's swissaltiregio
     far: dict  # the datasets config's swissimage_far
-    regio_tiles: list[str]  # the tiles the heights' rule needs, in the lock's order
+    regio_tiles: list[str]  # the lock's swissaltiregio tiles (the fit showed them the box's)
     far_tiles: list[str]  # the lock's swissimage_far tiles, in its order
 
 
@@ -401,14 +399,17 @@ def _checked(
                 f"recomputes the expected values (docs/SPEC.md §8)"
             )
 
-    problem = regio_fit_problem(lock, regio, grid)
-    if problem:
-        raise FarColourError(problem)
-    cells = farphoto_cells(world, area, margin_m=settings["margin_m"])
-    problem = _far_fit_problem(lock, far, cells, area)
-    if problem:
-        raise FarColourError(problem)
     entries = (REGIO, DATASET)
+    try:
+        for name in entries:
+            problem = fit_problem(lock, datasets, world, area, name, surroundings=config)
+            if problem:
+                raise FarColourError(problem)
+    except DownloadError as exc:  # a datasets config fit_problem cannot read
+        raise FarColourError(str(exc)) from exc
+    problem = shape_problem(lock)
+    if problem:
+        raise FarColourError(problem)
     try:
         current = entries_sha256(lock, entries)
     except LockError as exc:  # the fits found both entries: not reached
@@ -432,7 +433,7 @@ def _checked(
         rows=rows,
         regio=regio,
         far=far,
-        regio_tiles=regio_tiles_needed(grid),
+        regio_tiles=sorted(lock["datasets"][REGIO]["tiles"]),
         far_tiles=list(far_entry["tiles"]),
     )
 
@@ -454,67 +455,6 @@ def _far_config(datasets: object, fail: Callable[[str], FarColourError]) -> dict
             f"found {resolution!r}"
         )
     return config
-
-
-def _far_fit_problem(lock: object, far: dict, cells: list[str], area: str) -> str | None:
-    """Why the lock's swissimage_far entry does not fit the datasets config and the box, or None.
-
-    It fits when it exists, is for the datasets config's collection, edition and resolution, and
-    its `tiles` and `absent` cells together are exactly `cells`, the 1 km cells that meet the
-    surroundings box (`download.farphoto_cells`): none missing, none beside them and none in both,
-    each tile pinned as exactly a file name and a SHA-256. The text is the whole refusal: it names
-    the area and `python -m mattini lock farphoto`, and no other command.
-    """
-
-    def problem(message: str) -> str:
-        return (
-            f"the lock {message} (area {area!r}); `{LOCK_COMMAND}` writes the lock's {DATASET} "
-            f"entry for the config"
-        )
-
-    datasets = lock.get("datasets") if isinstance(lock, dict) else None
-    entry = datasets.get(DATASET) if isinstance(datasets, dict) else None
-    if not isinstance(entry, dict):
-        return problem(f"has no {DATASET!r} entry")
-    for key in ("collection", "edition", "resolution_m"):
-        if entry.get(key) != far[key]:
-            return problem(
-                f"is for {DATASET} {key} {entry.get(key)!r}, the config pins {far[key]!r}"
-            )
-    pinned = entry.get("tiles")
-    if not isinstance(pinned, dict):
-        return problem("has no tiles")
-    absent = entry.get("absent")
-    if not isinstance(absent, list) or not all(isinstance(cell, str) for cell in absent):
-        return problem("has no absent list of tile ids")
-    both = [cell for cell in absent if cell in pinned]
-    if both:
-        return problem(f"records the cells {_some(both)} both as pinned tiles and as absent")
-    if len(set(absent)) != len(absent):
-        return problem("lists an absent cell twice")
-    missing = [cell for cell in cells if cell not in pinned and cell not in absent]
-    if missing:
-        return problem(
-            f"neither pins a checksum for nor records as absent the tiles {_some(missing)} of the box"
-        )
-    wanted = set(cells)
-    extra = sorted(cell for cell in [*pinned, *absent] if cell not in wanted)
-    if extra:
-        return problem(f"holds the tiles {_some(extra)}, which the box does not need")
-    for cell in pinned:
-        pin = pinned[cell]
-        if not (
-            isinstance(pin, dict)
-            and set(pin) == {"file", "sha256"}
-            and isinstance(pin["file"], str)
-            and SAFE_NAME.fullmatch(pin["file"])
-            and isinstance(pin["sha256"], str)
-            and SHA256_HEX.fullmatch(pin["sha256"])
-        ):
-            return problem(
-                f"pins the tile {cell} as {pin!r}, not exactly a file name and a SHA-256"
-            )
-    return None
 
 
 def _some(parts: list[str], limit: int = 6) -> str:
