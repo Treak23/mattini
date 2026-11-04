@@ -61,7 +61,9 @@ The second fixer round (the prover's findings on the pinned gates; decision 14 a
   reads leaves cells unread): the committed lock is replayed through the real code for all 1806
   cells with the real item URL form (`download.STAC_ITEM` not patched), and what the two live
   fetchers send (`Accept`, `User-Agent`, a timeout; HEAD's two headers) is held without a network.
-  The provenance's attribution is the config's.
+- *The records follow the config*: with another collection, edition, resolution and credit in
+  the datasets config, the lock's entry and provenance.json carry those, not the committed
+  values; and the refusals of a new and of a vanished item name the file and the checksum.
 
 Run as the owner runs the commands, against the local stand-in (local_farphoto.py, real urllib,
 the `margin_m` 1000 box: 20 cells, 17 with an item), except the runner's own tests, which call
@@ -611,21 +613,59 @@ def test_download_farphoto_names_an_unusable_resolution_before_anything_else(far
     assert far.requests == [] and not far.out.exists()
 
 
-def test_the_provenance_carries_the_config_s_attribution(far):
-    credit = "© swisstopo (a changed credit)"
+def test_the_entry_and_the_provenance_follow_the_datasets_config(tmp_path):
+    """Another collection, edition, resolution and credit than the committed config's: the lock's
+    entry and provenance.json carry them, not the committed values (nothing is hard-coded)."""
     datasets = copy.deepcopy(load_datasets())
-    datasets[download.FARPHOTO]["attribution"] = credit
-    download.download_farphoto(
-        load_world(),
-        datasets,
-        far.out,
-        download.urllib_fetch_json,
-        download.urllib_fetch_file,
-        lock=far.pinned,
-        area="village",
+    datasets[download.FARPHOTO].update(
+        collection="ch.example.far", edition="2031", resolution_m=5, attribution="© example"
     )
-    written = (far.out / download.FARPHOTO / "2023" / download.PROVENANCE).read_text("utf-8")
-    assert json.loads(written)["attribution"] == credit
+    world, cells = load_world(), download.area_farphoto_cells(load_world(), "village")
+    published = cells[100:103]
+    names = {cell: f"swissimage-dop10_2031_{cell}_5_2056.tif" for cell in published}
+    bodies = {names[cell]: f"far bytes of {cell}\n".encode() * 3 for cell in published}
+    prefix = "https://data.geo.admin.ch/api/stac/v1/collections/ch.example.far/items/"
+
+    def fetch_json(url):
+        cell = url.removeprefix(prefix).removeprefix("swissimage-dop10_2031_")
+        if cell not in cells:
+            raise AssertionError(f"asked for {url}")
+        if cell not in published:
+            raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+        return {
+            "id": f"swissimage-dop10_2031_{cell}",
+            "properties": {"datetime": "2031-01-01T00:00:00Z"},
+            "assets": {
+                names[cell]: {
+                    "href": f"https://example.invalid/{names[cell]}",
+                    "file:checksum": "1220" + sha256(bodies[names[cell]]).upper(),
+                }
+            },
+        }
+
+    def fetch_file(url, dest):
+        dest.write_bytes(bodies[url.rsplit("/", 1)[1]])
+
+    entry = lock.farphoto_entry(world, datasets, fetch_json, area="village")
+    assert entry == {
+        "absent": sorted(set(cells) - set(published)),
+        "collection": "ch.example.far",
+        "edition": "2031",
+        "resolution_m": 5,
+        "tiles": {
+            cell: {"file": names[cell], "sha256": sha256(bodies[names[cell]])} for cell in published
+        },
+    }
+    whole = lock.with_entry(COMMITTED, download.FARPHOTO, entry)
+    download.download_farphoto(
+        world, datasets, tmp_path, fetch_json, fetch_file, lock=whole, area="village"
+    )
+    written = (tmp_path / download.FARPHOTO / "2031" / download.PROVENANCE).read_text("utf-8")
+    provenance = json.loads(written)
+    assert provenance["attribution"] == "© example"
+    assert provenance["collection"] == "ch.example.far" and provenance["edition"] == "2031"
+    assert provenance["resolution_m"] == 5 and provenance["absent"] == entry["absent"]
+    assert [tile["tile"] for tile in provenance["tiles"]] == published
 
 
 # --- the live check's offline twin ----------------------------------------------------------
