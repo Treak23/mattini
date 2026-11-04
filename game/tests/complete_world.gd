@@ -31,6 +31,21 @@ extends RefCounted
 ## - The capture shadows (brief v0.5.0-03, M4-06 decision 7): the shared shadows fixture's
 ##   description and PNG (64 x 96 cells at 0.5 m), its box moved to SHADOWS_BOX, its
 ##   world_sha256 this world's.
+## - The far terrain (brief v0.6.0-09, from M4-10 decision 9): the shared surroundings fixture's
+##   block, its 6 x 7 heights at 3000 m and its 15 x 18 colour at 1000 m (synthetic, and labelled
+##   so in its two attributions), its lv95_box moved to SURROUNDINGS_BOX, its cut_box
+##   SURROUNDINGS_CUT, its world_sha256 this world's. The fixture's six NaN vertices (columns 2
+##   and 3, rows 2 to 4) then stand around this world's area, so the squares the far terrain does
+##   not draw (E 2'596'500 - 2'605'500, N 1'194'000 - 1'206'000) hold the whole terrain: its
+##   nearest drawn square is 4.47 km from the area, and its highest vertex (1870.27 m local,
+##   4.5 km west) stands 15.6 degrees above the terrain's middle, below every sun the render
+##   checks use. The heights are the fixture's local heights, test data for another world, not
+##   this one's ground.
+##   SURROUNDINGS_CUT is that undrawn square, not this world's area: the reader refuses heights
+##   whose NaN are not exactly the vertices strictly inside cut_box (design §3, the release
+##   session's ruling of 2026-11-02), and an area of 20 m x 11.5 m between vertices 3000 m apart
+##   holds no vertex, so with the area as the cut the six NaN would be refused. The pipeline cuts
+##   the area box (SPEC §13 row 59); this hand-made world's cut is test data, not the rule.
 ## The rectangles differ on purpose: the photo's is not the terrain grid's, the surfaces' is
 ## neither, and the capture shadows' is none of the three. The moved boxes, the box, its roof
 ## colour and the trees' places and sizes are test data, invented here, not swisstopo's (Hard
@@ -41,6 +56,7 @@ const PHOTO_FIXTURE := "tests/shared/photo_fixture/generated/manifest.json"
 const SURFACES_FIXTURE := "tests/shared/surfaces_fixture/generated/manifest.json"
 const TREES_FIXTURE := "tests/shared/trees_fixture/generated/manifest.json"
 const SHADOWS_FIXTURE := "tests/shared/shadows_fixture/generated/shadows/fixture.json"
+const SURROUNDINGS_FIXTURE := "tests/shared/surroundings_fixture/generated/manifest.json"
 const TILE := "2601-1199"
 const CHUNK_FILE := "buildings/2601-1199.bin"
 ## The box's floor, local: at the fixture terrain's centre, 603 m (LN02 1603 m). The
@@ -65,6 +81,16 @@ const SURFACES_BOX := {
 ## photo, its south edge 0.5 m outside; nothing else of the mask lies under the photo.
 const SHADOWS_BOX := {
 	"e_max": 2601051.0, "e_min": 2601019.0, "n_max": 1200004.5, "n_min": 1199956.5
+}
+## The far terrain's box in LV95: the shared fixture's 15 km x 18 km (6 x 7 vertices at 3000 m),
+## moved so that this world's area lies in the middle of the fixture's undrawn squares.
+const SURROUNDINGS_BOX := {
+	"e_max": 2608500.0, "e_min": 2593500.0, "n_max": 1209000.0, "n_min": 1191000.0
+}
+## The far terrain's cut in LV95: the undrawn square around this world's area, whose strictly
+## inner vertices are the fixture's six NaN (columns 2 and 3, rows 2 to 4 of SURROUNDINGS_BOX).
+const SURROUNDINGS_CUT := {
+	"e_max": 2605500.0, "e_min": 2596500.0, "n_max": 1206000.0, "n_min": 1194000.0
 }
 ## The trees, test data: [column, row, height_m, crown_radius_m] of the terrain grid's pixel
 ## (the cell between vertices column and column + 1, row and row + 1) each one stands on. No
@@ -98,11 +124,11 @@ static func terrain_fixture_path() -> String:
 
 ## Writes the complete world into [param dir] (created if missing): manifest.json, the
 ## terrain's heights (the fixture's, or [param heights] when given), the box's chunk, the
-## photo, the surfaces, the trees' chunk (standing on those heights), the sky block (SKY) and the
-## capture shadows' mask, with [param change] (a Callable taking the manifest Dictionary)
-## applied last. Returns the manifest's path.
+## photo, the surfaces, the trees' chunk (standing on those heights), the sky block (SKY), the
+## capture shadows' mask and the far terrain, with [param change] (a Callable taking the manifest
+## Dictionary) applied last. Returns the manifest's path.
 static func write(dir: String, change := Callable(), heights := PackedByteArray()) -> String:
-	for folder in ["terrain", "buildings", "photo", "surfaces", "trees", "shadows"]:
+	for folder in ["terrain", "buildings", "photo", "surfaces", "trees", "shadows", "surroundings"]:
 		DirAccess.make_dir_recursive_absolute(dir.path_join(folder))
 	var source := terrain_fixture_path()
 	var manifest := _parse(source)
@@ -143,6 +169,7 @@ static func write(dir: String, change := Callable(), heights := PackedByteArray(
 	manifest["photo"] = _moved(PHOTO_FIXTURE, "photo", dir, PHOTO_BOX, world_sha256)
 	manifest["surfaces"] = _moved(SURFACES_FIXTURE, "surfaces", dir, SURFACES_BOX, world_sha256)
 	manifest["shadows"] = _moved_description(SHADOWS_FIXTURE, dir, SHADOWS_BOX, world_sha256)
+	manifest["surroundings"] = _surroundings(dir, manifest, world_sha256)
 	manifest["trees"] = _trees(dir, manifest, WorldConfig.from_manifest(source), heights)
 	manifest["roofs"] = {
 		"area": "fixture",
@@ -213,6 +240,23 @@ static func _moved_description(
 	var folder := source.get_base_dir().get_base_dir()
 	_store(dir.path_join(file), FileAccess.get_file_as_bytes(folder.path_join(file)))
 	block["lv95_box"] = box.duplicate()
+	block["world_sha256"] = world_sha256
+	return block
+
+
+## The shared surroundings fixture's block, its heights and its colour copied into [param dir],
+## its lv95_box SURROUNDINGS_BOX, its cut_box SURROUNDINGS_CUT and its world_sha256
+## [param world_sha256].
+static func _surroundings(dir: String, _manifest: Dictionary, world_sha256: String) -> Dictionary:
+	var source := repo_file(SURROUNDINGS_FIXTURE)
+	var block: Dictionary = _parse(source)["surroundings"]
+	for key in ["file", "colour_file"]:
+		var file: String = block[key]
+		_store(
+			dir.path_join(file), FileAccess.get_file_as_bytes(source.get_base_dir().path_join(file))
+		)
+	block["lv95_box"] = SURROUNDINGS_BOX.duplicate()
+	block["cut_box"] = SURROUNDINGS_CUT.duplicate()
 	block["world_sha256"] = world_sha256
 	return block
 

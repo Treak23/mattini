@@ -53,6 +53,23 @@ extends GutTest
 ## ("2021-2022"; of three, "2019-2022"), or the one edition alone, as the trees' line writes the
 ## editions of their tiles: with the same attribution it is the trees' line, listed once.
 ##
+## Since brief v0.6.0-09 (M4-10 decisions 7 and 8, re-scoped by design §2 and §3; the startup
+## lines' test, the datasets' list, one new test and this paragraph change): one more startup line
+## follows the shadows' line when SurroundingsGrid accepted the far terrain,
+##   mattini <version>: surroundings <area> loaded, <columns> x <rows> vertices at <spacing> m,
+##   colour <colour columns> x <colour rows> at <colour cell> m
+## (one line; the complete world's: 6 x 7 vertices at 3000 m, colour 15 x 18 at 1000 m; the real
+## village's: 841 x 861 vertices at 50 m, colour 4200 x 4300 at 10 m), and the credits' "Data"
+## carries two more lines: the heights', "swissaltiregio <edition>, <attribution>", the block's
+## source.attribution whole (for the real village swissALTIRegio's whole source text from
+## config/datasets.json, M4-10 decision 8: read here at run time and set as the block's), and the
+## colour's under the photo's name, "swissimage <colour edition>, <colour attribution>" (design
+## §2: SWISSIMAGE, the photo's dataset): with the photo's edition and attribution it is the
+## photo's line, listed once; with another edition its own line. The complete world's two
+## attributions are the shared fixture's, which say they are synthetic, so both are lines of
+## their own there. The name "swissimage_far" (the dataset's key in config/datasets.json) is
+## never shown.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); what the shaders do with
 ## the textures; the real village's numbers (tools/export.sh step 6 does, on the exported
 ## build); that the catalogue's licence allows a sale (SPEC §13 row 51: it does not without ESA's
@@ -87,6 +104,13 @@ const SKY_NOTES := [
 	),
 ]
 const STARS_TABLE := "res://sky/stars.csv"
+## The complete world's far terrain, credited: the shared surroundings fixture's attributions.
+const FAR_HEIGHTS_LINE := (
+	"swissaltiregio 2026-06, © swisstopo" + " (synthetic test heights, not swissALTIRegio data)"
+)
+const FAR_COLOUR_LINE := (
+	"swissimage 2023, © swisstopo" + " (synthetic test colours, not SWISSIMAGE data)"
+)
 ## The star table's first line without its "# " (brief v0.4.0-06 decision 3).
 const STARS_NOTE := (
 	"Stars derived from the Hipparcos Catalogue (ESA 1997, ESA SP-1200): stars to V 6.0,"
@@ -243,6 +267,13 @@ func test_the_startup_lines_name_every_block_in_order() -> void:
 		"mattini %s: trees fixture loaded, %d trees in %d chunks" % [version, count, trees.size()],
 		"mattini %s: roofs fixture loaded, 1 of 1 buildings coloured" % version,
 		"mattini %s: shadows fixture loaded, 64 x 96 cells at 0.5 m" % version,
+		(
+			(
+				"mattini %s: surroundings fixture loaded, 6 x 7 vertices at 3000 m, colour 15 x 18 at"
+				+ " 1000 m"
+			)
+			% version
+		),
 	]
 	assert_gt(count, trees.size(), "the fixture's tree count differs from its chunk count")
 	# The same world with the box's roof uncoloured: "0 of 1".
@@ -265,7 +296,7 @@ func test_the_startup_lines_name_every_block_in_order() -> void:
 	for line in complete_lines:
 		if line.begins_with("mattini %s: " % version):
 			startup.append(line)
-	assert_eq(startup, PackedStringArray(expected), "the seven lines, exactly, in this order")
+	assert_eq(startup, PackedStringArray(expected), "the eight lines, exactly, in this order")
 	var roofs_line := "mattini %s: roofs fixture loaded, 0 of 1 buildings coloured" % version
 	assert_has(plain_lines, roofs_line, "a building without a colour is not counted")
 
@@ -279,8 +310,10 @@ func test_the_credits_name_every_dataset_texture_and_placeholder() -> void:
 			[
 				"Data",
 				"swissalti3d 2024, © swisstopo",
+				FAR_HEIGHTS_LINE,
 				"swissbuildings3d 2020, © swisstopo",
 				"swissimage 2023, © swisstopo",
+				FAR_COLOUR_LINE,
 				"swisssurface3d 2021-2022, © swisstopo",
 				"swisstlm3d 2026-02, © swisstopo",
 				"",
@@ -363,3 +396,39 @@ func test_the_mask_is_credited_with_its_editions_and_listed_once() -> void:
 	credits = _main_with(path).get_node("UI/PauseMenu/Credits").text
 	mask_line = "swisssurface3d 2019-2022, © swisstopo (the mask's test attribution)"
 	assert_string_contains(credits, "\n" + mask_line + "\n", "three editions, first to last")
+
+
+func test_the_far_terrain_is_credited_its_heights_whole_and_its_colour_as_the_photo_s() -> void:
+	# The complete world: the fixture's two attributions, each a line of its own, once.
+	var credits: String = _main_with(_complete).get_node("UI/PauseMenu/Credits").text
+	assert_eq(credits.count("\n" + FAR_HEIGHTS_LINE + "\n"), 1, "the far heights, once")
+	assert_eq(credits.count("\n" + FAR_COLOUR_LINE + "\n"), 1, "the far colour, once")
+	assert_false(credits.contains("swissimage_far"), "the dataset's key is never shown")
+	# The real village's attribution: swissALTIRegio's whole source text, on one line.
+	var datasets := _parse(CompleteWorld.repo_file("config/datasets.json"))
+	var text: String = datasets["datasets"]["swissaltiregio"]["attribution"]
+	assert_gt(text.length(), 200, "config/datasets.json holds swissALTIRegio's source text")
+	var whole := func(m: Dictionary) -> void: m["surroundings"]["source"]["attribution"] = text
+	_cases += 1
+	var path := CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), whole)
+	credits = _main_with(path).get_node("UI/PauseMenu/Credits").text
+	var heights_line := "swissaltiregio 2026-06, " + text
+	assert_string_contains(credits, "\n" + heights_line + "\n", "the source text, whole")
+	# The colour with the photo's edition and attribution: the photo's line, listed once.
+	var photo_s := func(m: Dictionary) -> void:
+		m["surroundings"]["colour_source"]["attribution"] = "© swisstopo"
+	_cases += 1
+	path = CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), photo_s)
+	credits = _main_with(path).get_node("UI/PauseMenu/Credits").text
+	var photo_line := "\nswissimage 2023, © swisstopo\n"
+	assert_eq(credits.count(photo_line), 1, "the photo's and the far colour's line, once")
+	assert_false(credits.contains(FAR_COLOUR_LINE), "and no line of its own")
+	# Another edition: a line of its own, beside the photo's.
+	var older := func(m: Dictionary) -> void:
+		m["surroundings"]["colour_source"]["attribution"] = "© swisstopo"
+		m["surroundings"]["colour_source"]["edition"] = "2020"
+	_cases += 1
+	path = CompleteWorld.write(SCRATCH_DIR.path_join("case_%d" % _cases), older)
+	credits = _main_with(path).get_node("UI/PauseMenu/Credits").text
+	assert_string_contains(credits, "\nswissimage 2020, © swisstopo\n", "its own edition")
+	assert_eq(credits.count(photo_line), 1, "and the photo's line")

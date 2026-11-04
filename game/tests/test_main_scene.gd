@@ -17,6 +17,12 @@ extends GutTest
 ## line, its message and this paragraph change): a refused manifest names eight, the photo's
 ## softened shadows after the roof colours and before the sun's and the moon's course.
 ##
+## Since brief v0.6.0-09 (M4-10 decision 10, re-scoped by design §3; the camera's far, the
+## not-JSON case's first line, its message and this paragraph change): the camera's far plane is
+## 40'000 m (design §3: every corner of the far terrain's window from anywhere in the area box;
+## test_v060_09_far_terrain.gd measures why), and a refused manifest names nine, the far terrain
+## after the photo's softened shadows and before the sun's and the moon's course.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); how the controls feel.
 
 const CompleteWorld := preload("res://tests/complete_world.gd")
@@ -127,7 +133,7 @@ func test_the_camera_is_current_and_sees_far() -> void:
 	var camera: FreeFlyCamera = main.get_node("Camera")
 	assert_true(camera.current, "the free-fly camera is the viewport's camera")
 	assert_almost_eq(camera.near, 0.1, 0.00001)
-	assert_almost_eq(camera.far, 20000.0, 0.001)
+	assert_almost_eq(camera.far, 40000.0, 0.001)
 	assert_almost_eq(camera.fov, 70.0, 0.00001)
 
 
@@ -202,10 +208,10 @@ func test_a_manifest_that_is_not_json_shows_its_refusal_and_the_manifest_command
 			(
 				"mattini cannot show the terrain, the buildings, the aerial photo, the surfaces"
 				+ " (roads, paths, water and rock), the trees, the roof colours, the photo's"
-				+ " softened shadows and the sun's and the moon's course.\n"
+				+ " softened shadows, the far terrain and the sun's and the moon's course.\n"
 			)
 		),
-		"a refused manifest shows nothing: all eight are named (M2-05, M3-14, v0.4.0-08, v0.5.0-05)"
+		"a refused manifest shows nothing: all nine are named (M2-05 to v0.6.0-09)"
 	)
 	assert_null(main.get_node_or_null("Terrain"))
 	assert_null(main.get_node_or_null("Buildings"))

@@ -1,9 +1,11 @@
 extends Node3D
-## The main scene (docs/SPEC.md §10, M1's to M3's game; briefs M1-05, M2-05, M3-14, v0.3.1-05).
+## The main scene (docs/SPEC.md §10, M1's to M3's game; briefs M1-05, M2-05, M3-14, v0.3.1-05,
+## v0.6.0-09).
 ## Reads the manifest at manifest_path and builds, in this order, its terrain (TerrainLoader,
 ## node "Terrain", the aerial photo on it with the surfaces drawn on the photo), its trees
-## (TreeLoader, "Trees") and its buildings (BuildingLoader, "Buildings", each roof in its
-## measured colour), beside each other, under a sun, a moon and a sky that follow the game's clock
+## (TreeLoader, "Trees"), its buildings (BuildingLoader, "Buildings", each roof in its
+## measured colour) and the far terrain around the area (SurroundingsLoader, "Surroundings",
+## brief v0.6.0-09), beside each other, under a sun, a moon and a sky that follow the game's clock
 ## (the sky rig, below). It starts the
 ## free-fly camera START_ABOVE_M above the ground at the grid's centre, facing
 ## START_BEARING_DEG, pitched START_PITCH_DOWN_DEG down. The pause action opens UI/PauseMenu:
@@ -11,7 +13,7 @@ extends Node3D
 ## Quit. While it is open the frame rate is capped at PAUSED_MAX_FPS (15); closing it, or the
 ## scene leaving the tree, gives back the project's cap (application/run/max_fps). A missing,
 ## refused or stale manifest or block (the terrain, buildings, photo, surfaces, trees, roofs, the
-## capture mask or the sky)
+## capture mask, the far terrain or the sky)
 ## opens UI/ErrorPanel: its first line names what cannot be shown, then each refusal with the
 ## commands that fix it, or in an exported build the release folder (Hard Rule 2). In an
 ## exported build (ReleaseBuild.is_exported()) the data packs missing beside the executable
@@ -23,21 +25,26 @@ extends Node3D
 ## classes, without the trees no "Trees", without the roof colours M2's roofs, without the capture
 ## mask the photo unlifted (the mask is read after the roof colours and handed to the terrain as
 ## TerrainLoader.create's fifth argument, brief v0.5.0-05; without a photo or a terrain it is
-## still read, so its refusal is its own entry); the terrain
+## still read, so its refusal is its own entry), without the far terrain no "Surroundings" (it is
+## read after the mask, whatever else was read or refused, so its refusal is its own entry
+## too); the terrain
 ## without its buildings, and the buildings without their terrain, the camera then starting
 ## START_ABOVE_M above the highest of their vertices, over the centre of their bounds, with
 ## the same bearing and pitch (brief M2-08, M2 R1 G-02). Without the buildings the roof
 ## colours are not read: one cause, one entry. With nothing, the camera starts at the scene's
 ## origin. It flies either way. Each refusal is logged once, by the reader that refuses it
 ## (WorldConfig, TerrainGrid, BuildingChunks, PhotoGrid, SurfaceGrid, TreeChunks,
-## BuildingRoofs, CaptureShadowGrid, SkySite); the panel shows what they logged. Every direction
+## BuildingRoofs, CaptureShadowGrid, SurroundingsGrid, SkySite); the panel shows what they logged.
+## Every direction
 ## (the start view, the sun and the moon) is measured through WorldConfig, never assumed, and the
-## buildings and the trees stand
+## buildings, the trees and the far terrain stand
 ## where the pipeline placed them for the world config the manifest pins (Hard Rule 4): the
-## Buildings and Trees nodes and their meshes sit at the scene's origin, unturned and
-## unscaled (test_scene_placement.gd). Once everything is built, one startup line per block
+## Buildings, Trees and Surroundings nodes and their meshes sit at the scene's origin, unturned and
+## unscaled (test_scene_placement.gd, test_v060_09_far_terrain.gd); nothing here sets their
+## transform. The camera's far plane (FreeFlyCamera) reaches every corner of the far terrain.
+## Once everything is built, one startup line per block
 ## its reader accepted is printed, in the order terrain, buildings, photo, surfaces, trees,
-## roofs, shadows (tools/export.sh checks them in an exported build).
+## roofs, shadows, surroundings (tools/export.sh checks them in an exported build).
 ##
 ## The sky (brief v0.4.0-08, from M4-10): the clock, time_unix, starts at SkyClock.START_UNIX (the
 ## photo's moment) and runs at 1x (SPEEDS), standing still while the pause screen is
@@ -100,6 +107,11 @@ const SURFACES_FIX := [RUN + "download tlm", RUN + "surfaces"]
 const TREES_FIX := [RUN + "download surface", RUN + "download tlm", RUN + "trees"]
 const ROOFS_FIX := [RUN + "download photo", RUN + "roofs"]
 const SHADOWS_FIX := [RUN + "download surface", RUN + "shadows"]
+## Every command that builds the far terrain's block, in the order its reader names them (brief
+## v0.6.0-08 decision 3): each step writes the manifest itself, so there is no `manifest` command.
+const SURROUNDINGS_FIX := [
+	RUN + "download regio", RUN + "download farphoto", RUN + "surroundings", RUN + "farcolour"
+]
 const SKY_FIX := [RUN + "sky"]
 ## What the error panel's first line names when it cannot be shown.
 const TERRAIN_WHAT := "the terrain"
@@ -109,7 +121,12 @@ const SURFACES_WHAT := "the surfaces (roads, paths, water and rock)"
 const TREES_WHAT := "the trees"
 const ROOFS_WHAT := "the roof colours"
 const SHADOWS_WHAT := "the photo's softened shadows"
+const SURROUNDINGS_WHAT := "the far terrain"
 const SKY_WHAT := "the sun's and the moon's course"
+## The dataset name the far colour is credited under: SWISSIMAGE's, the photo's (design §2), never
+## the dataset's key in config/datasets.json (swissimage_far). With the photo's edition and
+## attribution its line is the photo's, listed once.
+const FAR_COLOUR_CREDIT := "swissimage"
 ## In an exported build a player has no pipeline: every fix is the release folder.
 const EXPORTED_FIX := (
 	"keep mattini.pck and the data packs mattini-*.pck beside the executable:"
@@ -335,11 +352,11 @@ static func _project_max_fps() -> int:
 
 
 ## In an exported build it first asks which data packs are missing. Reads the manifest and every
-## block, then builds the terrain, the trees and the buildings, and prints one startup line per
-## block read. A refused manifest shows nothing; a refused block leaves the others shown (see
-## the file's comment). Every refusal, and in an exported build every missing data pack, opens
-## the error panel. Returns the credits' line of each dataset loaded, one per distinct line,
-## sorted.
+## block, then builds the terrain, the trees, the buildings and the far terrain, and prints one
+## startup line per block read. A refused manifest shows nothing; a refused block leaves the
+## others shown (see the file's comment). Every refusal, and in an exported build every missing
+## data pack, opens the error panel. Returns the credits' line of each dataset loaded, one per
+## distinct line, sorted.
 func _load_world() -> PackedStringArray:
 	_missing_packs = PackedStringArray()
 	if ReleaseBuild.is_exported():
@@ -355,6 +372,7 @@ func _load_world() -> PackedStringArray:
 			TREES_WHAT,
 			ROOFS_WHAT,
 			SHADOWS_WHAT,
+			SURROUNDINGS_WHAT,
 			SKY_WHAT
 		]
 		_show_error([[_names(every), read_world[1], MANIFEST_FIX]])
@@ -394,6 +412,12 @@ func _load_world() -> PackedStringArray:
 	var shadows: CaptureShadowGrid = read_shadows[0]
 	if shadows == null:
 		refusals.append([SHADOWS_WHAT, read_shadows[1], SHADOWS_FIX])
+	# The far terrain is read whatever else was read or refused, like the mask: its refusal is its
+	# own entry, and a refused terrain, photo or buildings hide no broken far terrain.
+	var read_far := _caught(SurroundingsGrid.from_manifest.bind(manifest_path, world))
+	var far: SurroundingsGrid = read_far[0]
+	if far == null:
+		refusals.append([SURROUNDINGS_WHAT, read_far[1], SURROUNDINGS_FIX])
 	var read_sky := _caught(SkySite.from_manifest.bind(manifest_path, world))
 	_site = read_sky[0]
 	if _site == null:
@@ -409,10 +433,12 @@ func _load_world() -> PackedStringArray:
 		var node := _show_buildings(buildings, roofs)
 		if grid == null:
 			_start_view_over(node)
-	_print_startup_lines(grid, buildings, photo, surfaces, trees, roofs, shadows)
+	if far != null:
+		_show_surroundings(far)
+	_print_startup_lines(grid, buildings, photo, surfaces, trees, roofs, shadows, far)
 	if not refusals.is_empty() or not _missing_packs.is_empty():
 		_show_error(refusals)
-	return _credited(grid, buildings, photo, surfaces, trees, roofs, shadows)
+	return _credited(grid, buildings, photo, surfaces, trees, roofs, shadows, far)
 
 
 ## Calls [param read] while an ErrorCatcher listens; returns [its result, the errors logged
@@ -453,10 +479,19 @@ func _show_buildings(chunks: BuildingChunks, roofs: BuildingRoofs) -> Node3D:
 	return node
 
 
+## Builds the far terrain around the area, on this thread. The node "Surroundings" stays at the
+## scene's origin, unturned and unscaled: the loader places every vertex through the WorldConfig
+## (the grid's x_min and z_min), so nothing here sets a transform or subtracts an origin (Hard
+## Rule 4). The camera's start does not depend on it.
+func _show_surroundings(far: SurroundingsGrid) -> void:
+	move_child(SurroundingsLoader.create(far, self), _ui.get_index())
+
+
 ## Prints one startup line per block that was read, together, in the order terrain,
-## buildings, photo, surfaces, trees, roofs, shadows: an exported build is checked by them, headless
-## (tools/export.sh step 6; briefs M1-06, M2-05, M3-14). The numbers are written as _number
-## writes them.
+## buildings, photo, surfaces, trees, roofs, shadows, surroundings: an exported build is checked by
+## them, headless (tools/export.sh step 6; briefs M1-06, M2-05, M3-14). The numbers are written as
+## _number writes them. The far terrain's line gives its heights' grid and its colour's:
+## "surroundings village loaded, 841 x 861 vertices at 50 m, colour 4200 x 4300 at 10 m".
 func _print_startup_lines(
 	grid: TerrainGrid,
 	buildings: BuildingChunks,
@@ -464,7 +499,8 @@ func _print_startup_lines(
 	surfaces: SurfaceGrid,
 	trees: TreeChunks,
 	roofs: BuildingRoofs,
-	shadows: CaptureShadowGrid
+	shadows: CaptureShadowGrid,
+	far: SurroundingsGrid
 ) -> void:
 	var v := _version()
 	if grid != null:
@@ -503,11 +539,21 @@ func _print_startup_lines(
 	if shadows != null:
 		var text := "mattini %s: shadows %s loaded, %d x %d cells at %s m"
 		print(text % [v, shadows.area, shadows.columns, shadows.rows, _number(shadows.cell_m)])
+	if far != null:
+		var text := (
+			"mattini %s: surroundings %s loaded, %d x %d vertices at %s m,"
+			+ " colour %d x %d at %s m"
+		)
+		var heights := [far.area, far.columns, far.rows, _number(far.spacing_m)]
+		var colour := [far.colour_columns, far.colour_rows, _number(far.colour_cell_m)]
+		print(text % ([v] + heights + colour))
 
 
 ## The credits' line of each dataset a block that was read comes from, once each, sorted:
 ## the photo and the roof colours share one, and the capture mask's is the trees' when their
-## attribution agrees.
+## attribution agrees. The far terrain adds its heights' line, its source attribution whole, and
+## its colour's under the photo's dataset name (FAR_COLOUR_CREDIT): with the photo's edition and
+## attribution that is the photo's line, listed once.
 func _credited(
 	grid: TerrainGrid,
 	buildings: BuildingChunks,
@@ -515,7 +561,8 @@ func _credited(
 	surfaces: SurfaceGrid,
 	trees: TreeChunks,
 	roofs: BuildingRoofs,
-	shadows: CaptureShadowGrid
+	shadows: CaptureShadowGrid,
+	far: SurroundingsGrid
 ) -> PackedStringArray:
 	var lines := {}
 	if grid != null:
@@ -531,6 +578,10 @@ func _credited(
 		if editions.size() > 1 and editions[editions.size() - 1] != edition:
 			edition += "-" + editions[editions.size() - 1]
 		lines[_dataset_line(shadows.dataset, edition, shadows.attribution)] = true
+	if far != null:
+		lines[_dataset_line(far.dataset, far.edition, far.attribution)] = true
+		var colour := _dataset_line(FAR_COLOUR_CREDIT, far.colour_edition, far.colour_attribution)
+		lines[colour] = true
 	var sorted := PackedStringArray(lines.keys())
 	sorted.sort()
 	return sorted

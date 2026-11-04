@@ -40,6 +40,18 @@ extends GutTest
 ## SHADOWS_BOX, not the photo's. Without it the photo stays, unlifted (TerrainLoader's one texel
 ## of 0), and so does everything else. A refused manifest names all eight.
 ##
+## Since brief v0.6.0-09 (M4-10 decisions 4 and 10, re-scoped by design §3; the refused
+## manifest's test, five new tests (the fifth the release session's ruling of 2026-11-02), one
+## constant and this paragraph change): after the capture
+## mask the main scene reads SurroundingsGrid through the same catcher as the others, whatever
+## else was read or refused (one cause, one entry), and builds it with SurroundingsLoader
+## ("Surroundings"). Its name on the panel's first line, after the photo's softened shadows and
+## before the sun's and the moon's course (its entry between theirs when all three are refused):
+## "the far terrain"; its commands, in this order: download regio, download farphoto,
+## surroundings, farcolour (every command that builds the block, as its reader names them). Without
+## it there is no "Surroundings" and no swissaltiregio credit, and everything else is shown. A
+## refused manifest names all nine.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); that an exported build
 ## reaches the panel (tools/export.sh step 6 starts one with its packs, not without them); the
 ## lift's look (render_lift.gd checks where it lands, under Compatibility).
@@ -56,6 +68,7 @@ const PHOTO_SHADER := "res://shaders/terrain_photo.gdshader"
 const SHADOWS_RECT := Vector4(1019.0, -4.5, 32.0, 48.0)
 const PHOTO_RECT := Vector4(1017.0, 11.5, 16.0, 8.0)
 const RUN := "uv run --project pipeline python -m mattini "
+const FAR_COMMANDS := ["download regio", "download farphoto", "surroundings", "farcolour"]
 const IN_ORDER := "To fix it, run these in the mattini folder, in this order:"
 const EXPORTED := (
 	"keep mattini.pck and the data packs mattini-*.pck beside the executable:"
@@ -354,7 +367,124 @@ func test_the_mask_s_entry_comes_before_the_sky_s() -> void:
 	assert_push_error_count(2, "each once")
 
 
-func test_a_refused_manifest_names_all_eight() -> void:
+func test_without_the_far_terrain_everything_else_stays() -> void:
+	var path := _write(func(m: Dictionary) -> void: m["surroundings"] = null)
+	var main := _main_with(path)
+	var message := _message(main)
+	_assert_one_refusal(message, "the far terrain", FAR_COMMANDS)
+	assert_string_contains(message, "\nSurroundingsGrid: " + path, "the refusal itself")
+	assert_push_error("SurroundingsGrid: " + path, "SurroundingsGrid logs its refusal")
+	assert_push_error_count(1, "once, and nothing else is refused")
+	assert_null(main.get_node_or_null("Surroundings"), "no far terrain")
+	for node in ["Terrain", "Trees", "Buildings"]:
+		assert_not_null(main.get_node_or_null(node), "%s stays" % node)
+	var credits: String = main.get_node("UI/PauseMenu/Credits").text
+	assert_false(credits.contains("swissaltiregio"), "and no far terrain credited")
+	assert_string_contains(credits, "\nswissalti3d 2024, © swisstopo\n", "the terrain's still")
+
+
+func test_a_damaged_far_colour_is_the_far_terrain_s_entry() -> void:
+	var path := _write(
+		func(m: Dictionary) -> void: m["surroundings"]["colour_sha256"] = "0".repeat(64)
+	)
+	var main := _main_with(path)
+	var message := _message(main)
+	_assert_one_refusal(message, "the far terrain", FAR_COMMANDS)
+	assert_string_contains(message, "python -m mattini farcolour", "the reader names its step")
+	assert_push_error("SurroundingsGrid: " + path, "SurroundingsGrid logs its refusal")
+	assert_push_error_count(1, "once, and nothing else is refused")
+	assert_null(main.get_node_or_null("Surroundings"), "no far terrain")
+	assert_not_null(main.get_node_or_null("Terrain"), "the terrain stays")
+
+
+func test_without_the_terrain_the_far_terrain_is_still_read() -> void:
+	# The far terrain is read whatever else was refused: a refused terrain hides no broken far one.
+	var path := _write(
+		func(m: Dictionary) -> void:
+			m["terrain"] = null
+			m["photo"] = null
+			m["roofs"] = null
+			m["shadows"]["sha256"] = "0".repeat(64)
+			m["surroundings"]["sha256"] = "0".repeat(64)
+	)
+	var main := _main_with(path)
+	var first := (
+		"mattini cannot show the terrain, the aerial photo, the roof colours, the photo's softened"
+		+ " shadows and the far terrain.\n"
+	)
+	var message := _message(main)
+	assert_true(message.begins_with(first), "one entry each, the far terrain's last")
+	var far_fix := IN_ORDER.replace("fix it,", "fix the far terrain,")
+	var commands := "\n".join(FAR_COMMANDS.map(func(c: String) -> String: return "    " + RUN + c))
+	assert_true(message.ends_with("\n%s\n%s" % [far_fix, commands]), "its commands, last")
+	assert_push_error("TerrainGrid: " + path, "TerrainGrid logs its refusal")
+	assert_push_error("PhotoGrid: " + path, "PhotoGrid logs its refusal")
+	assert_push_error("BuildingRoofs: " + path, "BuildingRoofs logs its refusal")
+	assert_push_error("CaptureShadowGrid: " + path, "CaptureShadowGrid logs its refusal")
+	assert_push_error("SurroundingsGrid: " + path, "the far terrain is read without the terrain")
+	assert_push_error_count(5, "each once")
+	assert_null(main.get_node_or_null("Terrain"), "no terrain")
+	assert_null(main.get_node_or_null("Surroundings"), "no far terrain")
+	assert_not_null(main.get_node_or_null("Buildings"), "the buildings stay")
+
+
+func test_without_the_buildings_surfaces_and_trees_the_far_terrain_is_still_read() -> void:
+	# Whatever else was refused: the buildings (so the roofs are not read), the surfaces and the
+	# trees refused hide no broken far terrain (the release session's ruling).
+	var path := _write(
+		func(m: Dictionary) -> void:
+			m["buildings"] = null
+			m["surfaces"] = null
+			m["trees"] = null
+			m["surroundings"]["sha256"] = "0".repeat(64)
+	)
+	var main := _main_with(path)
+	var first := (
+		"mattini cannot show the buildings, the surfaces (roads, paths, water and rock), the trees"
+		+ " and the far terrain.\n"
+	)
+	var message := _message(main)
+	assert_true(message.begins_with(first), "one entry each, the far terrain's last")
+	assert_false(message.contains("roof colours"), "the roofs need the buildings: not read")
+	var far_fix := IN_ORDER.replace("fix it,", "fix the far terrain,")
+	var commands := "\n".join(FAR_COMMANDS.map(func(c: String) -> String: return "    " + RUN + c))
+	assert_true(message.ends_with("\n%s\n%s" % [far_fix, commands]), "its commands, last")
+	assert_push_error("BuildingChunks: " + path, "BuildingChunks logs its refusal")
+	assert_push_error("SurfaceGrid: " + path, "SurfaceGrid logs its refusal")
+	assert_push_error("TreeChunks: " + path, "TreeChunks logs its refusal")
+	assert_push_error("SurroundingsGrid: " + path, "the far terrain is read without the buildings")
+	assert_push_error_count(4, "each once")
+	assert_null(main.get_node_or_null("Surroundings"), "no far terrain")
+	assert_null(main.get_node_or_null("Buildings"), "no buildings")
+	assert_not_null(main.get_node_or_null("Terrain"), "the terrain stays")
+
+
+func test_the_far_terrain_s_entry_comes_after_the_mask_s_and_before_the_sky_s() -> void:
+	var path := _write(
+		func(m: Dictionary) -> void:
+			m["shadows"]["sha256"] = "0".repeat(64)
+			m["surroundings"]["sha256"] = "0".repeat(64)
+			m["sky"]["world_sha256"] = "0".repeat(64)
+	)
+	var main := _main_with(path)
+	var message := _message(main)
+	var first := (
+		"mattini cannot show the photo's softened shadows, the far terrain and the sun's and the"
+		+ " moon's course.\n"
+	)
+	assert_true(message.begins_with(first), "the far terrain named between the mask and the sky")
+	var mask_fix := message.find("To fix the photo's softened shadows,")
+	var far_fix := message.find("To fix the far terrain,")
+	var sky_fix := message.find("To fix the sun's and the moon's course,")
+	assert_true(mask_fix >= 0 and far_fix > mask_fix, "the mask's entry, then the far terrain's")
+	assert_true(sky_fix > far_fix, "then the sky's")
+	assert_push_error("CaptureShadowGrid: " + path, "CaptureShadowGrid logs its refusal")
+	assert_push_error("SurroundingsGrid: " + path, "SurroundingsGrid logs its refusal")
+	assert_push_error("SkySite: " + path, "SkySite logs its refusal")
+	assert_push_error_count(3, "each once")
+
+
+func test_a_refused_manifest_names_all_nine() -> void:
 	DirAccess.make_dir_recursive_absolute(SCRATCH_DIR)
 	var path := SCRATCH_DIR.path_join("not_json.json")
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -363,10 +493,10 @@ func test_a_refused_manifest_names_all_eight() -> void:
 	var main := _main_with(path)
 	var first := (
 		"mattini cannot show the terrain, the buildings, the aerial photo, the surfaces (roads,"
-		+ " paths, water and rock), the trees, the roof colours, the photo's softened shadows and"
-		+ " the sun's and the moon's course.\n"
+		+ " paths, water and rock), the trees, the roof colours, the photo's softened shadows, the"
+		+ " far terrain and the sun's and the moon's course.\n"
 	)
-	assert_true(_message(main).begins_with(first), "nothing is shown: all eight are named")
+	assert_true(_message(main).begins_with(first), "nothing is shown: all nine are named")
 	assert_push_error("not valid JSON", "WorldConfig logs its refusal")
 	assert_push_error_count(1, "once")
 

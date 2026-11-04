@@ -40,6 +40,12 @@ extends GutTest
 ## the shared buildings fixture holds as null ("shadows": null, brief v0.5.0-02), so
 ## CaptureShadowGrid's refusal of it is absorbed as the others' are.
 ##
+## Since brief v0.6.0-09 (M4-10's replacement of this file, re-scoped by design §3; only this
+## paragraph and the reader absorbed change): the main scene also reads the far terrain, which the
+## shared buildings fixture holds as null ("surroundings": null, brief v0.6.0-07), so
+## SurroundingsGrid's refusal of it is absorbed as the others' are. Where the far terrain stands
+## in the scene is test_v060_09_far_terrain.gd's.
+##
 ## Does NOT prove: that anything renders or looks right (no GPU); that the real village's
 ## buildings meet its terrain (measured at M2 planning and by the review, SPEC §8); that the real
 ## village's 34'412 trees stand on its ground (the placement lens measured 0 of them more than
@@ -59,6 +65,7 @@ const ABSENT_BLOCKS := [
 	"TreeChunks: ",
 	"BuildingRoofs: ",
 	"CaptureShadowGrid: ",
+	"SurroundingsGrid: ",
 	"SkySite: ",
 ]
 

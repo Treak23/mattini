@@ -38,7 +38,11 @@ var _looking := false
 
 func _init() -> void:
 	near = 0.1
-	far = 20000.0
+	# 40 km: the far terrain's window (the area's box grown by config/surroundings.json's margin_m)
+	# has corners up to 31.8 km from the village's area box, 32.2 km with 5'000 m of height between;
+	# 20'000 m clipped three corner chunks and 30'000 m would too (brief v0.6.0-09 decision 4,
+	# test_v060_09_far_terrain.gd computes it). The depth precision near the camera is set by near.
+	far = 40000.0
 	fov = 70.0
 
 
