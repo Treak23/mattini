@@ -80,10 +80,13 @@ item (HTTP 404: Italy) is not an error: `published_farphoto` returns it among th
 the lock (`lock farphoto`) records them beside the tiles. `download farphoto` (`download_farphoto`)
 reads the item of every cell first, `FARPHOTO_WORKERS` at once, and refuses before any file is
 fetched or anything on disk changes a republished tile, an item in a cell the lock records as
-absent, an item that vanished and an item of another edition (naming `lock farphoto` and
-config/surroundings.json, the config whose expected values design recomputes); then the files go
-through the shared fetch, `FARPHOTO_WORKERS` at once, into `swissimage_far/<edition>/`, whose
-provenance.json is the terrain's with `absent` added.
+absent, an item that vanished and an item of another edition. The first three are refused naming
+the cell, `lock farphoto` and config/surroundings.json (the config whose expected values design
+recomputes); an item of another edition is refused naming the cell, its datetime and the pinned
+edition only, as `_published_asset` words it before the lock is looked at (no lock command adopts
+it: the edition is config/datasets.json's). Then the files go through the shared fetch,
+`FARPHOTO_WORKERS` at once, into `swissimage_far/<edition>/`, whose provenance.json is the
+terrain's with `absent` added.
 
 A datasets config without the dataset, and an area the sheet grid cannot place, are
 DownloadErrors naming config/datasets.json or the world config and the area, never a
@@ -722,9 +725,11 @@ def download_farphoto(
     reader refuses is a DownloadError naming the file, before swisstopo is asked anything. Then
     the item of every cell is read (`published_farphoto`, `FARPHOTO_WORKERS` at once) and
     compared with the lock before any file is fetched or anything on disk changes: a republished
-    tile, an item in a cell the lock records as absent, an item that vanished (HTTP 404 for a
-    pinned tile) and an item of another edition are each refused naming the cell, `lock
-    farphoto` and config/surroundings.json. The files (`FARPHOTO_WORKERS` at once) and the
+    tile, an item in a cell the lock records as absent and an item that vanished (HTTP 404 for a
+    pinned tile) are each refused naming the cell, `lock farphoto` and
+    config/surroundings.json; an item of another edition is refused naming the cell, its
+    datetime and the pinned edition only (`_published_asset`'s refusal, raised before the lock
+    is looked at: no lock command adopts it). The files (`FARPHOTO_WORKERS` at once) and the
     provenance.json (the terrain's keys and `absent`) are the shared flow's. Returns the
     provenance entries of the tiles, in the lock's order.
     """
