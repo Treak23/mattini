@@ -35,3 +35,5 @@ SkyRig: user://test_ @ res://tests/test_v050_11_sky_guards.gd # its refusal test
 SurroundingsGrid: user://test_ @ res://tests/test_m4_07_surroundings_grid.gd # its refusal tests write broken manifests under user://test_m4_07_surroundings_grid on purpose (brief v0.6.0-08, from M4-07 decision 6)
 SurroundingsGrid: user://test_ @ res://tests/test_v060_08_surroundings_colour.gd # its refusal tests write broken colour blocks and files under user://test_v060_08_surroundings_colour on purpose (brief v0.6.0-08)
 SurroundingsGrid: user://test_ @ res://tests/test_main_scene_refusals.gd # its missing and damaged far terrains are refused on purpose (brief v0.6.0-09, M4-10 decision 11)
+Condition "err" is true. Returning: Ref<Image>() @ res://tests/test_v060_08_gaps.gd # a colour that is no JPEG under its own SHA-256 is refused on purpose, and Godot's JPEG loader prints this line for it (brief v0.6.0-08, fixer round 2)
+Condition "image.is_null()" is true. Returning: ERR_PARSE_ERROR @ res://tests/test_v060_08_gaps.gd # the second line Godot prints for the same undecodable colour (brief v0.6.0-08, fixer round 2)

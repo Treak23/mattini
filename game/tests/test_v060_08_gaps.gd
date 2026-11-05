@@ -1,28 +1,41 @@
 extends GutTest
-## Gaps in the pinned tests of brief v0.6.0-08 that the builder's own probes found (lesson 51,
-## decision 15): guards and branches of SurroundingsGrid and SurroundingsLoader that no pinned
-## test fails without. Each test here fails when the guard it names is removed or loosened.
+## Gaps in the pinned tests of brief v0.6.0-08 that mutation probes found (lesson 51, decision
+## 15): guards and branches of SurroundingsGrid and SurroundingsLoader that no pinned test fails
+## without. Each test here fails when the guard it names is removed or loosened, and covers the
+## class of its finding (lesson 9), not the one site a prover named.
 ##
 ## Every refusal is read through _read, which returns the problem without a push_error (every
-## reader's shape), so this script prints no ERROR line and has no allowlist entry.
+## reader's shape), so this script prints no ERROR line but the two Godot's JPEG loader prints for
+## an undecodable colour (two scoped entries of tools/gate_allowlist.txt).
 ##
-## The tests from "The batch gate's mutation prover's findings" on are the fixer round's: the
-## prover's findings, each with the class it belongs to (lesson 9), not the one site it named:
-## all four sides of the cut's containment, outside and on the edge; the colour's fit tolerance
-## on both sides of its edge and both signs; each axis at 16384 pixels and one past; the smallest
-## grid and colour; every character of a digest, for each of the three digests; every proper
-## rotation of the axes; each value of the world given, one at a time; the decoded size by its
-## width, its height and its format; the one material across a grid of many chunks.
+## Fixer round 1 (from "The batch gate's mutation prover's findings" on): the cut's containment on
+## all four sides; the colour's fit tolerance; each axis at 16384 pixels and one past; the smallest
+## grid and colour; every character of each digest; every proper rotation of the axes; each value
+## of the world given; the decoded size and format; the one material across many chunks.
+## Fixer round 2 (a second prover and sweeps of every guard, comparison and literal): the NaN
+## layout against its mirrors; the order of the refusals; each text, box, count, path and number
+## of the block with a value of the wrong type or infinite, and a key renamed; the wording of a
+## missing manifest, a missing file and an undecodable colour; the chunks past a whole chunk; the
+## skirt where the cut touches the box, its triangles covering their quad. The public tests are at
+## gdlint's limit of 20 (after_each counts), so a new check is a private _check_... that one calls.
 ##
 ## Does NOT prove: that the guards the pins and this file leave out are not needed (lesson 4);
-## the loader's skirt facing (the skirt is double-sided, so which way its front faces is not
-## pinned); that anything is drawn, or drawn right (no GPU; the owner's PC).
+## the loader's skirt facing, its normals' direction and which diagonal splits a square (brief
+## decisions 4 and 8 leave them to the builder, and the skirt is double-sided; the skirt's two
+## triangles are only held to cover their quad); that anything is drawn, or drawn right (no GPU;
+## the owner's PC).
 
 const SCRATCH_DIR := "user://test_v060_08_gaps"
 const FIXTURE_DIR := "tests/shared/surroundings_fixture/generated"
 const F32 := "surroundings/fixture.f32"
 const JPG := "surroundings/fixture_colour.jpg"
 const RELEASE_HINT := "; it ships in the release's packs: download the release folder again"
+## A cut off the middle of the fixture's grid on both axes: E 2615000 to 2620000 holds the columns
+## 1 and 2 of 0 to 5, N 1103000 to 1109000 the rows 1 and 2 of 0 to 6, so neither the cut nor its
+## NaN is symmetric east-west or north-south (the fixture's own is, both ways).
+const OFF_CENTRE_CUT := {
+	"e_min": 2615000.0, "e_max": 2620000.0, "n_min": 1103000.0, "n_max": 1109000.0
+}
 
 ## A 15 × 18 JPEG of ONE component (grayscale), made once with Pillow (Image.new("L", (15, 18)),
 ## pixel (x, y) = 40 + 7x + 5y, saved with quality 92) and kept here as base64: Godot 4.6.3 writes
@@ -73,10 +86,22 @@ func after_each() -> void:
 		if is_instance_valid(node):
 			node.free()
 	_built.clear()
+	# The scratch folder goes after each test (not after_all: the public methods are at gdlint's
+	# limit of 20, see the header).
+	if DirAccess.dir_exists_absolute(SCRATCH_DIR):
+		_remove_tree(SCRATCH_DIR)
 
 
-func after_all() -> void:
-	_remove_tree(SCRATCH_DIR)
+## Marks every tracked engine error or warning of this test whose text holds one of
+## [param texts] as handled (GUT fails a test for an error nobody handled); returns how many.
+func _handle_errors(texts: Array) -> int:
+	var handled := 0
+	for error in get_errors():
+		for text: String in texts:
+			if not error.handled and error.contains_text(text):
+				error.handled = true
+				handled += 1
+	return handled
 
 
 func _remove_tree(dir: String) -> void:
@@ -162,8 +187,17 @@ func test_no_world_config_a_missing_manifest_and_a_manifest_that_is_not_an_objec
 	assert_string_contains(SurroundingsGrid.new()._read(path, null), "WorldConfig")
 	var world := WorldConfig.from_manifest(path)
 	var missing := SCRATCH_DIR.path_join("no_such_manifest.json")
-	assert_string_contains(SurroundingsGrid.new()._read(missing, world), "cannot read the manifest")
+	var unreadable := SurroundingsGrid.new()._read(missing, world)
+	assert_string_contains(unreadable, "cannot read the manifest")
+	assert_false(unreadable.contains("empty"), "a missing manifest is not an empty one")
 	DirAccess.make_dir_recursive_absolute(SCRATCH_DIR)
+	var empty_path := SCRATCH_DIR.path_join("empty.json")
+	FileAccess.open(empty_path, FileAccess.WRITE).close()
+	var empty := SurroundingsGrid.new()._read(empty_path, world)
+	assert_string_contains(empty, "the manifest is empty")
+	assert_false(
+		empty.contains("cannot read"), "an empty manifest is read, not unreadable: %s" % empty
+	)
 	for pair in [
 		["not_json.json", "{ not json", "not valid JSON"],
 		["array.json", "[1, 2]", "not a JSON object"]
@@ -184,6 +218,9 @@ func test_a_manifest_without_a_world_block_or_a_block_that_is_not_an_object_is_r
 	assert_string_contains(SurroundingsGrid.new()._read(origin_gone, world), "no world block")
 	var not_object := _write_case(func(m: Dictionary) -> void: m["surroundings"] = 5.0)
 	assert_string_contains(SurroundingsGrid.new()._read(not_object, world), "must be an object")
+	# A block with no world_sha256 at all is a block for another world, not a runtime error.
+	var no_hash := _write_case(_erase_in(["world_sha256"]))
+	assert_string_contains(SurroundingsGrid.new()._read(no_hash, world), "another world config")
 
 
 func test_the_axes_refusal_is_this_reader_s_own() -> void:
@@ -222,9 +259,71 @@ func test_the_heights_fields_are_each_refused() -> void:
 		"a source missing its sha": [_erase_in(["source", "entry_sha256"]), "source"],
 		"an empty source text": [_set_in(["source", "attribution"], ""), "must be text"],
 		"a source that is not an object": [_set_key("source", "x"), "source"],
+		"a text column count": [_set_key("columns", "6"), "whole number"],
+		"a null row count": [_set_key("rows", null), "whole number"],
+		"a box that is a number": [_set_key("lv95_box", 5.0), "lv95_box"],
+		"a box that is null": [_set_key("lv95_box", null), "lv95_box"],
+		"a cut that is text": [_set_key("cut_box", "x"), "cut_box"],
+		"a cut that is an array": [_set_key("cut_box", [1.0, 2.0]), "cut_box"],
 	}
 	for why: String in cases:
 		_assert_refused(cases[why][0], why, cases[why][1])
+	_check_every_text_is_text("source", ["attribution", "collection", "edition", "entry_sha256"])
+	_check_a_renamed_key_is_refused()
+	var infinite := {"spacing_m": [["spacing_m"], "positive finite"]}
+	for box: String in ["lv95_box", "cut_box"]:
+		for side: String in ["e_max", "e_min", "n_max", "n_min"]:
+			infinite["%s.%s" % [box, side]] = [[box, side], "finite number"]
+	_check_infinite_numbers_are_refused(infinite)
+
+
+## Each of [param keys] of the text block [param container] (source or colour_source) refused
+## when it is empty, a number or null, naming it: the check is one loop over the keys, and a type
+## check before the emptiness one, and either can go unseen with a key or a type left out.
+func _check_every_text_is_text(container: String, keys: Array) -> void:
+	for key: String in keys:
+		for bad: Variant in ["", 5.0, null]:
+			var why := "surroundings.%s.%s as %s" % [container, key, var_to_str(bad)]
+			var says := "%s.%s must be text" % [container, key]
+			_assert_refused(_set_in([container, key], bad), why, says)
+
+
+## Renames the key [param old] of the object at [param path] (keys below the block) to [param new]:
+## as many keys as there should be, one of them not the right one.
+func _rename_in(path: Array, old: String, new: String) -> Callable:
+	return func(m: Dictionary) -> void:
+		var node: Dictionary = m["surroundings"]
+		for key in path:
+			node = node[key]
+		node[new] = node[old]
+		node.erase(old)
+
+
+func _check_a_renamed_key_is_refused() -> void:
+	var cases := {
+		"the block": [[], "filled_fraction", "surroundings must hold exactly"],
+		"the heights' source":
+		[["source"], "entry_sha256", "surroundings.source must hold exactly"],
+		"the colour's source":
+		[["colour_source"], "edition", "surroundings.colour_source must hold exactly"],
+		"the box": [["lv95_box"], "n_min", "surroundings.lv95_box must hold exactly"],
+		"the cut": [["cut_box"], "e_max", "surroundings.cut_box must hold exactly"],
+	}
+	for why: String in cases:
+		var spec: Array = cases[why]
+		var change := _rename_in(spec[0], spec[1], spec[1] + "_x")
+		_assert_refused(change, "%s with %s renamed" % [why, spec[1]], spec[2])
+
+
+## Each value of [param cases] (why: [path below the block, needle]) made infinite, both signs
+## (JSON.stringify writes INF as 1e99999, and Godot reads it back as infinity with a warning).
+func _check_infinite_numbers_are_refused(cases: Dictionary) -> void:
+	for why: String in cases:
+		for infinity: float in [INF, -INF]:
+			_assert_refused(
+				_set_in(cases[why][0], infinity), "%s as %s" % [why, infinity], cases[why][1]
+			)
+			_handle_errors(["Exponent too high"])
 
 
 func test_the_colour_fields_are_each_refused() -> void:
@@ -243,14 +342,30 @@ func test_the_colour_fields_are_each_refused() -> void:
 		[_set_in(["colour_source", "attribution"], ""), "must be text"],
 		"a colour source that is not an object": [_set_key("colour_source", 5.0), "colour_source"],
 		"a negative share": [_set_key("filled_fraction", -0.1), "from 0 to 1"],
+		"a colour cell of 0": [_set_key("colour_cell_m", 0.0), "positive finite"],
+		"a null colour column count": [_set_key("colour_columns", null), "colour_columns"],
 	}
 	for why: String in cases:
 		_assert_refused(cases[why][0], why, cases[why][1])
+	_check_every_text_is_text("colour_source", ["attribution", "collection", "edition"])
+	_check_infinite_numbers_are_refused(
+		{
+			"colour_cell_m": [["colour_cell_m"], "positive finite"],
+			"filled_fraction": [["filled_fraction"], "from 0 to 1"],
+		}
+	)
 
 
-func test_a_share_of_0_and_a_share_of_1_are_read() -> void:
+func test_the_edge_values_of_the_fields_are_read() -> void:
 	assert_eq(_problem(_set_key("filled_fraction", 0.0)), "", "no placeholder pixel")
 	assert_eq(_problem(_set_key("filled_fraction", 1.0)), "", "only placeholder pixels")
+	var capitals := func(m: Dictionary) -> void:
+		m["surroundings"]["sha256"] = m["surroundings"]["sha256"].to_upper()
+		m["surroundings"]["colour_sha256"] = m["surroundings"]["colour_sha256"].to_upper()
+	assert_eq(_problem(capitals), "", "both files' SHA-256 are compared in lower case")
+	# A grid of 0.5 m (a box of 7.5 × 9 m: 16 × 19 vertices) and a colour of 0.5 m pixels: any
+	# positive spacing and cell is read, not only those from 1 m.
+	assert_eq(_read_path(_box_case(16, 19, 0.5, 15, 18, 0.5)), "", "a grid and a colour of 0.5 m")
 
 
 func test_a_path_that_is_not_plain_is_refused_for_both_files() -> void:
@@ -261,14 +376,12 @@ func test_a_path_that_is_not_plain_is_refused_for_both_files() -> void:
 		assert_string_contains(problem, "surroundings.file must be a plain relative path")
 		problem = _problem(_set_key("colour_file", bad.replace("f32", "jpg")))
 		assert_string_contains(problem, "surroundings.colour_file must be a plain relative path")
+	# A path that is no text at all is refused as one, not a runtime error.
+	for bad: Variant in [5.0, null, ["a.f32"], true]:
+		for key: String in ["file", "colour_file"]:
+			var problem := _problem(_set_key(key, bad))
+			assert_string_contains(problem, "surroundings.%s must be a plain relative path" % key)
 	assert_eq(_problem(_unchanged()), "", "a plain path is read")
-
-
-func test_a_digest_in_capitals_is_read() -> void:
-	var change := func(m: Dictionary) -> void:
-		m["surroundings"]["sha256"] = m["surroundings"]["sha256"].to_upper()
-		m["surroundings"]["colour_sha256"] = m["surroundings"]["colour_sha256"].to_upper()
-	assert_eq(_problem(change), "", "both files' SHA-256 are compared in lower case")
 
 
 func test_the_file_messages_end_with_the_release_hint_in_an_export() -> void:
@@ -298,9 +411,33 @@ func test_the_file_messages_end_with_the_release_hint_in_an_export() -> void:
 		ReleaseBuild.set_exported_for_tests(false)
 		problem = SurroundingsGrid.new()._read(path, world)
 		assert_true(problem.ends_with(" rebuilds it"), "%s, not exported: %s" % [why, problem])
+	_check_a_missing_file_and_an_undecodable_colour_say_so()
 
 
-func test_a_nan_on_the_edge_of_the_cut_is_refused() -> void:
+## A file left out of the folder is "missing" (checked before any read, so no engine error), and
+## a colour that is no JPEG under its own SHA-256 "cannot be decoded": neither is told as the size
+## or the digest of what was read, and each ends with the hint of its own command.
+func _check_a_missing_file_and_an_undecodable_colour_say_so() -> void:
+	ReleaseBuild.set_exported_for_tests(false)
+	var heights := _problem(_unchanged(), null, PackedByteArray())
+	assert_true(heights.begins_with("the heights file "), "the heights, left out: %s" % heights)
+	assert_true(heights.contains(" is missing"), "the heights are missing, not read: %s" % heights)
+	assert_true(heights.ends_with("python -m mattini surroundings rebuilds it"), heights)
+	var colour := _problem(_unchanged(), PackedByteArray(), null)
+	assert_true(colour.begins_with("the colour "), "the colour, left out: %s" % colour)
+	assert_true(colour.contains(" is missing"), "the colour is missing, not read: %s" % colour)
+	assert_true(colour.ends_with("python -m mattini farcolour rebuilds it"), colour)
+	var garbage := PackedByteArray([1, 2, 3, 4, 5, 6, 7, 8])
+	var change := _set_key("colour_sha256", _sha256(garbage))
+	var undecodable := _problem(change, PackedByteArray(), garbage)
+	assert_string_contains(undecodable, "cannot be decoded")
+	assert_false(undecodable.contains("decodes to"), "no size to tell: %s" % undecodable)
+	assert_true(undecodable.ends_with("python -m mattini farcolour rebuilds it"), undecodable)
+	# Godot's JPEG loader prints two ERROR lines for it (the gate's allowlist excepts them here).
+	_handle_errors(["is true. Returning"])
+
+
+func test_the_nan_layout_must_be_the_cut_s_not_its_mirror() -> void:
 	# The fixture's cut keeps its edge: row 2, column 1 (west), row 1, column 2 (north), row 3,
 	# column 4 (east) and row 5, column 2 (south) are finite and lie on cut_box's four edges.
 	for at: Vector2i in [Vector2i(1, 2), Vector2i(2, 1), Vector2i(4, 3), Vector2i(2, 5)]:
@@ -311,6 +448,46 @@ func test_a_nan_on_the_edge_of_the_cut_is_refused() -> void:
 		var problem := _problem(_set_key("sha256", _sha256(holed)), holed)
 		assert_string_contains(problem, "NaN", true)
 		assert_string_contains(problem, "row %d, column %d" % [at.y, at.x])
+	_check_the_layout_is_the_cut_s_and_not_its_mirror()
+
+
+## The fixture's grid (6 × 7 vertices of 3000 m: E 2613000 to 2628000, N 1092000 to 1110000)
+## with the manifest's cut_box [param cut], and NaN at the vertices strictly inside it, or at
+## [param nan_at] (Vector2i column and row) when that is given. The block's SHA-256 is the
+## file's, or the fixture's (so stale) when [param stale_sha].
+func _cut_case(cut: Dictionary, nan_at: Variant = null, stale_sha: bool = false) -> String:
+	var heights := PackedFloat32Array()
+	heights.resize(6 * 7)
+	for r in 7:
+		for c in 6:
+			var e := 2613000.0 + c * 3000.0
+			var n := 1110000.0 - r * 3000.0
+			var hole: bool = e > cut["e_min"] and e < cut["e_max"]
+			hole = hole and n > cut["n_min"] and n < cut["n_max"]
+			if nan_at != null:
+				hole = Vector2i(c, r) in nan_at
+			heights[r * 6 + c] = NAN if hole else 1000.0 + r * 6 + c
+	var bytes := heights.to_byte_array()
+	var change := func(m: Dictionary) -> void:
+		m["surroundings"]["cut_box"] = cut
+		if not stale_sha:
+			m["surroundings"]["sha256"] = _sha256(bytes)
+	return _write_case(change, bytes)
+
+
+func _check_the_layout_is_the_cut_s_and_not_its_mirror() -> void:
+	assert_eq(
+		_read_path(_cut_case(OFF_CENTRE_CUT)), "", "NaN at columns 1, 2 and rows 1, 2 is read"
+	)
+	var mirrors := {
+		"east-west": [Vector2i(3, 1), Vector2i(4, 1), Vector2i(3, 2), Vector2i(4, 2)],
+		"north-south": [Vector2i(1, 4), Vector2i(2, 4), Vector2i(1, 5), Vector2i(2, 5)],
+		"both": [Vector2i(3, 4), Vector2i(4, 4), Vector2i(3, 5), Vector2i(4, 5)],
+	}
+	for why: String in mirrors:
+		var problem := _read_path(_cut_case(OFF_CENTRE_CUT, mirrors[why]))
+		assert_string_contains(problem, "row 1, column 1 is finite", true)
+		assert_string_contains(problem, "inside cut_box", true)
 
 
 ## The fixture with no cut: every height finite, cut_box a point at [param e], [param n] (no
@@ -649,3 +826,175 @@ func test_every_chunk_of_a_grid_of_many_chunks_draws_with_the_one_material() -> 
 		return
 	assert_not_same(skirt.get_active_material(0), one, "the skirt's material is its own")
 	assert_eq(skirt.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF, "no skirt shadow")
+
+
+## --- The second fixer round: the order of the refusals, and the loader's edges ----------------
+
+
+## Brief decision 3 lists the refusals "in this order": a case wrong in two adjacent ways must be
+## refused as the first, and only the first.
+func test_the_refusals_come_in_the_brief_s_order() -> void:
+	_check_the_heights_file_is_refused_by_size_then_digest_then_layout()
+	_check_the_colour_file_is_refused_by_digest_then_decode()
+	_check_the_block_and_the_world_are_refused_in_order()
+
+
+func _check_the_heights_file_is_refused_by_size_then_digest_then_layout() -> void:
+	# The block holds the fixture's SHA-256, which is stale for both files below.
+	var problem := _problem(_unchanged(), _fixture_bytes(F32).slice(0, 164))
+	assert_string_contains(problem, "holds 164 bytes")
+	assert_false(problem.contains("has SHA-256"), "the size comes before the digest: %s" % problem)
+	var mirror := [Vector2i(3, 1), Vector2i(4, 1), Vector2i(3, 2), Vector2i(4, 2)]
+	problem = _read_path(_cut_case(OFF_CENTRE_CUT, mirror, true))
+	assert_string_contains(problem, "has SHA-256")
+	assert_false(problem.contains("NaN"), "the digest is checked before the layout: %s" % problem)
+	problem = _read_path(_cut_case(OFF_CENTRE_CUT, mirror))
+	assert_string_contains(problem, "NaN", true)
+
+
+func _check_the_colour_file_is_refused_by_digest_then_decode() -> void:
+	# The block holds the fixture's colour SHA-256, which is stale for both files below.
+	var garbage := PackedByteArray([1, 2, 3, 4, 5, 6, 7, 8])
+	var cases := {"a file that is no JPEG": garbage, "a JPEG of another size": _rgb_jpeg(14, 18)}
+	for why: String in cases:
+		var problem := _problem(_unchanged(), PackedByteArray(), cases[why])
+		assert_string_contains(problem, "has SHA-256")
+		assert_false(problem.contains("decod"), "%s: the digest comes first: %s" % [why, problem])
+
+
+func _check_the_block_and_the_world_are_refused_in_order() -> void:
+	var both := func(m: Dictionary) -> void:
+		m["surroundings"]["area"] = ""
+		m["surroundings"]["colour_cell_m"] = -1.0
+	var problem := _problem(both)
+	assert_string_contains(problem, "surroundings.area")
+	assert_false(problem.contains("colour_cell_m"), "the heights' fields come first: %s" % problem)
+	var flipped := _fixture_bytes(F32)
+	flipped[20] = flipped[20] ^ 1
+	var damaged := _fixture_bytes(JPG)
+	damaged[400] = damaged[400] ^ 1
+	problem = _problem(_unchanged(), flipped, damaged)
+	assert_string_contains(problem, "the heights file")
+	assert_false(problem.contains("the colour"), "the heights' file comes first: %s" % problem)
+	# A world given that is not the manifest's, with the block wrong in each way in turn: the
+	# missing block, then its world_sha256, are told before the world's own guard, which is
+	# told before the key set.
+	var other := _write_case(_world_change(["origin_lv95", "e"], 2618251.0))
+	var world := WorldConfig.from_manifest(other)
+	var cases := {
+		"no block": [func(m: Dictionary) -> void: m["surroundings"] = null, "no surroundings"],
+		"a block of another world config":
+		[_set_key("world_sha256", "a".repeat(64)), "another world config"],
+		"a block of another key set": [_erase_in(["colour_file"]), "not read from this manifest"],
+	}
+	for why: String in cases:
+		var path := _write_case(cases[why][0])
+		assert_string_contains(SurroundingsGrid.new()._read(path, world), cases[why][1], true)
+
+
+func test_the_loader_builds_every_chunk_and_stops_the_skirt_at_the_box() -> void:
+	_check_the_squares_past_a_whole_chunk_are_chunks_of_their_own()
+	_check_the_skirt_stops_at_the_box_s_edge()
+
+
+func _check_the_squares_past_a_whole_chunk_are_chunks_of_their_own() -> void:
+	# 82 × 82 vertices, every one finite, are 81 × 81 squares: a chunk of 80 × 80 squares, a strip
+	# of 1 × 80, one of 80 × 1 and a single square (a count of 80 squares or fewer is one chunk).
+	var parent := Node3D.new()
+	_built.append(parent)
+	var root := SurroundingsLoader.create(_hand_grid(82, 82, 1000, 1000), parent)
+	var squares := {"Chunk_0_0": 80 * 80, "Chunk_1_0": 80, "Chunk_0_1": 80, "Chunk_1_1": 1}
+	assert_eq(root.get_child_count(), squares.size(), "four chunks and no skirt")
+	for chunk_name: String in squares:
+		var chunk := root.get_node_or_null(chunk_name) as MeshInstance3D
+		assert_not_null(chunk, "%s is built" % chunk_name)
+		if chunk != null:
+			var indices := (chunk.mesh as ArrayMesh).surface_get_array_index_len(0)
+			assert_eq(indices, 6 * squares[chunk_name], "%s: two triangles a square" % chunk_name)
+
+
+## The skirt's segments as brief decision 8 defines them (a grid edge between a drawn square, one
+## of four finite corners, and an undrawn one, both inside the box: the box's own outer edge has
+## none), as sorted text.
+func _expected_segments(grid: SurroundingsGrid) -> Array:
+	var drawn := func(c: int, r: int) -> bool:
+		var corners := [grid.height(c, r), grid.height(c + 1, r)]
+		corners.append_array([grid.height(c, r + 1), grid.height(c + 1, r + 1)])
+		return not corners.any(func(height: float) -> bool: return is_nan(height))
+	var segments := []
+	for r in range(1, grid.rows - 1):
+		for c in grid.columns - 1:
+			if drawn.call(c, r - 1) != drawn.call(c, r):
+				segments.append("%s-%s" % [Vector2i(c, r), Vector2i(c + 1, r)])
+	for c in range(1, grid.columns - 1):
+		for r in grid.rows - 1:
+			if drawn.call(c - 1, r) != drawn.call(c, r):
+				segments.append("%s-%s" % [Vector2i(c, r), Vector2i(c, r + 1)])
+	segments.sort()
+	return segments
+
+
+## The segments the skirt mesh hangs from, read off its quads' top vertices (grid column and row
+## of each, the lower first), as sorted text; and a check that each quad's two triangles are the
+## two halves of the quad (either diagonal, either way round: which is not pinned).
+func _skirt_segments(grid: SurroundingsGrid, skirt: MeshInstance3D) -> Array:
+	var arrays := (skirt.mesh as ArrayMesh).surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var quads := vertices.size() / 4
+	assert_eq(indices.size(), 6 * quads, "a quad is two triangles")
+	var halves := ["0,1,2|1,2,3", "0,1,3|0,2,3"]
+	var segments := []
+	for quad in quads:
+		var triangles := []
+		for t in 2:
+			var corners := []
+			for k in 3:
+				corners.append(indices[6 * quad + 3 * t + k] - 4 * quad)
+			corners.sort()
+			var text := corners.map(func(index: int) -> String: return str(index))
+			triangles.append(",".join(PackedStringArray(text)))
+		triangles.sort()
+		assert_true("|".join(PackedStringArray(triangles)) in halves, "quad %d is covered" % quad)
+		var ends := []
+		for corner in 2:
+			var top := vertices[4 * quad + corner]
+			var column := roundi((top.x - grid.x_min) / grid.spacing_m)
+			ends.append(Vector2i(column, roundi((top.z - grid.z_min) / grid.spacing_m)))
+		ends.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.x + a.y < b.x + b.y)
+		segments.append("%s-%s" % ends)
+	segments.sort()
+	return segments
+
+
+func _check_the_skirt_stops_at_the_box_s_edge() -> void:
+	# The fixture's grid (6 × 7 vertices) with a cut that touches the box on one side, then on
+	# two: the NaN is a block of 2 × 2 undrawn squares, and its skirt runs round the sides the
+	# drawn squares meet (6 segments; at the corner 4), never along the box's own edge.
+	var cases := {
+		"west":
+		[{"e_min": 2613000.0, "e_max": 2619000.0, "n_min": 1098000.0, "n_max": 1104000.0}, 6],
+		"east":
+		[{"e_min": 2622000.0, "e_max": 2628000.0, "n_min": 1098000.0, "n_max": 1104000.0}, 6],
+		"north":
+		[{"e_min": 2616000.0, "e_max": 2622000.0, "n_min": 1104000.0, "n_max": 1110000.0}, 6],
+		"south":
+		[{"e_min": 2616000.0, "e_max": 2622000.0, "n_min": 1092000.0, "n_max": 1098000.0}, 6],
+		"north-west corner":
+		[{"e_min": 2613000.0, "e_max": 2619000.0, "n_min": 1104000.0, "n_max": 1110000.0}, 4],
+	}
+	for why: String in cases:
+		var path := _cut_case(cases[why][0])
+		var grid := SurroundingsGrid.from_manifest(path, WorldConfig.from_manifest(path))
+		assert_not_null(grid, "a cut touching the box on the %s is read" % why)
+		if grid == null:
+			continue
+		var parent := Node3D.new()
+		_built.append(parent)
+		var skirt := SurroundingsLoader.create(grid, parent).get_node_or_null("Skirt")
+		assert_not_null(skirt, "the cut on the %s has a skirt" % why)
+		if skirt == null:
+			continue
+		var segments := _skirt_segments(grid, skirt as MeshInstance3D)
+		assert_eq(segments.size(), cases[why][1], "%s: the segments are %s" % [why, segments])
+		assert_eq(segments, _expected_segments(grid), "%s: where decision 8 says" % why)
