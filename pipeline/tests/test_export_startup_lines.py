@@ -48,6 +48,21 @@ roofs'. The far
 mountains' line (M4-10) belongs to a later release: step 6 requires exactly the packs' lines
 and the seven.
 
+Since brief v0.6.0-10 (design §3's far terrain, M4-10 decisions 7 and 10 as brief v0.6.0-09
+changed them; only MANIFEST, LINES, the cases and this paragraph change): the build ships nine
+blocks, so step 2 also refuses a manifest without the surroundings block, naming `python -m
+mattini download regio`, then `download farphoto`, then `surroundings`, then `farcolour` (the
+commands game/scripts/main.gd's SURROUNDINGS_FIX names, in its order), before anything is
+exported, and step 6 requires one more line after the shadows':
+    mattini <v>: surroundings <area> loaded, <columns> x <rows> vertices at <spacing> m, colour
+        <colour_columns> x <colour_rows> at <colour_cell> m
+(one line). The test block holds 421 x 431 heights at 12.5 m and 1684 x 1724 colour pixels at
+2.5 m, numbers no other block holds, with two decimals' worth of a fraction (fake_tools.MANIFEST
+keeps the real village's 841 x 861 at 50 m and 4200 x 4300 at 10 m); the twins are the columns
+and rows swapped, the colour's size the heights', the colour's cell the heights' spacing, M4-10's
+older words ("heights" for "vertices", no colour), the line missing, and the line before the
+shadows'.
+
 Does NOT prove: that the real build prints these lines (the release gate's export run does,
 docs/RELEASE.md §C); the Windows build (the owner's PC).
 """
@@ -95,6 +110,15 @@ MANIFEST = {
         "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b",
     },
     "surfaces": {"area": "village", "cell_m": 0.5, "columns": 4000, "rows": 6000},
+    "surroundings": {
+        "area": "village",
+        "colour_cell_m": 2.5,
+        "colour_columns": 1684,
+        "colour_rows": 1724,
+        "columns": 421,
+        "rows": 431,
+        "spacing_m": 12.5,
+    },
     "terrain": {"area": "village", "columns": 4001, "rows": 6001, "spacing_m": 0.5},
     "trees": {
         "area": "village",
@@ -113,7 +137,12 @@ LINES = (
     f"mattini {V}: trees village loaded, 34423 trees in 3 chunks",
     f"mattini {V}: roofs village loaded, 3 of 4 buildings coloured",
     f"mattini {V}: shadows village loaded, 2000 x 3000 cells at 1 m",
+    (
+        f"mattini {V}: surroundings village loaded, 421 x 431 vertices at 12.5 m, "
+        "colour 1684 x 1724 at 2.5 m"
+    ),
 )
+FAR = f"mattini {V}: surroundings village loaded, "
 # Godot's pack tool, as the stand-in Godot runs it: `-s res://tools/pack.gd -- <pack>
 # res://assets/generated/<folder>` writes every file of the folder, in name order, at its
 # res:// path (brief M3-08).
@@ -195,6 +224,11 @@ def test_every_startup_line_in_order_after_the_pack_lines_passes(tmp_path):
         (LINES[6], f"mattini {V}: shadows village loaded, 3000 x 2000 cells at 1 m"),
         (LINES[6], f"mattini {V}: shadows village loaded, 2000 x 3000 cells at 0.5 m"),
         (LINES[6], None),
+        (LINES[7], FAR + "431 x 421 vertices at 12.5 m, colour 1684 x 1724 at 2.5 m"),
+        (LINES[7], FAR + "421 x 431 vertices at 12.5 m, colour 421 x 431 at 2.5 m"),
+        (LINES[7], FAR + "421 x 431 vertices at 12.5 m, colour 1684 x 1724 at 12.5 m"),
+        (LINES[7], FAR + "421 x 431 heights at 12.5 m"),
+        (LINES[7], None),
     ],
     ids=[
         "photo-swapped",
@@ -205,6 +239,11 @@ def test_every_startup_line_in_order_after_the_pack_lines_passes(tmp_path):
         "shadows-swapped",
         "shadows-cell",
         "shadows-missing",
+        "surroundings-swapped",
+        "surroundings-colour-size-the-heights",
+        "surroundings-colour-cell-the-spacing",
+        "surroundings-m4-10-words",
+        "surroundings-missing",
     ],
 )
 def test_a_missing_or_wrong_line_fails(tmp_path, line, twin):
@@ -221,9 +260,16 @@ def test_a_missing_or_wrong_line_fails(tmp_path, line, twin):
         (*PACK_LINES, *LINES[:3], LINES[4], LINES[3], *LINES[5:]),
         (*LINES[:2], *PACK_LINES, *LINES[2:]),
         (*PACK_LINES, *LINES[2:], *LINES[:2]),
-        (*PACK_LINES, *LINES[:5], LINES[6], LINES[5]),
+        (*PACK_LINES, *LINES[:5], LINES[6], LINES[5], LINES[7]),
+        (*PACK_LINES, *LINES[:6], LINES[7], LINES[6]),
     ],
-    ids=["trees-before-surfaces", "packs-after-m2", "m3-before-m2", "shadows-before-roofs"],
+    ids=[
+        "trees-before-surfaces",
+        "packs-after-m2",
+        "m3-before-m2",
+        "shadows-before-roofs",
+        "surroundings-before-shadows",
+    ],
 )
 def test_a_line_out_of_order_fails(tmp_path, order):
     root = _tree(tmp_path, MANIFEST)
@@ -240,6 +286,7 @@ def test_a_line_out_of_order_fails(tmp_path, order):
         ("trees", ["download surface", "download tlm", "trees"]),
         ("roofs", ["download photo", "roofs"]),
         ("shadows", ["download surface", "shadows"]),
+        ("surroundings", ["download regio", "download farphoto", "surroundings", "farcolour"]),
         ("sky", ["sky"]),
     ],
 )

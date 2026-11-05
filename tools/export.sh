@@ -12,9 +12,10 @@
 # failure:
 #   1. rewrites the generated manifest, which re-checks the generated data against the
 #      config (and writes a block null when its generated data is gone);
-#   2. refuses unless the manifest step 1 has just written has all eight blocks the build
-#      ships (terrain, buildings, photo, surfaces, trees, roofs, shadows and sky: BLOCKS below), naming the
-#      commands that build the first missing one, in order (brief M3-14). Nothing is exported
+#   2. refuses unless the manifest step 1 has just written has all nine blocks the build
+#      ships (terrain, buildings, photo, surfaces, trees, roofs, shadows, surroundings and sky:
+#      BLOCKS below), naming the commands that build the first missing one, in order (brief
+#      M3-14; the surroundings' four commands, brief v0.6.0-10). Nothing is exported
 #      before this check (M2 R1 G-03: it used to run before the rewrite, so a block the
 #      rewrite dropped was found only after both exports);
 #   2b. refuses unless the data packs the game expects, the one-line const EXPECTED_PACKS of
@@ -59,14 +60,17 @@
 #      "mattini <version>: surfaces <area> loaded, <columns> x <rows> cells at <cell> m",
 #      "mattini <version>: trees <area> loaded, <n> trees in <k> chunks" and
 #      "mattini <version>: roofs <area> loaded, <n> of <m> buildings coloured" and
-#      "mattini <version>: shadows <area> loaded, <columns> x <rows> cells at <cell> m" with
-#      game/project.godot's version and the manifest's values (briefs M2-05, M3-14, v0.5.0-05). Each
-#      line must be printed after the one before it (its first occurrence after the previous
-#      one's counts: a line never printed fails, a line only printed earlier is out of
-#      order). It also requires exit 0 and no ERROR line (M1 review G-02: an export without
-#      its terrain passed every step before this one). A manifest without one of the blocks
-#      is refused there too, with step 2's message; the sky block is required there but prints
-#      no startup line (brief v0.4.0-09).
+#      "mattini <version>: shadows <area> loaded, <columns> x <rows> cells at <cell> m" and
+#      "mattini <version>: surroundings <area> loaded, <columns> x <rows> vertices at <spacing> m,
+#      colour <colour_columns> x <colour_rows> at <colour_cell> m" with game/project.godot's
+#      version and the manifest's values (briefs M2-05, M3-14, v0.5.0-05, v0.6.0-10; ten lines
+#      with the two data packs). Each line must be printed after the one before it (its first
+#      occurrence after the previous one's counts: a line never printed fails, a line only
+#      printed earlier is out of order). It also requires exit 0 and no ERROR line (M1 review
+#      G-02: an export without its terrain passed every step before this one). A manifest
+#      without one of the blocks is refused there too, with step 2's message; the sky block is
+#      required there but prints no startup line (brief v0.4.0-09). The far terrain's files
+#      ship in mattini.pck, not a data pack (brief v0.6.0-10).
 #      Nothing here starts the Windows build (the owner's PC is its test).
 # Once step 4 has begun (its first act deletes build/linux and build/windows), every refusal
 # fail() makes ends with the line "export: build/ is unfinished, do not ship it" on stderr:
@@ -158,8 +162,11 @@ error_lines() {
 }
 
 # The blocks of the manifest the build ships, in the order of the startup lines, each with the
-# commands that build it, in order (brief M3-14; the shadows' block, brief v0.5.0-05). The sky block is required and prints no startup
-# line (brief v0.4.0-09).
+# commands that build it, in order (brief M3-14; the shadows' block, brief v0.5.0-05; the
+# surroundings' block, brief v0.6.0-10). The commands are those of game/scripts/main.gd's
+# <BLOCK>_FIX constants, in their order: one list in two homes, which
+# pipeline/tests/test_v060_10_export_far_terrain.py keeps equal. The sky block is required and
+# prints no startup line (brief v0.4.0-09).
 BLOCKS=(
 	"terrain|download terrain|terrain"
 	"buildings|download buildings|buildings"
@@ -168,6 +175,7 @@ BLOCKS=(
 	"trees|download surface|download tlm|trees"
 	"roofs|download photo|roofs"
 	"shadows|download surface|shadows"
+	"surroundings|download regio|download farphoto|surroundings|farcolour"
 	"sky|sky"
 )
 
@@ -189,14 +197,16 @@ no_block_message() {
 
 # The startup lines of the started build, one per line: first one per data pack name given
 # as an argument ("mattini <version>: data pack <name> loaded", which
-# game/scripts/data_packs.gd prints), in the order given; then the seven lines
+# game/scripts/data_packs.gd prints), in the order given; then the eight lines
 # game/scripts/main.gd prints, each written as main.gd writes it (numbers with at most two
 # decimals and no trailing zeros), the version from game/project.godot and the rest from the
 # manifest's blocks: the terrain's area, columns, rows and spacing; the buildings' area and
 # counts of buildings, chunks and triangles; the photo's and the surfaces' area, columns,
 # rows and cell; the trees' area, count and chunks; the roofs' area, the buildings with a
-# colour and all buildings; the shadows' area, columns, rows and cell. The sky block must be there too but prints no line (brief v0.4.0-09). A missing block is refused with step 2's message, not a
-# traceback (require_blocks).
+# colour and all buildings; the shadows' area, columns, rows and cell; the surroundings' area,
+# heights' columns, rows and spacing and colour's columns, rows and cell (brief v0.6.0-10). The
+# sky block must be there too but prints no line (brief v0.4.0-09). A missing block is refused
+# with step 2's message, not a traceback (require_blocks).
 expected_startup_lines() {
 	require_blocks
 	"${UV_RUN[@]}" python -c '
@@ -244,6 +254,18 @@ print("mattini %s: roofs %s loaded, %d of %d buildings coloured" % fields)
 shadows = manifest["shadows"]
 fields = (version, shadows["area"], shadows["columns"], shadows["rows"], number(shadows["cell_m"]))
 print("mattini %s: shadows %s loaded, %d x %d cells at %s m" % fields)
+surroundings = manifest["surroundings"]
+fields = (
+    version,
+    surroundings["area"],
+    surroundings["columns"],
+    surroundings["rows"],
+    number(surroundings["spacing_m"]),
+    surroundings["colour_columns"],
+    surroundings["colour_rows"],
+    number(surroundings["colour_cell_m"]),
+)
+print("mattini %s: surroundings %s loaded, %d x %d vertices at %s m, colour %d x %d at %s m" % fields)
 ' "$MANIFEST" game/project.godot "$@"
 }
 
@@ -392,10 +414,10 @@ system="$(uname -s)"
 step "1. the manifest, rewritten and re-checked against the config"
 "${UV_RUN[@]}" python -m mattini manifest || fail "python -m mattini manifest refused the generated data (see above)"
 
-step "2. the manifest step 1 wrote has all eight blocks"
+step "2. the manifest step 1 wrote has all nine blocks"
 [ -f "$MANIFEST" ] || fail "$MANIFEST is missing after step 1 wrote it"
 require_blocks
-echo "all eight blocks are there: terrain, buildings, photo, surfaces, trees, roofs, shadows and sky"
+echo "all nine blocks are there: terrain, buildings, photo, surfaces, trees, roofs, shadows, surroundings and sky"
 
 step "2b. the data packs the game expects are the ones this script writes"
 [ -f "$DATA_PACKS_GD" ] || fail "$DATA_PACKS_GD is missing: nothing was exported"
@@ -529,8 +551,8 @@ fi
 step "6. the Linux build starts"
 expected="$(expected_startup_lines ${PACKS_WRITTEN[@]+"${PACKS_WRITTEN[@]}"})" || fail "no startup lines to expect (see above)"
 mapfile -t EXPECTED <<< "$expected"
-[ "${#EXPECTED[@]}" -eq $((7 + ${#PACKS_WRITTEN[@]})) ] \
-	|| fail "expected $((7 + ${#PACKS_WRITTEN[@]})) startup lines, found: $expected"
+[ "${#EXPECTED[@]}" -eq $((8 + ${#PACKS_WRITTEN[@]})) ] \
+	|| fail "expected $((8 + ${#PACKS_WRITTEN[@]})) startup lines, found: $expected"
 for line in "${EXPECTED[@]}"; do
 	echo "expecting: $line"
 done

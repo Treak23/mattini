@@ -54,6 +54,13 @@ tests above unchanged):
   another branch: exit 0 for main's tip and for an older commit of main, non-zero for a commit
   of another branch (its output names the sha and main), and no branch but main fetched.
 
+Since brief v0.6.0-10 (design §1, §2 and §6: the far terrain's two inputs and two steps; this
+file re-pinned whole on v0.6.0-03's, only PIPELINE, DOWNLOADS, the order test's download loop
+and this paragraph change): the downloads step also fetches `download regio` (swissALTIRegio)
+and `download farphoto` (SWISSIMAGE 2 m), and the pipeline runs `surroundings`, then
+`farcolour`, after `trees` and before `shadows` (`python -m mattini`'s own order, brief v0.6.0-07
+decision 1), so the far terrain's block is in the manifest the pair checks.
+
 Does NOT prove: that GitHub runs it (the session's dry run on GitHub after the batch lands,
 then the live run); that the runner has the disk, memory and time (the same run); that the
 hook still installs Godot in a fresh container (a census of its text: the next session's
@@ -93,10 +100,14 @@ PIPELINE = [
     "roofs",
     "surfaces",
     "trees",
+    "surroundings",
+    "farcolour",
     "shadows",
     "sky",
     "manifest",
 ]
+# What the downloads step fetches, `python -m mattini download <name>` each.
+DOWNLOADS = ("terrain", "buildings", "photo", "surface", "tlm", "regio", "farphoto")
 HEX64 = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])")
 
 
@@ -263,8 +274,10 @@ def test_the_steps_run_in_release_order():
     positions = [joined.index(f"python -m mattini {command}") for command in PIPELINE]
     assert positions == sorted(positions), "the pipeline in RELEASE.md §C's order"
     downloads = _steps()[order[3][1]]["run"]
-    for dataset in ("terrain", "buildings", "photo", "surface", "tlm"):
-        assert re.search(rf"\b{dataset}\b", downloads), f"the {dataset} download"
+    for dataset in DOWNLOADS:
+        assert re.search(rf"python -m mattini download {dataset}(\s|$)", downloads), (
+            f"the {dataset} download"
+        )
     pair = _steps()[order[4 + len(PIPELINE)][1]]["run"]
     assert "MANIFEST_BYTES" in pair and "manifest.json" in pair
 

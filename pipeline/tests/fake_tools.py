@@ -76,6 +76,14 @@ real export that did that. Measured on Godot 4.6.3 (pin author, 2026-10-30): pac
 refusals, exit 1, no pack; a folder holding only `.part`, `.import` and hidden files holds no
 file to pack; a hidden subfolder is not seen.
 
+Since brief v0.6.0-10 (design §3's far terrain; only MANIFEST, STARTUP_LINES, `export_tree`'s
+docstring and this paragraph change): the export ships nine blocks, so the stand-in manifest also
+holds the surroundings block (the seven keys tools/export.sh reads: area, columns, rows,
+spacing_m, colour_columns, colour_rows and colour_cell_m, at the real village's 841 x 861 heights
+at 50 m and 4200 x 4300 colour pixels at 10 m, as `python -m mattini surroundings` and `farcolour`
+wrote them in the pin author's rehearsal of brief v0.6.0-07), and the started build prints its
+startup line after the shadows', as game/scripts/main.gd writes it (brief v0.6.0-09 decision 3).
+
 Does NOT prove: that Godot, GUT or a Windows Godot print exactly this (each line was
 measured on Linux only; a CRLF run is simulated by turning every LF into CR LF).
 """
@@ -519,6 +527,15 @@ MANIFEST = {
         "world_sha256": "d2607d1362f3c7ec26b7e00c38d873b36d29db83aa169eebf60e0dd6f299509b",
     },
     "surfaces": {"area": "village", "cell_m": 0.5, "columns": 4000, "rows": 6000},
+    "surroundings": {
+        "area": "village",
+        "colour_cell_m": 10.0,
+        "colour_columns": 4200,
+        "colour_rows": 4300,
+        "columns": 841,
+        "rows": 861,
+        "spacing_m": 50.0,
+    },
     "terrain": {"area": "village", "columns": 4001, "rows": 6001, "spacing_m": 0.5},
     "trees": {
         "area": "village",
@@ -538,12 +555,16 @@ STARTUP_LINES = (
     f"mattini {VERSION}: trees village loaded, 34423 trees in 3 chunks",
     f"mattini {VERSION}: roofs village loaded, 1485 of 1486 buildings coloured",
     f"mattini {VERSION}: shadows village loaded, 4000 x 6000 cells at 0.5 m",
+    (
+        f"mattini {VERSION}: surroundings village loaded, 841 x 861 vertices at 50 m, "
+        "colour 4200 x 4300 at 10 m"
+    ),
 )
 
 
 def export_tree(tmp_path: Path, templates_dir: Path | None) -> Path:
     """A scratch repository for tools/export.sh: the script, game/project.godot,
-    game/scripts/data_packs.gd (its EXPECTED_PACKS), a manifest with the eight blocks (step
+    game/scripts/data_packs.gd (its EXPECTED_PACKS), a manifest with the nine blocks (step
     1's rewrite is the stand-in uv's no-op), a small stand-in file in each packed folder
     (PACKED_FOLDERS), and, unless None, Godot's export templates installed in
     `templates_dir`."""

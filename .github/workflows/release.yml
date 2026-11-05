@@ -6,6 +6,10 @@
 # Since brief v0.6.0-03 (the 0.5.0 residue): the Python is pinned in tools/pins.sh (uv's managed
 # CPython only, installed before any sync, logged with its zlib, another one refused), and a
 # commit that is not on main is refused before anything is downloaded.
+# Since brief v0.6.0-10 (the far terrain): the downloads step also fetches swissALTIRegio
+# (`download regio`) and SWISSIMAGE at 2 m (`download farphoto`), and the pipeline runs
+# `surroundings`, then `farcolour`, after `trees` and before `shadows` (`python -m mattini`'s own
+# order), so the manifest the pair checks holds the far terrain's block.
 name: release
 on:
   workflow_dispatch:
@@ -118,6 +122,8 @@ jobs:
           uv run --project pipeline --frozen python -m mattini download photo
           uv run --project pipeline --frozen python -m mattini download surface
           uv run --project pipeline --frozen python -m mattini download tlm
+          uv run --project pipeline --frozen python -m mattini download regio
+          uv run --project pipeline --frozen python -m mattini download farphoto
       - name: pipeline, terrain
         run: uv run --project pipeline --frozen python -m mattini terrain
       - name: pipeline, buildings
@@ -130,6 +136,10 @@ jobs:
         run: uv run --project pipeline --frozen python -m mattini surfaces
       - name: pipeline, trees
         run: uv run --project pipeline --frozen python -m mattini trees
+      - name: pipeline, surroundings
+        run: uv run --project pipeline --frozen python -m mattini surroundings
+      - name: pipeline, farcolour
+        run: uv run --project pipeline --frozen python -m mattini farcolour
       - name: pipeline, shadows
         run: uv run --project pipeline --frozen python -m mattini shadows
       - name: pipeline, sky

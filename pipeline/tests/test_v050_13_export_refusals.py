@@ -21,6 +21,10 @@ G-05)"):
 The script under test is the repository's own, run on stand-ins (fake_tools.py). A file over the
 limit is a sparse file under build/stray/ (step 4 replaces only build/linux and build/windows).
 
+Since brief v0.6.0-10 (only one comment and this paragraph change): fake_tools.STARTUP_LINES
+ends with the far terrain's line, after the shadows', so the case "6-a-startup-line-missing"
+leaves that line out; the case still holds (a startup line not printed, step 6 refuses).
+
 Does NOT prove: that a real export or pack tool fails this way (the release gate's export run,
 docs/RELEASE.md §C, and the pin author's probe of pack.gd); that the owner reads the line before
 shipping; GitHub's actual limit; the Windows build.
@@ -199,7 +203,7 @@ def _after_step_4(tmp_path, root, case):
     if case == "5-a-file-over-the-limit":
         _sparse(root / "build" / "stray" / "big.bin", LIMIT + 1)
         return _run(tmp_path, root), "export: over 100 MiB (104857600 bytes)"
-    lines = fake_tools.STARTUP_LINES[:-1]  # the shadows' line is not printed
+    lines = fake_tools.STARTUP_LINES[:-1]  # the last line, the far terrain's, is not printed
     done = _run(tmp_path, root, lines=lines)
     return done, "export: the Linux build did not print its startup line:"
 
