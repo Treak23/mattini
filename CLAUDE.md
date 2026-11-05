@@ -79,6 +79,7 @@ config/terrain.json  the in-game terrain spacing per area, its expected heights 
 config/buildings.json the expected building chunks per area (from M2-04)
 config/sky.json     the sun's site (latitude, longitude, grid convergence), design's data (from 0.4.0)
 config/shadows.json  the flight's sun and the capture-shadow mask's expected values, design's data (its step from 0.5.0)
+config/surroundings.json the far terrain's heights and colour: spacing, margin, expected values, design's data (the steps from 0.6.0)
 config/photo.json, roofs.json, surfaces.json, trees.json  the M3 steps' expected values,
                      design's data (the steps from M3-04 to M3-07)
 pipeline/            Python data pipeline (offline, re-runnable); package `mattini`
@@ -87,7 +88,8 @@ game/                Godot project (project.godot)
 game/addons/         vendored plugins (Terrain3D, GUT) — committed, SPEC §Storage
 game/textures/       CC0 detail textures from Poly Haven, with LICENSE.txt (from M3-10)
 game/assets/generated/  pipeline output: terrain, buildings + manifest (photo, roofs,
-                     surfaces, trees from M3-13) — git-ignored, regenerated
+                     surfaces, trees from M3-13; shadows, sky, and the far terrain's `surroundings/`
+                     heights and colour from 0.6.0) — git-ignored, regenerated
 build/               exports made by tools/export.sh — git-ignored (from M1-06)
 tests/shared/        fixtures read by both pipeline and game tests (the seam)
 tools/gate.sh        the standard gate

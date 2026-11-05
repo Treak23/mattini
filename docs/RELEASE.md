@@ -89,7 +89,7 @@ build on GitHub's machine, and its log is the delivery's proof.
       `mattini.pck`, not in a data pack (no third pack: `PACKED_FOLDERS` and the game's
       `EXPECTED_PACKS` stay the two): `surroundings/village.f32` (2'896'404 bytes),
       `village.json` (1'414), `village_colour.jpg` (5'908'151) and `village_colour.json` (546),
-      as measured on the real files at brief v0.6.0-10; each is under step 4c's 10 MiB, and
+      as measured on the real files at brief v0.6.0-07's real run and the 0.6.0 integration rehearsal, and checked by the release gate's export (brief v0.6.0-10 measured no real file); each is under step 4c's 10 MiB, and
       the JPEG's `.import` (importer `keep`) is not shipped. They add about 8.8 MB to
       `mattini.pck` (about 22.3 MB at 0.5.0), far under step 5's 100 MiB.
 - [ ] Every generated file ships once, byte for byte: `tools/export.sh` step 4c reads the
