@@ -37,10 +37,9 @@ folder with their names unchanged.
 4. Send the log and a screenshot to the `feedback` session.
 
 The rollback is the previous version's Release: download its archive and unpack it into a
-folder of its own. For 0.5.0, the first version delivered as a Release, it is the `dist`
-branch's folder `mattini-0.3.1/`
-(https://github.com/Treak23/mattini/tree/dist/mattini-0.3.1), because 0.4.0 was never
-delivered. A later release's session rewrites this line.
+folder of its own. For 0.6.0 it is Release v0.5.0
+(https://github.com/Treak23/mattini/releases/tag/v0.5.0). A later release's session rewrites
+this line.
 
 ## Checksums
 

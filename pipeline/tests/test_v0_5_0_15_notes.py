@@ -6,17 +6,34 @@ game/scripts/main.gd (SUN_NOTE, MOON_NOTE); the rollback for 0.5.0 is the dist b
 mattini-0.3.1/ folder; the checksum command uses --ignore-missing; tools/export.sh's header
 says what its "unfinished" line covers and what it does not.
 
+Since brief v0.6.0-11 (this file re-pinned whole; only this paragraph, the import of VERSION, the
+constants ROLLBACK and VERSION_BEFORE and the rollback's test change, every other line as v0.5.0-15
+left it): the rollback line names the previous version's GitHub Release, Release v0.5.0
+(https://github.com/Treak23/mattini/releases/tag/v0.5.0, published by the owner on 2026-10-31,
+docs/releases/v0.5.0.md), in place of the dist branch's mattini-0.3.1/ folder; it names the version
+it is written for, game/project.godot's (so a version raised without rewriting the line fails here:
+"A later release's session rewrites this line"), and no dist folder any more.
+
 Does NOT prove: that the Release page renders as intended on GitHub, or that the credits are
-legally sufficient.
+legally sufficient; that Release v0.5.0 is still published and its archives still download (the
+session's audit of the draft, docs/RELEASE.md §C); that VERSION_BEFORE is the version before
+game/project.godot's (a constant of this file, rewritten with the line).
 """
 
 import re
 
-from fake_tools import REPO
+from fake_tools import REPO, VERSION
 
 TEMPLATE = REPO / "tools" / "release_notes.md"
 MAIN_GD = REPO / "game" / "scripts" / "main.gd"
 EXPORT_SH = REPO / "tools" / "export.sh"
+VERSION_BEFORE = "0.5.0"  # the Release this version's notes roll back to (brief v0.6.0-11)
+ROLLBACK = (
+    "The rollback is the previous version's Release: download its archive and unpack it into a "
+    f"folder of its own. For {VERSION} it is Release v{VERSION_BEFORE} "
+    f"(https://github.com/Treak23/mattini/releases/tag/v{VERSION_BEFORE}). A later release's "
+    "session rewrites this line."
+)
 
 
 def _template():
@@ -54,10 +71,13 @@ def test_does_not_name_gut():
     assert not re.search(r"\bGUT\b", _template()), "GUT is a test addon and is not shipped"
 
 
-def test_rollback_names_dist_folder():
+def test_rollback_names_the_previous_release():
     text = _template()
-    assert "mattini-0.3.1/" in text
-    assert "https://github.com/Treak23/mattini/tree/dist/mattini-0.3.1" in text
+    assert ROLLBACK in " ".join(text.split()), "the rollback paragraph is not the pinned one"
+    assert text.count("The rollback is") == 1, "one rollback paragraph"
+    assert "releases/tag/v" + VERSION_BEFORE in text
+    assert "mattini-0.3.1" not in text, "the dist folder is no longer the rollback"
+    assert "tree/dist" not in text, "the dist branch is no longer the rollback"
     assert "Release of the version before this one: download" not in text
 
 
