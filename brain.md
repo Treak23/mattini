@@ -1,11 +1,10 @@
 # brain.md — mattini, the whole picture in one file
 
-Orientation for any session. Current as of **2026-11-02 — version 0.5.0 (the photo's own shadows softened by a capture-time
-mask, a light haze, the clock's note outside 2020 to 2035; the first release delivered as a GitHub Release, built by
-`.github/workflows/release.yml` on a GitHub runner; built from `main` `af3d5d2`, recorded in `docs/releases/v0.5.0.md`; no P0 or P1
-open) published by the owner 2026-10-31 as GitHub Release `v0.5.0`**; 0.6.0 is in build (its plan: `docs/briefs/v0.6.0-plan.md`) (0.4.0 was never delivered on its own: 0.5.0 contains it; `dist` holds
-0.1.0 to 0.3.1, `mattini-0.3.1/` the rollback)
-(update this header when a phase closes). `CLAUDE.md` (rules) and
+Orientation for any session. Current as of **2026-11-05 — version 0.6.0 (the far mountains drawn from swissALTIRegio and
+SWISSIMAGE 2 m around the village and shading it, the camera over them, the Release notes' placeholders, the Release build's
+pinned Python and sha-on-main check; built from `main` `8d4fa3f`, recorded in `docs/releases/v0.6.0.md`; no P0 or P1 open)
+waits as a draft Release for the owner to publish** (0.5.0 was published 2026-10-31 as `v0.5.0`, the rollback; `dist` holds
+0.1.0 to 0.3.1) (update this header when a phase closes). `CLAUDE.md` (rules) and
 `docs/SPEC.md` (design) outrank this file.
 
 ## 1. WHAT
@@ -34,22 +33,26 @@ copies it into the generated manifest, and the game learns the origin only from 
 ## 4. STACK
 Godot 4.6.3 (standard build, Forward+), GDScript, Terrain3D 1.0.2, GUT 9.6.1, gdtoolkit
 4.5.0; Python 3.13 via uv with a committed lockfile; pytest and ruff; rasterio and numpy
-from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (v0.5.0-13's
-batch gate at `e9c6f5f`, 2026-10-30): pytest 2830 passed, 5 network tests deselected; GUT 70 scripts, 463 tests, 19590
+from M1-03, fiona from M2-04. Why each: SPEC §4 and §13. Test counts at the last gate (0.6.0's release gate
+from a fresh clone of `8d4fa3f`, 2026-11-05): pytest 4309 passed, 7 network tests deselected; GUT 78 scripts, 561 tests, 23084
 asserts; the gate's render step passes, five RENDER lines (RENDER trees 0.8637, 20 of 20 crowns drawn, repeating exactly).
 
 ## 5. HISTORY
 Per-arc record: `docs/history/ARCS.md`. Releases: `docs/releases/` (0.1.0, 2026-09-25;
 0.2.0, 2026-09-26; 0.3.0, 2026-10-16, `dist` `5f08379`; 0.3.1, 2026-10-26, `dist` `5b51347`; 0.4.0, 2026-10-29,
-recorded, never delivered on its own; 0.5.0, 2026-10-31, GitHub Release `v0.5.0`).
+recorded, never delivered on its own; 0.5.0, 2026-10-31, GitHub Release `v0.5.0`; 0.6.0, 2026-11-05, a draft Release for the
+owner to publish).
 Lessons: `docs/LESSONS.md`. Ledger: `docs/history/LEDGER.md`.
 
 ## 6. NEXT
-0.6.0 (go 2026-11-02): the far mountains drawn from swissALTIRegio (SPEC §13 row 59, re-scoped from M4-01, -02, -07 and the
-surroundings parts of M4-09 and M4-10) and the release-reproducibility batch. Then M5 staged (row 58): stage 1, a per-tile
-full-resolution source map of the municipality plus 2 km and a derive step; stage 2, a mixed-resolution game of the whole
-municipality. The move to Godot 4.8 once it is stable and GUT follows (Terrain3D 1.1.0 already supports it); M6 weather and
-walking. The board is the live version.
+The owner publishes 0.6.0's draft Release and looks at the record's look list on the PC (the far mountains and their shadows,
+Italy's colour, the camera at the area's edge, how long the window stays blank at start). Then, from a fresh `ultracode design`
+session: M5 staged (SPEC §13 row 58, the owner's "follow your recommendations", 2026-11-02): stage 1, a per-tile
+full-resolution source map of the municipality of Zermatt plus 2 km and a derive step that first reproduces today's village
+(about two releases, nothing changes on screen; its first batch the STAC read retry if the runner flakes); stage 2, a
+mixed-resolution game of the whole municipality with Sentinel-2 colour for Italy; bridges as decks from swissTLM3D; the move to
+Godot 4.8 once it is stable and GUT follows (Terrain3D 1.1.0 already supports it); M6 weather and walking. The board is the live
+version.
 
 ## 7. HAZARDS
 All measured in a cloud container on 2026-09-24 (Godot 4.6.3): on day one, by M0's
@@ -371,6 +374,17 @@ builders, and by its review (M0 R1, `docs/reviews/`).
   `ubuntu-24.04`, the pipeline 2 min 34 s with shadows 60 s) wrote the manifest `f68275a1…`, design's pair, the surfaces PNG's
   zlib included, although its uv-managed CPython 3.13.14 is not this container's system 3.13.17 (the workflow does not pin
   the interpreter: residue, R1-CD-04).
+- **H32 — A container restart and a spend limit inside a release (measured 2026-11-04 and 05, 0.6.0).** A restart killed the
+  running Workflow task and nothing else: the disk, the scratchpad, the worktrees and the transcript journal survived, and
+  `Workflow({scriptPath, resumeFromRunId, args})` with the same script and args replayed every agent that had finished and
+  re-ran the rest (a nested `workflow()` child's agents included). Agents that re-run after the first uncached call run live
+  again, and a reviewer re-run can report other findings than the lost one (batch 09's camera finding F2 was in the first
+  round's journal only): read the journal for what a lost round found. The account's monthly spend limit fails the agents that
+  call the model (`You've hit your monthly spend limit`), not the shell: the prover and fixer of batch 09 failed with it and the
+  batch came back TRUNCATED; resume once the owner raises it. A subagent that ends its turn on a background gate has returned
+  (lesson 52). `gh api` on a draft Release's assets works when the container's token is valid (it was this time); the session's
+  GitHub tools list a Release but not its assets. A draft has no tag: `get_release_by_tag` 404s until it is published; use
+  `list_releases`.
 - Benign: GUT runs end with `WARNING: ObjectDB instances leaked at exit`, a warning line,
   not an error.
 

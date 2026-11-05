@@ -6,15 +6,19 @@ Open items only. Shipped and answered items live in `docs/history/` and
 
 ## Open now
 
-**Release 0.6.0 — GO 2026-11-02 (`docs/history/blocked/2026-11-02-1.md`; the plan `docs/briefs/v0.6.0-plan.md`).** The far
-mountains drawn from swissALTIRegio (SPEC §13 row 59; re-scoped from M4-01, -02, -07 and the surroundings parts of M4-09 and
-M4-10) and the release-reproducibility batch. Builders on Sonnet, two lanes; no size limit this release and no build before the owner's second go (the owner's overrides, 2026-11-02). The list is frozen. Eleven briefs pinned and rehearsed on real data (`docs/briefs/v0.6.0-plan.md`, Status GO 2026-11-03); building in two lanes. Answered with the go: Italy's colour stays the altitude-band fill; M5's stage 1 is 0.7.0.
+**Release 0.6.0 — built, checked and recorded 2026-11-05 (`docs/releases/v0.6.0.md`); a draft GitHub Release waits for the owner
+to publish it: https://github.com/Treak23/mattini/releases.** The far mountains drawn from swissALTIRegio and SWISSIMAGE 2 m (SPEC §13
+row 59), the camera over them, the Release notes' placeholders, the Release's pinned Python and sha-on-main check; twelve briefs
+DONE in two lanes (`docs/briefs/v0.6.0-plan.md`); the whole-range review's one P1 (the camera) fixed; the release gate from a fresh
+clone green (pytest 4309, GUT 78 scripts, 561 tests, 23'084 asserts; the manifest 328'184 bytes `a5a3ef65…`); the dry run (17 min)
+and the real run (12 min) green on GitHub. `mattini.pck` differs between builds (brain.md H15), so does each build's archives.
 
-**After 0.6.0:** M5 staged (SPEC §13 row 58): stage 1, the per-tile source map of the municipality of Zermatt plus 2 km and a
-derive step (about 2 releases, nothing changes on screen); stage 2, the mixed-resolution game of the whole municipality (about 2
-to 3); bridges as decks from swissTLM3D (about 3 batches); the move to Godot 4.8 when it is stable and GUT supports it (Terrain3D
-1.1.0-stable, 2026-10-30, supports 4.5 to 4.8; GUT's latest 9.7.1 names no 4.8; Godot 4.8 beta 2, 2026-10-29); M6 weather and
-walking.
+**Next release:** M5 staged (SPEC §13 row 58): stage 1, the per-tile full-resolution source map of the municipality of Zermatt
+plus 2 km and a derive step (about 2 releases, nothing changes on screen; its first batch the STAC read retry if the runner
+flakes), then stage 2, the mixed-resolution game of the whole municipality (about 2 to 3), real colour for Italy with it
+(Sentinel-2); bridges as decks from swissTLM3D (about 3 batches); the move to Godot 4.8 when it is stable and GUT supports it
+(Terrain3D 1.1.0-stable, 2026-10-30, supports 4.5 to 4.8; GUT's latest 9.7.1 names no 4.8; Godot 4.8 beta 2, 2026-10-29); M6
+weather and walking.
 
 **Release 0.5.0 — published by the owner 2026-10-31 (https://github.com/Treak23/mattini/releases/tag/v0.5.0; `docs/releases/v0.5.0.md`).**
 
@@ -22,7 +26,8 @@ walking.
 40 % against 0.3.0's 94 % (68 °C against 87 °C), the log fills while running; "everything else is good"; the
 river "flows but side to side, we will need to give it a direction" (FB-008, for 0.4.0's triage).
 
-**Waiting on the owner:** the 0.5.0 record's look list on the PC. A
+**Waiting on the owner:** publishing 0.6.0's draft Release (https://github.com/Treak23/mattini/releases) and the record's look list on
+the PC (the far mountains and their shadows, Italy's colour, the camera at the area's edge, the start time). A
 second developer may join: how a person works beside the release sessions (the process assumes only agents commit to `main`)
 and the licence of mattini's own code are a `design` conversation when they do. The Windows build's first start stays deferred by
 the owner ("not a priority" until sharing). Done 2026-10-26: the repository is public, and ruleset 25920774 blocks deletion and
@@ -33,7 +38,10 @@ non-fast-forward pushes on `main` and `dist` with no bypass actors.
 files removed. The Yale catalogue was refused (no licence; the ADC's recorded word forbids altered copies). Known limits (v0.4.0-06): positions are J1991.25, not precessed to the date (0.13 to 0.35°); no star colours. The licence's §7(b) reinstates it if a breach is cured within 30 days (the triage said otherwise).
 
 **Decisions for the owner to audit** (the session's reversible calls, DESIGN.md §How the session
-decides 2), release 0.5.0 (the plan's audit list, the record's Question 2): the clock note stays shown while outside 2020 to
+decides 2), release 0.6.0 (the plan's audit list, the record's Question 2): the pin authors' taken options for every open question
+of the PINSPECs; the skirt double-sided; the reader's NaN check; the fixtures' colour as game-only data; the test world's hole by its
+own grid; the camera's far plane at 40'000 m; `directional_shadow_max_distance` left at 3000; the band fill's rounding; the panel
+entry reading "the far terrain"; the 100 MiB per-file limit kept. Release 0.5.0 (the plan's audit list, the record's Question 2): the clock note stays shown while outside 2020 to
 2035; the render checks at a fixed 60 fps; the flow check's 5° and 0.5 to 1 m/s; the trees drawn at 20 of 20 crowns 8.0 from bare
 ground; the classes check's gaps 100 and 10; 06's two Release-notes findings raised to P1. Kept by the owner's "6a yes", 2026-10-29, release 0.4.0 (the plan): SkyClock (v0.4.0-04) at tier 1 although it reads no world config; the sky rig and
 the stars (05, 06) at tier 2, their frame reviewed in 08 at tier 1; the river's ripples run in real time whatever the
@@ -45,8 +53,8 @@ permanent in `docs/RELEASE.md` §C. The briefs' Findings carry both options of e
 pushed without a separate "push dist" (DESIGN.md step 6 publishes; it added 21 MB, `mattini.pck`, every
 other file 0.3.0's; RULINGS 2026-10-26); `mattini-0.1.0/` left `dist`'s tree (the last three kept).
 
-**Last shipped:** 0.5.0, 2026-10-30: the softened photo shadows, the haze, the first GitHub Release (`docs/releases/v0.5.0.md`;
-built from `main` `af3d5d2`; published by the owner 2026-10-31). Before it: 0.4.0, 2026-10-29, recorded but never
+**Last shipped:** 0.6.0, 2026-11-05: the far mountains drawn and shading the village (`docs/releases/v0.6.0.md`; built from `main`
+`8d4fa3f`; the draft Release waits for the owner to publish). Before it: 0.5.0, 2026-10-30 (published 2026-10-31); 0.4.0, 2026-10-29, recorded but never
 delivered on its own; 0.3.1, 2026-10-26 (`dist` `5b51347`), kept as `mattini-0.3.1/`, the rollback; 0.3.0 and 0.2.0 as their
 folders on `dist`.
 
@@ -73,10 +81,9 @@ are closed.
 The project's direction (the owner, 2026-10-27; SPEC §13 row 50): this repository is the map, as detailed and
 accurate as the data allows; each game is a branch or fork that takes what it needs.
 
-1. (0.4.0 and 0.5.0, shipped: the river's direction, the moving sun, the softened photo shadows, the haze, GitHub Releases)
-2. The far mountains, drawn (0.6.0; the rest of M4, re-scoped by SPEC §13 row 59)
-3. M5 Scale up, staged (SPEC §13 row 58): the municipality plus 2 km as a per-tile source map, then a mixed-resolution game
-4. M6 Weather and walking
+1. (0.4.0 to 0.6.0, shipped: the river's direction, the moving sun, the softened photo shadows, the haze, GitHub Releases, the far mountains drawn)
+2. M5 Scale up, staged (SPEC §13 row 58): the municipality plus 2 km as a per-tile source map, then a mixed-resolution game
+3. M6 Weather and walking
 - When Godot 4.8 is out of beta: the move to it (the owner, 2026-10-27), a release of its own once Terrain3D and
   GUT support it (SPEC §4's pins)
 
@@ -112,12 +119,17 @@ and the Windows first start (deferred by the owner); every other inbox entry is 
 - 0.5.0's whole-range review, P3 (`docs/reviews/v0.5.0-round1.md`): `tools/gate_allowlist.txt` line 20 excuses every error on the
   buildings fixture's path, so CaptureShadowGrid's and SkySite's refusals there are excused unnamed (S-09); `star_image`'s
   declination guard refuses exactly ±90 only: just inside, the run width `floor(0.5 / cos dec)` is unbounded (a hang at
-  89.9999999, a doubled star at 89.99; the shipped table tops out at Polaris, +89.26) (correctness N2); `release_checks.sh` check
-  5's FAIL message says the game exited before the lines appeared even when they had (the verdict is right) (N4);
-  `release.yml` takes any 40-hex `sha` and never checks it is on `main`, while the notes say "built from `main`" (owner N2); the
-  mask reader's tests use LV95 values a float32 holds exactly, so a 32-bit origin subtraction passes (R1-CD-02, H5); the workflow
-  does not pin the Python interpreter whose zlib the PNGs' bytes depend on (the runner's uv-managed 3.13.14, the container's
-  system 3.13.17; R1-CD-04, H27).
+  89.9999999, a doubled star at 89.99; the shipped table tops out at Polaris, +89.26) (correctness N2); the
+  mask reader's tests use LV95 values a float32 holds exactly, so a 32-bit origin subtraction passes (R1-CD-02, H5).
+- 0.6.0's review and batches, P3 and one P2 (`docs/reviews/v0.6.0-round1.md`, `docs/briefs/v0.6.0-plan.md` §The residue after the
+  review): a STAC item read has no retry (`download._published_asset`; `download farphoto` reads 1806 items on every run; a
+  P2, fixed in a follow-up batch if the runner flakes: the dry run and the real run did not meet it); seven digest shape
+  checks in six readers (`tree_chunks.gd`, `building_chunks.gd`, `surface_grid.gd` twice, `terrain_grid.gd`, `shadow_grid.gd`,
+  `photo_grid.gd`) accept a leading plus or minus; no commit-gate test crosses the pipeline's 20-key `surroundings` block to the
+  game's reader; the new commands' help is thin (no sizes, no progress for the first 65 s of `lock farphoto`, `farcolour` before
+  `surroundings` fails only at the manifest write); `tools/export.sh` step 6 bounds a start at 300 s and no gate times the far
+  mesh's build in a window; two unreachable `except DownloadError` handlers kept with true words; the colour band's "100 m"
+  is a literal in the game tied to `config/surroundings.json` by a text census only.
 - 0.5.0's batches, P3 (`docs/briefs/v0.5.0-plan.md`, the batch log): the readers' world guard says "its origin differs" when only
   the height offset differs (v0.5.0-03, in every reader that copies it: `shadow_grid.gd`, `surface_grid.gd`); RENDER lift's
   east-west and transposed comparators read 0.0 and never decide (v0.5.0-04, a pinned file); the mask's credit takes the
@@ -152,7 +164,7 @@ carried items: `PhotoGrid` does not refuse a photo wider than 16384 texels (M3-0
 `trees.py` imports private grid helpers from `surfaces.py`, a manifest write cut before its rename
 leaves `manifest.json.part` (M3-13 Findings 8).
 
-Round R2 (`docs/reviews/M3-round2.md`, closed clean), all P3: P-02 the render world is 16 m wide, flat and positive-coordinates-only (an `abs()`, a scale of 1.002, a shift of the terrain's vertices pass; nine edits move it north-west); S-02 RELEASE.md §C's manifest box prints nothing on a wrong size (the release walk records `wc -c` and the exit status); S-03 SPEC §8's config shape omits `expected_png_sha256`; V1-2 and V1-3 below stay open.
+Round R2 (`docs/reviews/M3-round2.md`, closed clean), all P3: P-02 the render world is 16 m wide, flat and positive-coordinates-only (an `abs()`, a scale of 1.002, a shift of the terrain's vertices pass; nine edits move it north-west); S-03 SPEC §8's config shape omits `expected_png_sha256`; V1-2 and V1-3 below stay open.
 
 Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified, no P0 to P2), all P3: V1-2 fix-4's normal census counts lines that begin with `NORMAL` (a braced second statement passes, a correct `dFdyCoarse` spelling fails); V1-3 the scene-level tree tests see one cell south-east of the origin (a sign error that shows only at x < 0 passes); V1-4 `ManifestValue.differs` calls a String and a StringName different types (no site passes a StringName).
 
@@ -189,6 +201,8 @@ Round V1 (`docs/reviews/M3-V1.md`, the verification pass: every R1 fix verified,
 
 ## Shipped
 
+- **0.6.0** — 2026-11-05 — the far mountains drawn from swissALTIRegio and SWISSIMAGE 2 m, shading the village; the camera over
+  them; the Release's pinned Python and sha-on-main check (`docs/releases/v0.6.0.md`).
 - **0.5.0** — 2026-10-30 — the photo's own shadows softened, the haze, the clock's note, the first GitHub Release
   (`docs/releases/v0.5.0.md`).
 - **0.4.0** — 2026-10-29 — the river flows downstream; the sun and the moon move, a physical sky, the stars
