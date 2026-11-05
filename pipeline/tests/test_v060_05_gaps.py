@@ -65,6 +65,23 @@ The second fixer round (the prover's findings on the pinned gates; decision 14 a
   the datasets config, the lock's entry and provenance.json carry those, not the committed
   values; and the refusals of a new and of a vanished item name the file and the checksum.
 
+The third fixer round (the prover's findings once more; decision 14 again):
+
+- *Only the far photo runs in parallel* (X20): decision 7 gives the parallel runner to
+  `farphoto` alone, and the pins hold the far photo's width and nothing about the other
+  datasets, so `workers=FARPHOTO_WORKERS` for every dataset passed them (other files' tests of
+  the order of the fetches fail it, five of them in the whole suite, but they compare a list the
+  scheduler may happen to keep in order, and they look at no thread). The terrain, the photo,
+  the surface and swissALTIRegio, for `lock` and for
+  `download`, read every item and fetch every file in the calling thread, one at a time: the
+  threads the calls ran in and the calls under way together are counted at the one function each
+  read (`_published_asset`) and each fetch (`_fetch_into`) goes through, so a pool anywhere in
+  those paths ends in another thread, whichever of its three call sites or defaults put it there.
+
+The prover's other findings were closed by the first two rounds and reproduced as closed at the
+third (every mutation named in its Findings table fails a test of this file, bar the equivalent
+ones and the network test, which the gate deselects by design and whose offline twin is above).
+
 Re-cut by brief v0.6.0-07 onto the config's one reader: the margin comes from the config the
 caller is given (`surroundings=`, read by the command line through
 `surroundings.load_surroundings_config`, which the fixture replaces on its module), and the
@@ -100,6 +117,7 @@ import urllib.request
 
 import pytest
 from local_farphoto import ABSENT, LocalFarphoto, cells_of, far_name
+from local_regio import LocalRegio
 from local_swisstopo import PHOTO, photo_name, sha256
 
 import mattini.__main__ as cli
@@ -161,14 +179,14 @@ class Meter:
         self.active = self.peak = self.calls = 0
         self.guard = threading.Lock()
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         with self.guard:
             self.active += 1
             self.calls += 1
             self.peak = max(self.peak, self.active)
         try:
             time.sleep(self.hold_s)  # long enough for every other worker to start meanwhile
-            return self.call(*args)
+            return self.call(*args, **kwargs)
         finally:
             with self.guard:
                 self.active -= 1
@@ -815,3 +833,97 @@ def test_the_head_fetcher_reads_what_the_stand_in_s_file_host_sends(far):
     name = far_name(PRESENT[2])
     body = far.bodies[name]
     assert download.urllib_head(far.base + far.file_path(name)) == (len(body), sha256(body))
+
+
+# --- the other datasets stay one at a time ----------------------------------------------------
+
+
+class Watched(Meter):
+    """A Meter that also keeps the threads its calls ran in."""
+
+    def __init__(self, call, hold_s=0.01):
+        super().__init__(call, hold_s)
+        self.threads = set()
+
+    def __call__(self, *args, **kwargs):
+        self.threads.add(threading.current_thread())
+        return super().__call__(*args, **kwargs)
+
+
+@pytest.fixture
+def others(monkeypatch, tmp_path):
+    """The stand-in that serves the photo, the surface and swissALTIRegio, and a lock pinning them."""
+    for name in ("http_proxy", "HTTP_PROXY"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("no_proxy", "127.0.0.1")
+    site = LocalRegio()
+    monkeypatch.setattr(download, "STAC_ITEM", site.stac_item)
+    site.lock_path = tmp_path / "config" / "datasets.lock.json"
+    site.lock_path.parent.mkdir()
+    pinned = json.loads(COMMITTED_LOCK.read_bytes())
+    pinned["datasets"].update(site.expected_entries())
+    pinned["datasets"]["swissaltiregio"] = site.regio_entry()
+    site.lock_path.write_text(json.dumps(pinned, indent=2, sort_keys=True), "utf-8")
+    monkeypatch.setattr(lock, "LOCK_PATH", site.lock_path)
+    site.out = tmp_path / "raw"
+    yield site
+    site.close()
+
+
+def _one_at_a_time_here(watched, at_least):
+    """Every call of `watched` ran in this thread, one at a time, and there were enough of them."""
+    assert watched.calls >= at_least, watched.calls
+    assert watched.threads == {threading.current_thread()}, watched.threads
+    assert watched.peak == 1, watched.peak
+
+
+@pytest.mark.parametrize("command", ["lock", "download"])
+@pytest.mark.parametrize("dataset", ["photo", "surface", "regio"])
+def test_no_dataset_but_the_far_photo_reads_or_fetches_in_parallel(
+    others, monkeypatch, capsys, dataset, command
+):
+    reads, fetches = Watched(download._published_asset), Watched(download._fetch_into)
+    monkeypatch.setattr(download, "_published_asset", reads)
+    monkeypatch.setattr(download, "_fetch_into", fetches)
+    argv = [command, dataset, *(["--out", str(others.out)] if command == "download" else [])]
+    code, _, err = _run(capsys, *argv)
+    assert code == 0, err
+    _one_at_a_time_here(reads, at_least=6)
+    if command == "download":
+        _one_at_a_time_here(fetches, at_least=6)
+    else:
+        assert fetches.calls == 0  # no lock command asks the file host for anything
+
+
+TERRAIN_ITEMS = "https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo.swissalti3d/items/"
+
+
+def _terrain_body(name):
+    return f"bytes of {name}".encode()
+
+
+def _terrain_item(url):
+    item_id = url.removeprefix(TERRAIN_ITEMS)
+    assets = {}
+    for resolution in ("0.5", "2"):
+        name = f"{item_id}_{resolution}_2056_5728.tif"
+        checksum = "1220" + sha256(_terrain_body(name))
+        assets[name] = {"href": f"https://files.example/{name}", "file:checksum": checksum}
+    return {"id": item_id, "assets": assets}
+
+
+def _terrain_file(url, dest):
+    dest.write_bytes(_terrain_body(url.rsplit("/", 1)[1]))
+
+
+def test_the_terrain_reads_and_fetches_one_at_a_time_in_the_calling_thread(tmp_path):
+    world, datasets = load_world(), load_datasets()
+    locking = Watched(_terrain_item)
+    pinned = lock.build_lock(world, datasets, locking, area="village")
+    _one_at_a_time_here(locking, at_least=6)
+    reads, fetches = Watched(_terrain_item), Watched(_terrain_file)
+    download.download_terrain(
+        world, datasets, tmp_path, reads, fetches, lock=pinned, area="village"
+    )
+    _one_at_a_time_here(reads, at_least=6)
+    _one_at_a_time_here(fetches, at_least=6)
