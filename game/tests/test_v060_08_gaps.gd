@@ -384,56 +384,51 @@ func test_a_path_that_is_not_plain_is_refused_for_both_files() -> void:
 	assert_eq(_problem(_unchanged()), "", "a plain path is read")
 
 
-func test_the_file_messages_end_with_the_release_hint_in_an_export() -> void:
+## Every refusal about a file of the fixture folder: why -> [manifest change, heights file, colour
+## file (an empty array keeps the fixture's, null leaves it out), the file's path in the folder,
+## what the message says right after the path].
+func _file_refusals() -> Dictionary:
 	var short := _fixture_bytes(F32).slice(0, 164)
 	var flipped := _fixture_bytes(F32)
 	flipped[20] = flipped[20] ^ 1
-	var small := Image.create(15, 17, false, Image.FORMAT_RGB8)
-	var small_jpg := small.save_jpg_to_buffer(0.92)
 	var damaged := _fixture_bytes(JPG)
 	damaged[400] = damaged[400] ^ 1
-	var cases := {
-		"the heights of another size": [_set_key("sha256", _sha256(short)), short, null],
-		"the heights of another SHA-256": [_unchanged(), flipped, null],
-		"the colour of another SHA-256": [_unchanged(), null, damaged],
-		"the colour of another size":
-		[_set_key("colour_sha256", _sha256(small_jpg)), null, small_jpg],
+	var small := Image.create(15, 17, false, Image.FORMAT_RGB8).save_jpg_to_buffer(0.92)
+	var garbage := PackedByteArray([1, 2, 3, 4, 5, 6, 7, 8])
+	var keep := PackedByteArray()
+	var short_sha := _set_key("sha256", _sha256(short))
+	var garbage_sha := _set_key("colour_sha256", _sha256(garbage))
+	var small_sha := _set_key("colour_sha256", _sha256(small))
+	return {
+		"heights left out": [_unchanged(), null, keep, F32, " is missing"],
+		"colour left out": [_unchanged(), keep, null, JPG, " is missing"],
+		"heights of another size": [short_sha, short, keep, F32, " holds 164 bytes, not 168"],
+		"heights of another SHA-256": [_unchanged(), flipped, keep, F32, " has SHA-256 "],
+		"colour of another SHA-256": [_unchanged(), keep, damaged, JPG, " has SHA-256 "],
+		"colour that is no JPEG": [garbage_sha, keep, garbage, JPG, " cannot be decoded"],
+		"colour of another size": [small_sha, keep, small, JPG, " decodes to 15 × 17 pixels"],
 	}
+
+
+func test_each_file_refusal_names_its_file_and_ends_with_its_hint() -> void:
+	var cases := _file_refusals()
 	for why: String in cases:
 		var spec: Array = cases[why]
-		var f32: Variant = spec[1] if spec[1] != null else PackedByteArray()
-		var jpg: Variant = spec[2] if spec[2] != null else PackedByteArray()
-		var path := _write_case(spec[0], f32, jpg)
+		var path := _write_case(spec[0], spec[1], spec[2])
 		var world := WorldConfig.from_manifest(path)
 		ReleaseBuild.set_exported_for_tests(true)
 		var problem := SurroundingsGrid.new()._read(path, world)
 		assert_true(problem.ends_with(RELEASE_HINT), "%s, exported: %s" % [why, problem])
 		ReleaseBuild.set_exported_for_tests(false)
 		problem = SurroundingsGrid.new()._read(path, world)
-		assert_true(problem.ends_with(" rebuilds it"), "%s, not exported: %s" % [why, problem])
-	_check_a_missing_file_and_an_undecodable_colour_say_so()
-
-
-## A file left out of the folder is "missing" (checked before any read, so no engine error), and
-## a colour that is no JPEG under its own SHA-256 "cannot be decoded": neither is told as the size
-## or the digest of what was read, and each ends with the hint of its own command.
-func _check_a_missing_file_and_an_undecodable_colour_say_so() -> void:
-	ReleaseBuild.set_exported_for_tests(false)
-	var heights := _problem(_unchanged(), null, PackedByteArray())
-	assert_true(heights.begins_with("the heights file "), "the heights, left out: %s" % heights)
-	assert_true(heights.contains(" is missing"), "the heights are missing, not read: %s" % heights)
-	assert_true(heights.ends_with("python -m mattini surroundings rebuilds it"), heights)
-	var colour := _problem(_unchanged(), PackedByteArray(), null)
-	assert_true(colour.begins_with("the colour "), "the colour, left out: %s" % colour)
-	assert_true(colour.contains(" is missing"), "the colour is missing, not read: %s" % colour)
-	assert_true(colour.ends_with("python -m mattini farcolour rebuilds it"), colour)
-	var garbage := PackedByteArray([1, 2, 3, 4, 5, 6, 7, 8])
-	var change := _set_key("colour_sha256", _sha256(garbage))
-	var undecodable := _problem(change, PackedByteArray(), garbage)
-	assert_string_contains(undecodable, "cannot be decoded")
-	assert_false(undecodable.contains("decodes to"), "no size to tell: %s" % undecodable)
-	assert_true(undecodable.ends_with("python -m mattini farcolour rebuilds it"), undecodable)
-	# Godot's JPEG loader prints two ERROR lines for it (the gate's allowlist excepts them here).
+		var is_heights: bool = spec[3] == F32
+		var noun := "the heights file " if is_heights else "the colour "
+		var named: String = noun + path.get_base_dir().path_join(spec[3]) + spec[4]
+		assert_true(problem.begins_with(named), "%s starts '%s': %s" % [why, named, problem])
+		var command := "surroundings" if is_heights else "farcolour"
+		var hint := "; python -m mattini %s rebuilds it" % command
+		assert_true(problem.ends_with(hint), "%s, not exported: %s" % [why, problem])
+	# Godot's JPEG loader prints two ERROR lines for the colour that is no JPEG (the allowlist's).
 	_handle_errors(["is true. Returning"])
 
 
