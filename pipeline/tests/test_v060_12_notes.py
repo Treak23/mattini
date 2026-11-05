@@ -38,6 +38,13 @@ TREES_GD = REPO / "game" / "scripts" / "trees" / "tree_loader.gd"
 SURROUNDINGS_CONFIG = REPO / "config" / "surroundings.json"
 DATASETS_CONFIG = REPO / "config" / "datasets.json"
 WORLD_CONFIG = REPO / "config" / "world.json"
+SECTION_HEADING = "## Placeholders and limits"
+# The slow-start line, whole: its words are "far terrain" among others, which the limits' own
+# paragraph holds too, so a key word alone would pass with this sentence gone.
+START_SENTENCE = (
+    "At the start the window may stay blank for several seconds while the terrain and the far"
+    " terrain are built."
+)
 # The notes the game always lists, and the file each const is in.
 FIXED_NOTES = {
     "WALLS_NOTE": WALLS_GD,
@@ -53,6 +60,21 @@ def _template():
 
 def _flat(text):
     return " ".join(text.split())
+
+
+def _section_text():
+    """The template's `## Placeholders and limits` section, flattened: its heading to the next
+    `## ` heading or the end.
+
+    The prose checks read this and never the whole template: a key word such as "far terrain"
+    stands in other sections too, so a check on the whole file passes with the sentence it is
+    meant to pin gone (brief v0.6.0-12's prover, mutation 16).
+    """
+    text = _template()
+    assert text.count(SECTION_HEADING) == 1, f"the notes have one {SECTION_HEADING!r} section"
+    rest = text[text.index(SECTION_HEADING) + len(SECTION_HEADING) :]
+    end = rest.find("\n## ")
+    return _flat(SECTION_HEADING + (rest if end < 0 else rest[:end]))
 
 
 def _const_text(path, name):
@@ -125,7 +147,7 @@ def test_the_credits_note_s_band_is_the_config_s_colour_band():
 
 
 def test_the_template_names_the_far_terrain_s_two_limits():
-    text = _flat(_template())
+    text = _section_text()
     spacing = {a["spacing_m"] for a in _json(SURROUNDINGS_CONFIG)["areas"].values()}
     assert len(spacing) == 1
     (metres,) = spacing
@@ -139,9 +161,8 @@ def test_the_template_names_the_far_terrain_s_two_limits():
 
 
 def test_the_template_says_the_window_may_stay_blank_at_start():
-    text = _flat(_template())
-    assert "blank for several seconds" in text, "the window may stay blank for several seconds"
-    assert "far terrain" in text, "while the terrain and the far terrain are built"
+    # The whole sentence, in the section: "far terrain" alone is in the limits' paragraph too.
+    assert START_SENTENCE in _section_text(), START_SENTENCE
 
 
 def test_the_template_has_exactly_the_three_placeholders_still():

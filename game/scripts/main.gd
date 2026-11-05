@@ -384,7 +384,10 @@ static func _project_max_fps() -> int:
 ## startup line per block read. A refused manifest shows nothing; a refused block leaves the
 ## others shown (see the file's comment). Every refusal, and in an exported build every missing
 ## data pack, opens the error panel. Returns the credits' line of each dataset loaded, one per
-## distinct line, sorted.
+## distinct line, sorted. It starts with the missing packs, the far colour's note and the far grid
+## emptied, so a manifest refused here leaves none of an earlier call's (it runs once, from
+## _ready; test_v060_12_gaps.gd calls it again on a refused manifest to pin the three resets, and
+## does not claim a second good read is safe: the nodes it adds are not removed).
 func _load_world() -> PackedStringArray:
 	_missing_packs = PackedStringArray()
 	_far_colour_note = ""
