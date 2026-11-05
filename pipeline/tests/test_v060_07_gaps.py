@@ -1,6 +1,6 @@
 """Guards of brief v0.6.0-07 the pinned tests leave open (decision 12; the batch gate's prover).
 
-The pinned copies state what the wiring must do; they leave open eight things that no pin tells
+The pinned copies state what the wiring must do; they leave open these things, which no pin tells
 from their absence (each probe changed the code and left the pins green):
 
 - *A surroundings config without the area* is a DownloadError naming config/surroundings.json and
@@ -28,6 +28,17 @@ from their absence (each probe changed the code and left the pins green):
   optional in config/surroundings.json, so `checked` cannot compare its `computed_for`; the
   description is still refused (naming config/surroundings.json when the heights are built,
   the missing heights when they are not), never dropped to a null block.
+- *A DownloadError out of the lock's fit* (the second fixer round's E35 and E36): `surroundings`
+  (the step and the built block, which share `_lock_problem`) and `farcolour` (likewise, through
+  `_checked`, both fits) turn it into their own refusal with its text, decision 6. The steps'
+  own readers of the datasets config refuse its faults first, so no datasets config reaches
+  the conversion; the tests raise the DownloadError from inside the fit with a stand-in tile
+  rule, as the pins replace the rules.
+- *A built block for an area the world config lacks* (the second fixer round's E38): the
+  manifest's `_inputs_check` makes no lock fit for it (the tile rules read the area's box and
+  raise a WorldConfigError, no step's class), so the half's own check refuses it in its own
+  class; asked of every step but shadows (whose block function, outside this brief, leaves the
+  WorldConfigError), and of the surroundings' two halves by their own refusal's text.
 
 The manifest's `.part` rename (the pin author's third probe) is held by the full suite:
 test_m3_13_commands.py's two cases for `write_manifest`, which the new key does not touch.
@@ -36,6 +47,7 @@ Does NOT prove: that these are the only unpinned orders (the batch gate's prover
 """
 
 import copy
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -47,7 +59,7 @@ from synthetic_regio import FIXTURE, fixture_datasets, raw_regio
 
 from mattini import download, lock
 from mattini import manifest as manifest_module
-from mattini.farcolour import FarColourError, build_farcolour
+from mattini.farcolour import FarColourError, build_farcolour, built_farcolour_block
 from mattini.lock import shape_problem, write_lock
 from mattini.manifest import build_manifest
 from mattini.surroundings import (
@@ -418,3 +430,193 @@ def test_a_built_colour_whose_area_holds_no_colour_block_is_refused_not_dropped(
         assert "config/surroundings.json" in text and "no colour block" in text, text
     else:
         assert set(COMMAND.findall(text)) == {"python -m mattini surroundings"}, text
+
+
+# --------- the steps: a DownloadError out of the lock's fit is the step's own refusal (decision 6)
+#
+# A datasets config without the dataset, or with a malformed one, is refused by the steps' own
+# reader of it (`_regio_config`, `regio_config`, `_far_config`) before any fit is asked, in the
+# step's class: no config reaches the conversion. What does is a DownloadError raised from inside
+# the fit, by a tile rule or by the area lookup; a stand-in rule, replaced on `download` where
+# the fit looks it up, raises one.
+
+
+def _a_rule_that_refuses(monkeypatch, rule: str) -> str:
+    """Replace `download.<rule>` by one that raises a DownloadError; return its text."""
+    text = f"config/surroundings.json: stand-in refusal of {rule}"
+
+    def refuse(*args, **kwargs):
+        raise download.DownloadError(text)
+
+    monkeypatch.setattr(download, rule, refuse)
+    return text
+
+
+def _is_the_steps_refusal(refusal, error, text: str) -> None:
+    """Exactly the step's class (not the DownloadError, a RuntimeError no step catches), whole text."""
+    assert type(refusal.value) is error, repr(refusal.value)
+    assert not isinstance(refusal.value, download.DownloadError)
+    assert str(refusal.value) == text, str(refusal.value)
+
+
+def test_surroundings_turns_a_download_error_of_the_fit_into_its_own_refusal(tmp_path, monkeypatch):
+    root, made = raw_regio(tmp_path / "raw")
+    config = recorded(
+        load_surroundings_config(FIXTURE / "surroundings.json"), _fixture_world(), made, REGIO
+    )
+    text = _a_rule_that_refuses(monkeypatch, "regio_tiles")
+    with pytest.raises(SurroundingsError) as refusal:
+        build_surroundings(
+            _fixture_world(), fixture_datasets(), made, config, root, tmp_path / "out"
+        )
+    _is_the_steps_refusal(refusal, SurroundingsError, text)
+    assert not (tmp_path / "out").exists()
+
+
+def test_the_surroundings_built_block_turns_a_download_error_of_the_fit_into_its_own_refusal(
+    monkeypatch,
+):
+    out = FIXTURE / "generated"
+    config = load_surroundings_config(FIXTURE / "surroundings.json")
+    world_sha256 = json.loads((out / "surroundings" / "fixture.json").read_bytes())["world_sha256"]
+    made = json.loads((FIXTURE / "datasets.lock.json").read_text(encoding="utf-8"))
+    text = _a_rule_that_refuses(monkeypatch, "regio_tiles")
+    with pytest.raises(SurroundingsError) as refusal:
+        built_surroundings_block(
+            out, config, _fixture_world(), world_sha256, fixture_datasets(), made
+        )
+    _is_the_steps_refusal(refusal, SurroundingsError, text)
+
+
+@pytest.mark.parametrize("rule", ["regio_tiles", "farphoto_cells"])
+def test_farcolour_turns_a_download_error_of_either_fit_into_its_own_refusal(
+    tmp_path, monkeypatch, rule
+):
+    root, made = synthetic_farphoto.raw_inputs(tmp_path / "raw")
+    text = _a_rule_that_refuses(monkeypatch, rule)
+    with pytest.raises(FarColourError) as refusal:
+        build_farcolour(
+            load_world(FAR_FIXTURE / "world.json"),
+            synthetic_farphoto.fixture_datasets(),
+            made,
+            _far_config(made),
+            root,
+            tmp_path / "out",
+        )
+    _is_the_steps_refusal(refusal, FarColourError, text)
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("rule", ["regio_tiles", "farphoto_cells"])
+def test_the_far_colour_built_block_turns_a_download_error_of_either_fit_into_its_own_refusal(
+    tmp_path, monkeypatch, rule
+):
+    _, made = synthetic_farphoto.raw_inputs(tmp_path / "raw")
+    out = tmp_path / "out"
+    (out / "surroundings").mkdir(parents=True)
+    (out / "surroundings" / "fixture_colour.json").write_text("{}\n", encoding="utf-8")
+    world_sha256 = hashlib.sha256((FAR_FIXTURE / "world.json").read_bytes()).hexdigest()
+    text = _a_rule_that_refuses(monkeypatch, rule)
+    with pytest.raises(FarColourError) as refusal:
+        built_farcolour_block(
+            out,
+            _far_config(made),
+            load_world(FAR_FIXTURE / "world.json"),
+            world_sha256,
+            synthetic_farphoto.fixture_datasets(),
+            made,
+        )
+    _is_the_steps_refusal(refusal, FarColourError, text)
+
+
+# ------------------- the manifest: a built block, a world config that holds no such area
+
+
+def _world_without_the_area(tmp_path: Path) -> Path:
+    """The committed world config with its one area renamed: valid, and no `village` in it."""
+    data = json.loads((CONFIG / "world.json").read_text(encoding="utf-8"))
+    data["areas"] = {"elsewhere": data["areas"].pop(AREA)}
+    path = tmp_path / "world.json"
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _config_recording(tmp_path: Path, key: str, world: Path) -> Path:
+    """config/<key>.json with the committed world's SHA-256 replaced by `world`'s everywhere, so
+    that the manifest's world check (step 1) passes for that world."""
+    committed = hashlib.sha256((CONFIG / "world.json").read_bytes()).hexdigest()
+    text = (CONFIG / f"{key}.json").read_text(encoding="utf-8")
+    assert committed in text, f"config/{key}.json does not record the committed world"
+    path = tmp_path / f"{key}.json"
+    path.write_text(
+        text.replace(committed, hashlib.sha256(world.read_bytes()).hexdigest()), encoding="utf-8"
+    )
+    return path
+
+
+# shadows.built_shadows_block (v0.5.0-02's, outside this brief) asks its own lock fit before it
+# looks at the area, so a world config without the area leaves it as the WorldConfigError that
+# fit raises, which the command line catches with one line naming the world config: the one
+# step whose block is not refused in the step's own class, and so the one left out here.
+_AREA_STEPS = [step for step in _STEPS if step.key != "shadows"]
+
+
+@pytest.mark.parametrize(
+    "step", _AREA_STEPS, ids=[f"{step.key}{step.suffix}" for step in _AREA_STEPS]
+)
+def test_a_built_block_for_an_area_the_world_config_lacks_is_the_step_s_refusal(tmp_path, step):
+    """`_inputs_check` makes no lock fit for such an area (the tile rules read the area's box and
+    raise a WorldConfigError, no step's class): the block is refused in the step's own class and
+    nothing is written."""
+    world = _world_without_the_area(tmp_path)
+    out = tmp_path / "out"
+    (out / step.key).mkdir(parents=True)
+    (out / step.key / f"{AREA}{step.suffix}.json").write_text("{}\n", encoding="utf-8")
+    config = _config_recording(tmp_path, step.key, world)
+    with pytest.raises(step.error) as refusal:
+        build_manifest(world, out, **{f"{step.key}_config_path": config})
+    assert type(refusal.value) is step.error, repr(refusal.value)
+    assert not (out / "manifest.json").exists()
+
+
+@pytest.mark.parametrize("half", ["heights", "colour"])
+def test_each_surroundings_half_refuses_an_area_the_world_config_lacks_by_its_own_check(
+    tmp_path, monkeypatch, half
+):
+    """The half's own check, not a lock fit and not the other half's: the heights' check refuses
+    for the heights; for the colour the heights' block is a stand-in that accepts, so that the
+    colour's own check is the one reached."""
+    world = _world_without_the_area(tmp_path)
+    out = tmp_path / "out"
+    (out / "surroundings").mkdir(parents=True)
+    for name in [f"{AREA}.json", *([f"{AREA}_colour.json"] if half == "colour" else [])]:
+        (out / "surroundings" / name).write_text("{}\n", encoding="utf-8")
+    if half == "colour":
+        monkeypatch.setattr(
+            manifest_module, "built_surroundings_block", lambda *a, **k: {"area": AREA}
+        )
+    error, name, said, command = {
+        "heights": (
+            SurroundingsError,
+            f"{AREA}.json",
+            f"the world config has no area {AREA!r}",
+            "surroundings",
+        ),
+        "colour": (
+            FarColourError,
+            f"{AREA}_colour.json",
+            f"no area named {AREA!r}",
+            "farcolour",
+        ),
+    }[half]
+    with pytest.raises(error) as refusal:
+        build_manifest(
+            world,
+            out,
+            surroundings_config_path=_config_recording(tmp_path, "surroundings", world),
+        )
+    text = str(refusal.value)
+    assert type(refusal.value) is error, repr(refusal.value)
+    assert name in text and said in text, text
+    assert f"`python -m mattini {command}` rebuilds" in text, text
+    assert not (out / "manifest.json").exists()
