@@ -99,7 +99,6 @@ TILE_M = 1000  # SWISSIMAGE's tiles are 1 km cells named by their south-west cor
 TILE_EPSG = 2056
 TILE_BANDS = 3
 BLOCK = 5  # source pixels a colour pixel's side: the cell is 5 times the tile's resolution
-LOCK_COMMAND = "python -m mattini lock farphoto"
 DOWNLOAD_COMMAND = "python -m mattini download farphoto"
 STEP_COMMAND = "python -m mattini farcolour"
 TILE_ID = re.compile(r"([0-9]+)-([0-9]+)")
@@ -249,9 +248,9 @@ def built_farcolour_block(
     the lock's two entries. A difference in the world or the entries is a FarColourError naming
     design, not the rebuild, which would be refused for the same reason. Anything else that no
     longer holds is refused naming `python -m mattini farcolour`: a description that is not
-    exactly the one the step writes for this world, cell, box, source and entries, a JPEG of
-    another SHA-256 than the description pins and than the config expects, or a `.import` that is
-    not Godot's "keep" remap.
+    exactly the one the step writes for this world, cell, box, source and entries (its JPEG's
+    SHA-256 the config's expected one), a JPEG of another SHA-256 than the description pins, or a
+    `.import` that is not Godot's "keep" remap.
     """
     try:
         check_surroundings_config(surroundings_config, SURROUNDINGS_CONFIG_NAME)
@@ -313,13 +312,10 @@ def built_farcolour_block(
         keep = jpeg.with_name(jpeg.name + ".import").read_bytes()
     except OSError as exc:
         raise fail(f"the JPEG or its .import cannot be read: {exc}") from exc
+    # the description's colour_sha256 is the config's expected one (`wanted` above), so the JPEG
+    # that has it is the config's too: a third comparison, against the config, could never fire
     if actual != block["colour_sha256"]:
         raise fail(f"{jpeg} has SHA-256 {actual}, the description pins {block['colour_sha256']}")
-    if actual != colour["expected_sha256"]:
-        raise fail(
-            f"{jpeg} has SHA-256 {actual}, {SURROUNDINGS_CONFIG_NAME} expects "
-            f"{colour['expected_sha256']}"
-        )
     if keep != KEEP_IMPORT:
         raise fail(f"{jpeg}.import is {keep!r}, Godot must keep the JPEG as it is: {KEEP_IMPORT!r}")
     return block
