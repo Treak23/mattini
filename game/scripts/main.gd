@@ -45,6 +45,10 @@ extends Node3D
 ## Once everything is built, one startup line per block
 ## its reader accepted is printed, in the order terrain, buildings, photo, surfaces, trees,
 ## roofs, shadows, surroundings (tools/export.sh checks them in an exported build).
+## The pause screen's credits name every placeholder: the walls', the trees' and the streams'
+## notes always and, when the far terrain was read and any pixel of its colour was filled where
+## SWISSIMAGE has no image, one more note with the share of those pixels (FAR_COLOUR_NOTE, from
+## the block's filled_fraction: test_v060_09_gaps.gd).
 ##
 ## The sky (brief v0.4.0-08, from M4-10): the clock, time_unix, starts at SkyClock.START_UNIX (the
 ## photo's moment) and runs at 1x (SPEEDS), standing still while the pause screen is
@@ -127,6 +131,14 @@ const SKY_WHAT := "the sun's and the moon's course"
 ## the dataset's key in config/datasets.json (swissimage_far). With the photo's edition and
 ## attribution its line is the photo's, listed once.
 const FAR_COLOUR_CREDIT := "swissimage"
+## The credits' note on the far colour's filled pixels, a placeholder (Hard Rule 2; SPEC §10):
+## the far colour step gives every pixel of a cell without a SWISSIMAGE item the mean colour of the
+## covered pixels at the same 100 m of altitude, and the block records their share
+## (filled_fraction). The first %s is the share in words, the other two the colour's edition.
+const FAR_COLOUR_NOTE := (
+	"Far colour: %s of its pixels are a placeholder, not SWISSIMAGE data: where swisstopo has no %s"
+	+ " image they are filled with the mean colour of the %s pixels at the same 100 m of altitude."
+)
 ## In an exported build a player has no pipeline: every fix is the release folder.
 const EXPORTED_FIX := (
 	"keep mattini.pck and the data packs mattini-*.pck beside the executable:"
@@ -233,6 +245,9 @@ var _terrain: Terrain3D
 ## The messages of the data packs an exported build is missing, asked before the manifest is
 ## read; empty outside an exported build.
 var _missing_packs := PackedStringArray()
+## The credits' note on the far colour's filled pixels (FAR_COLOUR_NOTE); empty until the far
+## terrain was read, and when none of its pixels was filled.
+var _far_colour_note := ""
 ## The sun's place and the rig that lights the scene; null until made.
 var _site: SkySite
 var _rig: SkyRig
@@ -359,6 +374,7 @@ static func _project_max_fps() -> int:
 ## distinct line, sorted.
 func _load_world() -> PackedStringArray:
 	_missing_packs = PackedStringArray()
+	_far_colour_note = ""
 	if ReleaseBuild.is_exported():
 		_missing_packs = DATA_PACKS.missing_pack_errors(OS.get_executable_path().get_base_dir())
 	var read_world := _caught(WorldConfig.from_manifest.bind(manifest_path))
@@ -435,6 +451,7 @@ func _load_world() -> PackedStringArray:
 			_start_view_over(node)
 	if far != null:
 		_show_surroundings(far)
+		_far_colour_note = _far_note(far)
 	_print_startup_lines(grid, buildings, photo, surfaces, trees, roofs, shadows, far)
 	if not refusals.is_empty() or not _missing_packs.is_empty():
 		_show_error(refusals)
@@ -485,6 +502,17 @@ func _show_buildings(chunks: BuildingChunks, roofs: BuildingRoofs) -> Node3D:
 ## Rule 4). The camera's start does not depend on it.
 func _show_surroundings(far: SurroundingsGrid) -> void:
 	move_child(SurroundingsLoader.create(far, self), _ui.get_index())
+
+
+## The credits' note on the far colour's placeholder pixels (FAR_COLOUR_NOTE), naming their share
+## of the colour whole ("about 32 %", "less than 1 %" below one percent) and the colour's edition,
+## or an empty string when no pixel was filled: then nothing in the far colour is a placeholder.
+static func _far_note(far: SurroundingsGrid) -> String:
+	if far.filled_fraction <= 0.0:
+		return ""
+	var percent := far.filled_fraction * 100.0
+	var share := "less than 1 %" if percent < 1.0 else "about %d %%" % roundi(percent)
+	return FAR_COLOUR_NOTE % [share, far.colour_edition, far.colour_edition]
 
 
 ## Prints one startup line per block that was read, together, in the order terrain,
@@ -828,9 +856,11 @@ func _key_name(event: InputEventKey) -> String:
 
 ## The credits: under "Data" one line per dataset loaded ([param datasets], sorted, each
 ## once), then "Textures" with the CC0 textures' note whole, then "Placeholders" (the walls,
-## the trees and the streams: they describe the build, so they are always listed), then "Sky"
-## (the sun's and the moon's formulas, and the Hipparcos credit only when [param stars] is true:
-## the stars were drawn, so the table res://sky/stars.csv exists), then the software's licences.
+## the trees and the streams: they describe the build, so they are always listed; then, when the
+## far terrain was read and some of its colour was filled, the far colour's note, _far_note), then
+## "Sky" (the sun's and the moon's formulas, and the Hipparcos credit only when [param stars] is
+## true: the stars were drawn, so the table res://sky/stars.csv exists), then the software's
+## licences.
 func _credits_text(datasets: PackedStringArray, stars: bool) -> String:
 	var lines := PackedStringArray(["Credits", "", "Data"])
 	if datasets.is_empty():
@@ -841,6 +871,8 @@ func _credits_text(datasets: PackedStringArray, stars: bool) -> String:
 	lines.append_array(
 		["", "Placeholders", BuildingLoader.WALLS_NOTE, TreeLoader.TREES_NOTE, STREAMS_NOTE]
 	)
+	if not _far_colour_note.is_empty():
+		lines.append(_far_colour_note)
 	lines.append_array(["", "Sky", SUN_NOTE, MOON_NOTE])
 	if stars:
 		lines.append(STARS_NOTE)
