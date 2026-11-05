@@ -396,12 +396,17 @@ def _checked(
             )
 
     entries = (REGIO, DATASET)
+    # `fit_problem` raises DownloadError only for a datasets config without the dataset's entry or
+    # its one `edition` and for a surroundings config without settings for the area; `regio_config`
+    # and `_far_config` above and `configured_area` have already refused each of those, so the
+    # `except` below is unreachable today. It is kept so that a future change that lets one through
+    # ends as a FarColourError refusal with the text, not as a traceback (its stand-in test stays).
     try:
         for name in entries:
             problem = fit_problem(lock, datasets, world, area, name, surroundings=config)
             if problem:
                 raise FarColourError(problem)
-    except DownloadError as exc:  # a datasets config fit_problem cannot read
+    except DownloadError as exc:  # not reached today: see above
         raise FarColourError(str(exc)) from exc
     problem = shape_problem(lock)
     if problem:

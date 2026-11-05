@@ -590,8 +590,15 @@ def _lock_problem(
     `lock.fit_problem` for swissALTIRegio with the surroundings config the step was given (its
     margin and spacing; `download.regio_tiles` is the tile rule), then `lock.shape_problem` for
     the lock's structure. The text is the whole refusal: it names the area and `python -m mattini
-    lock regio`, and no other command, for a fit; a datasets config that fit_problem cannot read
-    (a DownloadError) is refused with its text.
+    lock regio`, and no other command, for a fit.
+
+    `fit_problem` raises `DownloadError` only for a datasets config without the dataset's entry
+    or its one `edition` (`download.dataset_of`, `download.edition_of`) and for a surroundings
+    config without settings for the area (`download.surroundings_margin_spacing`). Both callers
+    have already refused each of those (`_regio_config` for the datasets config, the step's own
+    `configured_area` for the area), so the `except` below is unreachable today. It is kept so
+    that a future change that lets one through ends as a `SurroundingsError` refusal with the
+    text, not as a traceback; its stand-in test (test_v060_07_gaps.py) stays.
     """
     try:
         return fit_problem(lock, datasets, world, area, DATASET, surroundings=config) or (

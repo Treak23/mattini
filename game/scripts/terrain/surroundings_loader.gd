@@ -11,10 +11,12 @@ extends RefCounted
 ## vertices are built, and a square with a NaN corner (the cut, where the near terrain is) has
 ## no triangle. Front faces are clockwise seen from above (brain.md H16): with a the north-west,
 ## b the north-east, c the south-west and d the south-east corner of a square, (a, b, c) and
-## (b, d, c). A vertex's normal is (−dh/dx, 1, −dh/dz) normalised, by central differences of the
-## whole grid (one-sided where a neighbour lies outside the box or is NaN), so a vertex that two
-## chunks share has one normal; its UV is (c / (columns − 1), r / (rows − 1)), so the box's
-## edges are the colour texture's edges (u east, v south).
+## (b, d, c) (SurroundingsGrid.SQUARE_TRIANGLES, the one convention this mesh and
+## SurroundingsGrid.height_at, the camera's floor over it, both use). A vertex's normal is
+## (−dh/dx, 1, −dh/dz) normalised, by central differences of the whole grid (one-sided where a
+## neighbour lies outside the box or is NaN), so a vertex that two chunks share has one normal; its
+## UV is (c / (columns − 1), r / (rows − 1)), so the box's edges are the colour texture's edges (u
+## east, v south).
 ##
 ## The skirt is a vertical quad of two triangles hung SKIRT_DEPTH_M down from each grid edge
 ## between a drawn square and an undrawn one, inside the box: seen from inside the cut it covers
@@ -206,23 +208,40 @@ static func _chunk_mesh(
 	vertices.resize(made)
 	vertex_normals.resize(made)
 	uvs.resize(made)
+	# The six corners of a square's two triangles, in the order they are drawn (the grid's
+	# SQUARE_TRIANGLES, which height_at stands on too), as steps in this chunk's lattice from the
+	# square's north-west vertex.
+	var steps := _square_steps(width)
+	var step_0 := steps[0]
+	var step_1 := steps[1]
+	var step_2 := steps[2]
+	var step_3 := steps[3]
+	var step_4 := steps[4]
+	var step_5 := steps[5]
 	var indices := PackedInt32Array()
 	indices.resize(6 * count)
 	var next := 0
 	for k in count:
 		var at := squares[k]
-		var north_west := slots[at]
-		var north_east := slots[at + 1]
-		var south_west := slots[at + width]
-		var south_east := slots[at + width + 1]
-		indices[next] = north_west
-		indices[next + 1] = north_east
-		indices[next + 2] = south_west
-		indices[next + 3] = north_east
-		indices[next + 4] = south_east
-		indices[next + 5] = south_west
+		indices[next] = slots[at + step_0]
+		indices[next + 1] = slots[at + step_1]
+		indices[next + 2] = slots[at + step_2]
+		indices[next + 3] = slots[at + step_3]
+		indices[next + 4] = slots[at + step_4]
+		indices[next + 5] = slots[at + step_5]
 		next += 6
 	return _mesh(vertices, vertex_normals, uvs, indices)
+
+
+## The corners of the two triangles of a square, in drawing order, as offsets in a lattice
+## [param width] vertices wide from the square's north-west vertex: corner k of
+## SurroundingsGrid.SQUARE_TRIANGLES is (k & 1) columns east and (k >> 1) rows south of it.
+static func _square_steps(width: int) -> PackedInt32Array:
+	var steps := PackedInt32Array()
+	for triangle: Array in SurroundingsGrid.SQUARE_TRIANGLES:
+		for corner: int in triangle:
+			steps.append((corner & 1) + width * (corner >> 1))
+	return steps
 
 
 ## An ArrayMesh of one triangle surface from the arrays given.

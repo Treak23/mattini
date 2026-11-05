@@ -41,7 +41,14 @@ extends Node3D
 ## where the pipeline placed them for the world config the manifest pins (Hard Rule 4): the
 ## Buildings, Trees and Surroundings nodes and their meshes sit at the scene's origin, unturned and
 ## unscaled (test_scene_placement.gd, test_v060_09_far_terrain.gd); nothing here sets their
-## transform. The camera's far plane (FreeFlyCamera) reaches every corner of the far terrain.
+## transform. From anywhere in the area box the camera's far plane (FreeFlyCamera, 40 km) reaches
+## every corner of the far terrain (test_v060_09_far_terrain.gd computes it); from outside the
+## box it may not (the village's far window is 42 km by 43 km). The camera's floor
+## (_ground_height, brief v0.6.0-12) is the near terrain's inside the area box and the far
+## terrain's outside it (SurroundingsGrid.height_at, the surface the far mesh draws): the camera
+## is kept FreeFlyCamera.clearance_m above it, lifted at the step where the two meet and never
+## lowered, and flies freely where neither has ground (the far terrain is read whatever else is
+## refused, so with the terrain refused the far floor still holds).
 ## Once everything is built, one startup line per block
 ## its reader accepted is printed, in the order terrain, buildings, photo, surfaces, trees,
 ## roofs, shadows, surroundings (tools/export.sh checks them in an exported build).
@@ -134,7 +141,10 @@ const FAR_COLOUR_CREDIT := "swissimage"
 ## The credits' note on the far colour's filled pixels, a placeholder (Hard Rule 2; SPEC §10):
 ## the far colour step gives every pixel of a cell without a SWISSIMAGE item the mean colour of the
 ## covered pixels at the same 100 m of altitude, and the block records their share
-## (filled_fraction). The first %s is the share in words, the other two the colour's edition.
+## (filled_fraction). The first %s is the share in words, the other two the colour's edition. The
+## "100 m" is a literal here, a copy of colour.band_m in config/surroundings.json: nothing reads the
+## config at run time, and pipeline/tests/test_v060_12_notes.py ties the two (a census of text: it
+## proves the numbers agree, not that the step uses the band).
 const FAR_COLOUR_NOTE := (
 	"Far colour: %s of its pixels are a placeholder, not SWISSIMAGE data: where swisstopo has no %s"
 	+ " image they are filled with the mean colour of the %s pixels at the same 100 m of altitude."
@@ -242,6 +252,9 @@ var _east := Vector3.ZERO
 var _north := Vector3.ZERO
 var _up := Vector3.ZERO
 var _terrain: Terrain3D
+## The far terrain's grid as read (null when it was refused or absent): the camera's floor outside
+## the area box is its height_at (_ground_height).
+var _far: SurroundingsGrid
 ## The messages of the data packs an exported build is missing, asked before the manifest is
 ## read; empty outside an exported build.
 var _missing_packs := PackedStringArray()
@@ -375,6 +388,7 @@ static func _project_max_fps() -> int:
 func _load_world() -> PackedStringArray:
 	_missing_packs = PackedStringArray()
 	_far_colour_note = ""
+	_far = null
 	if ReleaseBuild.is_exported():
 		_missing_packs = DATA_PACKS.missing_pack_errors(OS.get_executable_path().get_base_dir())
 	var read_world := _caught(WorldConfig.from_manifest.bind(manifest_path))
@@ -432,6 +446,7 @@ func _load_world() -> PackedStringArray:
 	# own entry, and a refused terrain, photo or buildings hide no broken far terrain.
 	var read_far := _caught(SurroundingsGrid.from_manifest.bind(manifest_path, world))
 	var far: SurroundingsGrid = read_far[0]
+	_far = far
 	if far == null:
 		refusals.append([SURROUNDINGS_WHAT, read_far[1], SURROUNDINGS_FIX])
 	var read_sky := _caught(SkySite.from_manifest.bind(manifest_path, world))
@@ -499,9 +514,11 @@ func _show_buildings(chunks: BuildingChunks, roofs: BuildingRoofs) -> Node3D:
 ## Builds the far terrain around the area, on this thread. The node "Surroundings" stays at the
 ## scene's origin, unturned and unscaled: the loader places every vertex through the WorldConfig
 ## (the grid's x_min and z_min), so nothing here sets a transform or subtracts an origin (Hard
-## Rule 4). The camera's start does not depend on it.
+## Rule 4). The camera's start does not depend on it, its floor does: the far terrain is ground
+## to the camera wherever it is drawn, whether or not a terrain was built (_ground_height).
 func _show_surroundings(far: SurroundingsGrid) -> void:
 	move_child(SurroundingsLoader.create(far, self), _ui.get_index())
+	_camera.height_at = _ground_height
 
 
 ## The credits' note on the far colour's placeholder pixels (FAR_COLOUR_NOTE), naming their share
@@ -624,9 +641,22 @@ static func _dataset_line(dataset: Variant, edition: Variant, attribution: Strin
 	return "%s %s, %s" % [dataset, edition, attribution]
 
 
-## The local height of the terrain under (x, z), or NaN where there is none.
+## The local height of the ground under (x, z) the camera rests on, or NaN where there is none: the
+## near terrain's where that has a finite height (inside the area box; Terrain3D's is NaN outside
+## its grid, which is holes), else the far terrain's, the surface the far mesh draws
+## (SurroundingsGrid.height_at, NaN in the cut and outside the far box), else NaN: the camera then
+## flies freely. Either may be missing (null): the terrain refused, the far terrain refused or
+## absent. At the area box's edge the floor passes from the near terrain's to the far one's, which
+## may stand metres higher or lower; the camera is lifted there and never lowered (FreeFlyCamera
+## only raises), brief v0.6.0-12 decision 3.
 func _ground_height(x: float, z: float) -> float:
-	return _terrain.data.get_height(Vector3(x, 0.0, z))
+	if _terrain != null:
+		var near := _terrain.data.get_height(Vector3(x, 0.0, z))
+		if is_finite(near):
+			return near
+	if _far != null:
+		return _far.height_at(x, z)
+	return NAN
 
 
 ## LV95 east, north and up in local coordinates, through the world config (to_local of

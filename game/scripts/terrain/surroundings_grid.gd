@@ -58,6 +58,17 @@ const KEYS := [
 const SOURCE_KEYS := ["attribution", "collection", "dataset", "edition", "entry_sha256"]
 const COLOUR_SOURCE_KEYS := ["attribution", "collection", "dataset", "edition"]
 const BOX_KEYS := ["e_max", "e_min", "n_max", "n_min"]
+## How every square of the heights is drawn: the one convention of SurroundingsLoader's mesh and
+## of height_at, so that the surface the camera rests on is the surface that is drawn (brief
+## v0.6.0-12). The corners of a square are numbered 0 the north-west one (a), 1 the north-east
+## (b), 2 the south-west (c) and 3 the south-east (d); corner k lies (k & 1) columns east and
+## (k >> 1) rows south of the north-west one. The square is the two triangles (a, b, c) and
+## (b, d, c), so its diagonal runs from b to c; their front faces are clockwise seen from above
+## (brain.md H16).
+const SQUARE_TRIANGLES := [[0, 1, 2], [1, 3, 2]]
+## How far, in squares, a point may lie off a grid line and still be on it: a point made as
+## x_min + c · spacing_m is not always exactly c squares from x_min in 64 bits.
+const LINE_TOLERANCE := 1e-9
 
 var area: String
 var columns: int
@@ -100,6 +111,78 @@ static func from_manifest(path: String, world: WorldConfig) -> SurroundingsGrid:
 ## The height of the vertex at [param column], [param row]; NaN in the cut.
 func height(column: int, row: int) -> float:
 	return heights[row * columns + column]
+
+
+## The local height of the surface the far terrain is drawn as under local ([param x],
+## [param z]), or NaN where nothing is drawn there: outside the box, in the cut, and in a square
+## with a NaN corner (SurroundingsLoader draws no triangle there). The square is found from
+## x_min, z_min and spacing_m, which the reader took from the WorldConfig: no origin and no LV95
+## number is used here (Hard Rule 4). The height is linear between the three corners of the
+## triangle of SQUARE_TRIANGLES that holds the point. A point on the line between two squares
+## belongs to either of them that is drawn, and the box's last row and column belong to the last
+## square (brief v0.6.0-12: the free-fly camera's floor outside the area box).
+func height_at(x: float, z: float) -> float:
+	var east := (x - x_min) / spacing_m
+	var south := (z - z_min) / spacing_m
+	# Written so that a NaN, which compares false with everything, ends as NaN.
+	var inside := east >= -LINE_TOLERANCE and east <= (columns - 1) + LINE_TOLERANCE
+	inside = inside and south >= -LINE_TOLERANCE and south <= (rows - 1) + LINE_TOLERANCE
+	if not inside:
+		return NAN
+	var column_first := clampi(floori(east - LINE_TOLERANCE), 0, columns - 2)
+	var column_last := clampi(floori(east + LINE_TOLERANCE), 0, columns - 2)
+	var row_first := clampi(floori(south - LINE_TOLERANCE), 0, rows - 2)
+	var row_last := clampi(floori(south + LINE_TOLERANCE), 0, rows - 2)
+	for row in range(row_first, row_last + 1):
+		for column in range(column_first, column_last + 1):
+			var found := _square_height(column, row, east - column, south - row)
+			if not is_nan(found):
+				return found
+	return NAN
+
+
+## The height at ([param u], [param v]) squares east and south of the north-west vertex of the
+## square at [param column], [param row] (clamped to the square), or NaN when one of the square's
+## four corners is NaN.
+func _square_height(column: int, row: int, u: float, v: float) -> float:
+	var at := row * columns + column
+	var corners := [heights[at], heights[at + 1], heights[at + columns], heights[at + columns + 1]]
+	for corner: float in corners:
+		if is_nan(corner):
+			return NAN
+	var east := clampf(u, 0.0, 1.0)
+	var south := clampf(v, 0.0, 1.0)
+	# The two triangles tile the square: the one the point is most inside of holds it (a point on
+	# the diagonal is on both, and both give its height).
+	var best := -INF
+	var found := NAN
+	for triangle: Array in SQUARE_TRIANGLES:
+		var weights := _weights(east, south, triangle)
+		var worst := minf(weights[0], minf(weights[1], weights[2]))
+		if worst > best:
+			best = worst
+			found = (
+				weights[0] * corners[triangle[0]]
+				+ weights[1] * corners[triangle[1]]
+				+ weights[2] * corners[triangle[2]]
+			)
+	return found
+
+
+## The barycentric weights, three floats, of the point ([param u], [param v]) (squares east and
+## south of the north-west corner) in the triangle of the square's corners numbered
+## [param triangle] (SQUARE_TRIANGLES). All three are 0 or more where the point is on the triangle.
+static func _weights(u: float, v: float, triangle: Array) -> Array:
+	var x0 := float(triangle[0] & 1)
+	var y0 := float(triangle[0] >> 1)
+	var x1 := float(triangle[1] & 1)
+	var y1 := float(triangle[1] >> 1)
+	var x2 := float(triangle[2] & 1)
+	var y2 := float(triangle[2] >> 1)
+	var span := (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2)
+	var w0 := ((y1 - y2) * (u - x2) + (x2 - x1) * (v - y2)) / span
+	var w1 := ((y2 - y0) * (u - x2) + (x0 - x2) * (v - y2)) / span
+	return [w0, w1, 1.0 - w0 - w1]
 
 
 ## Reads and checks everything and fills this object; returns what is wrong, or "".

@@ -78,3 +78,22 @@ Detail textures for rock, roads and paths: Poly Haven, CC0 1.0 Universal (public
 Software: Godot Engine, Terrain3D and godot-cpp (compiled into Terrain3D's library), all MIT; their licences, and the other components'
 copyright notices, are shown on the game's pause screen (Escape) and sit in the repository:
 Terrain3D's beside its addon (`game/addons/terrain_3d/`), godot-cpp's in `game/credits/`.
+
+## Placeholders and limits
+
+What the picture holds that is not measured data. The game lists the first four on its pause
+screen (Escape), under Placeholders, in these words:
+
+Walls: one neutral plaster colour, a placeholder: no open data shows the façades.
+
+Trees: one generic conifer shape, placed and sized from swissSURFACE3D; the data gives no species.
+
+Streams: drawn 2 m wide, an assumed width: swissTLM3D gives none.
+
+Far colour: about 32 % of its pixels are a placeholder, not SWISSIMAGE data: where swisstopo has no 2023 image they are filled with the mean colour of the 2023 pixels at the same 100 m of altitude.
+
+That last one is the far terrain's colour where SWISSIMAGE has no image: Italy and every 1 km cell it does not cover, about a third of the village's far colour.
+
+The far terrain, the mountains around the 2 km x 3 km area, has two limits. It is a surface of 50 m means, so summits are drawn 15 to 31 m lower than they are. And outside the area it is smooth up close, a smear and not the real ground.
+
+At the start the window may stay blank for several seconds while the terrain and the far terrain are built.
